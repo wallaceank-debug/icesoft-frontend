@@ -1,4 +1,12 @@
 /* =========================================
+   0. CATRACA DE SEGURANÇA
+   ========================================= */
+if (!localStorage.getItem('icesoft_token')) {
+    alert("Acesso Negado! Por favor, faça login.");
+    window.location.href = '/login/'; 
+}
+
+/* =========================================
    1. BANCO DE DADOS CENTRAL (Vindo do Servidor)
    ========================================= */
 let produtosIcesoft = []; 
