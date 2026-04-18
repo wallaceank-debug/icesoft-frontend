@@ -1,0 +1,246 @@
+/* =========================================
+   CONFIGURAÇÕES GERAIS (Foco no Mobile)
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #f4f4f9; /* Fundo cinza bem clarinho para destacar os produtos */
+    color: #333;
+    
+    /* A MÁGICA DO MOBILE-FIRST NO COMPUTADOR */
+    /* Se alguém abrir no PC, o site não vai esticar feio, vai ficar no centro parecendo um celular */
+    max-width: 480px; 
+    margin: 0 auto; 
+    background-color: #ffffff;
+    min-height: 100vh;
+    box-shadow: 0px 0px 20px rgba(0,0,0,0.1); /* Sombrinha nas laterais */
+}
+
+/* =========================================
+   CABEÇALHO E BUSCA INTELIGENTE
+   ========================================= */
+.header-loja {
+    background-color: #ff477e; /* Rosa vibrante da Icesoft (alta conversão) */
+    padding: 25px 20px;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    color: white;
+}
+
+.logo-area h1 {
+    font-size: 26px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 800;
+}
+
+.busca-area input {
+    width: 100%;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    outline: none;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.15); /* Efeito flutuante */
+    transition: 0.3s;
+}
+
+/* =========================================
+   NAVEGAÇÃO EM "STORY" (Categorias)
+   ========================================= */
+.stories-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 25px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+}
+
+/* O círculo em volta do emoji parecendo Story */
+.story-item::before {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 60px;
+    background-color: #fff0f3;
+    border: 3px solid #ff477e;
+    border-radius: 50%;
+    margin-bottom: -40px; /* Puxa o emoji para cima do círculo */
+    z-index: 0;
+}
+
+.story-item {
+    z-index: 1; /* Garante que o texto/emoji fique por cima do círculo */
+}
+
+/* =========================================
+   ÁREA DO CARDÁPIO
+   ========================================= */
+main#lista-produtos {
+    padding: 25px 20px;
+}
+
+main#lista-produtos h2 {
+    font-size: 22px;
+    color: #222;
+    margin-bottom: 15px;
+}
+
+/* =========================================
+   RODAPÉ DO CARRINHO (ESTILO FIXO)
+   ========================================= */
+.carrinho-fixo {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Centraliza no mobile */
+    width: 90%;
+    max-width: 440px;
+    background-color: #333; /* Cor escura para dar contraste com o rosa */
+    color: white;
+    padding: 15px 25px;
+    border-radius: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0px 10px 25px rgba(0,0,0,0.3);
+    z-index: 999;
+}
+
+.carrinho-info {
+    display: flex;
+    flex-direction: column;
+}
+
+#qtd-itens {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+#total-carrinho {
+    font-size: 18px;
+}
+
+.btn-ver-carrinho {
+    background-color: #ff477e;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* =========================================
+   TELA DE CHECKOUT (MODAL)
+   ========================================= */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5); /* Fundo escuro transparente */
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Faz a tela subir por baixo no celular */
+    z-index: 1000;
+}
+
+.modal-conteudo {
+    background-color: #fff;
+    width: 100%;
+    max-width: 480px;
+    height: 85vh; /* Ocupa 85% da tela */
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+    padding: 20px;
+    overflow-y: auto; /* Permite rolar se o carrinho for muito grande */
+    animation: subirTela 0.3s ease-out;
+}
+
+@keyframes subirTela {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.modal-cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+#btn-fechar-modal {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+}
+
+.item-no-carrinho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed #ccc;
+}
+
+.item-no-carrinho button {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.resumo-valores {
+    text-align: right;
+    font-size: 18px;
+    margin: 20px 0;
+}
+
+.form-entrega h3 {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.form-entrega input, .form-entrega textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.btn-sucesso {
+    width: 100%;
+    background-color: #25D366; /* Verde do WhatsApp */
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icesoft - Cardápio Digital</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header-loja">
+        <div class="logo-area">
+            <h1>🍦 Icesoft</h1>
+        </div>
+        <div class="busca-area">
+            <input type="text" id="busca-produtos" placeholder="O que você quer pedir hoje?">
+        </div>
+    </header>
+
+    <nav class="stories-container">
+        <div class="story-item">🍨<br>Massas</div>
+        <div class="story-item">🍧<br>Açaí</div>
+        <div class="story-item">🍡<br>Picolés</div>
+        <div class="story-item">🥤<br>Bebidas</div>
+    </nav>
+
+    <main id="lista-produtos">
+        <h2>Cardápio</h2>
+        <p>Os produtos serão carregados aqui em breve...</p>
+    </main>
+
+<footer id="rodape-carrinho" style="display: none;" class="carrinho-fixo">
+        <div class="carrinho-info">
+            <span id="qtd-itens">0 itens</span>
+            <strong id="total-carrinho">R$ 0,00</strong>
+        </div>
+        <button class="btn-ver-carrinho">Ver Sacola 🛍️</button>
+    </footer>
+
+<div id="modal-checkout" class="modal" style="display: none;">
+        <div class="modal-conteudo">
+            <div class="modal-cabecalho">
+                <h2>Seu Pedido</h2>
+                <button id="btn-fechar-modal">✖</button>
+            </div>
+            
+            <div id="lista-itens-carrinho">
+                </div>
+
+            <div class="resumo-valores">
+                <p>Total: <strong id="total-checkout">R$ 0,00</strong></p>
+            </div>
+
+            <div class="form-entrega">
+                <h3>Dados para Entrega</h3>
+                <input type="text" id="cli-nome" placeholder="Seu Nome">
+                <input type="tel" id="cli-telefone" placeholder="Celular (com DDD)">
+                <textarea id="cli-endereco" placeholder="Endereço Completo (Rua, Número, Bairro, Referência)"></textarea>
+            </div>
+
+            <button id="btn-enviar-pedido" class="btn-sucesso">Finalizar Pedido pelo WhatsApp</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

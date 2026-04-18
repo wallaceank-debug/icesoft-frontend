@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icesoft - Dashboard Gerencial</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2>🍦 Icesoft</h2>
+                <p>Painel Gerencial</p>
+            </div>
+            <nav class="menu-lateral">
+                <button class="menu-item ativo">📊 Visão Geral</button>
+                <button class="menu-item">🧾 Auditoria de Caixa</button>
+                <button class="menu-item">📦 Produtos Mais Vendidos</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-header">
+                <h1>Visão Geral do Negócio</h1>
+                <div class="filtro-periodo">
+                    <label>Período: </label>
+                    <select id="filtro-tempo">
+                        <option value="hoje">Hoje</option>
+                        <option value="semana">Nesta Semana</option>
+                        <option value="mes">Neste Mês</option>
+                    </select>
+                </div>
+            </header>
+
+            <section class="kpi-cards">
+                <div class="card">
+                    <h3>Faturamento Total</h3>
+                    <strong id="kpi-faturamento">R$ 0,00</strong>
+                </div>
+                <div class="card">
+                    <h3>Vendas Realizadas</h3>
+                    <strong id="kpi-vendas">0</strong>
+                </div>
+                <div class="card">
+                    <h3>Ticket Médio</h3>
+                    <strong id="kpi-ticket">R$ 0,00</strong>
+                </div>
+            </section>
+
+            <section class="gestao-caixa">
+                <div class="section-header">
+                    <h2>Últimas Vendas Registradas</h2>
+                    <p class="subtitle">Auditoria e gestão do fluxo de caixa</p>
+                </div>
+                
+                <div class="table-container">
+                    <table class="tabela-vendas">
+                        <thead>
+                            <tr>
+                                <th>Cód. da Venda</th>
+                                <th>Origem</th>
+                                <th>Data / Hora</th>
+                                <th>Valor Total</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-vendas-tabela">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 20px;">Carregando histórico...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
