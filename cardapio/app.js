@@ -250,7 +250,7 @@ btnEnviarPedido.addEventListener('click', () => {
     const textoCodificado = encodeURIComponent(textoPedido);
 
     // 5. Número do WhatsApp da Sorveteria (Substitua pelo número real da Icesoft depois)
-    const numeroWhatsapp = "5511999999999"; 
+    const numeroWhatsapp = "5524992308585"; 
 
     // 6. Abrir o aplicativo do WhatsApp direto na conversa da loja
     const url = `https://wa.me/${numeroWhatsapp}?text=${textoCodificado}`;
