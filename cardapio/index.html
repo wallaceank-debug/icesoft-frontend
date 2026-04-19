@@ -3,77 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Icesoft - Cardápio Digital</title>
+    <title>Icesoft - Cardápio Delivery</title>
     <link rel="stylesheet" href="/cardapio/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
-    <header class="header-loja">
-        <div class="logo-area">
-            <h1>🍦 Icesoft</h1>
-        </div>
-        <div class="busca-area">
-            <input type="text" id="busca-produtos" placeholder="O que você quer pedir hoje?">
-        </div>
+    <header style="background-color: #e91e63; color: white; padding: 20px; text-align: center;">
+        <h1>🍦 Icesoft Delivery</h1>
+        <p>Os melhores sorvetes direto na sua casa!</p>
     </header>
 
-    <nav class="stories-container">
-        <div class="story-item">🍨<br>Massas</div>
-        <div class="story-item">🍧<br>Açaí</div>
-        <div class="story-item">🍡<br>Picolés</div>
-        <div class="story-item">🥤<br>Bebidas</div>
-    </nav>
+    <main id="lista-produtos" style="padding: 20px; padding-bottom: 100px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+        </main>
 
-    <main id="lista-produtos">
-        <h2>Cardápio</h2>
-        <p>Os produtos serão carregados aqui em breve...</p>
-    </main>
-
-<footer id="rodape-carrinho" style="display: none;" class="carrinho-fixo">
+    <div id="carrinho-flutuante" class="carrinho-oculto">
         <div class="carrinho-info">
-            <span id="qtd-itens">0 itens</span>
-            <strong id="total-carrinho">R$ 0,00</strong>
+            <span id="carrinho-qtd">0 itens</span>
+            <span id="carrinho-total">R$ 0,00</span>
         </div>
-        <button class="btn-ver-carrinho">Ver Sacola 🛍️</button>
-    </footer>
-
-<div id="modal-checkout" class="modal" style="display: none;">
-        <div class="modal-conteudo">
-            <div class="modal-cabecalho">
-                <h2>Seu Pedido</h2>
-                <button id="btn-fechar-modal">✖</button>
-            </div>
-            
-            <div id="lista-itens-carrinho">
-                </div>
-
-            <div class="resumo-valores">
-                <p>Total: <strong id="total-checkout">R$ 0,00</strong></p>
-            </div>
-
-            <div class="form-entrega">
-                <h3>Dados para Entrega</h3>
-                <input type="text" id="cli-nome" placeholder="Seu Nome">
-                <input type="tel" id="cli-telefone" placeholder="Celular (com DDD)">
-                <textarea id="cli-endereco" placeholder="Endereço Completo (Rua, Número, Bairro, Referência)"></textarea>
-            </div>
-
-            <button id="btn-enviar-pedido" class="btn-sucesso">Finalizar Pedido pelo WhatsApp</button>
-        </div>
+        <button onclick="finalizarPedidoWhatsApp()" class="btn-whatsapp">Fazer Pedido 📱</button>
     </div>
 
-<div id="modal-checkout" class="modal-oculto">
+    <div id="modal-checkout" class="modal-oculto">
         <div class="modal-conteudo">
-            <h3 style="color: #e91e63; text-align: center;">Detalhes da Entrega</h3>
+            <h3 style="color: #e91e63; text-align: center; margin-bottom: 10px;">Detalhes da Entrega</h3>
             
             <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" required>
-            <input type="text" id="cliente-endereco" placeholder="Endereço de Entrega (Rua, Número, Bairro)" required>
+            <input type="text" id="cliente-endereco" placeholder="Endereço de Entrega (Rua, Nº, Bairro)" required>
             
             <select id="cliente-pagamento">
                 <option value="" disabled selected>Forma de Pagamento</option>
                 <option value="Pix">Pix</option>
-                <option value="Cartão de Crédito">Cartão de Crédito (Maquininha)</option>
-                <option value="Cartão de Débito">Cartão de Débito (Maquininha)</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
                 <option value="Dinheiro">Dinheiro Vivo</option>
             </select>
 
@@ -85,14 +47,5 @@
     </div>
 
     <script src="/cardapio/app.js"></script>
-
-<div id="carrinho-flutuante" class="carrinho-oculto">
-        <div class="carrinho-info">
-            <span id="carrinho-qtd">0 itens</span>
-            <span id="carrinho-total">R$ 0,00</span>
-        </div>
-        <button onclick="finalizarPedidoWhatsApp()" class="btn-whatsapp">Fazer Pedido 📱</button>
-    </div>
-
 </body>
 </html>
