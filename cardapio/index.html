@@ -62,6 +62,37 @@
         </div>
     </div>
 
+<div id="modal-checkout" class="modal-oculto">
+        <div class="modal-conteudo">
+            <h3 style="color: #e91e63; text-align: center;">Detalhes da Entrega</h3>
+            
+            <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" required>
+            <input type="text" id="cliente-endereco" placeholder="Endereço de Entrega (Rua, Número, Bairro)" required>
+            
+            <select id="cliente-pagamento">
+                <option value="" disabled selected>Forma de Pagamento</option>
+                <option value="Pix">Pix</option>
+                <option value="Cartão de Crédito">Cartão de Crédito (Maquininha)</option>
+                <option value="Cartão de Débito">Cartão de Débito (Maquininha)</option>
+                <option value="Dinheiro">Dinheiro Vivo</option>
+            </select>
+
+            <div class="modal-botoes">
+                <button onclick="fecharModal()" class="btn-cancelar">Voltar</button>
+                <button onclick="enviarPedidoFinal()" class="btn-confirmar">Enviar Pedido 🚀</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/cardapio/app.js"></script>
+
+<div id="carrinho-flutuante" class="carrinho-oculto">
+        <div class="carrinho-info">
+            <span id="carrinho-qtd">0 itens</span>
+            <span id="carrinho-total">R$ 0,00</span>
+        </div>
+        <button onclick="finalizarPedidoWhatsApp()" class="btn-whatsapp">Fazer Pedido 📱</button>
+    </div>
+
 </body>
 </html>
