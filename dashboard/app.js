@@ -184,7 +184,7 @@ document.querySelectorAll('.menu-item')[2].addEventListener('click', function() 
     carregarRankingMaisVendidos();
 });
 
-// Função para listar os produtos na tabela de gestão
+// Função para listar os produtos na tabela de gestão (AGORA COM BOTÃO EXCLUIR)
 async function carregarProdutosGestao() {
     const resposta = await fetch('https://icesoft-api.onrender.com/api/produtos');
     const produtos = await resposta.json();
@@ -198,7 +198,8 @@ async function carregarProdutosGestao() {
                 <td><strong>${p.nome}</strong></td>
                 <td>R$ ${p.preco.toFixed(2)}</td>
                 <td>
-                    <button onclick='prepararEdicao(${JSON.stringify(p)})' style="background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Editar</button>
+                    <button onclick='prepararEdicao(${JSON.stringify(p)})' style="background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-right:5px;">Editar</button>
+                    <button onclick='excluirProduto(${p.id})' style="background:#f44336; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Excluir</button>
                 </td>
             </tr>
         `;
@@ -261,6 +262,30 @@ async function salvarProduto() {
         carregarProdutosGestao(); // Recarrega a tabela
     } else {
         alert("Erro ao salvar produto.");
+    }
+}
+
+// Função para Excluir o Produto
+async function excluirProduto(id) {
+    // A caixa de confirmação de segurança (para você não apagar sem querer)
+    const confirmacao = confirm("⚠️ Tem certeza que deseja excluir este sorvete? Ele sumirá do cardápio dos clientes!");
+    
+    if (confirmacao) {
+        try {
+            const resposta = await fetch(`https://icesoft-api.onrender.com/api/produtos/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (resposta.ok) {
+                alert("🗑️ Produto excluído com sucesso!");
+                carregarProdutosGestao(); // Recarrega a tabela instantaneamente
+            } else {
+                alert("Erro ao excluir o produto.");
+            }
+        } catch (erro) {
+            console.error("Erro na exclusão:", erro);
+            alert("Erro de conexão ao tentar excluir.");
+        }
     }
 }
 
