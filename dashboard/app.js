@@ -183,3 +183,86 @@ document.querySelectorAll('.menu-item')[2].addEventListener('click', function() 
     this.classList.add('ativo');
     carregarRankingMaisVendidos();
 });
+
+// Função para listar os produtos na tabela de gestão
+async function carregarProdutosGestao() {
+    const resposta = await fetch('https://icesoft-api.onrender.com/api/produtos');
+    const produtos = await resposta.json();
+    const tabela = document.getElementById('tabela-produtos-gestao');
+    tabela.innerHTML = '';
+
+    produtos.forEach(p => {
+        tabela.innerHTML += `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-size: 1.5rem;">${p.emoji}</td>
+                <td><strong>${p.nome}</strong></td>
+                <td>R$ ${p.preco.toFixed(2)}</td>
+                <td>
+                    <button onclick='prepararEdicao(${JSON.stringify(p)})' style="background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Editar</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// Abre o modal para NOVO produto
+function abrirModalProduto() {
+    document.getElementById('modal-titulo').innerText = "Cadastrar Produto";
+    document.getElementById('prod-id').value = "";
+    document.getElementById('prod-nome').value = "";
+    document.getElementById('prod-desc').value = "";
+    document.getElementById('prod-preco').value = "";
+    document.getElementById('prod-emoji').value = "";
+    document.getElementById('modal-produto').style.display = 'flex';
+}
+
+// Abre o modal preenchido para EDITAR
+function prepararEdicao(produto) {
+    document.getElementById('modal-titulo').innerText = "Editar Produto";
+    document.getElementById('prod-id').value = produto.id;
+    document.getElementById('prod-nome').value = produto.nome;
+    document.getElementById('prod-desc').value = produto.descricao;
+    document.getElementById('prod-preco').value = produto.preco;
+    document.getElementById('prod-emoji').value = produto.emoji;
+    document.getElementById('modal-produto').style.display = 'flex';
+}
+
+function fecharModalProduto() {
+    document.getElementById('modal-produto').style.display = 'none';
+}
+
+// A FUNÇÃO PRINCIPAL: Salva na Nuvem
+async function salvarProduto() {
+    const id = document.getElementById('prod-id').value;
+    const dados = {
+        nome: document.getElementById('prod-nome').value,
+        descricao: document.getElementById('prod-desc').value,
+        preco: parseFloat(document.getElementById('prod-preco').value),
+        emoji: document.getElementById('prod-emoji').value
+    };
+
+    let url = 'https://icesoft-api.onrender.com/api/produtos';
+    let metodo = 'POST'; // Padrão é criar novo
+
+    if (id) {
+        url = `https://icesoft-api.onrender.com/api/produtos/${id}`;
+        metodo = 'PUT'; // Se tem ID, estamos editando
+    }
+
+    const resposta = await fetch(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados)
+    });
+
+    if (resposta.ok) {
+        alert("Sucesso! O cardápio foi atualizado.");
+        fecharModalProduto();
+        carregarProdutosGestao(); // Recarrega a tabela
+    } else {
+        alert("Erro ao salvar produto.");
+    }
+}
+
+// Chamar a lista assim que o Dashboard carregar
+carregarProdutosGestao();
