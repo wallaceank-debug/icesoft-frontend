@@ -1,45 +1,174 @@
-// A "sacola" de compras do cliente
 let carrinho = [];
+let produtosDaNuvem = [];
+let gruposGlobais = [];
+let produtoEmSelecao = null;
+let escolhasAtuais = [];
 
-// 1. Busca os produtos na sua Nuvem (Render)
-async function carregarProdutos() {
+// ==========================================
+// 1. CARREGAR DADOS DA NUVEM
+// ==========================================
+async function carregarTudo() {
     try {
-        const resposta = await fetch('https://icesoft-api.onrender.com/api/produtos');
-        const produtosDaNuvem = await resposta.json();
+        const [resProd, resGrupos] = await Promise.all([
+            fetch('https://icesoft-api.onrender.com/api/produtos'),
+            fetch('https://icesoft-api.onrender.com/api/grupos')
+        ]);
+        produtosDaNuvem = await resProd.json();
+        gruposGlobais = await resGrupos.json();
         renderizarCardapio(produtosDaNuvem);
-    } catch (erro) {
-        console.error("Erro ao carregar cardápio:", erro);
-        document.getElementById('lista-produtos').innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar o cardápio. Tente novamente.</p>';
+    } catch (e) { 
+        console.error("Erro ao carregar:", e); 
     }
 }
 
-// 2. Desenha os produtos na tela
-function renderizarCardapio(listaProdutos) {
+// ==========================================
+// 2. DESENHAR CARDÁPIO
+// ==========================================
+function renderizarCardapio(lista) {
     const container = document.getElementById('lista-produtos');
-    container.innerHTML = ''; 
-
-    listaProdutos.forEach(produto => {
+    container.innerHTML = '';
+    lista.forEach(p => {
         container.innerHTML += `
-            <div class="produto-card">
-                <div class="produto-emoji">${produto.emoji}</div>
-                <h3 class="produto-nome">${produto.nome}</h3>
-                <p class="produto-descricao">${produto.descricao}</p>
-                <div class="produto-preco">R$ ${produto.preco.toFixed(2).replace('.', ',')}</div>
-                <button class="btn-add" onclick="adicionarAoCarrinho('${produto.nome}', ${produto.preco})">
-                    + Adicionar
-                </button>
+            <div class="produto-card" style="display: flex; background: white; margin-bottom: 15px; padding: 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); align-items: center; gap: 15px;">
+                <div style="font-size: 2.5rem;">${p.emoji}</div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0; color: #333;">${p.nome}</h3>
+                    <p style="margin: 5px 0; color: #777; font-size: 0.85rem;">${p.descricao}</p>
+                    <div style="font-weight: bold; color: #e91e63;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button onclick="verificarAdicao(${p.id})" style="background: #e91e63; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">+</button>
             </div>
         `;
     });
 }
 
-// 3. Adiciona na sacola
-function adicionarAoCarrinho(nomeProduto, precoProduto) {
-    carrinho.push({ nome: nomeProduto, preco: precoProduto });
+// ==========================================
+// 3. REGRAS DE ADIÇÃO (COM OU SEM GRUPO)
+// ==========================================
+function verificarAdicao(id) {
+    const produto = produtosDaNuvem.find(p => p.id === id);
+    if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
+        adicionarAoCarrinho(produto.nome, Number(produto.preco));
+        return;
+    }
+    abrirModalEscolha(produto);
+}
+
+// ==========================================
+// 4. JANELINHA DE ADICIONAIS (MODAL)
+// ==========================================
+function abrirModalEscolha(produto) {
+    produtoEmSelecao = produto;
+    escolhasAtuais = [];
+    
+    document.getElementById('detalhes-produto-topo').innerHTML = `
+        <h2 style="margin:0; color:#e91e63;">${produto.nome}</h2>
+        <p style="color:#777; margin:5px 0;">Escolha seus complementos</p>
+    `;
+
+    const container = document.getElementById('container-grupos-opcoes');
+    container.innerHTML = '';
+    
+    const gruposDoProduto = gruposGlobais.filter(g => produto.grupos_ids.includes(g.id));
+
+    gruposDoProduto.forEach(grupo => {
+        // Criamos os itens garantindo que o clique vá sempre para a função correta
+        let itensHtml = (grupo.itens || []).map((item, idx) => {
+            let precoSeguro = Number(item.preco) || 0;
+            let nomeSeguro = item.nome.replace(/'/g, "\\'"); // Evita bugs com aspas
+            let chkId = `chk-${grupo.id}-${idx}`;
+
+            return `
+            <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${chkId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="${chkId}" style="accent-color:#e91e63; pointer-events:none;">
+                    <span>${item.nome}</span>
+                </div>
+                <span style="color:#25D366; font-size:0.9rem;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+            </div>`;
+        }).join('');
+
+        container.innerHTML += `
+            <div style="margin-bottom:20px;">
+                <div style="background:#f8f8f8; padding:10px; border-radius:10px; display:flex; justify-content:space-between;">
+                    <strong style="color:#333;">${grupo.nome}</strong>
+                    <span style="font-size:0.75rem; color:#e91e63; background:white; padding:2px 8px; border-radius:10px;">Até ${grupo.limite}</span>
+                </div>
+                ${itensHtml}
+            </div>
+        `;
+    });
+
+    atualizarPrecoDinamico();
+    document.getElementById('modal-opcoes').style.display = 'flex';
+}
+
+function toggleOpcional(grupoId, nomeItem, preco, chkId) {
+    const grupo = gruposGlobais.find(g => g.id === grupoId);
+    const chk = document.getElementById(chkId);
+    const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
+
+    if (index > -1) {
+        // Se já estava marcado, a pessoa quer desmarcar
+        escolhasAtuais.splice(index, 1);
+        chk.checked = false;
+    } else {
+        const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
+        
+        // UX DE OURO: Se o limite é 1 e ele escolheu outro, troca automaticamente!
+        if (grupo.limite === 1) {
+            if (escolhasNoGrupo.length > 0) {
+                // Remove o antigo da memória
+                const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
+                escolhasAtuais.splice(idxAnterior, 1);
+                // Desmarca todos os quadradinhos desse grupo visualmente
+                const todosChkDoGrupo = document.querySelectorAll(`input[id^="chk-${grupoId}-"]`);
+                todosChkDoGrupo.forEach(c => c.checked = false);
+            }
+        } 
+        // Se o limite for maior que 1 e já estourou
+        else if (escolhasNoGrupo.length >= grupo.limite) {
+            alert(`Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}`);
+            return;
+        }
+        
+        // Adiciona a nova escolha
+        escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco) });
+        chk.checked = true;
+    }
+    
+    atualizarPrecoDinamico();
+}
+
+function atualizarPrecoDinamico() {
+    const totalOpcionais = escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    const totalGeral = Number(produtoEmSelecao.preco) + totalOpcionais;
+    document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+}
+
+function confirmarEscolhasEAdicionar() {
+    let nomeFinal = produtoEmSelecao.nome;
+    if (escolhasAtuais.length > 0) {
+        nomeFinal += " (" + escolhasAtuais.map(e => e.nome).join(', ') + ")";
+    }
+    const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    
+    adicionarAoCarrinho(nomeFinal, precoFinal);
+    fecharModalOpcoes();
+}
+
+function fecharModalOpcoes() { 
+    document.getElementById('modal-opcoes').style.display = 'none'; 
+}
+
+// ==========================================
+// 5. O CARRINHO DE COMPRAS
+// ==========================================
+function adicionarAoCarrinho(nome, preco) {
+    carrinho.push({ nome, preco: Number(preco) });
     atualizarBarraCarrinho();
 }
 
-// 4. Atualiza a barra flutuante
 function atualizarBarraCarrinho() {
     const barra = document.getElementById('carrinho-flutuante');
     const txtQtd = document.getElementById('carrinho-qtd');
@@ -48,67 +177,68 @@ function atualizarBarraCarrinho() {
     if (carrinho.length > 0) {
         barra.classList.remove('carrinho-oculto');
         barra.classList.add('carrinho-visivel');
+        barra.style.display = 'flex'; // Força a exibição
         
-        let total = carrinho.reduce((soma, item) => soma + item.preco, 0);
-        
+        let total = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
         txtQtd.innerText = `${carrinho.length} item(ns)`;
         txtTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
     } else {
         barra.classList.remove('carrinho-visivel');
         barra.classList.add('carrinho-oculto');
+        barra.style.display = 'none'; // Esconde com segurança
     }
 }
 
-// 5. Abre a Janela de Checkout
+// ==========================================
+// 6. CHECKOUT E WHATSAPP FINAL (BUGS 3 E 4 CORRIGIDOS)
+// ==========================================
 function finalizarPedidoWhatsApp() {
-    document.getElementById('modal-checkout').classList.remove('modal-oculto');
-    document.getElementById('modal-checkout').classList.add('modal-visivel');
+    const modal = document.getElementById('modal-checkout');
+    modal.classList.remove('modal-oculto');
+    modal.classList.add('modal-visivel');
+    modal.style.display = 'flex';
 }
 
-// 6. Fecha a Janela de Checkout
 function fecharModal() {
-    document.getElementById('modal-checkout').classList.remove('modal-visivel');
-    document.getElementById('modal-checkout').classList.add('modal-oculto');
+    const modal = document.getElementById('modal-checkout');
+    modal.classList.remove('modal-visivel');
+    modal.classList.add('modal-oculto');
+    modal.style.display = 'none'; // Mata a janela na hora!
 }
 
-// 7. Envia para o WhatsApp Oficialmente
 function enviarPedidoFinal() {
     const nome = document.getElementById('cliente-nome').value;
     const endereco = document.getElementById('cliente-endereco').value;
     const pagamento = document.getElementById('cliente-pagamento').value;
 
     if (!nome || !endereco || !pagamento) {
-        alert("Por favor, preencha todos os campos da entrega para enviarmos seu sorvete!");
+        alert("Preencha todos os campos da entrega, por favor!");
         return;
     }
 
-    // ⚠️ ATENÇÃO: COLOQUE SEU NÚMERO AQUI (DDI + DDD + Número)
+    // ⚠️ ATENÇÃO: COLOQUE SEU NÚMERO AQUI ⚠️
     const telefoneDono = "5524992308585"; 
     
-    let total = 0;
-    let textoPedido = "🍦 *NOVO PEDIDO - ICESOFT (Delivery)* 🍦\n\n";
-    
+    let textoPedido = "🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n";
     textoPedido += `👤 *Cliente:* ${nome}\n`;
     textoPedido += `📍 *Endereço:* ${endereco}\n`;
     textoPedido += `💳 *Pagamento:* ${pagamento}\n\n`;
     textoPedido += "📦 *Itens do Pedido:*\n";
 
+    let total = 0;
     carrinho.forEach(item => {
-        textoPedido += `▪️ 1x ${item.nome} - R$ ${item.preco.toFixed(2).replace('.', ',')}\n`;
-        total += item.preco;
+        textoPedido += `▪️ 1x ${item.nome} - R$ ${Number(item.preco).toFixed(2).replace('.', ',')}\n`;
+        total += Number(item.preco);
     });
 
-    textoPedido += `\n💰 *Total a Pagar: R$ ${total.toFixed(2).replace('.', ',')}*\n\n`;
-    textoPedido += "Aguardando confirmação de saída!";
+    textoPedido += `\n💰 *Total: R$ ${total.toFixed(2).replace('.', ',')}*`;
 
-    fecharModal();
+    // Envia e limpa tudo
+    window.open(`https://wa.me/${telefoneDono}?text=${encodeURIComponent(textoPedido)}`, '_blank');
+    
     carrinho = [];
     atualizarBarraCarrinho();
-
-    const textoCodificado = encodeURIComponent(textoPedido);
-    const linkWhatsApp = `https://wa.me/${telefoneDono}?text=${textoCodificado}`;
-    window.open(linkWhatsApp, '_blank');
+    fecharModal();
 }
 
-// Liga o motor assim que a página abre
-window.onload = carregarProdutos;
+window.onload = carregarTudo;
