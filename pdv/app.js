@@ -273,21 +273,13 @@ async function finalizarVendaPDV() {
     // 1. Gera um resumo para o seu Dashboard saber o que foi vendido
     const resumoItens = carrinho.map(item => item.nome).join(' + ');
     
+    // GAVETAS ALINHADAS COM O BANCO DE DADOS
     const dadosDaVenda = {
-        produto_nome: "Balcão: " + resumoItens.substring(0, 50), // Corta se for muito longo
-        total: subtotalGlobalPDV
+        itens: "Balcão: " + resumoItens.substring(0, 100), 
+        valor_total: subtotalGlobalPDV,
+        forma_pagamento: metodo,
+        status: "Concluída"
     };
-
-    // 2. Envia para o Banco de Dados (API Vendas)
-    try {
-        await fetch(`${API_URL}/vendas`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dadosDaVenda)
-        });
-    } catch (e) {
-        console.error("Erro ao enviar venda para a nuvem:", e);
-    }
 
     // 3. Sucesso!
     alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
