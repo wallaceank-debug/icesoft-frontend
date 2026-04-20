@@ -4,54 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Cardápio - Icesoft</title>
-    <link rel="stylesheet" href="/gestao/style.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header class="gestao-header">
-        <div class="titulo-area">
-            <h1>GESTÃO DE CARDÁPIO</h1>
-        </div>
-        <div class="botoes-area">
-            <button onclick="abrirModalProduto()" class="btn-topo">+ PRODUTO</button>
-            <button onclick="abrirModalGrupo()" class="btn-topo">+ GRUPO</button>
-        </div>
-    </header>
+    <aside class="menu-lateral">
+        <a href="/pdv/" class="btn-menu">Balcão PDV</a>
+        <a href="/gestao/" class="btn-menu ativo">Cardápio</a>
+        <a href="/dashboard/" class="btn-menu">Dashboard</a>
+    </aside>
 
-    <main class="gestao-container">
+    <div class="conteudo-principal">
         
-        <section class="coluna-card">
-            <div class="coluna-header">
-                <h2>PRODUTOS</h2>
+        <header class="gestao-header">
+            <div class="titulo-area">
+                <h1>GESTÃO DE CARDÁPIO</h1>
             </div>
-            <div class="coluna-lista" id="lista-produtos">
-                <p class="carregando">Carregando...</p>
+            <div class="botoes-area">
+                <button onclick="abrirModalProduto()" class="btn-topo">+ PRODUTO</button>
+                <button onclick="abrirModalGrupo()" class="btn-topo">+ GRUPO</button>
             </div>
-        </section>
+        </header>
 
-        <section class="coluna-card">
-            <div class="coluna-header">
-                <h2>GRUPOS DE ADICIONAIS</h2>
-            </div>
-            <div class="coluna-lista" id="lista-grupos">
-                <p class="carregando">Carregando...</p>
-            </div>
-        </section>
+        <main class="gestao-container">
+            
+            <section class="coluna-card">
+                <div class="coluna-header">
+                    <h2>PRODUTOS</h2>
+                </div>
+                <div class="coluna-lista" id="lista-produtos">
+                    <p class="carregando">Carregando...</p>
+                </div>
+            </section>
 
-        <section class="coluna-card">
-            <div class="coluna-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>ADICIONAIS</h2>
-                <button id="btn-novo-adicional" onclick="abrirModalAdicional()" class="btn-add-mini" style="display: none;">+ NOVO</button>
-            </div>
-            <div class="coluna-lista" id="lista-adicionais">
-                <p class="carregando" style="opacity: 0.6;">Selecione um Grupo na coluna ao lado para ver os adicionais.</p>
-            </div>
-        </section>
+            <section class="coluna-card">
+                <div class="coluna-header">
+                    <h2>GRUPOS DE ADICIONAIS</h2>
+                </div>
+                <div class="coluna-lista" id="lista-grupos">
+                    <p class="carregando">Carregando...</p>
+                </div>
+            </section>
 
-    </main>
+            <section class="coluna-card">
+                <div class="coluna-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>ADICIONAIS</h2>
+                    <button id="btn-novo-adicional" onclick="abrirModalAdicional()" class="btn-add-mini" style="display: none;">+ NOVO</button>
+                </div>
+                <div class="coluna-lista" id="lista-adicionais">
+                    <p class="carregando" style="opacity: 0.6;">Selecione um Grupo na coluna ao lado para ver os adicionais.</p>
+                </div>
+            </section>
 
-    <div id="modal-produto" class="modal-fundo" style="display:none;">
+        </main>
+    </div> <div id="modal-produto" class="modal-fundo" style="display:none;">
         <div class="modal-conteudo">
             <h2 id="titulo-modal-produto">Novo Produto</h2>
             <input type="hidden" id="prod-id">

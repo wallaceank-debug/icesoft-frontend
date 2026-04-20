@@ -4,68 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Icesoft</title>
-    <link rel="stylesheet" href="/dashboard/style.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header class="dash-header">
-        <div class="titulo-area">
-            <h1>DASHBOARD</h1>
-        </div>
-        <div class="filtros-area">
-            <input type="date" id="filtro-inicio" class="input-filtro" title="Data Início">
-            <input type="date" id="filtro-fim" class="input-filtro" title="Data Final">
-            <button onclick="carregarVendas()" class="btn-filtrar">FILTRAR VENDAS</button>
-            <div class="divisor-bolinha"></div>
-            <div id="periodo-exibicao" class="periodo-badge">TODO O HISTÓRICO</div>
-        </div>
-    </header>
+    <aside class="menu-lateral">
+        <a href="/pdv/" class="btn-menu">Balcão PDV</a>
+        <a href="/gestao/" class="btn-menu">Cardápio</a>
+        <a href="/dashboard/" class="btn-menu ativo">Dashboard</a>
+    </aside>
 
-    <main class="dash-container">
+    <div class="conteudo-principal">
         
-        <section class="grid-linha-1">
-            <div class="dash-card">
-                <h3>FATURAMENTO DO<br>PERÍODO SELECIONADO</h3>
-                <p id="dash-faturamento" class="valor-destaque">R$ 0,00</p>
+        <header class="dash-header">
+            <div class="titulo-area">
+                <h1>DASHBOARD</h1>
             </div>
-
-            <div class="dash-card">
-                <h3>TICKET MÉDIO DO<br>PERÍODO</h3>
-                <p id="dash-ticket" class="valor-destaque">R$ 0,00</p>
+            <div class="filtros-area">
+                <input type="date" id="filtro-inicio" class="input-filtro" title="Data Início">
+                <input type="date" id="filtro-fim" class="input-filtro" title="Data Final">
+                <button onclick="carregarVendas()" class="btn-filtrar">FILTRAR VENDAS</button>
+                <div class="divisor-bolinha"></div>
+                <div id="periodo-exibicao" class="periodo-badge">TODO O HISTÓRICO</div>
             </div>
+        </header>
 
-            <div class="dash-card">
-                <h3>NÚMERO TOTAL DE<br>PEDIDOS DO PERÍODO</h3>
-                <p id="dash-pedidos" class="valor-destaque">0</p>
-            </div>
-        </section>
-
-        <section class="grid-linha-2">
-            <div class="dash-card card-grande">
-                <h3>PRODUTOS MAIS<br>VENDIDOS</h3>
-                <div class="lista-rolagem" id="lista-produtos-top">
-                    <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
+        <main class="dash-container">
+            
+            <section class="grid-linha-1">
+                <div class="dash-card">
+                    <h3>FATURAMENTO DO<br>PERÍODO SELECIONADO</h3>
+                    <p id="dash-faturamento" class="valor-destaque">R$ 0,00</p>
                 </div>
-            </div>
 
-            <div class="dash-card card-grande">
-                <h3>ADICIONAIS MAIS<br>VENDIDOS</h3>
-                <div class="lista-rolagem" id="lista-adicionais-top">
-                    <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
+                <div class="dash-card">
+                    <h3>TICKET MÉDIO DO<br>PERÍODO</h3>
+                    <p id="dash-ticket" class="valor-destaque">R$ 0,00</p>
                 </div>
-            </div>
 
-            <div class="dash-card card-grande">
-                <h3>Vendas por horário em<br>dias da semana</h3>
-                <div style="display: flex; justify-content: center; align-items: center; height: 70%; opacity: 0.7;">
-                    <p style="font-weight: normal; text-align: center;">📊<br>Módulo de Gráficos<br>Em Breve</p>
+                <div class="dash-card">
+                    <h3>NÚMERO TOTAL DE<br>PEDIDOS DO PERÍODO</h3>
+                    <p id="dash-pedidos" class="valor-destaque">0</p>
                 </div>
-            </div>
-        </section>
+            </section>
 
-    </main>
+            <section class="grid-linha-2">
+                <div class="dash-card card-grande">
+                    <h3>PRODUTOS MAIS<br>VENDIDOS</h3>
+                    <div class="lista-rolagem" id="lista-produtos-top">
+                        <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
+                    </div>
+                </div>
 
-    <script src="/dashboard/app.js"></script>
+                <div class="dash-card card-grande">
+                    <h3>ADICIONAIS MAIS<br>VENDIDOS</h3>
+                    <div class="lista-rolagem" id="lista-adicionais-top">
+                        <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
+                    </div>
+                </div>
+
+                <div class="dash-card card-grande">
+                    <h3>Vendas por horário em<br>dias da semana</h3>
+                    <div style="display: flex; justify-content: center; align-items: center; height: 70%; opacity: 0.7;">
+                        <p style="font-weight: normal; text-align: center;">📊<br>Módulo de Gráficos<br>Em Breve</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div> <script src="/dashboard/app.js"></script>
 </body>
 </html>

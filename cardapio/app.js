@@ -233,6 +233,44 @@ function removerItemCarrinho(index) {
 }
 
 // ==========================================
+// INTEGRAÇÃO COM O DASHBOARD (BANCO DE DADOS)
+// ==========================================
+async function salvarVendaDelivery() {
+    // 1. Calcula o total do carrinho
+    const totalPedido = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    
+    // 2. Pega a forma de pagamento real que o cliente escolheu na janelinha
+    let metodoPag = "WhatsApp / Online";
+    const inputPagamento = document.getElementById('cliente-pagamento'); // ID CORRIGIDO
+    if (inputPagamento && inputPagamento.value) metodoPag = inputPagamento.value;
+
+    // 3. Monta o PACOTE UNIVERSAL (Com a etiqueta 'Delivery')
+    const itensFormatados = carrinho.map(item => {
+        return { nome: "Delivery: " + item.nome, preco: item.preco };
+    });
+    
+    const dadosDaVenda = {
+        itens: JSON.stringify(itensFormatados), 
+        produto_nome: JSON.stringify(itensFormatados),
+        valor_total: totalPedido,
+        total: totalPedido,
+        forma_pagamento: metodoPag,
+        status: "Pendente Delivery"
+    };
+
+    try {
+        await fetch('https://icesoft-api.onrender.com/api/vendas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosDaVenda)
+        });
+        console.log("✅ Cópia do pedido enviada para o Dashboard!");
+    } catch (e) {
+        console.error("⚠️ Ocorreu um erro silencioso, mas o WhatsApp vai abrir normal:", e);
+    }
+}
+
+// ==========================================
 // 6. CHECKOUT E WHATSAPP FINAL (BLINDADO)
 // ==========================================
 function finalizarPedidoWhatsApp() {
@@ -246,7 +284,8 @@ function fecharModalCheckout() {
     modal.style.display = 'none'; // Força o fechamento imediato
 }
 
-function processarEnvioWhatsApp() {
+// ADICIONAMOS "async" AQUI PARA ELE SABER ESPERAR O BANCO DE DADOS
+async function processarEnvioWhatsApp() {
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefoneCliente = document.getElementById('cliente-telefone').value.trim(); // PEGA O CELULAR
     const endereco = document.getElementById('cliente-endereco').value.trim();
@@ -256,6 +295,9 @@ function processarEnvioWhatsApp() {
         alert("⚠️ Preencha todos os campos, incluindo seu telefone!");
         return;
     }
+
+    // 🚀 O ESPIÃO ENTRA EM AÇÃO! Manda para o banco de dados antes de ir pro WhatsApp
+    await salvarVendaDelivery();
 
     const telefoneDono = "5524992308585"; // SEU NÚMERO
     
@@ -274,10 +316,12 @@ function processarEnvioWhatsApp() {
 
     textoPedido += `\n💰 *Total: R$ ${total.toFixed(2).replace('.', ',')}*`;
 
+    // ABRE O WHATSAPP
     window.location.href = `https://api.whatsapp.com/send?phone=${telefoneDono}&text=${encodeURIComponent(textoPedido)}`;
     
     carrinho = [];
     atualizarBarraCarrinho();
     fecharModalCheckout();
 }
+
 window.onload = carregarTudo;

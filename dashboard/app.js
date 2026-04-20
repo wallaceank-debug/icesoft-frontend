@@ -31,7 +31,6 @@ async function carregarVendas() {
         let vendasBrutas = await resposta.json();
         if (!Array.isArray(vendasBrutas)) vendasBrutas = [];
 
-        // DATAS BLINDADAS (Matemática Pura - Sem bugs de fuso horário do navegador)
         const [anoI, mesI, diaI] = inicioInput.split('-');
         const dataInicio = new Date(anoI, mesI - 1, diaI, 0, 0, 0);
         
@@ -40,60 +39,72 @@ async function carregarVendas() {
 
         const vendasFiltradas = vendasBrutas.filter(v => {
             if (!v.data_hora) return true; 
-            
             const dataTexto = String(v.data_hora).substring(0, 10);
             const [anoV, mesV, diaV] = dataTexto.split('-');
-            const dataDaVenda = new Date(anoV, mesV - 1, diaV, 12, 0, 0); // Força meio-dia
-            
+            const dataDaVenda = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
             return dataDaVenda >= dataInicio && dataDaVenda <= dataFim;
         });
         
         let faturamento = 0;
         let contagemProdutos = {};
         let contagemAdicionais = {};
+        let pedidosValidos = 0;
 
         vendasFiltradas.forEach(v => {
-            if (!v.itens || v.valor_total === null) return;
-            faturamento += parseFloat(v.valor_total) || 0;
+            if (!v.itens || String(v.itens).includes("[object")) return;
+            
+            let valorNum = parseFloat(v.valor_total || v.total);
 
             let listaTextosDeVenda = [];
+            let itensLidos = v.itens;
 
-            // Lê listas do PDV e do Cardápio Online da mesma forma!
-            if (Array.isArray(v.itens)) {
-                listaTextosDeVenda = v.itens.map(item => item.nome || item.produto_nome || "");
-            } else if (typeof v.itens === 'string' && !v.itens.includes("[object")) {
-                let textoLimpo = v.itens.replace('Balcão: ', '');
+            if (typeof itensLidos === 'string' && itensLidos.trim().startsWith('[')) {
+                try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
+            }
+
+            if (Array.isArray(itensLidos)) {
+                listaTextosDeVenda = itensLidos.map(item => item.nome || item.produto_nome || "");
+                if (isNaN(valorNum)) {
+                    valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
+                }
+            } else if (typeof itensLidos === 'string') {
+                // AQUI FOI ATUALIZADO (Limpa Balcão e Delivery)
+                let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:)\s*/g, '');
                 listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
             }
 
-            listaTextosDeVenda.forEach(textoVenda => {
-                if (!textoVenda) return;
-                
-                // Limpa o termo "Balcão: " se houver, para somar junto com o online
-                let textoLimpo = textoVenda.replace('Balcão: ', '').trim();
-                let nomeBase = textoLimpo.split('(')[0].trim();
-                
-                if (nomeBase) {
-                    contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
-                }
+            if (isNaN(valorNum)) valorNum = 0;
 
-                let match = textoLimpo.match(/\(([^)]+)\)/);
-                if(match) {
-                    let itensAdicionais = match[1].split(','); 
-                    itensAdicionais.forEach(item => {
-                        let adcLimpo = item.trim();
-                        if (adcLimpo) contagemAdicionais[adcLimpo] = (contagemAdicionais[adcLimpo] || 0) + 1;
-                    });
-                }
-            });
+            if (listaTextosDeVenda.length > 0 && listaTextosDeVenda.some(t => t !== "")) {
+                faturamento += valorNum; 
+                pedidosValidos++; 
+                
+                listaTextosDeVenda.forEach(textoVenda => {
+                    if (!textoVenda) return;
+                    
+                    // AQUI TAMBÉM FOI ATUALIZADO
+                    let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:)\s*/g, '').trim();
+                    let nomeBase = textoLimpo.split('(')[0].trim();
+                    
+                    if (nomeBase) contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
+
+                    let match = textoLimpo.match(/\(([^)]+)\)/);
+                    if(match) {
+                        let adicionais = match[1].split(','); 
+                        adicionais.forEach(item => {
+                            let adcLimpo = item.trim();
+                            if (adcLimpo) contagemAdicionais[adcLimpo] = (contagemAdicionais[adcLimpo] || 0) + 1;
+                        });
+                    }
+                });
+            }
         });
 
-        const totalPedidos = vendasFiltradas.filter(v => v.itens && v.valor_total !== null).length;
-        const ticketMedio = totalPedidos > 0 ? (faturamento / totalPedidos) : 0;
+        const ticketMedio = pedidosValidos > 0 ? (faturamento / pedidosValidos) : 0;
 
         document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toFixed(2).replace('.', ',')}`;
         document.getElementById('dash-ticket').innerText = `R$ ${ticketMedio.toFixed(2).replace('.', ',')}`;
-        document.getElementById('dash-pedidos').innerText = totalPedidos;
+        document.getElementById('dash-pedidos').innerText = pedidosValidos;
 
         renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido neste período.");
         renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido neste período.");

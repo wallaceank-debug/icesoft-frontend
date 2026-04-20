@@ -260,53 +260,69 @@ function calcularTroco() {
 }
 
 async function finalizarVendaPDV() {
-    const metodo = document.getElementById('checkout-metodo').value;
-    
-    if (metodo === 'Dinheiro') {
-        const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
-        if (recebido < subtotalGlobalPDV) {
-            alert("⚠️ O valor recebido é menor que o total da venda!");
-            return;
-        }
-    }
+    if (carrinho.length === 0) return alert("Carrinho vazio!");
 
-    // ==========================================
-    // ENVIO ESTRUTURADO (Igual ao Cardápio Online)
-    // ==========================================
-    // Transforma o carrinho em uma lista estruturada e adiciona o selo "Balcão"
+    // 1. Pega o método de pagamento que o caixa selecionou na janelinha
+    const metodo = document.getElementById('checkout-metodo').value;
+
     const itensFormatados = carrinho.map(item => {
         return { nome: "Balcão: " + item.nome, preco: item.preco };
     });
     
+    // PACOTE UNIVERSAL: Mandamos todas as chaves possíveis para o servidor não se perder
     const dadosDaVenda = {
-        itens: itensFormatados, // Agora mandamos a lista estruturada (Array) para o Banco!
+        itens: JSON.stringify(itensFormatados), 
+        produto_nome: JSON.stringify(itensFormatados), // Garantia
         valor_total: subtotalGlobalPDV,
+        total: subtotalGlobalPDV, // A palavra mágica que faltava!
         forma_pagamento: metodo,
         status: "Concluída"
     };
 
-    // 3. Sucesso!
-    alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
-    
-    carrinho = []; // Limpa o carrinho
-    renderizarCarrinho(); // Zera a tela
-    fecharModalCheckout(); // Fecha a janela
+    // RADARES ATIVADOS 🕵️‍♂️
+    console.log("🚀 1. PREPARANDO ENVIO:", dadosDaVenda);
+
+    try {
+        const resposta = await fetch(`${API_URL}/vendas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dadosDaVenda)
+        });
+
+        const respostaDoServidor = await resposta.json();
+        console.log("📩 2. O BANCO DE DADOS RESPONDEU:", respostaDoServidor);
+
+        if (resposta.ok) {
+            // Sucesso Total! Avisa o usuário, limpa o carrinho e fecha a janela (usando as funções corretas)
+            alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
+            
+            carrinho = []; 
+            renderizarCarrinho(); 
+            fecharModalCheckout(); 
+        } else {
+            console.error("❌ 3. ERRO DO BANCO:", respostaDoServidor);
+            alert("Erro ao salvar no banco de dados.");
+        }
+    } catch (e) {
+        console.error("❌ 3. ERRO DE CONEXÃO FATAL:", e);
+        alert("Erro de conexão com o servidor. Verifique a internet.");
+    }
 }
 
 // ==========================================
-// ATALHOS DE TECLADO (VELOCIDADE DE CAIXA)
+// ATALHOS DE TECLADO E BOTÕES (VELOCIDADE DE CAIXA)
 // ==========================================
 document.addEventListener('keydown', (e) => {
-    // F12 para abrir cobrança (Bloqueia o abrir painel do navegador)
+    // F12 para abrir cobrança
     if (e.key === 'F12') {
         e.preventDefault(); 
         abrirModalCheckout();
     }
     // Enter para confirmar a venda se a janela estiver aberta
     if (e.key === 'Enter' && document.getElementById('modal-checkout').style.display === 'flex') {
-        finalizarVendaPDV();
+        finalizarVendaPDV(); // Agora a função puxa o método de pagamento sozinha!
     }
 });
 
-// Vincular o botão verde físico da tela
+// Vincular o botão verde físico da tela principal
 document.querySelector('.btn-cobrar').onclick = abrirModalCheckout;
