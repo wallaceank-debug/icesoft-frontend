@@ -42,7 +42,17 @@ async function carregarVendas() {
         const vendasFiltradas = vendasBrutas.filter(v => {
             // LENDO A GAVETA CORRETA: data_hora
             if (!v.data_hora) return true; 
-            const dataDaVenda = new Date(v.data_hora);
+
+            // ========================================================
+            // A CURA DO FUSO HORÁRIO (TIMEZONE FIX)
+            // ========================================================
+            // 1. Corta a string para pegar apenas a data "YYYY-MM-DD" ignorando o "Z" do servidor
+            const dataTexto = String(v.data_hora).substring(0, 10);
+            
+            // 2. Força a criação da data ao MEIO-DIA local. 
+            // Assim, a subtração do UTC-3 cai para 09:00 da manhã do mesmo dia, e não para ontem!
+            const dataDaVenda = new Date(dataTexto + "T12:00:00");
+            
             return dataDaVenda >= dataInicio && dataDaVenda <= dataFim;
         });
         
