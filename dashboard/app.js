@@ -151,12 +151,10 @@ function renderizarGrafico(dadosDaSemana) {
     const ctx = document.getElementById('graficoVendas');
     if (!ctx) return;
 
-    // Destrói o gráfico antigo antes de desenhar o novo (impede bugs ao filtrar datas)
     if (chartInstancia) {
         chartInstancia.destroy();
     }
 
-    // Desenha o novo gráfico de barras da Icesoft
     chartInstancia = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -164,15 +162,16 @@ function renderizarGrafico(dadosDaSemana) {
             datasets: [{
                 label: 'Faturamento (R$)',
                 data: dadosDaSemana,
-                backgroundColor: '#00bcd4', // Ciano oficial
-                borderRadius: 6 // Barras arredondadas e modernas
+                // A MÁGICA ESTÁ AQUI: Trocamos para o Rosa Vibrante da Icesoft!
+                backgroundColor: '#e91e63', 
+                borderRadius: 6 
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }, // Esconde a legenda para visual mais limpo
+                legend: { display: false }, 
                 tooltip: {
                     callbacks: {
                         label: function(context) {
