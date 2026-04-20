@@ -270,12 +270,16 @@ async function finalizarVendaPDV() {
         }
     }
 
-    // 1. Gera um resumo para o seu Dashboard saber o que foi vendido
-    const resumoItens = carrinho.map(item => item.nome).join(' + ');
+    // ==========================================
+    // ENVIO ESTRUTURADO (Igual ao Cardápio Online)
+    // ==========================================
+    // Transforma o carrinho em uma lista estruturada e adiciona o selo "Balcão"
+    const itensFormatados = carrinho.map(item => {
+        return { nome: "Balcão: " + item.nome, preco: item.preco };
+    });
     
-    // GAVETAS ALINHADAS COM O BANCO DE DADOS
     const dadosDaVenda = {
-        itens: "Balcão: " + resumoItens.substring(0, 100), 
+        itens: itensFormatados, // Agora mandamos a lista estruturada (Array) para o Banco!
         valor_total: subtotalGlobalPDV,
         forma_pagamento: metodo,
         status: "Concluída"
