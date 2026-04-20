@@ -163,7 +163,7 @@ function renderizarGrafico(dadosDaSemana) {
                 label: 'Faturamento (R$)',
                 data: dadosDaSemana,
                 // A MÁGICA ESTÁ AQUI: Trocamos para o Rosa Vibrante da Icesoft!
-                backgroundColor: '#e91e63', 
+                backgroundColor: '#ffffff', 
                 borderRadius: 6 
             }]
         },
