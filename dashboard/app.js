@@ -1,4 +1,5 @@
 const API_URL = 'https://icesoft-api.onrender.com/api';
+let chartInstancia = null; // Guarda a memória do gráfico
 
 window.onload = () => { carregarVendas(); };
 
@@ -49,12 +50,14 @@ async function carregarVendas() {
         let contagemProdutos = {};
         let contagemAdicionais = {};
         let pedidosValidos = 0;
+        
+        // As 7 gavetas dos dias da semana (Domingo a Sábado)
+        let faturamentoPorDia = [0, 0, 0, 0, 0, 0, 0]; 
 
         vendasFiltradas.forEach(v => {
             if (!v.itens || String(v.itens).includes("[object")) return;
             
             let valorNum = parseFloat(v.valor_total || v.total);
-
             let listaTextosDeVenda = [];
             let itensLidos = v.itens;
 
@@ -68,7 +71,6 @@ async function carregarVendas() {
                     valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
                 }
             } else if (typeof itensLidos === 'string') {
-                // AQUI FOI ATUALIZADO (Limpa Balcão e Delivery)
                 let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:)\s*/g, '');
                 listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
             }
@@ -78,11 +80,20 @@ async function carregarVendas() {
             if (listaTextosDeVenda.length > 0 && listaTextosDeVenda.some(t => t !== "")) {
                 faturamento += valorNum; 
                 pedidosValidos++; 
+
+                // 📊 INTELIGÊNCIA DO GRÁFICO: Descobre o dia da semana da venda
+                let diaSemanaIndex = new Date().getDay(); // Assume hoje como segurança
+                if (v.data_hora) {
+                    const dataTexto = String(v.data_hora).substring(0, 10);
+                    const [anoV, mesV, diaV] = dataTexto.split('-');
+                    const dataCorrigida = new Date(anoV, mesV - 1, diaV, 12, 0, 0);
+                    diaSemanaIndex = dataCorrigida.getDay(); // Retorna de 0 (Dom) a 6 (Sáb)
+                }
+                faturamentoPorDia[diaSemanaIndex] += valorNum; // Coloca o dinheiro na gaveta do dia
                 
                 listaTextosDeVenda.forEach(textoVenda => {
                     if (!textoVenda) return;
                     
-                    // AQUI TAMBÉM FOI ATUALIZADO
                     let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:)\s*/g, '').trim();
                     let nomeBase = textoLimpo.split('(')[0].trim();
                     
@@ -106,8 +117,11 @@ async function carregarVendas() {
         document.getElementById('dash-ticket').innerText = `R$ ${ticketMedio.toFixed(2).replace('.', ',')}`;
         document.getElementById('dash-pedidos').innerText = pedidosValidos;
 
-        renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido neste período.");
-        renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido neste período.");
+        renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido.");
+        renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido.");
+        
+        // 🚀 DISPARA O GRÁFICO!
+        renderizarGrafico(faturamentoPorDia);
 
     } catch (e) {
         console.error("Erro:", e);
@@ -115,17 +129,61 @@ async function carregarVendas() {
     }
 }
 
+// ==========================================
+// FUNÇÕES DE DESENHO DA TELA (LISTAS E GRÁFICO)
+// ==========================================
 function renderizarLista(objetoContagem, idElemento, msgVazio) {
     const container = document.getElementById(idElemento);
     const ordenado = Object.entries(objetoContagem).sort((a, b) => b[1] - a[1]);
 
     if (ordenado.length === 0) {
-        container.innerHTML = `<p style="text-align:center; font-weight:normal; margin-top:20px; opacity:0.8;">${msgVazio}</p>`;
+        container.innerHTML = `<p style="text-align:center; opacity:0.8;">${msgVazio}</p>`;
         return;
     }
 
     container.innerHTML = '';
     ordenado.forEach(([nome, quantidade]) => {
         container.innerHTML += `<div class="item-lista"><span>${nome}</span><span class="qtd">${quantidade}x</span></div>`;
+    });
+}
+
+function renderizarGrafico(dadosDaSemana) {
+    const ctx = document.getElementById('graficoVendas');
+    if (!ctx) return;
+
+    // Destrói o gráfico antigo antes de desenhar o novo (impede bugs ao filtrar datas)
+    if (chartInstancia) {
+        chartInstancia.destroy();
+    }
+
+    // Desenha o novo gráfico de barras da Icesoft
+    chartInstancia = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            datasets: [{
+                label: 'Faturamento (R$)',
+                data: dadosDaSemana,
+                backgroundColor: '#00bcd4', // Ciano oficial
+                borderRadius: 6 // Barras arredondadas e modernas
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }, // Esconde a legenda para visual mais limpo
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.raw.toFixed(2).replace('.', ',');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
     });
 }
