@@ -4,10 +4,10 @@ window.onload = () => {
     carregarVendas();
 };
 
-// Função para transformar "2026-04-20" em "20/04/2026"
 function formatarDataBR(dataString) {
     if (!dataString) return '';
     const partes = dataString.split('-');
+    if (partes.length !== 3) return dataString; // Segurança extra
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
@@ -16,44 +16,39 @@ async function carregarVendas() {
     let fimInput = document.getElementById('filtro-fim').value;
     const textoPeriodo = document.getElementById('periodo-exibicao');
 
-    // ========================================================
-    // 1. INTELIGÊNCIA DOS 30 DIAS (SE NÃO HOUVER FILTRO)
-    // ========================================================
+    // 1. INTELIGÊNCIA DOS 30 DIAS
     if (!inicioInput || !fimInput) {
         const dataHoje = new Date();
         const dataTrintaDiasAtras = new Date();
         dataTrintaDiasAtras.setDate(dataHoje.getDate() - 30);
 
-        // Converte para o formato que as caixinhas de data entendem (YYYY-MM-DD)
         inicioInput = dataTrintaDiasAtras.toISOString().split('T')[0];
         fimInput = dataHoje.toISOString().split('T')[0];
 
-        // Preenche as caixinhas visualmente para o operador saber o que está vendo
         document.getElementById('filtro-inicio').value = inicioInput;
         document.getElementById('filtro-fim').value = fimInput;
     }
 
-    // 2. Atualiza o texto do Cabeçalho
     textoPeriodo.innerText = `${formatarDataBR(inicioInput)} ATÉ ${formatarDataBR(fimInput)}`;
 
     try {
-        // Busca TODAS as vendas brutas do servidor
         const resposta = await fetch(`${API_URL}/vendas`);
         let vendasBrutas = await resposta.json();
         
-        // ========================================================
-        // 3. FILTRO DE DATA ROBUSTO (Ignora fuso horário do banco)
-        // ========================================================
-        // Adiciona T00:00:00 (Início do dia inicial) e T23:59:59 (Fim do dia final)
+        // ESCUDO 1: Se a API falhar e não mandar uma lista, cria uma vazia para não travar
+        if (!Array.isArray(vendasBrutas)) {
+            vendasBrutas = [];
+        }
+
         const dataInicio = new Date(inicioInput + "T00:00:00");
         const dataFim = new Date(fimInput + "T23:59:59");
 
         const vendasFiltradas = vendasBrutas.filter(v => {
-            // Dica: Se a sua coluna de data no banco Neon se chamar diferente de 'data_venda'
-            // (ex: 'criado_em'), troque a palavra abaixo.
-            if (!v.data_venda) return true; // Se a venda for antiga e não tiver data, mostra por segurança
+            // Se a coluna de data não existir no banco, a gente aprova a venda para não sumir com o dinheiro
+            if (!v.data_venda && !v.created_at) return true; 
             
-            const dataDaVenda = new Date(v.data_venda);
+            // Tenta usar data_venda ou created_at (o que existir no seu banco)
+            const dataDaVenda = new Date(v.data_venda || v.created_at);
             return dataDaVenda >= dataInicio && dataDaVenda <= dataFim;
         });
         
@@ -62,9 +57,13 @@ async function carregarVendas() {
         let contagemAdicionais = {};
 
         vendasFiltradas.forEach(v => {
-            faturamento += parseFloat(v.total);
+            // ESCUDO 2: Ignora completamente vendas que não têm nome ou total (dados sujos de testes antigos)
+            if (!v.produto_nome || v.total === undefined) return;
 
-            let textoVenda = v.produto_nome.replace('Balcão: ', '').trim();
+            faturamento += parseFloat(v.total) || 0;
+
+            // Transforma em texto de forma forçada para evitar travamentos
+            let textoVenda = String(v.produto_nome).replace('Balcão: ', '').trim();
             let nomeBase = textoVenda.split('(')[0].trim();
             
             if (nomeBase) {
@@ -83,19 +82,21 @@ async function carregarVendas() {
             }
         });
 
-        const totalPedidos = vendasFiltradas.length;
+        // Só conta como pedido as vendas que não foram barradas no Escudo 2
+        const totalPedidos = faturamento > 0 ? Object.keys(contagemProdutos).reduce((a, b) => a + contagemProdutos[b], 0) : 0;
         const ticketMedio = totalPedidos > 0 ? (faturamento / totalPedidos) : 0;
 
         document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toFixed(2).replace('.', ',')}`;
         document.getElementById('dash-ticket').innerText = `R$ ${ticketMedio.toFixed(2).replace('.', ',')}`;
-        document.getElementById('dash-pedidos').innerText = totalPedidos;
+        // Como o Dashboard estava contando vendas vazias, agora ele conta pelos produtos reais:
+        document.getElementById('dash-pedidos').innerText = vendasFiltradas.filter(v => v.produto_nome).length;
 
         renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido neste período.");
         renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido neste período.");
 
     } catch (e) {
-        console.error("Erro ao carregar dashboard:", e);
-        alert("Erro ao calcular vendas. Atualize a página e tente novamente.");
+        console.error("Erro detalhado (para o TI):", e);
+        alert("Ops! O servidor acordou mas algo falhou. Atualize a tela.");
     }
 }
 
