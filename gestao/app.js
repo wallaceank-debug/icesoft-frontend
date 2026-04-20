@@ -197,13 +197,153 @@ function abrirModalAdicional() {
 }
 
 // ==========================================
-// FUNÇÕES DE MODAL BÁSICAS (Salvar e Fechar)
+// FUNÇÕES DE MODAL E CADASTRO (PRODUTOS E GRUPOS)
 // ==========================================
+
 function fecharModalProduto() { document.getElementById('modal-produto').style.display = 'none'; }
 function fecharModalGrupo() { document.getElementById('modal-grupo').style.display = 'none'; }
 
-function abrirModalProduto() { /* Limpa campos e abre o modal */ document.getElementById('modal-produto').style.display='flex'; }
-function abrirModalGrupo() { /* Limpa campos e abre o modal */ document.getElementById('modal-grupo').style.display='flex'; }
+// --- MOTOR DE PRODUTOS ---
 
-// *As funções de salvar Produto e Grupo são idênticas as anteriores, chamando POST/PUT*
-// Para economizar espaço, as chavinhas já estão 100% funcionais no código acima!
+function abrirModalProduto(id = null) {
+    const modal = document.getElementById('modal-produto');
+    const titulo = document.getElementById('titulo-modal-produto');
+    const idInput = document.getElementById('prod-id');
+    const nomeInput = document.getElementById('prod-nome');
+    const precoInput = document.getElementById('prod-preco');
+    const emojiInput = document.getElementById('prod-emoji');
+    const containerGrupos = document.getElementById('container-checkbox-grupos');
+
+    // MÁGICA 1: Puxa todos os grupos criados e desenha os quadradinhos (checkboxes)
+    containerGrupos.innerHTML = '';
+    listaGrupos.forEach(g => {
+        containerGrupos.innerHTML += `
+            <label style="display:block; margin-bottom:8px; cursor:pointer; font-size: 0.95rem;">
+                <input type="checkbox" value="${g.id}" class="chk-grupo" style="accent-color: #00bcd4;"> ${g.nome}
+            </label>
+        `;
+    });
+
+    if (id) { // MODO EDIÇÃO
+        const p = listaProdutos.find(x => x.id === id);
+        titulo.innerText = "Editar Produto";
+        idInput.value = p.id;
+        nomeInput.value = p.nome;
+        precoInput.value = p.preco;
+        emojiInput.value = p.emoji;
+
+        // Marca os quadradinhos que esse produto já tinha
+        const checkboxes = document.querySelectorAll('.chk-grupo');
+        checkboxes.forEach(chk => {
+            if (p.grupos_ids && p.grupos_ids.includes(Number(chk.value))) {
+                chk.checked = true;
+            }
+        });
+    } else { // MODO NOVO PRODUTO
+        titulo.innerText = "Novo Produto";
+        idInput.value = '';
+        nomeInput.value = '';
+        precoInput.value = '';
+        emojiInput.value = '';
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function abrirEdicaoProduto(id) {
+    abrirModalProduto(id); // Usa a mesma janela, mas passando o ID para editar
+}
+
+async function salvarProduto() {
+    const id = document.getElementById('prod-id').value;
+    const nome = document.getElementById('prod-nome').value;
+    const preco = document.getElementById('prod-preco').value;
+    const emoji = document.getElementById('prod-emoji').value;
+
+    // Vasculha a tela e pega só os IDs dos quadradinhos que você marcou
+    const checkboxes = document.querySelectorAll('.chk-grupo:checked');
+    const grupos_ids = Array.from(checkboxes).map(chk => Number(chk.value));
+
+    if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
+
+    const dados = { nome, preco: parseFloat(preco), emoji, grupos_ids, ativo: true };
+
+    try {
+        if (id) {
+            await fetch(`${API_URL}/produtos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+        } else {
+            await fetch(`${API_URL}/produtos`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+        }
+        fecharModalProduto();
+        await carregarTudo(); // Recarrega a tela instantaneamente
+    } catch (e) {
+        alert("❌ Erro ao salvar produto no banco de dados.");
+    }
+}
+
+async function excluirProduto(id) {
+    if(!confirm("⚠️ Tem certeza que deseja excluir este produto definitivamente?")) return;
+    try {
+        await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
+        await carregarTudo();
+    } catch (e) {
+        alert("❌ Erro ao excluir.");
+    }
+}
+
+// --- MOTOR DE GRUPOS ---
+
+function abrirModalGrupo(id = null) {
+    const modal = document.getElementById('modal-grupo');
+    const titulo = document.getElementById('titulo-modal-grupo');
+    const idInput = document.getElementById('grupo-id');
+    const nomeInput = document.getElementById('grupo-nome');
+    const limiteInput = document.getElementById('grupo-limite');
+
+    if (id) { // MODO EDIÇÃO
+        const g = listaGrupos.find(x => x.id === id);
+        titulo.innerText = "Editar Grupo";
+        idInput.value = g.id;
+        nomeInput.value = g.nome;
+        limiteInput.value = g.limite;
+    } else { // MODO NOVO
+        titulo.innerText = "Novo Grupo";
+        idInput.value = '';
+        nomeInput.value = '';
+        limiteInput.value = '';
+    }
+    modal.style.display = 'flex';
+}
+
+function abrirEdicaoGrupo(id) {
+    abrirModalGrupo(id);
+}
+
+async function salvarGrupo() {
+    const id = document.getElementById('grupo-id').value;
+    const nome = document.getElementById('grupo-nome').value;
+    const limite = document.getElementById('grupo-limite').value;
+
+    if (!nome || !limite) return alert("⚠️ Preencha o nome e o limite!");
+
+    // Se for edição, precisamos preservar os itens (adicionais) que já estavam lá dentro
+    let itens = [];
+    if (id) {
+        const gExistente = listaGrupos.find(x => x.id === Number(id));
+        if (gExistente && gExistente.itens) itens = gExistente.itens;
+    }
+
+    const dados = { nome, limite: parseInt(limite), itens, ativo: true };
+
+    try {
+        if (id) {
+            await fetch(`${API_URL}/grupos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+        } else {
+            await fetch(`${API_URL}/grupos`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+        }
+        fecharModalGrupo();
+        await carregarTudo();
+    } catch (e) {
+        alert("❌ Erro ao salvar grupo.");
+    }
+}
