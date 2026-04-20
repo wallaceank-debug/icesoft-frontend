@@ -4,8 +4,9 @@ let gruposGlobais = [];
 let produtoEmSelecao = null;
 let escolhasAtuais = [];
 
+
 // ==========================================
-// 1. CARREGAR DADOS DA NUVEM
+// 1. CARREGAR DADOS DA NUVEM (FILTRANDO INATIVOS)
 // ==========================================
 async function carregarTudo() {
     try {
@@ -13,8 +14,14 @@ async function carregarTudo() {
             fetch('https://icesoft-api.onrender.com/api/produtos'),
             fetch('https://icesoft-api.onrender.com/api/grupos')
         ]);
-        produtosDaNuvem = await resProd.json();
-        gruposGlobais = await resGrupos.json();
+        
+        const todosProdutos = await resProd.json();
+        const todosGrupos = await resGrupos.json();
+
+        // MÁGICA: Só guarda na memória o que estiver ATIVO (ligado na chavinha)
+        produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
+        gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
+        
         renderizarCardapio(produtosDaNuvem);
     } catch (e) { 
         console.error("Erro ao carregar:", e); 
@@ -55,7 +62,7 @@ function verificarAdicao(id) {
 }
 
 // ==========================================
-// 4. JANELINHA DE ADICIONAIS (MODAL)
+// 4. JANELINHA DE ADICIONAIS (FILTRANDO ITENS)
 // ==========================================
 function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
@@ -69,13 +76,19 @@ function abrirModalEscolha(produto) {
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
+    // Pega os grupos vinculados que estão ativos
     const gruposDoProduto = gruposGlobais.filter(g => produto.grupos_ids.includes(g.id));
 
     gruposDoProduto.forEach(grupo => {
-        // Criamos os itens garantindo que o clique vá sempre para a função correta
-        let itensHtml = (grupo.itens || []).map((item, idx) => {
+        // MÁGICA: Só pega os adicionais (ex: Morango) que estiverem ATIVOS
+        const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+
+        // Se o grupo não tem nenhum item ativo, nem mostra o grupo na tela!
+        if (itensAtivos.length === 0) return;
+
+        let itensHtml = itensAtivos.map((item, idx) => {
             let precoSeguro = Number(item.preco) || 0;
-            let nomeSeguro = item.nome.replace(/'/g, "\\'"); // Evita bugs com aspas
+            let nomeSeguro = item.nome.replace(/'/g, "\\'"); 
             let chkId = `chk-${grupo.id}-${idx}`;
 
             return `

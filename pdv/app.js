@@ -1,272 +1,316 @@
-/* =========================================
-   0. CATRACA DE SEGURANÇA
-   ========================================= */
-if (!localStorage.getItem('icesoft_token')) {
-    alert("Acesso Negado! Por favor, faça login.");
-    window.location.href = '/login/'; 
+const API_URL = 'https://icesoft-api.onrender.com/api';
+let produtosDaNuvem = [];
+let gruposGlobais = [];
+let carrinho = [];
+
+// Variáveis para o item que está sendo personalizado no momento
+let produtoEmSelecao = null;
+let escolhasAtuais = [];
+
+window.onload = async () => {
+    await carregarDadosIniciais();
+};
+
+async function carregarDadosIniciais() {
+    try {
+        const [resProd, resGrupos] = await Promise.all([
+            fetch(`${API_URL}/produtos`),
+            fetch(`${API_URL}/grupos`)
+        ]);
+        
+        const todosProdutos = await resProd.json();
+        const todosGrupos = await resGrupos.json();
+
+        // Filtra só o que tá ligado
+        produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
+        gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
+        
+        renderizarGradeProdutos(produtosDaNuvem);
+    } catch (e) { console.error("Erro ao carregar dados:", e); }
 }
 
-/* =========================================
-   1. BANCO DE DADOS CENTRAL (Vindo do Servidor)
-   ========================================= */
-let produtosIcesoft = []; 
-let carrinhoPdv = [];
-
-/* =========================================
-   2. CARREGAR OS PRODUTOS NA TELA (Esquerda)
-   ========================================= */
-function carregarProdutos() {
-    const gridProdutos = document.getElementById('grid-produtos');
-    gridProdutos.innerHTML = ''; 
-
-    produtosIcesoft.forEach(produto => {
-        const cardHtml = `
-            <div onclick="adicionarAoCaixa(${produto.id})" style="background: white; border: 1px solid #ddd; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s;" onmouseover="this.style.borderColor='#ff477e'" onmouseout="this.style.borderColor='#ddd'">
-                <div style="font-size: 40px; margin-bottom: 10px;">${produto.emoji}</div>
-                <h3 style="font-size: 14px; color: #333; margin-bottom: 5px;">${produto.nome}</h3>
-                <strong style="color: #ff477e; font-size: 14px;">R$ ${produto.preco.toFixed(2).replace('.', ',')}</strong>
+function renderizarGradeProdutos(lista) {
+    const container = document.getElementById('grade-produtos');
+    container.innerHTML = '';
+    lista.forEach(p => {
+        container.innerHTML += `
+            <div class="pdv-card" onclick="verificarAdicao(${p.id})">
+                <div class="pdv-emoji">${p.emoji}</div>
+                <div class="pdv-nome">${p.nome}</div>
+                <div class="pdv-preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
             </div>
         `;
-        gridProdutos.innerHTML += cardHtml;
     });
 }
 
-/* =========================================
-   3. REGRAS DO CAIXA (Direita)
-   ========================================= */
-function adicionarAoCaixa(idProduto) {
-    const produto = produtosIcesoft.find(p => p.id === idProduto);
-    carrinhoPdv.push(produto);
-    atualizarFitaDoCaixa();
+// ==========================================
+// LÓGICA DE ADIÇÃO E MODAL (ADICIONAIS)
+// ==========================================
+
+function verificarAdicao(id) {
+    const produto = produtosDaNuvem.find(p => p.id === id);
+    if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
+        adicionarAoCarrinho(produto.nome, Number(produto.preco));
+        return;
+    }
+    abrirModalEscolha(produto);
 }
 
-function atualizarFitaDoCaixa() {
-    const listaItens = document.getElementById('pdv-lista-itens');
-    const labelSubtotal = document.getElementById('pdv-subtotal');
-    const labelTotal = document.getElementById('pdv-total');
+function abrirModalEscolha(produto) {
+    produtoEmSelecao = produto;
+    escolhasAtuais = [];
     
-    listaItens.innerHTML = '';
-    let total = 0;
+    document.getElementById('detalhes-produto-topo').innerHTML = `
+        <h2 style="margin:0; color:#00bcd4;">${produto.nome}</h2>
+        <p style="color:#777; margin:5px 0;">Selecione os adicionais solicitados</p>
+    `;
 
-    carrinhoPdv.forEach((item, index) => {
-        total += item.preco;
-        listaItens.innerHTML += `
-            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee;">
-                <span style="font-size: 14px; color: #333;">${index + 1}. ${item.nome}</span>
-                <div style="display: flex; gap: 10px;">
-                    <strong style="font-size: 14px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</strong>
-                    <button onclick="removerDoCaixa(${index})" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: bold;">X</button>
+    const container = document.getElementById('container-grupos-opcoes');
+    container.innerHTML = '';
+    
+    const gruposDoProduto = gruposGlobais.filter(g => produto.grupos_ids.includes(g.id));
+
+    gruposDoProduto.forEach(grupo => {
+        // Filtra os itens desligados
+        const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+        if (itensAtivos.length === 0) return;
+
+        let itensHtml = itensAtivos.map((item, idx) => {
+            const chkId = `pdv-chk-${grupo.id}-${idx}`;
+            return `
+            <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${item.nome}', ${item.preco}, '${chkId}')" 
+                 style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="${chkId}" style="width:18px; height:18px; accent-color:#00bcd4; pointer-events:none;">
+                    <span style="font-weight: 500;">${item.nome}</span>
                 </div>
+                <span style="color:#25D366; font-weight:bold;">${item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2) : 'Grátis'}</span>
+            </div>`;
+        }).join('');
+
+        container.innerHTML += `
+            <div style="margin-bottom:15px;">
+                <div style="background:#f8f9fa; padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:#333;">${grupo.nome}</strong>
+                    <span style="font-size:0.75rem; color:white; background:#00bcd4; padding:2px 8px; border-radius:10px;">Até ${grupo.limite}</span>
+                </div>
+                ${itensHtml}
             </div>
         `;
     });
 
-    labelSubtotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-    labelTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    atualizarPrecoDinamico();
+    document.getElementById('modal-opcoes').style.display = 'flex';
 }
 
-function removerDoCaixa(index) {
-    carrinhoPdv.splice(index, 1);
-    atualizarFitaDoCaixa();
+function toggleOpcional(grupoId, nomeItem, preco, chkId) {
+    const grupo = gruposGlobais.find(g => g.id === grupoId);
+    const chk = document.getElementById(chkId);
+    const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
+
+    if (index > -1) {
+        escolhasAtuais.splice(index, 1);
+        chk.checked = false;
+    } else {
+        const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
+        
+        if (grupo.limite === 1) {
+            if (escolhasNoGrupo.length > 0) {
+                const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
+                escolhasAtuais.splice(idxAnterior, 1);
+                document.querySelectorAll(`input[id^="pdv-chk-${grupoId}-"]`).forEach(c => c.checked = false);
+            }
+        } else if (escolhasNoGrupo.length >= grupo.limite) {
+            alert(`Limite de ${grupo.limite} itens atingido para este grupo.`);
+            return;
+        }
+        
+        escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco) });
+        chk.checked = true;
+    }
+    atualizarPrecoDinamico();
 }
 
-function cancelarVenda() {
-    if(carrinhoPdv.length === 0) return; 
-    
-    if(confirm("Tem certeza que deseja cancelar esta venda e limpar o caixa?")) {
-        carrinhoPdv = [];
-        atualizarFitaDoCaixa();
+function atualizarPrecoDinamico() {
+    const totalOpcionais = escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    const totalGeral = Number(produtoEmSelecao.preco) + totalOpcionais;
+    document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+}
+
+function fecharModalOpcoes() { document.getElementById('modal-opcoes').style.display = 'none'; }
+
+function confirmarEscolhasEAdicionar() {
+    let nomeFinal = produtoEmSelecao.nome;
+    if (escolhasAtuais.length > 0) {
+        nomeFinal += " (" + escolhasAtuais.map(e => e.nome).join(', ') + ")";
+    }
+    const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    adicionarAoCarrinho(nomeFinal, precoFinal);
+    fecharModalOpcoes();
+}
+
+// ==========================================
+// GESTÃO DO CARRINHO (LADO DIREITO)
+// ==========================================
+
+function adicionarAoCarrinho(nome, preco) {
+    carrinho.push({ nome, preco: Number(preco) });
+    renderizarCarrinho();
+}
+
+function removerDoCarrinho(index) {
+    carrinho.splice(index, 1);
+    renderizarCarrinho();
+}
+
+function renderizarCarrinho() {
+    const container = document.getElementById('lista-carrinho');
+    if (carrinho.length === 0) {
+        container.innerHTML = '<div class="carrinho-vazio">Nenhum item adicionado</div>';
+        document.getElementById('pdv-subtotal').innerText = "R$ 0,00";
+        document.getElementById('pdv-total').innerText = "R$ 0,00";
+        return;
+    }
+
+    container.innerHTML = '';
+    let subtotal = 0;
+
+    carrinho.forEach((item, index) => {
+        subtotal += item.preco;
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:start; padding:10px 0; border-bottom:1px solid #eee;">
+                <div style="flex:1;">
+                    <div style="font-weight:600; font-size:0.95rem; line-height:1.2;">${item.nome}</div>
+                    <div style="color:#e91e63; font-weight:700;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button onclick="removerDoCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.1rem; padding:0 5px;">🗑️</button>
+            </div>
+        `;
+    });
+
+    document.getElementById('pdv-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    document.getElementById('pdv-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+}
+
+function limparCarrinho() {
+    if (confirm("Deseja limpar todo o pedido?")) {
+        carrinho = [];
+        renderizarCarrinho();
     }
 }
 
-// Função oficial que abre e prepara a tela de pagamentos
-function abrirTelaDePagamento() {
-    if(carrinhoPdv.length === 0) {
-        alert("Caixa vazio! Adicione produtos.");
+// Vincular botão de limpar
+document.querySelector('.btn-limpar').onclick = limparCarrinho;
+document.querySelector('.btn-cancelar').onclick = limparCarrinho;
+
+// ==========================================
+// SISTEMA DE COBRANÇA (CHECKOUT PDV) E TROCO
+// ==========================================
+let subtotalGlobalPDV = 0; // Guarda o valor total para facilitar o cálculo do troco
+
+// Sobrescrevendo a função renderizarCarrinho para salvar o valor Global
+const renderizarCarrinhoAntiga = renderizarCarrinho;
+renderizarCarrinho = function() {
+    renderizarCarrinhoAntiga(); // Chama a função original que já desenha a lista
+    // Atualiza a variável global calculando o total do carrinho atual
+    subtotalGlobalPDV = carrinho.reduce((soma, item) => soma + item.preco, 0);
+};
+
+function abrirModalCheckout() {
+    if (carrinho.length === 0) {
+        alert("⚠️ O carrinho está vazio! Adicione produtos antes de cobrar.");
         return;
     }
     
-    valorTotalAtual = carrinhoPdv.reduce((soma, item) => soma + item.preco, 0);
-    valorDesconto = 0; 
-    inputDesconto.value = "0.00";
-    formaPagamentoSelecionada = "";
+    document.getElementById('checkout-total').innerText = `R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`;
+    document.getElementById('checkout-recebido').value = '';
+    document.getElementById('checkout-troco').innerText = 'R$ 0,00';
+    document.getElementById('checkout-troco').style.color = '#25D366';
     
-    botoesFormaPgto.forEach(b => b.classList.remove('selecionada'));
-    areaTroco.style.display = 'none';
-    inputRecebido.value = "0.00";
-    lblTroco.innerText = "R$ 0,00";
-
-    atualizarValoresModal();
-    modalPagamento.style.display = 'flex';
+    document.getElementById('modal-checkout').style.display = 'flex';
+    verificarMetodoPagamento(); // Atualiza a visão da caixa de troco
+    
+    // Foca automaticamente no campo de dinheiro para o caixa digitar rápido
+    setTimeout(() => document.getElementById('checkout-recebido').focus(), 100);
 }
 
-function cobrarVenda() {
-    abrirTelaDePagamento(); 
+function fecharModalCheckout() {
+    document.getElementById('modal-checkout').style.display = 'none';
 }
 
-/* =========================================
-   4. BOTÕES E ATALHOS DE TECLADO (Agilidade)
-   ========================================= */
-document.getElementById('btn-cancelar-venda').addEventListener('click', cancelarVenda);
-document.getElementById('btn-cobrar').addEventListener('click', cobrarVenda);
-
-document.addEventListener('keydown', function(evento) {
-    if(evento.key === 'F4') {
-        evento.preventDefault(); 
-        cancelarVenda();
-    }
-    if(evento.key === 'F12') {
-        evento.preventDefault(); 
-        cobrarVenda();
-    }
-});
-
-/* =========================================
-   6. MOTOR DE PAGAMENTO E DESCONTOS
-   ========================================= */
-let valorTotalAtual = 0;
-let valorDesconto = 0;
-let formaPagamentoSelecionada = "";
-
-const modalPagamento = document.getElementById('modal-pagamento');
-const btnFecharPagamento = document.getElementById('btn-fechar-pagamento');
-const lblPagSubtotal = document.getElementById('pag-subtotal');
-const lblPagTotal = document.getElementById('pag-total');
-const inputDesconto = document.getElementById('input-desconto');
-const btnAplicarDesconto = document.getElementById('btn-aplicar-desconto');
-const botoesFormaPgto = document.querySelectorAll('.btn-forma-pag');
-const areaTroco = document.getElementById('area-troco');
-const inputRecebido = document.getElementById('input-recebido');
-const lblTroco = document.getElementById('valor-troco');
-const btnConfirmarVenda = document.getElementById('btn-confirmar-venda');
-
-btnFecharPagamento.addEventListener('click', () => { modalPagamento.style.display = 'none'; });
-
-btnAplicarDesconto.addEventListener('click', () => {
-    let descontoDigitado = parseFloat(inputDesconto.value);
-    if(isNaN(descontoDigitado) || descontoDigitado < 0) descontoDigitado = 0;
-    
-    if(descontoDigitado > valorTotalAtual) {
-        alert("O desconto não pode ser maior que o valor da venda!");
-        inputDesconto.value = valorTotalAtual.toFixed(2);
-        valorDesconto = valorTotalAtual;
-    } else {
-        valorDesconto = descontoDigitado;
-    }
-    
-    atualizarValoresModal();
-});
-
-function atualizarValoresModal() {
-    const totalComDesconto = valorTotalAtual - valorDesconto;
-    
-    lblPagSubtotal.innerText = `R$ ${valorTotalAtual.toFixed(2).replace('.', ',')}`;
-    lblPagTotal.innerText = `R$ ${totalComDesconto.toFixed(2).replace('.', ',')}`;
-    
-    document.getElementById('pdv-desconto').innerText = `R$ ${valorDesconto.toFixed(2).replace('.', ',')}`;
-    document.getElementById('pdv-total').innerText = `R$ ${totalComDesconto.toFixed(2).replace('.', ',')}`;
-    
-    calcularTroco();
+function verificarMetodoPagamento() {
+    const metodo = document.getElementById('checkout-metodo').value;
+    const areaTroco = document.getElementById('area-troco');
+    // Só mostra a área de dar troco se o pagamento for em Dinheiro
+    areaTroco.style.display = (metodo === 'Dinheiro') ? 'block' : 'none';
 }
-
-botoesFormaPgto.forEach(botao => {
-    botao.addEventListener('click', function() {
-        botoesFormaPgto.forEach(b => b.classList.remove('selecionada'));
-        this.classList.add('selecionada');
-        formaPagamentoSelecionada = this.getAttribute('data-tipo');
-        
-        if(formaPagamentoSelecionada === "Dinheiro") {
-            areaTroco.style.display = 'block';
-            inputRecebido.focus();
-        } else {
-            areaTroco.style.display = 'none';
-        }
-    });
-});
-
-inputRecebido.addEventListener('input', calcularTroco);
 
 function calcularTroco() {
-    if(formaPagamentoSelecionada !== "Dinheiro") return;
+    const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
+    const troco = recebido - subtotalGlobalPDV;
+    const displayTroco = document.getElementById('checkout-troco');
     
-    const recebido = parseFloat(inputRecebido.value) || 0;
-    const totalComDesconto = valorTotalAtual - valorDesconto;
-    let troco = recebido - totalComDesconto;
-    
-    if(troco < 0) troco = 0;
-    lblTroco.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
+    if (troco >= 0) {
+        displayTroco.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
+        displayTroco.style.color = '#25D366'; // Verde (tudo ok)
+    } else {
+        displayTroco.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
+        displayTroco.style.color = '#f44336'; // Vermelho (dinheiro insuficiente)
+    }
 }
 
-btnConfirmarVenda.addEventListener('click', finalizarPagamento);
-
-// A função agora é 'async' porque vai conversar com a internet
-async function finalizarPagamento() {
-    if(formaPagamentoSelecionada === "") {
-        alert("Por favor, selecione uma forma de pagamento!");
-        return;
-    }
+async function finalizarVendaPDV() {
+    const metodo = document.getElementById('checkout-metodo').value;
     
-    const totalComDesconto = valorTotalAtual - valorDesconto;
+    if (metodo === 'Dinheiro') {
+        const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
+        if (recebido < subtotalGlobalPDV) {
+            alert("⚠️ O valor recebido é menor que o total da venda!");
+            return;
+        }
+    }
 
-    // 1. Monta o "Malote de Dinheiro" (Pacote de Dados)
-    const pacoteVenda = {
-        origem: "💻 Balcão",
-        itens: carrinhoPdv,
-        subtotal: valorTotalAtual,
-        desconto: valorDesconto,
-        valor: totalComDesconto, // Chamamos de 'valor' para bater com o que o Dashboard espera ler
-        formaPagamento: formaPagamentoSelecionada
+    // 1. Gera um resumo para o seu Dashboard saber o que foi vendido
+    const resumoItens = carrinho.map(item => item.nome).join(' + ');
+    
+    const dadosDaVenda = {
+        produto_nome: "Balcão: " + resumoItens.substring(0, 50), // Corta se for muito longo
+        total: subtotalGlobalPDV
     };
 
+    // 2. Envia para o Banco de Dados (API Vendas)
     try {
-        // 2. O carteiro envia o pacote para o Servidor Central (Método POST)
-        const resposta = await fetch('https://icesoft-api.onrender.com/api/vendas', {
+        await fetch(`${API_URL}/vendas`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pacoteVenda)
+            body: JSON.stringify(dadosDaVenda)
         });
-
-        if (resposta.ok) {
-            // 3. Só limpa a tela se o Servidor disser "Recebi o dinheiro!"
-            carrinhoPdv = [];
-            atualizarFitaDoCaixa();
-            document.getElementById('pdv-desconto').innerText = `R$ 0,00`;
-            modalPagamento.style.display = 'none';
-            alert("✅ Venda registrada com sucesso no Servidor Central!");
-        } else {
-            alert("❌ Ocorreu um erro no servidor ao registrar a venda.");
-        }
-    } catch (erro) {
-        console.error("Falha ao enviar venda:", erro);
-        alert("⚠️ ATENÇÃO: O Servidor Central está offline. A venda NÃO foi registrada.");
+    } catch (e) {
+        console.error("Erro ao enviar venda para a nuvem:", e);
     }
+
+    // 3. Sucesso!
+    alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
+    
+    carrinho = []; // Limpa o carrinho
+    renderizarCarrinho(); // Zera a tela
+    fecharModalCheckout(); // Fecha a janela
 }
 
-document.addEventListener('keydown', function(evento) {
-    if(evento.key === 'Enter' && modalPagamento.style.display === 'flex') {
-        finalizarPagamento();
+// ==========================================
+// ATALHOS DE TECLADO (VELOCIDADE DE CAIXA)
+// ==========================================
+document.addEventListener('keydown', (e) => {
+    // F12 para abrir cobrança (Bloqueia o abrir painel do navegador)
+    if (e.key === 'F12') {
+        e.preventDefault(); 
+        abrirModalCheckout();
+    }
+    // Enter para confirmar a venda se a janela estiver aberta
+    if (e.key === 'Enter' && document.getElementById('modal-checkout').style.display === 'flex') {
+        finalizarVendaPDV();
     }
 });
 
-/* =========================================
-   7. COMUNICAÇÃO COM O SERVIDOR CENTRAL (API)
-   ========================================= */
-async function ligarMotorPDV() {
-    try {
-        const resposta = await fetch('https://icesoft-api.onrender.com/api/produtos');
-        produtosIcesoft = await resposta.json();
-        
-        carregarProdutos();
-        atualizarFitaDoCaixa();
-    } catch (erro) {
-        console.error("Erro ao conectar com o servidor central:", erro);
-        document.getElementById('grid-produtos').innerHTML = '<p style="color: red; padding: 20px; font-weight: bold;">⚠️ Falha de conexão com o Servidor Central. O caixa está inoperante. Verifique o servidor.</p>';
-    }
-}
-
-/* =========================================
-   8. INICIALIZAÇÃO
-   ========================================= */
-window.onload = () => {
-    ligarMotorPDV();
-};
+// Vincular o botão verde físico da tela
+document.querySelector('.btn-cobrar').onclick = abrirModalCheckout;

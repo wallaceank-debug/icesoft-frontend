@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Cardápio - Icesoft</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="gestao-header">
+        <div class="titulo-area">
+            <h1>GESTÃO DE CARDÁPIO</h1>
+        </div>
+        <div class="botoes-area">
+            <button onclick="abrirModalProduto()" class="btn-topo">+ PRODUTO</button>
+            <button onclick="abrirModalGrupo()" class="btn-topo">+ GRUPO</button>
+        </div>
+    </header>
+
+    <main class="gestao-container">
+        
+        <section class="coluna-card">
+            <div class="coluna-header">
+                <h2>PRODUTOS</h2>
+            </div>
+            <div class="coluna-lista" id="lista-produtos">
+                <p class="carregando">Carregando...</p>
+            </div>
+        </section>
+
+        <section class="coluna-card">
+            <div class="coluna-header">
+                <h2>GRUPOS DE ADICIONAIS</h2>
+            </div>
+            <div class="coluna-lista" id="lista-grupos">
+                <p class="carregando">Carregando...</p>
+            </div>
+        </section>
+
+        <section class="coluna-card">
+            <div class="coluna-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>ADICIONAIS</h2>
+                <button id="btn-novo-adicional" onclick="abrirModalAdicional()" class="btn-add-mini" style="display: none;">+ NOVO</button>
+            </div>
+            <div class="coluna-lista" id="lista-adicionais">
+                <p class="carregando" style="opacity: 0.6;">Selecione um Grupo na coluna ao lado para ver os adicionais.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-produto" class="modal-fundo" style="display:none;">
+        <div class="modal-conteudo">
+            <h2 id="titulo-modal-produto">Novo Produto</h2>
+            <input type="hidden" id="prod-id">
+            <input type="text" id="prod-nome" class="input-padrao" placeholder="Nome do Produto">
+            <input type="number" id="prod-preco" class="input-padrao" placeholder="Preço (Ex: 15.00)" step="0.01">
+            <input type="text" id="prod-emoji" class="input-padrao" placeholder="Emoji (Ex: 🍨)">
+            
+            <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Grupos Vinculados:</p>
+            <div id="container-checkbox-grupos" style="max-height: 120px; overflow-y:auto; margin-bottom:15px;"></div>
+
+            <div class="modal-botoes">
+                <button onclick="fecharModalProduto()" class="btn-cancelar">Cancelar</button>
+                <button onclick="salvarProduto()" class="btn-salvar">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-grupo" class="modal-fundo" style="display:none;">
+        <div class="modal-conteudo">
+            <h2 id="titulo-modal-grupo">Novo Grupo</h2>
+            <input type="hidden" id="grupo-id">
+            <input type="text" id="grupo-nome" class="input-padrao" placeholder="Nome do Grupo (Ex: Sabores)">
+            <input type="number" id="grupo-limite" class="input-padrao" placeholder="Limite de escolha (Ex: 1)">
+            
+            <div class="modal-botoes">
+                <button onclick="fecharModalGrupo()" class="btn-cancelar">Cancelar</button>
+                <button onclick="salvarGrupo()" class="btn-salvar">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

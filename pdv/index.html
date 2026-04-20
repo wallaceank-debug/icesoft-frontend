@@ -3,109 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Icesoft - PDV (Frente de Caixa)</title>
-    <link rel="stylesheet" href="/pdv/style.css">
+    <title>Icesoft - PDV Balcão</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <header class="pdv-header">
-        <div class="logo">
+        <div class="logo-area">
             <h1>🍦 Icesoft PDV</h1>
-            <span class="status-caixa">Caixa Aberto - Operador: Wallace</span>
         </div>
-        <div class="controles-topo">
-            <button class="btn-mesas">Mesas/Comandas</button>
-            <button class="btn-fechar-caixa">Fechar Caixa</button>
+        
+        <div class="status-caixa">
+            <span class="dot-verde"></span>
+            <strong>Caixa Aberto</strong> | Operador: Wallace
+        </div>
+
+        <div class="controles-header">
+            <div class="toggle-cardapio">
+                <span>Cardápio Online</span>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <button class="btn-header">Mesas/Comandas</button>
+            <button class="btn-header btn-fechar-caixa">Fechar Caixa</button>
         </div>
     </header>
 
     <main class="pdv-container">
         
-        <section class="pdv-produtos">
-            <div class="categorias-pdv">
-                <button class="btn-categoria ativo">Todas</button>
-                <button class="btn-categoria">Massas</button>
-                <button class="btn-categoria">Açaí</button>
-                <button class="btn-categoria">Picolés</button>
-            </div>
-            
-            <div id="grid-produtos" class="grid-produtos">
-                <p>Carregando produtos...</p>
+        <section class="painel-esquerdo">
+            <nav class="barra-categorias" id="barra-categorias">
+                <button class="categoria-btn ativo">Todos</button>
+                <button class="categoria-btn">Açaí</button>
+                <button class="categoria-btn">Sorvetes</button>
+                <button class="categoria-btn">Milk Shakes</button>
+                <button class="categoria-btn">Bebidas</button>
+            </nav>
+
+            <div class="grade-produtos" id="grade-produtos">
+                <p style="padding: 20px;">Carregando produtos do servidor...</p>
             </div>
         </section>
 
-        <aside class="pdv-carrinho">
-            <div class="carrinho-header">
-                <h2>Venda Atual</h2>
-                <span id="pdv-comanda">Balcão</span>
-            </div>
-            
-            <div id="pdv-lista-itens" class="pdv-lista-itens">
-                </div>
-
-            <div class="pdv-resumo-valores">
-                <div class="linha-valor">
-                    <span>Subtotal:</span>
-                    <span id="pdv-subtotal">R$ 0,00</span>
-                </div>
-                <div class="linha-valor desconto">
-                    <span>Desconto:</span>
-                    <span id="pdv-desconto">R$ 0,00</span>
-                </div>
-                <div class="linha-valor total">
-                    <span>Total a Pagar:</span>
-                    <strong id="pdv-total">R$ 0,00</strong>
-                </div>
+        <aside class="painel-direito">
+            <div class="cabecalho-carrinho">
+                <h2>Resumo do Pedido</h2>
+                <button class="btn-limpar">Limpar</button>
             </div>
 
-            <div class="pdv-acoes">
-                <button class="btn-cancelar" id="btn-cancelar-venda">Cancelar (F4)</button>
-                <button class="btn-pagamento" id="btn-cobrar">Cobrar (F12)</button>
+            <div class="lista-carrinho" id="lista-carrinho">
+                <div class="carrinho-vazio">Nenhum item adicionado</div>
+            </div>
+
+            <div class="area-totais">
+                <div class="linha-total"><span>Subtotal</span> <strong id="pdv-subtotal">R$ 0,00</strong></div>
+                <div class="linha-total" style="color: #f44336;"><span>Descontos</span> <strong>- R$ 0,00</strong></div>
+                <div class="linha-total" style="color: #2196F3;"><span>Acréscimos</span> <strong>+ R$ 0,00</strong></div>
+                <hr>
+                <div class="linha-total total-final"><span>Total a Cobrar</span> <strong id="pdv-total">R$ 0,00</strong></div>
+            </div>
+
+            <div class="area-botoes-acao">
+                <button class="btn-acao btn-cancelar">Cancelar</button>
+                <button class="btn-acao btn-cobrar">Cobrar (F12)</button>
             </div>
         </aside>
 
-<div id="modal-pagamento" class="modal-overlay" style="display: none;">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h2>Cobrar Venda</h2>
-                    <button id="btn-fechar-pagamento">✖</button>
-                </div>
-                
-                <div class="modal-body">
-                    <div class="resumo-pagamento">
-                        <div class="linha-pgto">
-                            <span>Subtotal:</span>
-                            <span id="pag-subtotal">R$ 0,00</span>
-                        </div>
-                        <div class="linha-desconto-input">
-                            <label>Desconto (R$):</label>
-                            <input type="number" id="input-desconto" value="0.00" min="0" step="0.50">
-                            <button id="btn-aplicar-desconto">Aplicar</button>
-                        </div>
-                        <h3 class="total-destaque">Total a Pagar: <strong id="pag-total">R$ 0,00</strong></h3>
-                    </div>
-
-                    <div class="formas-pagamento">
-                        <button class="btn-forma-pag" data-tipo="Dinheiro">💵 Dinheiro</button>
-                        <button class="btn-forma-pag" data-tipo="Cartao">💳 Cartão</button>
-                        <button class="btn-forma-pag" data-tipo="Pix">💠 Pix</button>
-                    </div>
-
-                    <div id="area-troco" style="display: none;">
-                        <label>Valor Recebido do Cliente (R$):</label>
-                        <input type="number" id="input-recebido" value="0.00" min="0" step="1">
-                        <p>Troco: <strong id="valor-troco">R$ 0,00</strong></p>
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button id="btn-confirmar-venda" class="btn-sucesso-pgto">Finalizar Venda (Enter)</button>
-                </div>
-            </div>
-        </div>
-
     </main>
 
-    <script src="/pdv/app.js"></script>
+<div id="modal-opcoes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000;">
+        <div style="background:white; width:90%; max-width:500px; border-radius:20px; padding:25px; max-height:90vh; overflow-y:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px;">
+                </div>
+
+            <div id="container-grupos-opcoes">
+                </div>
+
+            <div style="margin-top:20px; padding:20px; background:#e0f7fa; border-radius:15px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span style="font-size:0.9rem; color:#555;">Total deste item:</span><br>
+                    <strong id="preco-dinamico" style="font-size:1.4rem; color:#00bcd4;">R$ 0,00</strong>
+                </div>
+                <button onclick="confirmarEscolhasEAdicionar()" style="background:#4CAF50; color:white; border:none; padding:15px 30px; border-radius:12px; font-weight:bold; cursor:pointer; font-size: 1.1rem;">
+                    Confirmar e Inserir
+                </button>
+            </div>
+            <button onclick="fecharModalOpcoes()" style="width:100%; background:none; border:none; color:#f44336; padding:15px; margin-top:10px; cursor:pointer; font-weight: bold;">Cancelar</button>
+        </div>
+    </div>
+
+<div id="modal-checkout" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:3000;">
+        <div style="background:white; width:90%; max-width:400px; border-radius:20px; padding:30px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+            <h2 style="text-align:center; color:#333; margin-top:0;">Finalizar Venda</h2>
+            
+            <div style="text-align:center; margin: 20px 0; background: #fff0f5; padding: 15px; border-radius: 15px; border: 1px dashed #f8bbd0;">
+                <span style="color:#777; font-size:1rem;">Total a Cobrar</span><br>
+                <strong id="checkout-total" style="font-size:2.8rem; color:#e91e63;">R$ 0,00</strong>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:600; color:#555; display:block; margin-bottom:8px;">Forma de Pagamento</label>
+                <select id="checkout-metodo" onchange="verificarMetodoPagamento()" style="width:100%; padding:15px; border-radius:10px; border:2px solid #eee; font-size:1.1rem; outline:none; cursor:pointer; background: #fafafa;">
+                    <option value="Dinheiro">💵 Dinheiro</option>
+                    <option value="Pix">💠 Pix</option>
+                    <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                    <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                </select>
+            </div>
+
+            <div id="area-troco" style="display:block; margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee;">
+                <label style="font-weight:600; color:#555; display:block; margin-bottom:8px;">Valor Recebido (R$)</label>
+                <input type="number" id="checkout-recebido" onkeyup="calcularTroco()" placeholder="Ex: 50.00" step="0.01" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; font-size:1.2rem; outline:none;">
+                <div style="margin-top:10px; font-size:1.1rem; color:#333; text-align: right;">
+                    Troco: <strong id="checkout-troco" style="color:#25D366; font-size:1.3rem;">R$ 0,00</strong>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="fecharModalCheckout()" style="flex:1; padding:15px; background:#eee; color:#333; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1.1rem;">Voltar</button>
+                <button onclick="finalizarVendaPDV()" style="flex:1.5; padding:15px; background:#4CAF50; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 10px rgba(76,175,80,0.3);">Concluir (Enter)</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>

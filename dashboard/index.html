@@ -3,106 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Dono - Icesoft</title>
+    <title>Dashboard - Icesoft</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body style="background-color: #fce4ec; font-family: 'Poppins', sans-serif; margin: 0; padding: 0;">
+<body>
 
-    <header style="background-color: #e91e63; color: white; padding: 20px; text-align: center;">
-        <h1 style="margin: 0;">Painel de Gestão - Icesoft</h1>
+    <header class="dash-header">
+        <div class="titulo-area">
+            <h1>DASHBOARD</h1>
+        </div>
+        <div class="filtros-area">
+            <input type="date" id="filtro-inicio" class="input-filtro" title="Data Início">
+            <input type="date" id="filtro-fim" class="input-filtro" title="Data Final">
+            <button onclick="carregarVendas()" class="btn-filtrar">FILTRAR VENDAS</button>
+            <div class="divisor-bolinha"></div>
+            <div id="periodo-exibicao" class="periodo-badge">TODO O HISTÓRICO</div>
+        </div>
     </header>
 
-    <main style="max-width: 1200px; margin: 0 auto; padding-bottom: 50px;">
+    <main class="dash-container">
         
-        <section style="padding: 20px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
-            <input type="date" id="filtro-inicio" style="padding: 10px; border-radius: 8px; border: 1px solid #f8bbd0;">
-            <span style="color: #e91e63; font-weight: bold;">até</span>
-            <input type="date" id="filtro-fim" style="padding: 10px; border-radius: 8px; border: 1px solid #f8bbd0;">
-            <button onclick="carregarVendas()" style="background: #e91e63; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Filtrar Vendas</button>
+        <section class="grid-linha-1">
+            <div class="dash-card">
+                <h3>FATURAMENTO DO<br>PERÍODO SELECIONADO</h3>
+                <p id="dash-faturamento" class="valor-destaque">R$ 0,00</p>
+            </div>
+
+            <div class="dash-card">
+                <h3>TICKET MÉDIO DO<br>PERÍODO</h3>
+                <p id="dash-ticket" class="valor-destaque">R$ 0,00</p>
+            </div>
+
+            <div class="dash-card">
+                <h3>NÚMERO TOTAL DE<br>PEDIDOS DO PERÍODO</h3>
+                <p id="dash-pedidos" class="valor-destaque">0</p>
+            </div>
         </section>
 
-        <section style="display: flex; gap: 20px; padding: 0 20px 20px 20px; justify-content: center; flex-wrap: wrap;">
-            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; text-align: center;">
-                <h3 style="color: #555; margin-top: 0;">Total no Período</h3>
-                <p id="dash-total-vendas" style="font-size: 1.8rem; color: #25D366; font-weight: bold; margin: 0;">R$ 0,00</p>
+        <section class="grid-linha-2">
+            <div class="dash-card card-grande">
+                <h3>PRODUTOS MAIS<br>VENDIDOS</h3>
+                <div class="lista-rolagem" id="lista-produtos-top">
+                    <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
+                </div>
             </div>
-            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; text-align: center;">
-                <h3 style="color: #555; margin-top: 0;">Mais Vendido</h3>
-                <p id="dash-produto-topo" style="font-size: 1.8rem; color: #e91e63; font-weight: bold; margin: 0;">---</p>
+
+            <div class="dash-card card-grande">
+                <h3>ADICIONAIS MAIS<br>VENDIDOS</h3>
+                <div class="lista-rolagem" id="lista-adicionais-top">
+                    <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="dash-card card-grande">
+                <h3>Vendas por horário em<br>dias da semana</h3>
+                <div style="display: flex; justify-content: center; align-items: center; height: 70%; opacity: 0.7;">
+                    <p style="font-weight: normal; text-align: center;">📊<br>Módulo de Gráficos<br>Em Breve</p>
+                </div>
             </div>
         </section>
 
-        <div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 0 20px;">
-            <section style="flex: 1; min-width: 300px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: #e91e63; margin: 0; font-size: 1.2rem;">📚 Grupos de Adicionais</h2>
-                    <button onclick="abrirModalGrupo()" style="background: #2196F3; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">+ Novo Grupo</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-                        <tbody id="tabela-grupos"></tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section style="flex: 2; min-width: 400px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: #e91e63; margin: 0; font-size: 1.2rem;">🍦 Cardápio (Produtos)</h2>
-                    <button onclick="abrirModalProduto()" style="background: #25D366; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">+ Novo Produto</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-                        <tbody id="tabela-produtos-gestao"></tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
     </main>
-
-    <div id="modal-grupo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000;">
-        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width:400px; display:flex; flex-direction:column; gap:10px;">
-            <h3 id="modal-grupo-titulo" style="color:#e91e63; text-align:center; margin: 0;">Criar Grupo</h3>
-            <input type="hidden" id="grupo-id">
-            <input type="text" id="grupo-nome" placeholder="Nome (ex: Sabor do Açaí)" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            <input type="number" id="grupo-limite" placeholder="Limite de escolhas (ex: 1)" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            
-            <div style="background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <strong>Itens do Grupo</strong>
-                    <button onclick="adicionarItemGrupo()" style="background:#4CAF50; color:white; border:none; padding:3px 8px; border-radius:5px; cursor:pointer; font-size:0.8rem;">+ Item</button>
-                </div>
-                <div id="lista-itens-grupo" style="max-height: 150px; overflow-y: auto;"></div>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button onclick="fecharModalGrupo()" style="flex:1; padding:10px; background:#eee; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
-                <button onclick="salvarGrupo()" style="flex:1; padding:10px; background:#2196F3; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Salvar Grupo</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-produto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000;">
-        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width:400px; display:flex; flex-direction:column; gap:10px; max-height: 90vh; overflow-y: auto;">
-            <h3 id="modal-produto-titulo" style="color:#e91e63; text-align:center; margin: 0;">Cadastrar Produto</h3>
-            <input type="hidden" id="prod-id">
-            <input type="text" id="prod-emoji" placeholder="Emoji (ex: 🍨)" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            <input type="text" id="prod-nome" placeholder="Nome do Produto" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            <input type="text" id="prod-desc" placeholder="Descrição" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            <input type="number" id="prod-preco" placeholder="Preço Base (ex: 15.50)" step="0.01" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-            
-            <hr style="border: 0.5px solid #eee;">
-            <strong style="color: #e91e63;">Vincular Grupos de Adicionais:</strong>
-            <p style="font-size: 0.8rem; color: #777; margin: 0;">Selecione os grupos que este produto usará:</p>
-            <div id="container-checkbox-grupos" style="background:#f9f9f9; padding:10px; border-radius:8px; max-height:150px; overflow-y:auto; border:1px solid #eee; display: flex; flex-direction: column; gap: 5px;">
-                </div>
-
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button onclick="fecharModalProduto()" style="flex:1; padding:10px; background:#eee; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
-                <button onclick="salvarProduto()" style="flex:1; padding:10px; background:#25D366; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Salvar Produto</button>
-            </div>
-        </div>
-    </div>
 
     <script src="app.js"></script>
 </body>
