@@ -51,24 +51,54 @@ async function carregarVendas() {
         let contagemAdicionais = {};
 
         vendasFiltradas.forEach(v => {
-            // LENDO AS GAVETAS CORRETAS E BARRANDO AS VAZIAS DE ANTES (null)
             if (!v.itens || v.valor_total === null) return;
 
             faturamento += parseFloat(v.valor_total) || 0;
 
-            let textoVenda = String(v.itens).replace('Balcão: ', '').trim();
-            let nomeBase = textoVenda.split('(')[0].trim();
-            
-            if (nomeBase) contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
+            // ========================================================
+            // TRADUTOR DE GAVETAS (Cura do [object Object])
+            // ========================================================
+            let listaTextosDeVenda = [];
 
-            let match = textoVenda.match(/\(([^)]+)\)/);
-            if(match) {
-                let itensAdicionais = match[1].split(','); 
-                itensAdicionais.forEach(item => {
-                    let adcLimpo = item.trim();
-                    if (adcLimpo) contagemAdicionais[adcLimpo] = (contagemAdicionais[adcLimpo] || 0) + 1;
-                });
+            // 1. Se a venda veio do Cardápio Online (Formato de Lista Complexa / Array)
+            if (Array.isArray(v.itens)) {
+                // Abre a lista e pega apenas a palavra "nome" de cada item
+                listaTextosDeVenda = v.itens.map(item => item.nome || item.produto_nome || "");
+            } 
+            // 2. Se a venda veio do PDV (Formato de Texto)
+            else if (typeof v.itens === 'string') {
+                // Se por acaso foi salvo um [object Object] em texto antes, ele ignora
+                if (v.itens.includes("[object Object]")) return; 
+                
+                // Limpa o "Balcão:" e separa se tiver mais de um item no texto
+                let textoLimpo = v.itens.replace('Balcão: ', '');
+                listaTextosDeVenda = textoLimpo.split('+').map(texto => texto.trim());
             }
+
+            // ========================================================
+            // AGORA SIM, CONTA OS PRODUTOS E ADICIONAIS
+            // ========================================================
+            listaTextosDeVenda.forEach(textoVenda => {
+                if (!textoVenda) return; // Pula se estiver vazio
+
+                // Separa o nome base (antes dos parênteses)
+                let nomeBase = textoVenda.split('(')[0].trim();
+                if (nomeBase) {
+                    contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
+                }
+
+                // Procura os adicionais (o que está dentro dos parênteses)
+                let match = textoVenda.match(/\(([^)]+)\)/);
+                if(match) {
+                    let itensAdicionais = match[1].split(','); 
+                    itensAdicionais.forEach(item => {
+                        let adcLimpo = item.trim();
+                        if (adcLimpo) {
+                            contagemAdicionais[adcLimpo] = (contagemAdicionais[adcLimpo] || 0) + 1;
+                        }
+                    });
+                }
+            });
         });
 
         // Contagem corrigida
