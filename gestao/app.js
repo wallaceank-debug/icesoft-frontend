@@ -210,18 +210,21 @@ let gruposSelecionadosTemporarios = []; // Array para controlar a ordem no modal
 function abrirModalProduto(id = null) {
     const modal = document.getElementById('modal-produto');
     const idInput = document.getElementById('prod-id');
-    const containerGrupos = document.getElementById('container-checkbox-grupos');
+    const titulo = document.getElementById('titulo-modal-produto');
 
     gruposSelecionadosTemporarios = []; // Reinicia a lista
 
-    if (id) {
+    if (id) { // MODO EDIÇÃO
         const p = listaProdutos.find(x => x.id === id);
+        titulo.innerText = "Editar Produto";
         idInput.value = p.id;
         document.getElementById('prod-nome').value = p.nome;
         document.getElementById('prod-preco').value = p.preco;
         document.getElementById('prod-emoji').value = p.emoji;
+        // Carrega a ordem dos IDs que estava salva no banco
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
-    } else {
+    } else { // MODO NOVO PRODUTO
+        titulo.innerText = "Novo Produto";
         idInput.value = '';
         document.getElementById('prod-nome').value = '';
         document.getElementById('prod-preco').value = '';
@@ -235,7 +238,7 @@ function abrirModalProduto(id = null) {
 // Nova função para desenhar a lista de grupos com botões de ordem
 function renderizarSelecaoGrupos() {
     const container = document.getElementById('container-checkbox-grupos');
-    container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e use as setas para ordenar o passo a passo:</p>';
+    container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e use as setas para ordenar o passo a passo do cliente:</p>';
 
     listaGrupos.forEach(g => {
         const isChecked = gruposSelecionadosTemporarios.includes(g.id);
@@ -249,8 +252,8 @@ function renderizarSelecaoGrupos() {
                 </label>
                 ${isChecked ? `
                     <div style="display:flex; gap:5px;">
-                        <button onclick="moverGrupo(${index}, -1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px;">↑</button>
-                        <button onclick="moverGrupo(${index}, 1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px;">↓</button>
+                        <button onclick="moverGrupo(${index}, -1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px; font-weight:bold;">↑</button>
+                        <button onclick="moverGrupo(${index}, 1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px; font-weight:bold;">↓</button>
                     </div>
                 ` : ''}
             </div>
@@ -270,46 +273,17 @@ function toggleGrupoNoProduto(id) {
 
 function moverGrupo(index, direcao) {
     const novaPos = index + direcao;
+    // Impede que a seta tente mover para fora do limite da lista
     if (novaPos < 0 || novaPos >= gruposSelecionadosTemporarios.length) return;
     
-    // Troca de posição no array
+    // Troca os itens de posição na memória
     const item = gruposSelecionadosTemporarios.splice(index, 1)[0];
     gruposSelecionadosTemporarios.splice(novaPos, 0, item);
     renderizarSelecaoGrupos();
 }
 
-// Na sua função salvarProduto(), mude a linha que pega os IDs:
-// Substitua a lógica de querySelectorAll por:
-// const grupos_ids = gruposSelecionadosTemporarios;
-
-    if (id) { // MODO EDIÇÃO
-        const p = listaProdutos.find(x => x.id === id);
-        titulo.innerText = "Editar Produto";
-        idInput.value = p.id;
-        nomeInput.value = p.nome;
-        precoInput.value = p.preco;
-        emojiInput.value = p.emoji;
-
-        // Marca os quadradinhos que esse produto já tinha
-        const checkboxes = document.querySelectorAll('.chk-grupo');
-        checkboxes.forEach(chk => {
-            if (p.grupos_ids && p.grupos_ids.includes(Number(chk.value))) {
-                chk.checked = true;
-            }
-        });
-    } else { // MODO NOVO PRODUTO
-        titulo.innerText = "Novo Produto";
-        idInput.value = '';
-        nomeInput.value = '';
-        precoInput.value = '';
-        emojiInput.value = '';
-    }
-    
-    modal.style.display = 'flex';
-}
-
 function abrirEdicaoProduto(id) {
-    abrirModalProduto(id); // Usa a mesma janela, mas passando o ID para editar
+    abrirModalProduto(id); 
 }
 
 async function salvarProduto() {
@@ -318,9 +292,8 @@ async function salvarProduto() {
     const preco = document.getElementById('prod-preco').value;
     const emoji = document.getElementById('prod-emoji').value;
 
-    // Vasculha a tela e pega só os IDs dos quadradinhos que você marcou
-    const checkboxes = document.querySelectorAll('.chk-grupo:checked');
-    const grupos_ids = Array.from(checkboxes).map(chk => Number(chk.value));
+    // MÁGICA DA ORDENAÇÃO: Salva a lista na exata ordem que você deixou na tela!
+    const grupos_ids = gruposSelecionadosTemporarios;
 
     if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
 
@@ -384,7 +357,6 @@ async function salvarGrupo() {
 
     if (!nome || !limite) return alert("⚠️ Preencha o nome e o limite!");
 
-    // Se for edição, precisamos preservar os itens (adicionais) que já estavam lá dentro
     let itens = [];
     if (id) {
         const gExistente = listaGrupos.find(x => x.id === Number(id));
