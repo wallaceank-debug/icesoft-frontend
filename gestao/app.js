@@ -205,8 +205,25 @@ function abrirModalProduto(id = null) {
 function renderizarSelecaoGrupos() {
     const container = document.getElementById('container-checkbox-grupos');
     container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e use as setas para ordenar o passo a passo do cliente:</p>';
-    
+
+    // 1. A MÁGICA: Organiza a fila visual antes de desenhar
+    let gruposParaExibir = [];
+
+    // Primeiro, coloca os grupos marcados na exata ordem que você definiu nas setinhas
+    gruposSelecionadosTemporarios.forEach(id => {
+        const g = listaGrupos.find(x => x.id === id);
+        if (g) gruposParaExibir.push(g);
+    });
+
+    // Depois, coloca todos os grupos que estão desmarcados lá pro final da lista
     listaGrupos.forEach(g => {
+        if (!gruposSelecionadosTemporarios.includes(g.id)) {
+            gruposParaExibir.push(g);
+        }
+    });
+
+    // 2. Agora sim, desenha a tela usando a nova fila organizada
+    gruposParaExibir.forEach(g => {
         const isChecked = gruposSelecionadosTemporarios.includes(g.id);
         const index = gruposSelecionadosTemporarios.indexOf(g.id);
         
@@ -218,8 +235,8 @@ function renderizarSelecaoGrupos() {
                 </label>
                 ${isChecked ? `
                     <div style="display:flex; gap:5px;">
-                        <button onclick="moverGrupo(${index}, -1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px; font-weight:bold;">↑</button>
-                        <button onclick="moverGrupo(${index}, 1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px; font-weight:bold;">↓</button>
+                        <button type="button" onclick="moverGrupo(${index}, -1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 10px; font-weight:bold; font-size:1.1rem;">↑</button>
+                        <button type="button" onclick="moverGrupo(${index}, 1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 10px; font-weight:bold; font-size:1.1rem;">↓</button>
                     </div>
                 ` : ''}
             </div>
