@@ -205,24 +205,82 @@ function fecharModalGrupo() { document.getElementById('modal-grupo').style.displ
 
 // --- MOTOR DE PRODUTOS ---
 
+let gruposSelecionadosTemporarios = []; // Array para controlar a ordem no modal
+
 function abrirModalProduto(id = null) {
     const modal = document.getElementById('modal-produto');
-    const titulo = document.getElementById('titulo-modal-produto');
     const idInput = document.getElementById('prod-id');
-    const nomeInput = document.getElementById('prod-nome');
-    const precoInput = document.getElementById('prod-preco');
-    const emojiInput = document.getElementById('prod-emoji');
     const containerGrupos = document.getElementById('container-checkbox-grupos');
 
-    // MÁGICA 1: Puxa todos os grupos criados e desenha os quadradinhos (checkboxes)
-    containerGrupos.innerHTML = '';
+    gruposSelecionadosTemporarios = []; // Reinicia a lista
+
+    if (id) {
+        const p = listaProdutos.find(x => x.id === id);
+        idInput.value = p.id;
+        document.getElementById('prod-nome').value = p.nome;
+        document.getElementById('prod-preco').value = p.preco;
+        document.getElementById('prod-emoji').value = p.emoji;
+        gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
+    } else {
+        idInput.value = '';
+        document.getElementById('prod-nome').value = '';
+        document.getElementById('prod-preco').value = '';
+        document.getElementById('prod-emoji').value = '🍨';
+    }
+
+    renderizarSelecaoGrupos();
+    modal.style.display = 'flex';
+}
+
+// Nova função para desenhar a lista de grupos com botões de ordem
+function renderizarSelecaoGrupos() {
+    const container = document.getElementById('container-checkbox-grupos');
+    container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e use as setas para ordenar o passo a passo:</p>';
+
     listaGrupos.forEach(g => {
-        containerGrupos.innerHTML += `
-            <label style="display:block; margin-bottom:8px; cursor:pointer; font-size: 0.95rem;">
-                <input type="checkbox" value="${g.id}" class="chk-grupo" style="accent-color: #00bcd4;"> ${g.nome}
-            </label>
+        const isChecked = gruposSelecionadosTemporarios.includes(g.id);
+        const index = gruposSelecionadosTemporarios.indexOf(g.id);
+        
+        container.innerHTML += `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; padding:8px; border-radius:8px; margin-bottom:5px; border: 1px solid ${isChecked ? '#00bcd4' : '#eee'}">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:8px; flex:1;">
+                    <input type="checkbox" value="${g.id}" ${isChecked ? 'checked' : ''} onchange="toggleGrupoNoProduto(${g.id})">
+                    ${g.nome}
+                </label>
+                ${isChecked ? `
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="moverGrupo(${index}, -1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px;">↑</button>
+                        <button onclick="moverGrupo(${index}, 1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px;">↓</button>
+                    </div>
+                ` : ''}
+            </div>
         `;
     });
+}
+
+function toggleGrupoNoProduto(id) {
+    const index = gruposSelecionadosTemporarios.indexOf(id);
+    if (index > -1) {
+        gruposSelecionadosTemporarios.splice(index, 1);
+    } else {
+        gruposSelecionadosTemporarios.push(id); // Adiciona ao final da fila
+    }
+    renderizarSelecaoGrupos();
+}
+
+function moverGrupo(index, direcao) {
+    const novaPos = index + direcao;
+    if (novaPos < 0 || novaPos >= gruposSelecionadosTemporarios.length) return;
+    
+    // Troca de posição no array
+    const item = gruposSelecionadosTemporarios.splice(index, 1)[0];
+    gruposSelecionadosTemporarios.splice(novaPos, 0, item);
+    renderizarSelecaoGrupos();
+}
+
+// Na sua função salvarProduto(), mude a linha que pega os IDs:
+// Substitua a lógica de querySelectorAll por:
+// const grupos_ids = gruposSelecionadosTemporarios;
 
     if (id) { // MODO EDIÇÃO
         const p = listaProdutos.find(x => x.id === id);
