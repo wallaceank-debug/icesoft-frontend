@@ -76,8 +76,9 @@ function abrirModalEscolha(produto) {
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
-    // Pega os grupos vinculados que estão ativos
-    const gruposDoProduto = gruposGlobais.filter(g => produto.grupos_ids.includes(g.id));
+    const gruposDoProduto = produto.grupos_ids
+        .map(id => gruposGlobais.find(g => g.id === Number(id)))
+        .filter(g => g && g.ativo !== false); // Remove grupos inativos ou não encontrados
 
     gruposDoProduto.forEach(grupo => {
         // MÁGICA: Só pega os adicionais (ex: Morango) que estiverem ATIVOS
