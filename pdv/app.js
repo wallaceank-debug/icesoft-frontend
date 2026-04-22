@@ -3,6 +3,9 @@ let produtosDaNuvem = [];
 let gruposGlobais = [];
 let carrinho = [];
 
+// NOVO: Guarda qual botão está clicado no momento
+let categoriaAtiva = 'Todos';
+
 // Variáveis para o item que está sendo personalizado no momento
 let produtoEmSelecao = null;
 let escolhasAtuais = [];
@@ -21,11 +24,12 @@ async function carregarDadosIniciais() {
         const todosProdutos = await resProd.json();
         const todosGrupos = await resGrupos.json();
 
-        // Filtra só o que tá ligado
         produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
         gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
         
-        renderizarGradeProdutos(produtosDaNuvem);
+        // NOVO: Ao invés de jogar tudo na tela de uma vez, ele cria os botões primeiro
+        renderizarBotoesCategoria();
+        filtrarE_RenderizarProdutos();
     } catch (e) { console.error("Erro ao carregar dados:", e); }
 }
 
@@ -41,6 +45,48 @@ function renderizarGradeProdutos(lista) {
             </div>
         `;
     });
+}
+
+// ==========================================
+// FILTROS E CATEGORIAS DINÂMICAS
+// ==========================================
+
+function renderizarBotoesCategoria() {
+    const nav = document.getElementById('barra-categorias');
+    
+    // 1. Vasculha todos os produtos para descobrir quais categorias você inventou
+    const categoriasUnicas = ["Todos"];
+    produtosDaNuvem.forEach(p => {
+        const cat = p.categoria || "Outros"; // Se algum produto antigo não tiver categoria
+        if (!categoriasUnicas.includes(cat)) {
+            categoriasUnicas.push(cat);
+        }
+    });
+
+    // 2. Limpa a barra antiga e desenha os botões dinamicamente
+    nav.innerHTML = '';
+    categoriasUnicas.forEach(cat => {
+        const classeAtivo = cat === categoriaAtiva ? 'ativo' : '';
+        nav.innerHTML += `<button class="categoria-btn ${classeAtivo}" onclick="mudarCategoria('${cat}')">${cat}</button>`;
+    });
+}
+
+function mudarCategoria(novaCategoria) {
+    categoriaAtiva = novaCategoria; // Salva o nome da categoria clicada
+    renderizarBotoesCategoria();    // Pinta o botão clicado de ciano
+    filtrarE_RenderizarProdutos();  // Corta os produtos e mostra só os certos
+}
+
+function filtrarE_RenderizarProdutos() {
+    let produtosFiltrados = produtosDaNuvem; // Por padrão, são todos
+
+    // Se a categoria não for "Todos", ele joga fora quem não é da categoria
+    if (categoriaAtiva !== 'Todos') {
+        produtosFiltrados = produtosDaNuvem.filter(p => (p.categoria || "Outros") === categoriaAtiva);
+    }
+    
+    // Manda desenhar na tela só o que sobrou no filtro
+    renderizarGradeProdutos(produtosFiltrados);
 }
 
 // ==========================================
@@ -68,6 +114,7 @@ function abrirModalEscolha(produto) {
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
+    // FORMA NOVA (Respeita a ordem dos IDs):
     const gruposDoProduto = produto.grupos_ids
         .map(id => gruposGlobais.find(g => g.id === Number(id)))
         .filter(g => g && g.ativo !== false); // Remove grupos inativos ou não encontrados
