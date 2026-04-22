@@ -140,6 +140,26 @@
 
     <div id="cupom-impressao" style="display:none; padding: 10px;">
     </div>
+
+    <div id="modal-caixa" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2500;">
+        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;">
+            <h2 id="titulo-modal-caixa" style="color:#333; margin-top:0;">Controle de Caixa</h2>
+            
+            <p id="msg-modal-caixa" style="color:#666; font-size:0.95rem; margin-bottom: 20px;">
+                Informe o valor de Fundo de Caixa (Troco Inicial) para abrir.
+            </p>
+
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #eee;">
+                <label style="color:#555; font-weight:600; font-size:1rem;">Valor em Dinheiro (R$)</label>
+                <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 100.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="document.getElementById('modal-caixa').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Cancelar</button>
+                <button id="btn-acao-caixa" onclick="processarCaixa()" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Confirmar</button>
+            </div>
+        </div>
+    </div>
     
     <script src="app.js"></script>
 </body>
