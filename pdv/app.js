@@ -11,8 +11,13 @@ let escolhasAtuais = [];
 let subtotalGlobalPDV = 0;
 let caixaAtual = { id: null, status: 'Fechado' };
 
+// Memória dos Descontos e Acréscimos
+let descontoGlobal = 0;
+let acrescimoGlobal = 0;
+let totalFinalGlobal = 0; 
+
 window.onload = async () => {
-    await verificarStatusCaixa(); // NOVO: Checa a gaveta antes de tudo!
+    await verificarStatusCaixa(); 
     await carregarDadosIniciais();
 };
 
@@ -26,9 +31,8 @@ async function carregarDadosIniciais() {
         
         const todosProdutos = await resProd.json();
         const todosGrupos = await resGrupos.json();
-        categoriasGlobais = await resCat.json(); // Puxa do servidor
+        categoriasGlobais = await resCat.json(); 
 
-        // Filtra só o que está ligado
         produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
         gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
         
@@ -48,11 +52,9 @@ function renderizarBotoesCategoria() {
     const nav = document.getElementById('barra-categorias');
     nav.innerHTML = '';
     
-    // O botão "Todos" é fixo
     const classeTodos = categoriaAtiva === 'Todos' ? 'ativo' : '';
     nav.innerHTML += `<button class="categoria-btn ${classeTodos}" onclick="mudarCategoria('Todos')">Todos</button>`;
 
-    // Puxa as categorias da memória global
     if (categoriasGlobais && categoriasGlobais.length > 0) {
         categoriasGlobais.forEach(cat => {
             const classeAtivo = cat.nome === categoriaAtiva ? 'ativo' : '';
@@ -102,7 +104,6 @@ function renderizarGradeProdutos(lista) {
 function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
-        // Se não tem adicional, manda a lista vazia []
         adicionarAoCarrinho(produto.nome, [], Number(produto.preco));
         return;
     }
@@ -203,7 +204,45 @@ function confirmarEscolhasEAdicionar() {
 }
 
 // ==========================================
-// GESTÃO DO CARRINHO (NOVO VISUAL)
+// MÓDULO DE DESCONTOS E ACRÉSCIMOS
+// ==========================================
+
+function pedirDesconto() {
+    let valor = prompt("✏️ Digite o valor do DESCONTO em R$ (Ex: 5.50)\n(Ou deixe em branco para zerar):");
+    if (valor !== null) {
+        descontoGlobal = parseFloat(valor.replace(',', '.')) || 0;
+        atualizarTotais();
+    }
+}
+
+function pedirAcrescimo() {
+    let valor = prompt("✏️ Digite o valor do ACRÉSCIMO/TAXA em R$ (Ex: 2.00)\n(Ou deixe em branco para zerar):");
+    if (valor !== null) {
+        acrescimoGlobal = parseFloat(valor.replace(',', '.')) || 0;
+        atualizarTotais();
+    }
+}
+
+function atualizarTotais() {
+    totalFinalGlobal = subtotalGlobalPDV - descontoGlobal + acrescimoGlobal;
+    if (totalFinalGlobal < 0) totalFinalGlobal = 0; 
+
+    const divDesconto = document.getElementById('pdv-desconto');
+    const divAcrescimo = document.getElementById('pdv-acrescimo');
+    const divTotal = document.getElementById('pdv-total');
+
+    if (divDesconto) divDesconto.innerText = `- R$ ${descontoGlobal.toFixed(2).replace('.', ',')}`;
+    if (divAcrescimo) divAcrescimo.innerText = `+ R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}`;
+    if (divTotal) divTotal.innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
+
+    const checkoutTotal = document.getElementById('checkout-total');
+    if (checkoutTotal) checkoutTotal.innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
+    
+    if (typeof calcularTroco === "function") calcularTroco(); 
+}
+
+// ==========================================
+// GESTÃO DO CARRINHO
 // ==========================================
 
 function adicionarAoCarrinho(nomeBase, adicionais, preco) {
@@ -221,10 +260,9 @@ function renderizarCarrinho() {
     if (carrinho.length === 0) {
         container.innerHTML = '<div class="carrinho-vazio">Nenhum item adicionado</div>';
         document.getElementById('pdv-subtotal').innerText = "R$ 0,00";
-        document.getElementById('pdv-total').innerText = "R$ 0,00";
         subtotalGlobalPDV = 0;
+        atualizarTotais(); 
         return;
-        atualizarTotais();
     }
 
     container.innerHTML = '';
@@ -259,12 +297,14 @@ function renderizarCarrinho() {
 
     subtotalGlobalPDV = subtotal;
     document.getElementById('pdv-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-    document.getElementById('pdv-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    atualizarTotais(); 
 }
 
 function limparCarrinho() {
     if (confirm("Deseja limpar todo o pedido?")) {
         carrinho = [];
+        descontoGlobal = 0;
+        acrescimoGlobal = 0;
         renderizarCarrinho();
     }
 }
@@ -277,12 +317,11 @@ document.querySelector('.btn-cancelar').onclick = limparCarrinho;
 // ==========================================
 
 function abrirModalCheckout() {
-    // NOVA TRAVA DE SEGURANÇA
     if (caixaAtual.status === 'Fechado') {
         return alert("⚠️ O Caixa está FECHADO! Clique no indicador no topo da tela para abrir o caixa antes de cobrar.");
     }
     
-    document.getElementById('checkout-total').innerText = `R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`;
+    document.getElementById('checkout-total').innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
     document.getElementById('checkout-recebido').value = '';
     document.getElementById('checkout-troco').innerText = 'R$ 0,00';
     document.getElementById('checkout-troco').style.color = '#25D366';
@@ -330,8 +369,8 @@ async function finalizarVendaPDV() {
     const dadosDaVenda = {
         itens: JSON.stringify(itensFormatados), 
         produto_nome: JSON.stringify(itensFormatados), 
-        valor_total: subtotalGlobalPDV,
-        total: subtotalGlobalPDV,
+        valor_total: totalFinalGlobal,
+        total: totalFinalGlobal,
         forma_pagamento: metodo,
         status: "Concluída"
     };
@@ -344,17 +383,18 @@ async function finalizarVendaPDV() {
         });
 
         if (resposta.ok) {
-            const recebido = parseFloat(document.getElementById('checkout-recebido').value) || subtotalGlobalPDV;
-            const troco = recebido - subtotalGlobalPDV;
+            const recebido = parseFloat(document.getElementById('checkout-recebido').value) || totalFinalGlobal;
+            const troco = recebido - totalFinalGlobal;
             
-            // VERIFICA A CAIXINHA: Só chama a impressora se estiver marcada!
             const querImprimir = document.getElementById('checkout-imprimir').checked;
             if (querImprimir) {
                 imprimirComanda(metodo, recebido, troco); 
             }
 
-            alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
+            alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`);
             carrinho = []; 
+            descontoGlobal = 0;
+            acrescimoGlobal = 0;
             renderizarCarrinho(); 
             fecharModalCheckout(); 
         } else {
@@ -364,9 +404,6 @@ async function finalizarVendaPDV() {
         alert("Erro de conexão com o servidor. Verifique a internet.");
     }
 }
-
-descontoGlobal = 0;
-acrescimoGlobal = 0;
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') {
@@ -392,7 +429,6 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
     carrinho.forEach(item => {
         let textoAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
-            // Fonte dos adicionais aumentada para 13px
             textoAdicionais = item.adicionais.map(adc => `<div style="font-size: 13px; padding-left: 10px;">- ${adc}</div>`).join('');
         }
 
@@ -407,6 +443,14 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
         `;
     });
 
+    let extraHtml = '';
+    if (descontoGlobal > 0) {
+        extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Desconto: - R$ ${descontoGlobal.toFixed(2).replace('.', ',')}</div>`;
+    }
+    if (acrescimoGlobal > 0) {
+        extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Acréscimo: + R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}</div>`;
+    }
+
     cupom.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
             <h2 style="margin: 0; font-size: 24px; font-weight: 900;">SORVETERIA ICESOFT</h2>
@@ -419,7 +463,9 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
         </div>
         
         <div style="text-align: right; font-size: 15px;">
-            <strong style="font-size: 20px;">TOTAL: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}</strong><br>
+            <div style="font-size: 14px; color: #555;">Subtotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}</div>
+            ${extraHtml}
+            <strong style="font-size: 20px; display: block; margin-top: 5px;">TOTAL: R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}</strong><br>
             Pagamento: ${metodoPagamento}<br>
             ${metodoPagamento === 'Dinheiro' ? `Recebido: R$ ${valorRecebido.toFixed(2).replace('.', ',')}<br>Troco: R$ ${troco.toFixed(2).replace('.', ',')}` : ''}
         </div>
@@ -438,7 +484,7 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
 // ==========================================
 // CONTROLE DE CAIXA (Painel e Movimentações)
 // ==========================================
-let tipoMovimentacaoAtual = ''; // Guarda se é Sangria ou Suprimento
+let tipoMovimentacaoAtual = ''; 
 
 async function verificarStatusCaixa() {
     try {
@@ -495,7 +541,6 @@ function abrirPainelCaixa() {
     document.getElementById('modal-caixa').style.display = 'flex';
 }
 
-// NOVA FUNÇÃO: Tela de Conferência Padrão Saipos
 async function abrirTelaFechamento() {
     const container = document.getElementById('conteudo-modal-caixa');
     
@@ -581,7 +626,6 @@ async function processarCaixa(acao) {
             await fetch(`${API_URL}/caixa/fechar/${caixaAtual.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                // Enviamos o valor que você digitou + o valor que o sistema calculou
                 body: JSON.stringify({ valor_informado: valor, valor_sistema: window.esperadoAtual }) 
             });
             alert(`🔒 Caixa FECHADO com sucesso!`);
@@ -592,7 +636,6 @@ async function processarCaixa(acao) {
     } catch (e) { alert("❌ Erro ao comunicar com o servidor."); }
 }
 
-// NOVA FUNÇÃO: Calcula em tempo real enquanto você digita
 function calcularDiferencaCaixa() {
     const valorInformado = parseFloat(document.getElementById('input-valor-caixa').value);
     const divDiferenca = document.getElementById('area-diferenca');
@@ -605,7 +648,7 @@ function calcularDiferencaCaixa() {
     const esperado = window.esperadoAtual || 0;
     const diferenca = valorInformado - esperado;
 
-    if (Math.abs(diferenca) < 0.01) { // Bateu zerado (ignora dízimas de centavo)
+    if (Math.abs(diferenca) < 0.01) { 
         divDiferenca.innerHTML = `<span style="color: #25D366;">✅ Bateu! Nenhuma diferença.</span>`;
     } else if (diferenca < 0) {
         divDiferenca.innerHTML = `<span style="color: #f44336;">⚠️ Quebra (Falta): - R$ ${Math.abs(diferenca).toFixed(2).replace('.', ',')}</span>`;
@@ -614,7 +657,6 @@ function calcularDiferencaCaixa() {
     }
 }
 
-// Abre a janelinha para digitar o valor do Suprimento ou Sangria
 function abrirModalMovimentacao(tipo) {
     tipoMovimentacaoAtual = tipo;
     document.getElementById('titulo-movimentacao').innerText = `Registrar ${tipo}`;
@@ -627,7 +669,6 @@ function abrirModalMovimentacao(tipo) {
     document.getElementById('modal-movimentacao').style.display = 'flex';
 }
 
-// Salva a Sangria/Suprimento no Banco de Dados
 async function salvarMovimentacao() {
     const valor = parseFloat(document.getElementById('input-valor-mov').value);
     const motivo = document.getElementById('input-motivo-mov').value;
@@ -656,45 +697,4 @@ async function salvarMovimentacao() {
     } catch (e) {
         alert("Erro de conexão com o servidor.");
     }
-}
-
-// ==========================================
-// MÓDULO DE DESCONTOS E ACRÉSCIMOS
-// ==========================================
-let descontoGlobal = 0;
-let acrescimoGlobal = 0;
-let totalFinalGlobal = 0; // O valor real que o cliente vai pagar
-
-function pedirDesconto() {
-    let valor = prompt("✏️ Digite o valor do DESCONTO em R$ (Ex: 5.50)\n(Ou deixe em branco para zerar):");
-    if (valor !== null) {
-        descontoGlobal = parseFloat(valor.replace(',', '.')) || 0;
-        atualizarTotais();
-    }
-}
-
-function pedirAcrescimo() {
-    let valor = prompt("✏️ Digite o valor do ACRÉSCIMO/TAXA em R$ (Ex: 2.00)\n(Ou deixe em branco para zerar):");
-    if (valor !== null) {
-        acrescimoGlobal = parseFloat(valor.replace(',', '.')) || 0;
-        atualizarTotais();
-    }
-}
-
-function atualizarTotais() {
-    // subtotalGlobalPDV é a soma dos itens que o seu sistema já calcula
-    totalFinalGlobal = subtotalGlobalPDV - descontoGlobal + acrescimoGlobal;
-    if (totalFinalGlobal < 0) totalFinalGlobal = 0; // Não deixa o total ficar negativo
-
-    // Atualiza os números no resumo do pedido (Lateral Direita)
-    document.getElementById('pdv-desconto').innerText = `- R$ ${descontoGlobal.toFixed(2).replace('.', ',')}`;
-    document.getElementById('pdv-acrescimo').innerText = `+ R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}`;
-    document.getElementById('pdv-total').innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
-
-    // Atualiza a janela de cobrança em tempo real (se estiver aberta)
-    const checkoutTotal = document.getElementById('checkout-total');
-    if (checkoutTotal) checkoutTotal.innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
-    
-    // Atualiza o troco
-    if (typeof calcularTroco === "function") calcularTroco(); 
 }
