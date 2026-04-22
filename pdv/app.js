@@ -224,6 +224,7 @@ function renderizarCarrinho() {
         document.getElementById('pdv-total').innerText = "R$ 0,00";
         subtotalGlobalPDV = 0;
         return;
+        atualizarTotais();
     }
 
     container.innerHTML = '';
@@ -301,7 +302,7 @@ function verificarMetodoPagamento() {
 
 function calcularTroco() {
     const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
-    const troco = recebido - subtotalGlobalPDV;
+    const troco = recebido - totalFinalGlobal;
     const displayTroco = document.getElementById('checkout-troco');
     
     if (troco >= 0) {
@@ -363,6 +364,9 @@ async function finalizarVendaPDV() {
         alert("Erro de conexão com o servidor. Verifique a internet.");
     }
 }
+
+descontoGlobal = 0;
+acrescimoGlobal = 0;
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') {
