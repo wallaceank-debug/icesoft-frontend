@@ -95,12 +95,10 @@ async function toggleProduto(id, statusAtivo) {
 function renderizarGrupos() {
     const div = document.getElementById('lista-grupos');
     div.innerHTML = '';
-    
     listaGrupos.forEach(g => {
         const isAtivo = g.ativo !== false;
         const classeInativo = isAtivo ? '' : 'item-inativo';
         const isSelecionado = g.id === grupoSelecionadoId ? 'selecionado' : '';
-
         div.innerHTML += `
             <div class="item-linha ${isSelecionado}">
                 <div class="item-info ${classeInativo}" onclick="selecionarGrupo(${g.id})">
@@ -108,7 +106,8 @@ function renderizarGrupos() {
                     <span class="item-detalhe">Limite: ${g.limite} | ${(g.itens||[]).length} itens</span>
                 </div>
                 <div class="item-acoes">
-                    <button class="btn-icone" onclick="abrirEdicaoGrupo(${g.id})">✏️</button>
+                    <button class="btn-icone" title="Editar Grupo" onclick="abrirEdicaoGrupo(${g.id})">✏️</button>
+                    <button class="btn-icone" title="Duplicar Grupo" onclick="duplicarGrupo(${g.id})">📄</button>
                     <label class="switch">
                         <input type="checkbox" onchange="toggleGrupo(${g.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
                         <span class="slider"></span>
