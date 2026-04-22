@@ -142,21 +142,27 @@
     </div>
 
     <div id="modal-caixa" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2500;">
-        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;">
-            <h2 id="titulo-modal-caixa" style="color:#333; margin-top:0;">Controle de Caixa</h2>
-            
-            <p id="msg-modal-caixa" style="color:#666; font-size:0.95rem; margin-bottom: 20px;">
-                Informe o valor de Fundo de Caixa (Troco Inicial) para abrir.
-            </p>
+        <div id="conteudo-modal-caixa" style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;">
+            </div>
+    </div>
 
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #eee;">
-                <label style="color:#555; font-weight:600; font-size:1rem;">Valor em Dinheiro (R$)</label>
-                <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 100.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+    <div id="modal-movimentacao" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:2600;">
+        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;">
+            <h2 id="titulo-movimentacao" style="color:#333; margin-top:0;">Nova Movimentação</h2>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="color:#555; font-weight:600; font-size:0.9rem;">Valor (R$)</label>
+                <input type="number" id="input-valor-mov" class="input-padrao" placeholder="Ex: 50.00" style="width:100%; margin-top:5px; font-size:1.5rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+            </div>
+
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="color:#555; font-weight:600; font-size:0.9rem;">Motivo / Observação</label>
+                <input type="text" id="input-motivo-mov" class="input-padrao" placeholder="Ex: Compra de Gelo" style="width:100%; margin-top:5px; font-size:1.1rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button onclick="document.getElementById('modal-caixa').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Cancelar</button>
-                <button id="btn-acao-caixa" onclick="processarCaixa()" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Confirmar</button>
+                <button onclick="document.getElementById('modal-movimentacao').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Cancelar</button>
+                <button id="btn-salvar-mov" onclick="salvarMovimentacao()" style="flex: 2; padding: 12px; font-size: 1.1rem; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Salvar</button>
             </div>
         </div>
     </div>
