@@ -364,3 +364,60 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.querySelector('.btn-cobrar').onclick = abrirModalCheckout;
+
+// ==========================================
+// MÓDULO DE IMPRESSÃO (ELGIN i8 - 80mm)
+// ==========================================
+
+function imprimirComanda(metodoPagamento, valorRecebido, troco) {
+    const cupom = document.getElementById('cupom-impressao');
+    const dataHora = new Date().toLocaleString('pt-BR');
+
+    // Monta a listagem de itens idêntica ao carrinho
+    let itensHtml = '';
+    carrinho.forEach(item => {
+        let textoAdicionais = '';
+        if (item.adicionais && item.adicionais.length > 0) {
+            textoAdicionais = item.adicionais.map(adc => `<div style="font-size: 10px; padding-left: 10px;">+ ${adc}</div>`).join('');
+        }
+
+        itensHtml += `
+            <div style="margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold;">${item.qtd}x ${item.nomeBase}</span>
+                    <span>R$ ${item.preco.toFixed(2).replace('.', ',')}</span>
+                </div>
+                ${textoAdicionais}
+            </div>
+        `;
+    });
+
+    // Desenha o layout do Cupom Não Fiscal
+    cupom.innerHTML = `
+        <div style="text-align: center; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 18px;">SORVETERIA ICESOFT</h2>
+            <p style="margin: 2px 0; font-size: 12px;">Cupom Não Fiscal</p>
+            <p style="margin: 2px 0; font-size: 12px;">${dataHora}</p>
+        </div>
+        
+        <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; margin-bottom: 15px;">
+            ${itensHtml}
+        </div>
+        
+        <div style="text-align: right; font-size: 14px;">
+            <strong style="font-size: 16px;">TOTAL: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}</strong><br>
+            Pagamento: ${metodoPagamento}<br>
+            ${metodoPagamento === 'Dinheiro' ? `Recebido: R$ ${valorRecebido.toFixed(2).replace('.', ',')}<br>Troco: R$ ${troco.toFixed(2).replace('.', ',')}` : ''}
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; font-size: 11px;">
+            <p>Obrigado pela preferência!</p>
+            <p>~ Icesoft Sistema PDV ~</p>
+        </div>
+    `;
+
+    // Mágica: Mostra, manda pro navegador imprimir, e esconde de novo
+    cupom.style.display = 'block';
+    window.print();
+    cupom.style.display = 'none';
+}
