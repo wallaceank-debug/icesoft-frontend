@@ -118,6 +118,30 @@ function renderizarGrupos() {
     });
 }
 
+async function duplicarGrupo(id) {
+    const g = listaGrupos.find(x => x.id === id);
+    if (!g) return;
+
+    // Cria a cópia exata, preservando todos os itens/adicionais já criados dentro dele!
+    const dadosDuplicados = {
+        nome: g.nome + " (Cópia)",
+        limite: parseInt(g.limite),
+        itens: g.itens || [],
+        ativo: true
+    };
+
+    try {
+        await fetch(`${API_URL}/grupos`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(dadosDuplicados) 
+        });
+        await carregarTudo();
+    } catch (e) {
+        alert("❌ Erro ao duplicar grupo.");
+    }
+}
+
 function selecionarGrupo(id) {
     grupoSelecionadoId = id;
     renderizarGrupos(); // Repinta para marcar de ciano o selecionado
