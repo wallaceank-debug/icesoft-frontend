@@ -64,8 +64,15 @@
 
                 <div class="area-totais">
                     <div class="linha-total"><span>Subtotal</span> <strong id="pdv-subtotal">R$ 0,00</strong></div>
-                    <div class="linha-total" style="color: #f44336;"><span>Descontos</span> <strong>- R$ 0,00</strong></div>
-                    <div class="linha-total" style="color: #2196F3;"><span>Acréscimos</span> <strong>+ R$ 0,00</strong></div>
+                    
+                    <div class="linha-total" style="color: #f44336; cursor: pointer;" onclick="pedirDesconto()" title="Clique para aplicar desconto">
+                        <span>Descontos ✏️</span> <strong id="pdv-desconto">- R$ 0,00</strong>
+                    </div>
+                    
+                    <div class="linha-total" style="color: #2196F3; cursor: pointer;" onclick="pedirAcrescimo()" title="Clique para cobrar taxa/entrega">
+                        <span>Acréscimos ✏️</span> <strong id="pdv-acrescimo">+ R$ 0,00</strong>
+                    </div>
+                    
                     <hr>
                     <div class="linha-total total-final"><span>Total a Cobrar</span> <strong id="pdv-total">R$ 0,00</strong></div>
                 </div>
