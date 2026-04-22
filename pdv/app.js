@@ -495,7 +495,6 @@ function abrirPainelCaixa() {
 async function abrirTelaFechamento() {
     const container = document.getElementById('conteudo-modal-caixa');
     
-    // Mostra a tela de carregamento bonita enquanto o servidor calcula
     container.innerHTML = `
         <div style="text-align: center; padding: 30px;">
             <h2 style="color:#333; margin-bottom: 10px;">⏳ Calculando...</h2>
@@ -544,7 +543,7 @@ async function abrirTelaFechamento() {
             </div>
 
             <div id="area-diferenca" style="margin-bottom: 20px; font-size: 1.1rem; font-weight: bold; height: 25px;">
-                </div>
+            </div>
 
             <div style="display: flex; gap: 10px;">
                 <button onclick="abrirPainelCaixa()" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
@@ -554,9 +553,9 @@ async function abrirTelaFechamento() {
     } catch(e) {
         container.innerHTML = `
             <div style="text-align: center; padding: 20px;">
-                <h2 style="color: #f44336; margin-top: 0;">❌ Ops!</h2>
-                <p style="color: #555;">Erro de conexão. Tente novamente.<br><span style="font-size: 0.8rem; color: #999;">${e.message}</span></p>
-                <button onclick="abrirPainelCaixa()" style="margin-top: 15px; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #f0f0f0; cursor: pointer; font-weight: bold;">Voltar</button>
+                <h2 style="color: #f44336; margin-top: 0;">❌ Ops! Erro</h2>
+                <p style="color: #555;">Falha ao calcular os valores.<br><span style="font-size: 0.8rem; color: #f44336; font-weight:bold;">${e.message}</span></p>
+                <button onclick="abrirPainelCaixa()" style="margin-top: 15px; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #f0f0f0; cursor: pointer; font-weight: bold;">Tentar Novamente</button>
             </div>
         `;
     }
