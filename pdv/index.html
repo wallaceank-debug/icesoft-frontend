@@ -111,14 +111,16 @@
                 <strong id="checkout-total" style="font-size:2.8rem; color:#e91e63;">R$ 0,00</strong>
             </div>
 
-            <div style="margin-bottom:20px;">
-                <label style="font-weight:600; color:#555; display:block; margin-bottom:8px;">Forma de Pagamento</label>
-                <select id="checkout-metodo" onchange="verificarMetodoPagamento()" style="width:100%; padding:15px; border-radius:10px; border:2px solid #eee; font-size:1.1rem; outline:none; cursor:pointer; background: #fafafa;">
-                    <option value="Dinheiro">💵 Dinheiro</option>
-                    <option value="Pix">💠 Pix</option>
-                    <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-                    <option value="Cartão de Débito">💳 Cartão de Débito</option>
-                </select>
+            <div style="margin-bottom: 20px; text-align: left; background: #e0f7fa; padding: 10px; border-radius: 8px;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; color: #00838f;">
+                    <input type="checkbox" id="checkout-imprimir" style="width: 18px; height: 18px; accent-color: #00bcd4;" checked>
+                    🖨️ Imprimir Comprovante
+                </label>
+            </div>
+
+            <div class="modal-botoes">
+                <button onclick="fecharModalCheckout()" class="btn-cancelar" style="flex: 1;">Cancelar</button>
+                <button onclick="finalizarVendaPDV()" class="btn-salvar" style="flex: 2; font-size: 1.1rem;">💰 Confirmar</button>
             </div>
 
             <div id="area-troco" style="display:block; margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee;">
