@@ -1,14 +1,14 @@
 const API_URL = 'https://icesoft-api.onrender.com/api';
+
+// Variáveis Globais (A memória do sistema)
 let produtosDaNuvem = [];
 let gruposGlobais = [];
+let categoriasGlobais = []; 
 let carrinho = [];
-
-// NOVO: Guarda qual botão está clicado no momento
-let categoriaAtiva = 'Todos';
-
-// Variáveis para o item que está sendo personalizado no momento
+let categoriaAtiva = 'Todos'; 
 let produtoEmSelecao = null;
 let escolhasAtuais = [];
+let subtotalGlobalPDV = 0;
 
 window.onload = async () => {
     await carregarDadosIniciais();
@@ -16,35 +16,26 @@ window.onload = async () => {
 
 async function carregarDadosIniciais() {
     try {
-        const [resProd, resGrupos] = await Promise.all([
+        const [resProd, resGrupos, resCat] = await Promise.all([
             fetch(`${API_URL}/produtos`),
-            fetch(`${API_URL}/grupos`)
+            fetch(`${API_URL}/grupos`),
+            fetch(`${API_URL}/categorias`)
         ]);
         
         const todosProdutos = await resProd.json();
         const todosGrupos = await resGrupos.json();
+        categoriasGlobais = await resCat.json(); // Puxa do servidor
 
+        // Filtra só o que está ligado
         produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
         gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
         
-        // NOVO: Ao invés de jogar tudo na tela de uma vez, ele cria os botões primeiro
         renderizarBotoesCategoria();
         filtrarE_RenderizarProdutos();
-    } catch (e) { console.error("Erro ao carregar dados:", e); }
-}
-
-function renderizarGradeProdutos(lista) {
-    const container = document.getElementById('grade-produtos');
-    container.innerHTML = '';
-    lista.forEach(p => {
-        container.innerHTML += `
-            <div class="pdv-card" onclick="verificarAdicao(${p.id})">
-                <div class="pdv-emoji">${p.emoji}</div>
-                <div class="pdv-nome">${p.nome}</div>
-                <div class="pdv-preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
-            </div>
-        `;
-    });
+    } catch (e) { 
+        console.error("Erro ao carregar dados:", e); 
+        document.getElementById('grade-produtos').innerHTML = '<p style="padding: 20px; color: red;">Erro ao conectar. Atualize a página.</p>';
+    }
 }
 
 // ==========================================
@@ -53,40 +44,53 @@ function renderizarGradeProdutos(lista) {
 
 function renderizarBotoesCategoria() {
     const nav = document.getElementById('barra-categorias');
-    
-    // 1. Vasculha todos os produtos para descobrir quais categorias você inventou
-    const categoriasUnicas = ["Todos"];
-    produtosDaNuvem.forEach(p => {
-        const cat = p.categoria || "Outros"; // Se algum produto antigo não tiver categoria
-        if (!categoriasUnicas.includes(cat)) {
-            categoriasUnicas.push(cat);
-        }
-    });
-
-    // 2. Limpa a barra antiga e desenha os botões dinamicamente
     nav.innerHTML = '';
-    categoriasUnicas.forEach(cat => {
-        const classeAtivo = cat === categoriaAtiva ? 'ativo' : '';
-        nav.innerHTML += `<button class="categoria-btn ${classeAtivo}" onclick="mudarCategoria('${cat}')">${cat}</button>`;
-    });
+    
+    // O botão "Todos" é fixo
+    const classeTodos = categoriaAtiva === 'Todos' ? 'ativo' : '';
+    nav.innerHTML += `<button class="categoria-btn ${classeTodos}" onclick="mudarCategoria('Todos')">Todos</button>`;
+
+    // Puxa as categorias da memória global
+    if (categoriasGlobais && categoriasGlobais.length > 0) {
+        categoriasGlobais.forEach(cat => {
+            const classeAtivo = cat.nome === categoriaAtiva ? 'ativo' : '';
+            nav.innerHTML += `<button class="categoria-btn ${classeAtivo}" onclick="mudarCategoria('${cat.nome}')">${cat.nome}</button>`;
+        });
+    }
 }
 
 function mudarCategoria(novaCategoria) {
-    categoriaAtiva = novaCategoria; // Salva o nome da categoria clicada
-    renderizarBotoesCategoria();    // Pinta o botão clicado de ciano
-    filtrarE_RenderizarProdutos();  // Corta os produtos e mostra só os certos
+    categoriaAtiva = novaCategoria;
+    renderizarBotoesCategoria();
+    filtrarE_RenderizarProdutos();
 }
 
 function filtrarE_RenderizarProdutos() {
-    let produtosFiltrados = produtosDaNuvem; // Por padrão, são todos
-
-    // Se a categoria não for "Todos", ele joga fora quem não é da categoria
+    let produtosFiltrados = produtosDaNuvem;
     if (categoriaAtiva !== 'Todos') {
         produtosFiltrados = produtosDaNuvem.filter(p => (p.categoria || "Outros") === categoriaAtiva);
     }
-    
-    // Manda desenhar na tela só o que sobrou no filtro
     renderizarGradeProdutos(produtosFiltrados);
+}
+
+function renderizarGradeProdutos(lista) {
+    const container = document.getElementById('grade-produtos');
+    container.innerHTML = '';
+
+    if(lista.length === 0) {
+        container.innerHTML = '<p style="padding: 20px; opacity: 0.7;">Nenhum produto encontrado nesta categoria.</p>';
+        return;
+    }
+
+    lista.forEach(p => {
+        container.innerHTML += `
+            <div class="pdv-card" onclick="verificarAdicao(${p.id})">
+                <div class="pdv-emoji">${p.emoji || '🍨'}</div>
+                <div class="pdv-nome">${p.nome}</div>
+                <div class="pdv-preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+            </div>
+        `;
+    });
 }
 
 // ==========================================
@@ -114,13 +118,12 @@ function abrirModalEscolha(produto) {
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
-    // FORMA NOVA (Respeita a ordem dos IDs):
+    // Usa a ordem que você definiu lá na Gestão
     const gruposDoProduto = produto.grupos_ids
         .map(id => gruposGlobais.find(g => g.id === Number(id)))
-        .filter(g => g && g.ativo !== false); // Remove grupos inativos ou não encontrados
+        .filter(g => g && g.ativo !== false); 
 
     gruposDoProduto.forEach(grupo => {
-        // Filtra os itens desligados
         const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
         if (itensAtivos.length === 0) return;
 
@@ -199,7 +202,7 @@ function confirmarEscolhasEAdicionar() {
 }
 
 // ==========================================
-// GESTÃO DO CARRINHO (LADO DIREITO)
+// GESTÃO DO CARRINHO
 // ==========================================
 
 function adicionarAoCarrinho(nome, preco) {
@@ -218,6 +221,7 @@ function renderizarCarrinho() {
         container.innerHTML = '<div class="carrinho-vazio">Nenhum item adicionado</div>';
         document.getElementById('pdv-subtotal').innerText = "R$ 0,00";
         document.getElementById('pdv-total').innerText = "R$ 0,00";
+        subtotalGlobalPDV = 0;
         return;
     }
 
@@ -237,6 +241,7 @@ function renderizarCarrinho() {
         `;
     });
 
+    subtotalGlobalPDV = subtotal;
     document.getElementById('pdv-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('pdv-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
 }
@@ -248,22 +253,12 @@ function limparCarrinho() {
     }
 }
 
-// Vincular botão de limpar
 document.querySelector('.btn-limpar').onclick = limparCarrinho;
 document.querySelector('.btn-cancelar').onclick = limparCarrinho;
 
 // ==========================================
-// SISTEMA DE COBRANÇA (CHECKOUT PDV) E TROCO
+// SISTEMA DE COBRANÇA (CHECKOUT)
 // ==========================================
-let subtotalGlobalPDV = 0; // Guarda o valor total para facilitar o cálculo do troco
-
-// Sobrescrevendo a função renderizarCarrinho para salvar o valor Global
-const renderizarCarrinhoAntiga = renderizarCarrinho;
-renderizarCarrinho = function() {
-    renderizarCarrinhoAntiga(); // Chama a função original que já desenha a lista
-    // Atualiza a variável global calculando o total do carrinho atual
-    subtotalGlobalPDV = carrinho.reduce((soma, item) => soma + item.preco, 0);
-};
 
 function abrirModalCheckout() {
     if (carrinho.length === 0) {
@@ -277,20 +272,15 @@ function abrirModalCheckout() {
     document.getElementById('checkout-troco').style.color = '#25D366';
     
     document.getElementById('modal-checkout').style.display = 'flex';
-    verificarMetodoPagamento(); // Atualiza a visão da caixa de troco
-    
-    // Foca automaticamente no campo de dinheiro para o caixa digitar rápido
+    verificarMetodoPagamento(); 
     setTimeout(() => document.getElementById('checkout-recebido').focus(), 100);
 }
 
-function fecharModalCheckout() {
-    document.getElementById('modal-checkout').style.display = 'none';
-}
+function fecharModalCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
 
 function verificarMetodoPagamento() {
     const metodo = document.getElementById('checkout-metodo').value;
     const areaTroco = document.getElementById('area-troco');
-    // Só mostra a área de dar troco se o pagamento for em Dinheiro
     areaTroco.style.display = (metodo === 'Dinheiro') ? 'block' : 'none';
 }
 
@@ -301,35 +291,27 @@ function calcularTroco() {
     
     if (troco >= 0) {
         displayTroco.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
-        displayTroco.style.color = '#25D366'; // Verde (tudo ok)
+        displayTroco.style.color = '#25D366';
     } else {
         displayTroco.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
-        displayTroco.style.color = '#f44336'; // Vermelho (dinheiro insuficiente)
+        displayTroco.style.color = '#f44336'; 
     }
 }
 
 async function finalizarVendaPDV() {
     if (carrinho.length === 0) return alert("Carrinho vazio!");
 
-    // 1. Pega o método de pagamento que o caixa selecionou na janelinha
     const metodo = document.getElementById('checkout-metodo').value;
-
-    const itensFormatados = carrinho.map(item => {
-        return { nome: "Balcão: " + item.nome, preco: item.preco };
-    });
+    const itensFormatados = carrinho.map(item => ({ nome: "Balcão: " + item.nome, preco: item.preco }));
     
-    // PACOTE UNIVERSAL: Mandamos todas as chaves possíveis para o servidor não se perder
     const dadosDaVenda = {
         itens: JSON.stringify(itensFormatados), 
-        produto_nome: JSON.stringify(itensFormatados), // Garantia
+        produto_nome: JSON.stringify(itensFormatados), 
         valor_total: subtotalGlobalPDV,
-        total: subtotalGlobalPDV, // A palavra mágica que faltava!
+        total: subtotalGlobalPDV,
         forma_pagamento: metodo,
         status: "Concluída"
     };
-
-    // RADARES ATIVADOS 🕵️‍♂️
-    console.log("🚀 1. PREPARANDO ENVIO:", dadosDaVenda);
 
     try {
         const resposta = await fetch(`${API_URL}/vendas`, {
@@ -338,40 +320,27 @@ async function finalizarVendaPDV() {
             body: JSON.stringify(dadosDaVenda)
         });
 
-        const respostaDoServidor = await resposta.json();
-        console.log("📩 2. O BANCO DE DADOS RESPONDEU:", respostaDoServidor);
-
         if (resposta.ok) {
-            // Sucesso Total! Avisa o usuário, limpa o carrinho e fecha a janela (usando as funções corretas)
             alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
-            
             carrinho = []; 
             renderizarCarrinho(); 
             fecharModalCheckout(); 
         } else {
-            console.error("❌ 3. ERRO DO BANCO:", respostaDoServidor);
             alert("Erro ao salvar no banco de dados.");
         }
     } catch (e) {
-        console.error("❌ 3. ERRO DE CONEXÃO FATAL:", e);
         alert("Erro de conexão com o servidor. Verifique a internet.");
     }
 }
 
-// ==========================================
-// ATALHOS DE TECLADO E BOTÕES (VELOCIDADE DE CAIXA)
-// ==========================================
 document.addEventListener('keydown', (e) => {
-    // F12 para abrir cobrança
     if (e.key === 'F12') {
         e.preventDefault(); 
         abrirModalCheckout();
     }
-    // Enter para confirmar a venda se a janela estiver aberta
     if (e.key === 'Enter' && document.getElementById('modal-checkout').style.display === 'flex') {
-        finalizarVendaPDV(); // Agora a função puxa o método de pagamento sozinha!
+        finalizarVendaPDV(); 
     }
 });
 
-// Vincular o botão verde físico da tela principal
 document.querySelector('.btn-cobrar').onclick = abrirModalCheckout;
