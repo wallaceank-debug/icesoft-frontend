@@ -341,6 +341,14 @@ async function finalizarVendaPDV() {
         });
 
         if (resposta.ok) {
+            // == MÁGICA DA IMPRESSÃO AQUI ==
+            const recebido = parseFloat(document.getElementById('checkout-recebido').value) || subtotalGlobalPDV;
+            const troco = recebido - subtotalGlobalPDV;
+            
+            // Chama a impressora antes de limpar o carrinho!
+            imprimirComanda(metodo, recebido, troco); 
+            // ==============================
+
             alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`);
             carrinho = []; 
             renderizarCarrinho(); 
