@@ -9,8 +9,10 @@ let categoriaAtiva = 'Todos';
 let produtoEmSelecao = null;
 let escolhasAtuais = [];
 let subtotalGlobalPDV = 0;
+let caixaAtual = { id: null, status: 'Fechado' };
 
 window.onload = async () => {
+    await verificarStatusCaixa(); // NOVO: Checa a gaveta antes de tudo!
     await carregarDadosIniciais();
 };
 
@@ -274,9 +276,9 @@ document.querySelector('.btn-cancelar').onclick = limparCarrinho;
 // ==========================================
 
 function abrirModalCheckout() {
-    if (carrinho.length === 0) {
-        alert("⚠️ O carrinho está vazio! Adicione produtos antes de cobrar.");
-        return;
+    // NOVA TRAVA DE SEGURANÇA
+    if (caixaAtual.status === 'Fechado') {
+        return alert("⚠️ O Caixa está FECHADO! Clique no indicador no topo da tela para abrir o caixa antes de cobrar.");
     }
     
     document.getElementById('checkout-total').innerText = `R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}`;
@@ -427,4 +429,84 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
     cupom.style.display = 'block';
     window.print();
     cupom.style.display = 'none';
+}
+
+// ==========================================
+// CONTROLE DE CAIXA (Abertura e Fechamento)
+// ==========================================
+
+async function verificarStatusCaixa() {
+    try {
+        const resposta = await fetch(`${API_URL}/caixa/status`);
+        const dados = await resposta.json();
+        
+        caixaAtual = dados; // Salva na memória
+        
+        const bolinha = document.getElementById('dot-caixa');
+        const texto = document.getElementById('texto-status-caixa');
+        
+        if (caixaAtual.status === 'Aberto') {
+            bolinha.style.backgroundColor = '#25D366'; // Verde
+            texto.innerText = `Caixa Aberto`;
+        } else {
+            bolinha.style.backgroundColor = '#f44336'; // Vermelho
+            texto.innerText = `Caixa Fechado`;
+        }
+    } catch (e) { console.error("Erro ao verificar caixa:", e); }
+}
+
+function abrirPainelCaixa() {
+    const modal = document.getElementById('modal-caixa');
+    const titulo = document.getElementById('titulo-modal-caixa');
+    const msg = document.getElementById('msg-modal-caixa');
+    const inputValor = document.getElementById('input-valor-caixa');
+    const btn = document.getElementById('btn-acao-caixa');
+
+    inputValor.value = '';
+
+    if (caixaAtual.status === 'Fechado') {
+        titulo.innerText = "🔑 Abrir Caixa";
+        msg.innerText = "Informe o valor de Fundo de Caixa (Troco Inicial) para iniciar as vendas do dia.";
+        btn.innerText = "ABRIR CAIXA";
+        btn.style.backgroundColor = "#25D366";
+    } else {
+        titulo.innerText = "🔒 Fechar Caixa";
+        msg.innerText = "Conte todo o dinheiro físico da gaveta e informe o valor abaixo (Fechamento Cego).";
+        btn.innerText = "FECHAR CAIXA";
+        btn.style.backgroundColor = "#f44336";
+    }
+
+    modal.style.display = 'flex';
+}
+
+async function processarCaixa() {
+    const valor = parseFloat(document.getElementById('input-valor-caixa').value) || 0;
+    
+    try {
+        if (caixaAtual.status === 'Fechado') {
+            // ABRIR
+            await fetch(`${API_URL}/caixa/abrir`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valor_inicial: valor })
+            });
+            alert(`✅ Caixa ABERTO com sucesso! Fundo: R$ ${valor.toFixed(2)}`);
+        } else {
+            // FECHAR
+            if(!confirm("Tem certeza que deseja FECHAR o caixa? Vendas não poderão mais ser realizadas.")) return;
+            
+            await fetch(`${API_URL}/caixa/fechar/${caixaAtual.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ valor_informado: valor })
+            });
+            alert(`🔒 Caixa FECHADO! Valor informado: R$ ${valor.toFixed(2)}\n\n(O relatório de quebra será emitido em breve)`);
+        }
+        
+        document.getElementById('modal-caixa').style.display = 'none';
+        await verificarStatusCaixa(); // Atualiza a bolinha lá em cima
+        
+    } catch (e) {
+        alert("❌ Erro ao comunicar com o servidor.");
+    }
 }
