@@ -653,3 +653,44 @@ async function salvarMovimentacao() {
         alert("Erro de conexão com o servidor.");
     }
 }
+
+// ==========================================
+// MÓDULO DE DESCONTOS E ACRÉSCIMOS
+// ==========================================
+let descontoGlobal = 0;
+let acrescimoGlobal = 0;
+let totalFinalGlobal = 0; // O valor real que o cliente vai pagar
+
+function pedirDesconto() {
+    let valor = prompt("✏️ Digite o valor do DESCONTO em R$ (Ex: 5.50)\n(Ou deixe em branco para zerar):");
+    if (valor !== null) {
+        descontoGlobal = parseFloat(valor.replace(',', '.')) || 0;
+        atualizarTotais();
+    }
+}
+
+function pedirAcrescimo() {
+    let valor = prompt("✏️ Digite o valor do ACRÉSCIMO/TAXA em R$ (Ex: 2.00)\n(Ou deixe em branco para zerar):");
+    if (valor !== null) {
+        acrescimoGlobal = parseFloat(valor.replace(',', '.')) || 0;
+        atualizarTotais();
+    }
+}
+
+function atualizarTotais() {
+    // subtotalGlobalPDV é a soma dos itens que o seu sistema já calcula
+    totalFinalGlobal = subtotalGlobalPDV - descontoGlobal + acrescimoGlobal;
+    if (totalFinalGlobal < 0) totalFinalGlobal = 0; // Não deixa o total ficar negativo
+
+    // Atualiza os números no resumo do pedido (Lateral Direita)
+    document.getElementById('pdv-desconto').innerText = `- R$ ${descontoGlobal.toFixed(2).replace('.', ',')}`;
+    document.getElementById('pdv-acrescimo').innerText = `+ R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}`;
+    document.getElementById('pdv-total').innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
+
+    // Atualiza a janela de cobrança em tempo real (se estiver aberta)
+    const checkoutTotal = document.getElementById('checkout-total');
+    if (checkoutTotal) checkoutTotal.innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
+    
+    // Atualiza o troco
+    if (typeof calcularTroco === "function") calcularTroco(); 
+}
