@@ -119,7 +119,6 @@ function abrirModalEscolha(produto) {
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
-    // Usa a ordem que você definiu lá na Gestão
     const gruposDoProduto = produto.grupos_ids
         .map(id => gruposGlobais.find(g => g.id === Number(id)))
         .filter(g => g && g.ativo !== false); 
@@ -194,10 +193,7 @@ function fecharModalOpcoes() { document.getElementById('modal-opcoes').style.dis
 
 function confirmarEscolhasEAdicionar() {
     const nomeBase = produtoEmSelecao.nome;
-    
-    // Pega apenas uma lista com os nomes do que o cliente escolheu
     const listaAdicionais = escolhasAtuais.map(e => e.nome);
-    
     const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
     
     adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal);
@@ -205,11 +201,10 @@ function confirmarEscolhasEAdicionar() {
 }
 
 // ==========================================
-// GESTÃO DO CARRINHO
+// GESTÃO DO CARRINHO (NOVO VISUAL)
 // ==========================================
 
 function adicionarAoCarrinho(nomeBase, adicionais, preco) {
-    // Agora o carrinho guarda o nome, os adicionais e a quantidade (1x) separados!
     carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1 });
     renderizarCarrinho();
 }
@@ -235,7 +230,6 @@ function renderizarCarrinho() {
     carrinho.forEach((item, index) => {
         subtotal += item.preco;
 
-        // Monta a lista de adicionais (com o sinal de + e cor mais suave)
         let htmlAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
             htmlAdicionais = item.adicionais.map(adc => `
@@ -245,7 +239,6 @@ function renderizarCarrinho() {
             `).join('');
         }
 
-        // Desenha o bloco do produto na tela
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:start; padding:15px 0; border-bottom:1px dashed #ddd;">
                 <div style="flex:1;">
@@ -257,27 +250,6 @@ function renderizarCarrinho() {
                     <div style="color:#e91e63; font-weight:700; margin-top: 8px; padding-left: 25px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
                 </div>
                 <button onclick="removerDoCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.3rem; padding:5px; transition: 0.2s;">🗑️</button>
-            </div>
-        `;
-    });
-
-    subtotalGlobalPDV = subtotal;
-    document.getElementById('pdv-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-    document.getElementById('pdv-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
-}
-
-    container.innerHTML = '';
-    let subtotal = 0;
-
-    carrinho.forEach((item, index) => {
-        subtotal += item.preco;
-        container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:start; padding:10px 0; border-bottom:1px solid #eee;">
-                <div style="flex:1;">
-                    <div style="font-weight:600; font-size:0.95rem; line-height:1.2;">${item.nome}</div>
-                    <div style="color:#e91e63; font-weight:700;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
-                </div>
-                <button onclick="removerDoCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.1rem; padding:0 5px;">🗑️</button>
             </div>
         `;
     });
@@ -344,7 +316,6 @@ async function finalizarVendaPDV() {
 
     const metodo = document.getElementById('checkout-metodo').value;
     
-    // Remonta a string do jeito que o banco de dados (e o Dashboard) espera
     const itensFormatados = carrinho.map(item => {
         let nomeCompleto = "Balcão: " + item.nomeBase;
         if (item.adicionais && item.adicionais.length > 0) {
