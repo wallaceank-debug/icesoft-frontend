@@ -494,13 +494,22 @@ function abrirPainelCaixa() {
 // NOVA FUNÇÃO: Tela de Conferência Padrão Saipos
 async function abrirTelaFechamento() {
     const container = document.getElementById('conteudo-modal-caixa');
-    container.innerHTML = `<p style="padding: 20px; color: #555;">⏳ Calculando resumo do dia...</p>`;
+    
+    // Mostra a tela de carregamento bonita enquanto o servidor calcula
+    container.innerHTML = `
+        <div style="text-align: center; padding: 30px;">
+            <h2 style="color:#333; margin-bottom: 10px;">⏳ Calculando...</h2>
+            <p style="color: #666;">Buscando vendas e movimentações no servidor.</p>
+        </div>
+    `;
 
     try {
         const res = await fetch(`${API_URL}/caixa/resumo/${caixaAtual.id}`);
         const resumo = await res.json();
         
-        window.esperadoAtual = resumo.esperado; // Guarda na memória para a conta bater
+        if (!res.ok) throw new Error(resumo.erro || "Falha ao calcular resumo");
+
+        window.esperadoAtual = resumo.esperado; 
 
         container.innerHTML = `
             <h2 style="color:#333; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Conferência de Caixa</h2>
@@ -543,7 +552,13 @@ async function abrirTelaFechamento() {
             </div>
         `;
     } catch(e) {
-        container.innerHTML = `<p>Erro ao buscar resumo.</p><button onclick="abrirPainelCaixa()">Voltar</button>`;
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h2 style="color: #f44336; margin-top: 0;">❌ Ops!</h2>
+                <p style="color: #555;">Erro de conexão. Tente novamente.<br><span style="font-size: 0.8rem; color: #999;">${e.message}</span></p>
+                <button onclick="abrirPainelCaixa()" style="margin-top: 15px; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #f0f0f0; cursor: pointer; font-weight: bold;">Voltar</button>
+            </div>
+        `;
     }
 }
 
