@@ -22,6 +22,7 @@
                 <h1>GESTÃO DE CARDÁPIO</h1>
             </div>
             <div class="botoes-area">
+                <button onclick="abrirGerenciadorCategorias()" class="btn-topo" style="background:#ff9800;">⚙️ CATEGORIAS</button>
                 <button onclick="abrirModalProduto()" class="btn-topo">+ PRODUTO</button>
                 <button onclick="abrirModalGrupo()" class="btn-topo">+ GRUPO</button>
             </div>
@@ -67,13 +68,9 @@
             <input type="text" id="prod-emoji" class="input-padrao" placeholder="Emoji (Ex: 🍨)">
             
             <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Categoria:</p>
-            <input type="text" id="prod-categoria" class="input-padrao" placeholder="Ex: Açaí, Bebidas..." list="opcoes-categoria">
-            <datalist id="opcoes-categoria">
-                <option value="Açaí">
-                <option value="Sorvetes">
-                <option value="Milk Shakes">
-                <option value="Bebidas">
-            </datalist>
+            <select id="prod-categoria" class="input-padrao" style="width: 100%; cursor: pointer;">
+                <option value="Outros">Outros</option>
+                </select>
 
             <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Grupos Vinculados:</p>
             <div id="container-checkbox-grupos" style="max-height: 120px; overflow-y:auto; margin-bottom:15px;"></div>
@@ -96,6 +93,24 @@
                 <button onclick="fecharModalGrupo()" class="btn-cancelar">Cancelar</button>
                 <button onclick="salvarGrupo()" class="btn-salvar">Salvar</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-categorias" class="modal-fundo" style="display:none;">
+        <div class="modal-conteudo">
+            <h2>Gerenciar Categorias</h2>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Defina a ordem em que os botões aparecerão no PDV (Ex: 1, 2, 3...)</p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+                <input type="text" id="nova-cat-nome" class="input-padrao" placeholder="Nome (Ex: Promoções)">
+                <input type="number" id="nova-cat-ordem" class="input-padrao" placeholder="Ordem (Ex: 1)" style="width: 80px;">
+                <button onclick="salvarNovaCategoria()" class="btn-salvar" style="padding: 10px;">Adicionar</button>
+            </div>
+
+            <div id="lista-categorias-gerenciador" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
+                </div>
+
+            <button onclick="fecharGerenciadorCategorias()" class="btn-cancelar" style="width: 100%;">Fechar</button>
         </div>
     </div>
 
