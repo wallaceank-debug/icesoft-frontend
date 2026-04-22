@@ -432,81 +432,137 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
 }
 
 // ==========================================
-// CONTROLE DE CAIXA (Abertura e Fechamento)
+// CONTROLE DE CAIXA (Painel e Movimentações)
 // ==========================================
+let tipoMovimentacaoAtual = ''; // Guarda se é Sangria ou Suprimento
 
 async function verificarStatusCaixa() {
     try {
         const resposta = await fetch(`${API_URL}/caixa/status`);
-        const dados = await resposta.json();
-        
-        caixaAtual = dados; // Salva na memória
+        caixaAtual = await resposta.json();
         
         const bolinha = document.getElementById('dot-caixa');
         const texto = document.getElementById('texto-status-caixa');
         
         if (caixaAtual.status === 'Aberto') {
-            bolinha.style.backgroundColor = '#25D366'; // Verde
+            bolinha.style.backgroundColor = '#25D366';
             texto.innerText = `Caixa Aberto`;
         } else {
-            bolinha.style.backgroundColor = '#f44336'; // Vermelho
+            bolinha.style.backgroundColor = '#f44336';
             texto.innerText = `Caixa Fechado`;
         }
     } catch (e) { console.error("Erro ao verificar caixa:", e); }
 }
 
 function abrirPainelCaixa() {
-    const modal = document.getElementById('modal-caixa');
-    const titulo = document.getElementById('titulo-modal-caixa');
-    const msg = document.getElementById('msg-modal-caixa');
-    const inputValor = document.getElementById('input-valor-caixa');
-    const btn = document.getElementById('btn-acao-caixa');
-
-    inputValor.value = '';
-
+    const container = document.getElementById('conteudo-modal-caixa');
+    
     if (caixaAtual.status === 'Fechado') {
-        titulo.innerText = "🔑 Abrir Caixa";
-        msg.innerText = "Informe o valor de Fundo de Caixa (Troco Inicial) para iniciar as vendas do dia.";
-        btn.innerText = "ABRIR CAIXA";
-        btn.style.backgroundColor = "#25D366";
+        container.innerHTML = `
+            <h2 style="color:#333; margin-top:0;">🔑 Abrir Caixa</h2>
+            <p style="color:#666; font-size:0.95rem; margin-bottom: 20px;">Informe o Fundo de Caixa (Troco Inicial) para iniciar as vendas.</p>
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #eee;">
+                <label style="color:#555; font-weight:600; font-size:1rem;">Valor em Dinheiro (R$)</label>
+                <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 100.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="document.getElementById('modal-caixa').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Cancelar</button>
+                <button onclick="processarCaixa('abrir')" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #25D366; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">ABRIR CAIXA</button>
+            </div>
+        `;
     } else {
-        titulo.innerText = "🔒 Fechar Caixa";
-        msg.innerText = "Conte todo o dinheiro físico da gaveta e informe o valor abaixo (Fechamento Cego).";
-        btn.innerText = "FECHAR CAIXA";
-        btn.style.backgroundColor = "#f44336";
+        const dataAbertura = new Date(caixaAtual.data_abertura).toLocaleString('pt-BR');
+        container.innerHTML = `
+            <h2 style="color:#333; margin-top:0;">💵 Gerenciar Caixa</h2>
+            <p style="color:#666; font-size:0.85rem; margin-bottom: 20px;">Aberto em: ${dataAbertura}</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <button onclick="abrirModalMovimentacao('Suprimento')" style="padding: 15px; font-size: 1.1rem; background-color: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">➕ Suprimento (Entrada)</button>
+                <button onclick="abrirModalMovimentacao('Sangria')" style="padding: 15px; font-size: 1.1rem; background-color: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">➖ Sangria (Retirada)</button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
+
+            <div style="background:#fff0f4; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px dashed #ff80ab;">
+                <label style="color:#e91e63; font-weight:600; font-size:1rem;">Fechamento Cego (R$ na gaveta)</label>
+                <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 500.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #ff80ab; border-radius: 8px;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="document.getElementById('modal-caixa').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
+                <button onclick="processarCaixa('fechar')" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🔒 FECHAR CAIXA</button>
+            </div>
+        `;
     }
 
-    modal.style.display = 'flex';
+    document.getElementById('modal-caixa').style.display = 'flex';
 }
 
-async function processarCaixa() {
+async function processarCaixa(acao) {
     const valor = parseFloat(document.getElementById('input-valor-caixa').value) || 0;
-    
     try {
-        if (caixaAtual.status === 'Fechado') {
-            // ABRIR
+        if (acao === 'abrir') {
             await fetch(`${API_URL}/caixa/abrir`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ valor_inicial: valor })
             });
-            alert(`✅ Caixa ABERTO com sucesso! Fundo: R$ ${valor.toFixed(2)}`);
-        } else {
-            // FECHAR
+            alert(`✅ Caixa ABERTO! Fundo: R$ ${valor.toFixed(2)}`);
+        } else if (acao === 'fechar') {
             if(!confirm("Tem certeza que deseja FECHAR o caixa? Vendas não poderão mais ser realizadas.")) return;
-            
             await fetch(`${API_URL}/caixa/fechar/${caixaAtual.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ valor_informado: valor })
             });
-            alert(`🔒 Caixa FECHADO! Valor informado: R$ ${valor.toFixed(2)}\n\n(O relatório de quebra será emitido em breve)`);
+            alert(`🔒 Caixa FECHADO! \n(O relatório de quebra será implementado em breve!)`);
         }
         
         document.getElementById('modal-caixa').style.display = 'none';
-        await verificarStatusCaixa(); // Atualiza a bolinha lá em cima
-        
+        await verificarStatusCaixa(); 
+    } catch (e) { alert("❌ Erro ao comunicar com o servidor."); }
+}
+
+// Abre a janelinha para digitar o valor do Suprimento ou Sangria
+function abrirModalMovimentacao(tipo) {
+    tipoMovimentacaoAtual = tipo;
+    document.getElementById('titulo-movimentacao').innerText = `Registrar ${tipo}`;
+    document.getElementById('input-valor-mov').value = '';
+    document.getElementById('input-motivo-mov').value = '';
+    
+    const btn = document.getElementById('btn-salvar-mov');
+    btn.style.backgroundColor = (tipo === 'Sangria') ? '#FF9800' : '#2196F3';
+    
+    document.getElementById('modal-movimentacao').style.display = 'flex';
+}
+
+// Salva a Sangria/Suprimento no Banco de Dados
+async function salvarMovimentacao() {
+    const valor = parseFloat(document.getElementById('input-valor-mov').value);
+    const motivo = document.getElementById('input-motivo-mov').value;
+
+    if (!valor || valor <= 0) return alert("Digite um valor válido!");
+    if (!motivo) return alert("Informe o motivo da movimentação!");
+
+    try {
+        const resposta = await fetch(`${API_URL}/caixa/movimentacao`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                caixa_id: caixaAtual.id,
+                tipo: tipoMovimentacaoAtual,
+                valor: valor,
+                motivo: motivo
+            })
+        });
+
+        if (resposta.ok) {
+            alert(`✅ ${tipoMovimentacaoAtual} de R$ ${valor.toFixed(2)} registrada!`);
+            document.getElementById('modal-movimentacao').style.display = 'none';
+        } else {
+            alert("Erro ao registrar no banco de dados.");
+        }
     } catch (e) {
-        alert("❌ Erro ao comunicar com o servidor.");
+        alert("Erro de conexão com o servidor.");
     }
 }
