@@ -22,9 +22,9 @@
                 <h1>🍦 Icesoft PDV</h1>
             </div>
             
-            <div class="status-caixa">
-                <span class="dot-verde"></span>
-                <strong>Caixa Aberto</strong> | Operador: Wallace
+            <div class="status-caixa" onclick="abrirPainelCaixa()" style="cursor: pointer; transition: 0.2s;" title="Clique para gerenciar o caixa">
+                <span class="dot-verde" id="dot-caixa" style="background-color: #f44336;"></span>
+                <strong id="texto-status-caixa">Carregando Caixa...</strong>
             </div>
 
             <div class="controles-header">
@@ -36,7 +36,7 @@
                     </label>
                 </div>
                 <button class="btn-header">Mesas/Comandas</button>
-                <button class="btn-header btn-fechar-caixa">Fechar Caixa</button>
+                <button class="btn-header btn-fechar-caixa" onclick="abrirPainelCaixa()">💵 Gerenciar Caixa</button>
             </div>
         </header>
 
