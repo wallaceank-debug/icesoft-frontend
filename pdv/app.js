@@ -208,8 +208,9 @@ function confirmarEscolhasEAdicionar() {
 // GESTÃO DO CARRINHO
 // ==========================================
 
-function adicionarAoCarrinho(nome, preco) {
-    carrinho.push({ nome, preco: Number(preco) });
+function adicionarAoCarrinho(nomeBase, adicionais, preco) {
+    // Agora o carrinho guarda o nome, os adicionais e a quantidade (1x) separados!
+    carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1 });
     renderizarCarrinho();
 }
 
@@ -227,6 +228,43 @@ function renderizarCarrinho() {
         subtotalGlobalPDV = 0;
         return;
     }
+
+    container.innerHTML = '';
+    let subtotal = 0;
+
+    carrinho.forEach((item, index) => {
+        subtotal += item.preco;
+
+        // Monta a lista de adicionais (com o sinal de + e cor mais suave)
+        let htmlAdicionais = '';
+        if (item.adicionais && item.adicionais.length > 0) {
+            htmlAdicionais = item.adicionais.map(adc => `
+                <div style="color: #666; font-size: 0.85rem; padding-left: 25px; margin-top: 3px;">
+                    + ${adc}
+                </div>
+            `).join('');
+        }
+
+        // Desenha o bloco do produto na tela
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:start; padding:15px 0; border-bottom:1px dashed #ddd;">
+                <div style="flex:1;">
+                    <div style="display:flex; align-items: center; gap: 8px;">
+                        <span style="font-weight:700; font-size:0.95rem; color:#888;">${item.qtd}x</span>
+                        <span style="font-weight:700; font-size:1.1rem; line-height:1.2; color:#333;">${item.nomeBase}</span>
+                    </div>
+                    ${htmlAdicionais}
+                    <div style="color:#e91e63; font-weight:700; margin-top: 8px; padding-left: 25px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button onclick="removerDoCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.3rem; padding:5px; transition: 0.2s;">🗑️</button>
+            </div>
+        `;
+    });
+
+    subtotalGlobalPDV = subtotal;
+    document.getElementById('pdv-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    document.getElementById('pdv-total').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+}
 
     container.innerHTML = '';
     let subtotal = 0;
@@ -305,7 +343,15 @@ async function finalizarVendaPDV() {
     if (carrinho.length === 0) return alert("Carrinho vazio!");
 
     const metodo = document.getElementById('checkout-metodo').value;
-    const itensFormatados = carrinho.map(item => ({ nome: "Balcão: " + item.nome, preco: item.preco }));
+    
+    // Remonta a string do jeito que o banco de dados (e o Dashboard) espera
+    const itensFormatados = carrinho.map(item => {
+        let nomeCompleto = "Balcão: " + item.nomeBase;
+        if (item.adicionais && item.adicionais.length > 0) {
+            nomeCompleto += " (" + item.adicionais.join(', ') + ")";
+        }
+        return { nome: nomeCompleto, preco: item.preco };
+    });
     
     const dadosDaVenda = {
         itens: JSON.stringify(itensFormatados), 
