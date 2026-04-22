@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Cardápio - Icesoft</title>
-    <link rel="stylesheet" href="/gestao/style.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -66,6 +66,15 @@
             <input type="number" id="prod-preco" class="input-padrao" placeholder="Preço (Ex: 15.00)" step="0.01">
             <input type="text" id="prod-emoji" class="input-padrao" placeholder="Emoji (Ex: 🍨)">
             
+            <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Categoria:</p>
+            <input type="text" id="prod-categoria" class="input-padrao" placeholder="Ex: Açaí, Bebidas..." list="opcoes-categoria">
+            <datalist id="opcoes-categoria">
+                <option value="Açaí">
+                <option value="Sorvetes">
+                <option value="Milk Shakes">
+                <option value="Bebidas">
+            </datalist>
+
             <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Grupos Vinculados:</p>
             <div id="container-checkbox-grupos" style="max-height: 120px; overflow-y:auto; margin-bottom:15px;"></div>
 
