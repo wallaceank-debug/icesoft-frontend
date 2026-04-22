@@ -52,6 +52,32 @@ function renderizarProdutos() {
     });
 }
 
+async function duplicarProduto(id) {
+    const p = listaProdutos.find(x => x.id === id);
+    if (!p) return;
+
+    // Cria um pacote idêntico, mas com " (Cópia)" no nome
+    const dadosDuplicados = {
+        nome: p.nome + " (Cópia)",
+        preco: parseFloat(p.preco),
+        emoji: p.emoji,
+        categoria: p.categoria || "Outros",
+        grupos_ids: p.grupos_ids || [],
+        ativo: true
+    };
+
+    try {
+        await fetch(`${API_URL}/produtos`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(dadosDuplicados) 
+        });
+        await carregarTudo(); // Recarrega a tela para a cópia aparecer
+    } catch (e) {
+        alert("❌ Erro ao duplicar produto.");
+    }
+}
+
 async function toggleProduto(id, statusAtivo) {
     try {
         await fetch(`${API_URL}/produtos/${id}/status`, {
