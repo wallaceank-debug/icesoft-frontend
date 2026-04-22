@@ -10,9 +10,9 @@
 <body>
 
     <aside class="menu-lateral">
-        <a href="/pdv/" class="btn-menu ativo">Balcão PDV</a>
-        <a href="/gestao/" class="btn-menu">Cardápio</a>
-        <a href="/dashboard/" class="btn-menu">Dashboard</a>
+        <a href="../pdv/" class="btn-menu ativo">Balcão PDV</a>
+        <a href="../gestao/" class="btn-menu">Cardápio</a>
+        <a href="../dashboard/" class="btn-menu">Dashboard</a>
     </aside>
 
     <div class="conteudo-principal">
@@ -45,11 +45,7 @@
             <section class="painel-esquerdo">
                 <nav class="barra-categorias" id="barra-categorias">
                     <button class="categoria-btn ativo">Todos</button>
-                    <button class="categoria-btn">Açaí</button>
-                    <button class="categoria-btn">Sorvetes</button>
-                    <button class="categoria-btn">Milk Shakes</button>
-                    <button class="categoria-btn">Bebidas</button>
-                </nav>
+                    </nav>
 
                 <div class="grade-produtos" id="grade-produtos">
                     <p style="padding: 20px;">Carregando produtos do servidor...</p>
@@ -81,13 +77,15 @@
             </aside>
 
         </main>
-    </div> <div id="modal-opcoes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000;">
-        <div style="background:white; width:90%; max-width:500px; border-radius:20px; padding:25px; max-height:90vh; overflow-y:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    </div> 
+
+    <div id="modal-opcoes" class="modal-fundo" style="display:none;">
+        <div class="modal-conteudo" style="max-width: 500px; padding: 25px;">
             <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px;">
-                </div>
+            </div>
 
             <div id="container-grupos-opcoes">
-                </div>
+            </div>
 
             <div style="margin-top:20px; padding:20px; background:#e0f7fa; border-radius:15px; display:flex; justify-content:space-between; align-items:center;">
                 <div>
@@ -140,9 +138,9 @@
         </div>
     </div>
 
-<div id="cupom-impressao" style="display:none; padding: 10px;">
-        </div>
+    <div id="cupom-impressao" style="display:none; padding: 10px;">
+    </div>
     
-    <script src="/pdv/app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
