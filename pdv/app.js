@@ -100,7 +100,8 @@ function renderizarGradeProdutos(lista) {
 function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
-        adicionarAoCarrinho(produto.nome, Number(produto.preco));
+        // Se não tem adicional, manda a lista vazia []
+        adicionarAoCarrinho(produto.nome, [], Number(produto.preco));
         return;
     }
     abrirModalEscolha(produto);
@@ -192,12 +193,14 @@ function atualizarPrecoDinamico() {
 function fecharModalOpcoes() { document.getElementById('modal-opcoes').style.display = 'none'; }
 
 function confirmarEscolhasEAdicionar() {
-    let nomeFinal = produtoEmSelecao.nome;
-    if (escolhasAtuais.length > 0) {
-        nomeFinal += " (" + escolhasAtuais.map(e => e.nome).join(', ') + ")";
-    }
+    const nomeBase = produtoEmSelecao.nome;
+    
+    // Pega apenas uma lista com os nomes do que o cliente escolheu
+    const listaAdicionais = escolhasAtuais.map(e => e.nome);
+    
     const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
-    adicionarAoCarrinho(nomeFinal, precoFinal);
+    
+    adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal);
     fecharModalOpcoes();
 }
 
