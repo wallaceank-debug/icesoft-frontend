@@ -102,13 +102,28 @@
         </div>
     </div>
 
-    <div id="modal-checkout" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:3000;">
-        <div style="background:white; width:90%; max-width:400px; border-radius:20px; padding:30px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+    <div id="modal-checkout" class="modal-fundo" style="display:none;">
+        <div class="modal-conteudo" style="max-width: 400px;">
             <h2 style="text-align:center; color:#333; margin-top:0;">Finalizar Venda</h2>
             
-            <div style="text-align:center; margin: 20px 0; background: #fff0f5; padding: 15px; border-radius: 15px; border: 1px dashed #f8bbd0;">
-                <span style="color:#777; font-size:1rem;">Total a Cobrar</span><br>
-                <strong id="checkout-total" style="font-size:2.8rem; color:#e91e63;">R$ 0,00</strong>
+            <div style="background:#fff0f4; border: 1px dashed #ff80ab; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
+                <span style="color:#888; font-size:0.9rem;">Total a Cobrar</span>
+                <div id="checkout-total" style="color:#e91e63; font-size:2rem; font-weight:bold;">R$ 0,00</div>
+            </div>
+
+            <select id="checkout-metodo" class="input-padrao" style="width:100%; margin-bottom:15px; font-size:1.1rem; padding:10px; cursor:pointer;" onchange="verificarMetodoPagamento()">
+                <option value="Dinheiro">💵 Dinheiro</option>
+                <option value="PIX">💠 PIX</option>
+                <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                <option value="Cartão de Débito">💳 Cartão de Débito</option>
+            </select>
+
+            <div id="area-troco" style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #eee;">
+                <label style="color:#555; font-weight:600; font-size:0.9rem;">Valor Recebido (R$)</label>
+                <input type="number" id="checkout-recebido" class="input-padrao" placeholder="Ex: 50.00" style="width:100%; margin-top:5px; font-size:1.2rem;" onkeyup="calcularTroco()">
+                <div style="text-align:right; margin-top:10px; font-weight:bold; color:#555;">
+                    Troco: <span id="checkout-troco" style="color:#25D366; font-size:1.2rem;">R$ 0,00</span>
+                </div>
             </div>
 
             <div style="margin-bottom: 20px; text-align: left; background: #e0f7fa; padding: 10px; border-radius: 8px;">
@@ -118,22 +133,9 @@
                 </label>
             </div>
 
-            <div class="modal-botoes">
-                <button onclick="fecharModalCheckout()" class="btn-cancelar" style="flex: 1;">Cancelar</button>
-                <button onclick="finalizarVendaPDV()" class="btn-salvar" style="flex: 2; font-size: 1.1rem;">💰 Confirmar</button>
-            </div>
-
-            <div id="area-troco" style="display:block; margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee;">
-                <label style="font-weight:600; color:#555; display:block; margin-bottom:8px;">Valor Recebido (R$)</label>
-                <input type="number" id="checkout-recebido" onkeyup="calcularTroco()" placeholder="Ex: 50.00" step="0.01" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; font-size:1.2rem; outline:none;">
-                <div style="margin-top:10px; font-size:1.1rem; color:#333; text-align: right;">
-                    Troco: <strong id="checkout-troco" style="color:#25D366; font-size:1.3rem;">R$ 0,00</strong>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <button onclick="fecharModalCheckout()" style="flex:1; padding:15px; background:#eee; color:#333; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1.1rem;">Voltar</button>
-                <button onclick="finalizarVendaPDV()" style="flex:1.5; padding:15px; background:#4CAF50; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 10px rgba(76,175,80,0.3);">Concluir (Enter)</button>
+            <div class="modal-botoes" style="display: flex; gap: 10px;">
+                <button onclick="fecharModalCheckout()" class="btn-cancelar" style="flex: 1; padding: 12px; font-size: 1rem;">Voltar</button>
+                <button onclick="finalizarVendaPDV()" class="btn-salvar" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #4CAF50; color: white;">💰 Concluir (Enter)</button>
             </div>
         </div>
     </div>
