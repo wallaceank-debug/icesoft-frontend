@@ -483,19 +483,68 @@ function abrirPainelCaixa() {
 
             <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
 
-            <div style="background:#fff0f4; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px dashed #ff80ab;">
-                <label style="color:#e91e63; font-weight:600; font-size:1rem;">Fechamento Cego (R$ na gaveta)</label>
-                <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 500.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #ff80ab; border-radius: 8px;">
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <button onclick="document.getElementById('modal-caixa').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
-                <button onclick="processarCaixa('fechar')" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🔒 FECHAR CAIXA</button>
-            </div>
+            <button onclick="abrirTelaFechamento()" style="width: 100%; padding: 15px; font-size: 1.1rem; background-color: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🔒 INICIAR FECHAMENTO</button>
+            <button onclick="document.getElementById('modal-caixa').style.display='none'" style="width: 100%; padding: 12px; margin-top: 10px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
         `;
     }
 
     document.getElementById('modal-caixa').style.display = 'flex';
+}
+
+// NOVA FUNÇÃO: Tela de Conferência Padrão Saipos
+async function abrirTelaFechamento() {
+    const container = document.getElementById('conteudo-modal-caixa');
+    container.innerHTML = `<p style="padding: 20px; color: #555;">⏳ Calculando resumo do dia...</p>`;
+
+    try {
+        const res = await fetch(`${API_URL}/caixa/resumo/${caixaAtual.id}`);
+        const resumo = await res.json();
+        
+        window.esperadoAtual = resumo.esperado; // Guarda na memória para a conta bater
+
+        container.innerHTML = `
+            <h2 style="color:#333; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Conferência de Caixa</h2>
+
+            <div style="text-align: left; margin-bottom: 20px; font-size: 0.95rem; color: #555;">
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                    <span>Abertura de Caixa (+)</span>
+                    <span style="color: #25D366; font-weight: bold;">R$ ${resumo.fundo.toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                    <span>Vendas em Dinheiro (+)</span>
+                    <span style="color: #25D366; font-weight: bold;">R$ ${resumo.vendas_dinheiro.toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                    <span>Reforços/Suprimento (+)</span>
+                    <span style="color: #2196F3; font-weight: bold;">R$ ${resumo.suprimentos.toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                    <span>Retiradas/Sangrias (-)</span>
+                    <span style="color: #f44336; font-weight: bold;">R$ ${resumo.sangrias.toFixed(2).replace('.', ',')}</span>
+                </div>
+                <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 1.1rem; color: #333;">
+                    <strong>Esperado na Gaveta</strong>
+                    <strong>R$ ${resumo.esperado.toFixed(2).replace('.', ',')}</strong>
+                </div>
+            </div>
+
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #ccc;">
+                <label style="color:#333; font-weight:700; font-size:1rem;">Dinheiro Real na Gaveta</label>
+                <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 150.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #00bcd4; border-radius: 8px; font-weight: bold;" onkeyup="calcularDiferencaCaixa()" onchange="calcularDiferencaCaixa()">
+            </div>
+
+            <div id="area-diferenca" style="margin-bottom: 20px; font-size: 1.1rem; font-weight: bold; height: 25px;">
+                </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="abrirPainelCaixa()" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
+                <button onclick="processarCaixa('fechar')" style="flex: 2; padding: 12px; font-size: 1rem; background-color: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🔒 CONFIRMAR</button>
+            </div>
+        `;
+    } catch(e) {
+        container.innerHTML = `<p>Erro ao buscar resumo.</p><button onclick="abrirPainelCaixa()">Voltar</button>`;
+    }
 }
 
 async function processarCaixa(acao) {
@@ -509,18 +558,42 @@ async function processarCaixa(acao) {
             });
             alert(`✅ Caixa ABERTO! Fundo: R$ ${valor.toFixed(2)}`);
         } else if (acao === 'fechar') {
-            if(!confirm("Tem certeza que deseja FECHAR o caixa? Vendas não poderão mais ser realizadas.")) return;
+            if(!confirm("Atenção: Conferiu os valores? O caixa será fechado definitivamente.")) return;
+            
             await fetch(`${API_URL}/caixa/fechar/${caixaAtual.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ valor_informado: valor })
+                // Enviamos o valor que você digitou + o valor que o sistema calculou
+                body: JSON.stringify({ valor_informado: valor, valor_sistema: window.esperadoAtual }) 
             });
-            alert(`🔒 Caixa FECHADO! \n(O relatório de quebra será implementado em breve!)`);
+            alert(`🔒 Caixa FECHADO com sucesso!`);
         }
         
         document.getElementById('modal-caixa').style.display = 'none';
         await verificarStatusCaixa(); 
     } catch (e) { alert("❌ Erro ao comunicar com o servidor."); }
+}
+
+// NOVA FUNÇÃO: Calcula em tempo real enquanto você digita
+function calcularDiferencaCaixa() {
+    const valorInformado = parseFloat(document.getElementById('input-valor-caixa').value);
+    const divDiferenca = document.getElementById('area-diferenca');
+    
+    if (isNaN(valorInformado)) {
+        divDiferenca.innerHTML = "";
+        return;
+    }
+
+    const esperado = window.esperadoAtual || 0;
+    const diferenca = valorInformado - esperado;
+
+    if (Math.abs(diferenca) < 0.01) { // Bateu zerado (ignora dízimas de centavo)
+        divDiferenca.innerHTML = `<span style="color: #25D366;">✅ Bateu! Nenhuma diferença.</span>`;
+    } else if (diferenca < 0) {
+        divDiferenca.innerHTML = `<span style="color: #f44336;">⚠️ Quebra (Falta): - R$ ${Math.abs(diferenca).toFixed(2).replace('.', ',')}</span>`;
+    } else {
+        divDiferenca.innerHTML = `<span style="color: #2196F3;">⚠️ Sobra: + R$ ${diferenca.toFixed(2).replace('.', ',')}</span>`;
+    }
 }
 
 // Abre a janelinha para digitar o valor do Suprimento ou Sangria
