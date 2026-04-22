@@ -390,3 +390,102 @@ async function salvarGrupo() {
         alert("❌ Erro ao salvar grupo.");
     }
 }
+
+// ==========================================
+// SISTEMA DE CATEGORIAS (CRUD)
+// ==========================================
+let listaCategorias = [];
+
+// Substitui a função carregarTudo antiga para puxar as categorias também
+async function carregarTudo() {
+    try {
+        const [resProd, resGrupos, resCat] = await Promise.all([
+            fetch(`${API_URL}/produtos`),
+            fetch(`${API_URL}/grupos`),
+            fetch(`${API_URL}/categorias`) // Puxa do novo servidor!
+        ]);
+        listaProdutos = await resProd.json();
+        listaGrupos = await resGrupos.json();
+        listaCategorias = await resCat.json(); // Salva na memória
+
+        renderizarProdutos();
+        renderizarGrupos();
+        preencherSelectCategorias(); // Atualiza as opções na hora de criar o produto
+
+        if (grupoSelecionadoId) selecionarGrupo(grupoSelecionadoId);
+    } catch (e) { console.error("Erro", e); }
+}
+
+function preencherSelectCategorias() {
+    const select = document.getElementById('prod-categoria');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="Outros">Outros</option>';
+    listaCategorias.forEach(cat => {
+        select.innerHTML += `<option value="${cat.nome}">${cat.nome}</option>`;
+    });
+}
+
+function abrirGerenciadorCategorias() {
+    document.getElementById('modal-categorias').style.display = 'flex';
+    renderizarListaCategoriasAdmin();
+}
+
+function fecharGerenciadorCategorias() {
+    document.getElementById('modal-categorias').style.display = 'none';
+}
+
+function renderizarListaCategoriasAdmin() {
+    const container = document.getElementById('lista-categorias-gerenciador');
+    container.innerHTML = '';
+
+    if (listaCategorias.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma categoria criada.</p>';
+        return;
+    }
+
+    listaCategorias.forEach(cat => {
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px;">
+                <div>
+                    <strong>${cat.nome}</strong> 
+                    <span style="font-size:0.8rem; color:#888; margin-left:10px;">Ordem: ${cat.ordem}</span>
+                </div>
+                <button onclick="excluirCategoria(${cat.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;">🗑️</button>
+            </div>
+        `;
+    });
+}
+
+async function salvarNovaCategoria() {
+    const nome = document.getElementById('nova-cat-nome').value;
+    const ordem = document.getElementById('nova-cat-ordem').value;
+
+    if (!nome) return alert("Preencha o nome da categoria!");
+
+    try {
+        await fetch(`${API_URL}/categorias`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ nome, ordem: parseInt(ordem) || 0 }) 
+        });
+        
+        document.getElementById('nova-cat-nome').value = '';
+        document.getElementById('nova-cat-ordem').value = '';
+        await carregarTudo();
+        renderizarListaCategoriasAdmin(); // Atualiza a janelinha
+    } catch (e) {
+        alert("Erro ao salvar categoria.");
+    }
+}
+
+async function excluirCategoria(id) {
+    if(!confirm("Tem certeza que deseja excluir esta categoria?")) return;
+    try {
+        await fetch(`${API_URL}/categorias/${id}`, { method: 'DELETE' });
+        await carregarTudo();
+        renderizarListaCategoriasAdmin();
+    } catch (e) {
+        alert("Erro ao excluir categoria.");
+    }
+}
