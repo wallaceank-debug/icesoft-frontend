@@ -30,12 +30,9 @@ async function carregarTudo() {
 function renderizarProdutos() {
     const div = document.getElementById('lista-produtos');
     div.innerHTML = '';
-    
     listaProdutos.forEach(p => {
-        // Se a coluna 'ativo' for nula/indefinida, assume true (ligado)
-        const isAtivo = p.ativo !== false; 
+        const isAtivo = p.ativo !== false;
         const classeInativo = isAtivo ? '' : 'item-inativo';
-
         div.innerHTML += `
             <div class="item-linha">
                 <div class="item-info ${classeInativo}" onclick="abrirEdicaoProduto(${p.id})">
@@ -47,7 +44,8 @@ function renderizarProdutos() {
                         <input type="checkbox" onchange="toggleProduto(${p.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
                         <span class="slider"></span>
                     </label>
-                    <button class="btn-icone" onclick="excluirProduto(${p.id})">🗑️</button>
+                    <button class="btn-icone" title="Duplicar Produto" onclick="duplicarProduto(${p.id})">📄</button>
+                    <button class="btn-icone" title="Excluir Produto" onclick="excluirProduto(${p.id})">🗑️</button>
                 </div>
             </div>
         `;
