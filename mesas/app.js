@@ -459,6 +459,29 @@ function pedirAcrescimoMesa() {
     }
 }
 
+// ==========================================
+// FUNÇÕES DE CÁLCULO DE TROCO (MESA)
+// ==========================================
+function verificarMetodoMesa() {
+    const metodo = document.getElementById('metodo-pagamento-mesa').value;
+    document.getElementById('area-troco-mesa').style.display = (metodo === 'Dinheiro') ? 'block' : 'none';
+}
+
+function calcularTrocoMesa() {
+    const recebido = parseFloat(document.getElementById('recebido-pagamento-mesa').value) || 0;
+    const total = Number(document.getElementById('btn-finalizar-mesa').dataset.total) || 0;
+    const troco = recebido - total;
+    const display = document.getElementById('troco-pagamento-mesa');
+    
+    if (troco >= 0) {
+        display.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
+        display.style.color = '#25D366';
+    } else {
+        display.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
+        display.style.color = '#f44336';
+    }
+}
+
 // O Grande Momento: Finalizar e Mandar pro Servidor!
 async function finalizarPagamentoMesa() {
     if (itensSendoPagos.length === 0) return alert("Selecione pelo menos um item para pagar!");

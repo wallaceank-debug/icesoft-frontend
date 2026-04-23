@@ -59,6 +59,7 @@
             <h1 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Gestão de Mesas</h1>
             <button onclick="abrirModalNovaMesa()" style="background: white; color: #00bcd4; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">+ Abrir Nova Mesa</button>
         </header>
+
         <main style="flex: 1; overflow-y: auto; padding: 20px;">
             <div id="container-mesas" class="grade-mesas">
                 <p style="color: #666;">Carregando mapa do salão...</p>
@@ -164,12 +165,20 @@
                         <strong>A Cobrar:</strong> <strong id="total-pagamento-mesa" style="color:#e91e63;">R$ 0,00</strong>
                     </div>
 
-                    <select id="metodo-pagamento-mesa" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; font-size:1.1rem; cursor: pointer;">
+                    <select id="metodo-pagamento-mesa" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; font-size:1.1rem; cursor: pointer;" onchange="verificarMetodoMesa()">
                         <option value="Dinheiro">💵 Dinheiro</option>
                         <option value="PIX">💠 PIX</option>
                         <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
                         <option value="Cartão de Débito">💳 Cartão de Débito</option>
                     </select>
+
+                    <div id="area-troco-mesa" style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #eee; display:block;">
+                        <label style="color:#555; font-weight:600; font-size:0.9rem;">Valor Recebido (R$)</label>
+                        <input type="number" id="recebido-pagamento-mesa" class="input-padrao" placeholder="Ex: 50.00" style="width:100%; margin-top:5px; font-size:1.2rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;" onkeyup="calcularTrocoMesa()" onchange="calcularTrocoMesa()">
+                        <div style="text-align:right; margin-top:10px; font-weight:bold; color:#555;">
+                            Troco: <span id="troco-pagamento-mesa" style="color:#25D366; font-size:1.2rem;">R$ 0,00</span>
+                        </div>
+                    </div>
 
                     <button id="btn-finalizar-mesa" onclick="finalizarPagamentoMesa()" style="width:100%; padding:15px; border-radius:8px; background:#4CAF50; color:white; border:none; font-weight:bold; cursor:pointer; font-size:1.1rem;">💰 Confirmar Pagamento</button>
                 </div>
