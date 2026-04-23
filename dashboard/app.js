@@ -1,5 +1,5 @@
 const API_URL = 'https://icesoft-api.onrender.com/api';
-let chartInstancia = null; // Guarda a memória do gráfico
+let chartInstancia = null;
 
 window.onload = () => { carregarVendas(); };
 
@@ -8,6 +8,22 @@ function formatarDataBR(dataString) {
     const partes = dataString.split('-');
     if (partes.length !== 3) return dataString;
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+// NOVA FUNÇÃO: Extrai YYYY-MM-DD de qualquer formato de data
+function extrairDataYYYYMMDD(data) {
+    if (!data) return null;
+    // Se já for um objeto de data (comum no PostgreSQL/Node)
+    if (data instanceof Date) {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+    // Se for uma string (ISO ou formatada)
+    const texto = String(data);
+    if (texto.includes('T')) return texto.split('T')[0];
+    return texto.substring(0, 10);
 }
 
 async function carregarVendas() {
@@ -32,18 +48,18 @@ async function carregarVendas() {
         let vendasBrutas = await resposta.json();
         if (!Array.isArray(vendasBrutas)) vendasBrutas = [];
 
+        // Prepara os limites do filtro
         const [anoI, mesI, diaI] = inicioInput.split('-');
         const dataInicio = new Date(anoI, mesI - 1, diaI, 0, 0, 0);
-        
         const [anoF, mesF, diaF] = fimInput.split('-');
         const dataFim = new Date(anoF, mesF - 1, diaF, 23, 59, 59);
 
+        // FILTRAGEM BLINDADA
         const vendasFiltradas = vendasBrutas.filter(v => {
-            if (!v.data_hora) return true; 
-            const dataTexto = String(v.data_hora).substring(0, 10);
-            if (!dataTexto.includes('-')) return true; // BLINDAGEM: Evita crash se a data vier corrompida
+            const dataFormatada = extrairDataYYYYMMDD(v.data_hora);
+            if (!dataFormatada || !dataFormatada.includes('-')) return false;
 
-            const [anoV, mesV, diaV] = dataTexto.split('-');
+            const [anoV, mesV, diaV] = dataFormatada.split('-');
             const dataDaVenda = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
             return dataDaVenda >= dataInicio && dataDaVenda <= dataFim;
         });
@@ -57,52 +73,37 @@ async function carregarVendas() {
         vendasFiltradas.forEach(v => {
             if (!v.itens || String(v.itens).includes("[object")) return;
             
-            let valorNum = parseFloat(v.valor_total || v.total);
-            let listaTextosDeVenda = [];
+            let valorNum = parseFloat(v.valor_total || v.total || 0);
             let itensLidos = v.itens;
 
             if (typeof itensLidos === 'string' && itensLidos.trim().startsWith('[')) {
                 try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
             }
 
-            // BLINDAGEM: Garante que os itens virarão textos limpos antes de ler
+            let listaTextosDeVenda = [];
             if (Array.isArray(itensLidos)) {
-                listaTextosDeVenda = itensLidos.map(item => {
-                    if (typeof item === 'string') return item;
-                    return item.nome || item.produto_nome || "";
-                });
-                
-                if (isNaN(valorNum) || valorNum === 0) {
+                listaTextosDeVenda = itensLidos.map(item => item.nome || item.produto_nome || "");
+                if (valorNum === 0) {
                     valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
                 }
-            } else if (typeof itensLidos === 'string') {
-                // Remove prefixos antigos na marra para não dar crash
-                let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
-                listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
             }
 
-            if (isNaN(valorNum)) valorNum = 0;
-
-            if (listaTextosDeVenda.length > 0 && listaTextosDeVenda.some(t => t !== "")) {
+            if (listaTextosDeVenda.length > 0) {
                 faturamento += valorNum; 
                 pedidosValidos++; 
 
-                let diaSemanaIndex = new Date().getDay(); 
-                if (v.data_hora) {
-                    const dataTexto = String(v.data_hora).substring(0, 10);
-                    if (dataTexto.includes('-')) {
-                        const [anoV, mesV, diaV] = dataTexto.split('-');
-                        const dataCorrigida = new Date(anoV, mesV - 1, diaV, 12, 0, 0);
-                        diaSemanaIndex = dataCorrigida.getDay(); 
-                    }
+                // Descobre o dia da semana para o gráfico
+                let diaSemanaIndex = new Date().getDay();
+                const dataFormatada = extrairDataYYYYMMDD(v.data_hora);
+                if (dataFormatada) {
+                    const [anoV, mesV, diaV] = dataFormatada.split('-');
+                    diaSemanaIndex = new Date(anoV, mesV - 1, diaV, 12, 0, 0).getDay();
                 }
                 faturamentoPorDia[diaSemanaIndex] += valorNum; 
                 
                 listaTextosDeVenda.forEach(textoVenda => {
-                    // BLINDAGEM: Se o texto for inválido, pula para o próximo sem travar o painel
-                    if (typeof textoVenda !== 'string' || !textoVenda.trim()) return;
-                    
-                    // A MÁGICA DE LIMPEZA: Tira "Balcão:", "Delivery:" E "Mesa 05 -" tudo de uma vez!
+                    if (!textoVenda) return;
+                    // Limpa prefixos de Balcão, Delivery e Mesas
                     let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '').trim();
                     let nomeBase = textoLimpo.split('(')[0].trim();
                     
@@ -110,8 +111,7 @@ async function carregarVendas() {
 
                     let match = textoLimpo.match(/\(([^)]+)\)/);
                     if(match) {
-                        let adicionais = match[1].split(','); 
-                        adicionais.forEach(item => {
+                        match[1].split(',').forEach(item => {
                             let adcLimpo = item.trim();
                             if (adcLimpo) contagemAdicionais[adcLimpo] = (contagemAdicionais[adcLimpo] || 0) + 1;
                         });
@@ -120,35 +120,28 @@ async function carregarVendas() {
             }
         });
 
-        const ticketMedio = pedidosValidos > 0 ? (faturamento / pedidosValidos) : 0;
-
+        // Atualiza os painéis numéricos
         document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toFixed(2).replace('.', ',')}`;
-        document.getElementById('dash-ticket').innerText = `R$ ${ticketMedio.toFixed(2).replace('.', ',')}`;
+        document.getElementById('dash-ticket').innerText = `R$ ${pedidosValidos > 0 ? (faturamento / pedidosValidos).toFixed(2).replace('.', ',') : '0,00'}`;
         document.getElementById('dash-pedidos').innerText = pedidosValidos;
 
         renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido.");
         renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido.");
-        
         renderizarGrafico(faturamentoPorDia);
 
     } catch (e) {
-        console.error("Erro Crítico no Dashboard:", e);
-        alert("Erro ao calcular vendas. Atualize a página e tente novamente.");
+        console.error("Erro Dashboard:", e);
+        alert("Erro ao carregar dados. Verifique o console.");
     }
 }
 
-// ==========================================
-// FUNÇÕES DE DESENHO DA TELA (LISTAS E GRÁFICO)
-// ==========================================
 function renderizarLista(objetoContagem, idElemento, msgVazio) {
     const container = document.getElementById(idElemento);
     const ordenado = Object.entries(objetoContagem).sort((a, b) => b[1] - a[1]);
-
     if (ordenado.length === 0) {
         container.innerHTML = `<p style="text-align:center; opacity:0.8;">${msgVazio}</p>`;
         return;
     }
-
     container.innerHTML = '';
     ordenado.forEach(([nome, quantidade]) => {
         container.innerHTML += `<div class="item-lista"><span>${nome}</span><span class="qtd">${quantidade}x</span></div>`;
@@ -158,11 +151,7 @@ function renderizarLista(objetoContagem, idElemento, msgVazio) {
 function renderizarGrafico(dadosDaSemana) {
     const ctx = document.getElementById('graficoVendas');
     if (!ctx) return;
-
-    if (chartInstancia) {
-        chartInstancia.destroy();
-    }
-
+    if (chartInstancia) chartInstancia.destroy();
     chartInstancia = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -178,18 +167,14 @@ function renderizarGrafico(dadosDaSemana) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }, 
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return 'R$ ' + context.raw.toFixed(2).replace('.', ',');
-                        }
+                        label: (context) => 'R$ ' + context.raw.toFixed(2).replace('.', ',')
                     }
                 }
             },
-            scales: {
-                y: { beginAtZero: true }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
 }
