@@ -19,6 +19,7 @@ let totalFinalGlobal = 0;
 window.onload = async () => {
     await verificarStatusCaixa(); 
     await carregarDadosIniciais();
+    await carregarStatusLoja();
 };
 
 async function carregarDadosIniciais() {
