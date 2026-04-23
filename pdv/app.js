@@ -722,11 +722,9 @@ async function alterarStatusLoja() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: novoStatus })
         });
-        
-        // Se a loja fechou, a bolinha fica vermelha, se abriu, volta a ficar verde.
-        toggle.nextElementSibling.style.backgroundColor = toggle.checked ? '#4CAF50' : '#f44336';
+        // A animação e a cor verde/vermelha agora são feitas 100% pelo CSS!
     } catch (e) {
         alert("Erro de conexão ao alterar o status!");
-        toggle.checked = !toggle.checked; // Reverte o botão se der erro
+        toggle.checked = !toggle.checked; // Se a internet cair, a bolinha volta pro lugar sozinha
     }
 }
