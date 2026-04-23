@@ -32,14 +32,10 @@ async function carregarVendas() {
         let vendasBrutas = await resposta.json();
         if (!Array.isArray(vendasBrutas)) vendasBrutas = [];
 
-        // 🚀 A MÁGICA INFALÍVEL: Filtragem apenas por Texto (Ignora Fuso Horário)
+        // Filtro Blindado contra Fuso Horário
         const vendasFiltradas = vendasBrutas.filter(v => {
             if (!v.data_hora) return false;
-            
-            // Pega exatamente a parte "YYYY-MM-DD" que vem do banco de dados
             let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
-            
-            // Compara os textos! "2026-04-23" é >= "2026-04-23"
             return dataVendaTexto >= inicioInput && dataVendaTexto <= fimInput;
         });
         
@@ -50,23 +46,33 @@ async function carregarVendas() {
         let faturamentoPorDia = [0, 0, 0, 0, 0, 0, 0]; 
 
         vendasFiltradas.forEach(v => {
-            if (!v.itens || String(v.itens).includes("[object")) return;
+            if (!v.itens) return;
             
             let valorNum = parseFloat(v.valor_total || v.total || 0);
             let itensLidos = v.itens;
 
-            if (typeof itensLidos === 'string' && itensLidos.trim().startsWith('[')) {
-                try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
+            // A MÁGICA DA CORREÇÃO AQUI 👇
+            // Se for string e estiver corrompida, ignora. Mas se for um Array perfeito do banco JSONB, deixa passar!
+            if (typeof itensLidos === 'string') {
+                if (itensLidos.includes("[object")) return; 
+                if (itensLidos.trim().startsWith('[')) {
+                    try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
+                }
             }
 
             let listaTextosDeVenda = [];
+            
+            // Lê perfeitamente a lista que veio do PDV e das Mesas
             if (Array.isArray(itensLidos)) {
-                listaTextosDeVenda = itensLidos.map(item => item.nome || item.produto_nome || "");
+                listaTextosDeVenda = itensLidos.map(item => {
+                    if (typeof item === 'string') return item;
+                    return item.nome || item.produto_nome || item.nomeBase || "";
+                });
+                
                 if (valorNum === 0) {
                     valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
                 }
             } else if (typeof itensLidos === 'string') {
-                // Prevenção para as vendas antigas
                 let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
                 listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
             }
