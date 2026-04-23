@@ -326,3 +326,23 @@ async function processarEnvioWhatsApp() {
 }
 
 window.onload = carregarTudo;
+
+async function verificarStatusLoja() {
+    try {
+        const res = await fetch(`${API_URL}/loja/status`);
+        const data = await res.json();
+        
+        if (data.status === 'fechado') {
+            document.getElementById('overlay-loja-fechada').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Impede o cliente de rolar a página por trás
+        } else {
+            document.getElementById('overlay-loja-fechada').style.display = 'none';
+        }
+    } catch (e) { console.error("Erro ao verificar loja"); }
+}
+
+// Verifica o status assim que o cliente abre o cardápio
+verificarStatusLoja();
+
+// Opcional: Fica vigiando o status a cada 30 segundos (caso você feche enquanto ele tá olhando o cardápio)
+setInterval(verificarStatusLoja, 30000);
