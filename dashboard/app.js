@@ -41,6 +41,8 @@ async function carregarVendas() {
         const vendasFiltradas = vendasBrutas.filter(v => {
             if (!v.data_hora) return true; 
             const dataTexto = String(v.data_hora).substring(0, 10);
+            if (!dataTexto.includes('-')) return true; // BLINDAGEM: Evita crash se a data vier corrompida
+
             const [anoV, mesV, diaV] = dataTexto.split('-');
             const dataDaVenda = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
             return dataDaVenda >= dataInicio && dataDaVenda <= dataFim;
@@ -50,8 +52,6 @@ async function carregarVendas() {
         let contagemProdutos = {};
         let contagemAdicionais = {};
         let pedidosValidos = 0;
-        
-        // As 7 gavetas dos dias da semana (Domingo a Sábado)
         let faturamentoPorDia = [0, 0, 0, 0, 0, 0, 0]; 
 
         vendasFiltradas.forEach(v => {
@@ -65,13 +65,19 @@ async function carregarVendas() {
                 try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
             }
 
+            // BLINDAGEM: Garante que os itens virarão textos limpos antes de ler
             if (Array.isArray(itensLidos)) {
-                listaTextosDeVenda = itensLidos.map(item => item.nome || item.produto_nome || "");
-                if (isNaN(valorNum)) {
+                listaTextosDeVenda = itensLidos.map(item => {
+                    if (typeof item === 'string') return item;
+                    return item.nome || item.produto_nome || "";
+                });
+                
+                if (isNaN(valorNum) || valorNum === 0) {
                     valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
                 }
             } else if (typeof itensLidos === 'string') {
-                let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:)\s*/g, '');
+                // Remove prefixos antigos na marra para não dar crash
+                let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
                 listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
             }
 
@@ -81,20 +87,23 @@ async function carregarVendas() {
                 faturamento += valorNum; 
                 pedidosValidos++; 
 
-                // 📊 INTELIGÊNCIA DO GRÁFICO: Descobre o dia da semana da venda
-                let diaSemanaIndex = new Date().getDay(); // Assume hoje como segurança
+                let diaSemanaIndex = new Date().getDay(); 
                 if (v.data_hora) {
                     const dataTexto = String(v.data_hora).substring(0, 10);
-                    const [anoV, mesV, diaV] = dataTexto.split('-');
-                    const dataCorrigida = new Date(anoV, mesV - 1, diaV, 12, 0, 0);
-                    diaSemanaIndex = dataCorrigida.getDay(); // Retorna de 0 (Dom) a 6 (Sáb)
+                    if (dataTexto.includes('-')) {
+                        const [anoV, mesV, diaV] = dataTexto.split('-');
+                        const dataCorrigida = new Date(anoV, mesV - 1, diaV, 12, 0, 0);
+                        diaSemanaIndex = dataCorrigida.getDay(); 
+                    }
                 }
-                faturamentoPorDia[diaSemanaIndex] += valorNum; // Coloca o dinheiro na gaveta do dia
+                faturamentoPorDia[diaSemanaIndex] += valorNum; 
                 
                 listaTextosDeVenda.forEach(textoVenda => {
-                    if (!textoVenda) return;
+                    // BLINDAGEM: Se o texto for inválido, pula para o próximo sem travar o painel
+                    if (typeof textoVenda !== 'string' || !textoVenda.trim()) return;
                     
-                    let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:)\s*/g, '').trim();
+                    // A MÁGICA DE LIMPEZA: Tira "Balcão:", "Delivery:" E "Mesa 05 -" tudo de uma vez!
+                    let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '').trim();
                     let nomeBase = textoLimpo.split('(')[0].trim();
                     
                     if (nomeBase) contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
@@ -120,11 +129,10 @@ async function carregarVendas() {
         renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido.");
         renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido.");
         
-        // 🚀 DISPARA O GRÁFICO!
         renderizarGrafico(faturamentoPorDia);
 
     } catch (e) {
-        console.error("Erro:", e);
+        console.error("Erro Crítico no Dashboard:", e);
         alert("Erro ao calcular vendas. Atualize a página e tente novamente.");
     }
 }
@@ -162,7 +170,6 @@ function renderizarGrafico(dadosDaSemana) {
             datasets: [{
                 label: 'Faturamento (R$)',
                 data: dadosDaSemana,
-                // A MÁGICA ESTÁ AQUI: Trocamos para o Rosa Vibrante da Icesoft!
                 backgroundColor: '#ffffff', 
                 borderRadius: 6 
             }]
