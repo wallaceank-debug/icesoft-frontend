@@ -698,3 +698,34 @@ async function salvarMovimentacao() {
         alert("Erro de conexão com o servidor.");
     }
 }
+
+// ==========================================
+// CONTROLE DO CARDÁPIO ONLINE (LIGA/DESLIGA)
+// ==========================================
+async function carregarStatusLoja() {
+    try {
+        const res = await fetch(`${API_URL}/loja/status`);
+        const data = await res.json();
+        const toggle = document.getElementById('toggle-delivery');
+        if (toggle) toggle.checked = (data.status === 'aberto');
+    } catch (e) { console.error("Erro ao carregar status da loja"); }
+}
+
+async function alterarStatusLoja() {
+    const toggle = document.getElementById('toggle-delivery');
+    const novoStatus = toggle.checked ? 'aberto' : 'fechado';
+    
+    try {
+        await fetch(`${API_URL}/loja/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: novoStatus })
+        });
+        
+        // Se a loja fechou, a bolinha fica vermelha, se abriu, volta a ficar verde.
+        toggle.nextElementSibling.style.backgroundColor = toggle.checked ? '#4CAF50' : '#f44336';
+    } catch (e) {
+        alert("Erro de conexão ao alterar o status!");
+        toggle.checked = !toggle.checked; // Reverte o botão se der erro
+    }
+}
