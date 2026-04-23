@@ -701,30 +701,33 @@ async function salvarMovimentacao() {
 }
 
 // ==========================================
-// CONTROLE DO CARDÁPIO ONLINE (LIGA/DESLIGA)
+// VERIFICAÇÃO DE STATUS DA LOJA (DELIVERY)
 // ==========================================
-async function carregarStatusLoja() {
+async function verificarStatusLoja() {
     try {
-        const res = await fetch(`${API_URL}/loja/status`);
+        // Coloquei o link direto para garantir que ele ache o servidor de qualquer lugar
+        const res = await fetch(`https://icesoft-api.onrender.com/api/loja/status`);
         const data = await res.json();
-        const toggle = document.getElementById('toggle-delivery');
-        if (toggle) toggle.checked = (data.status === 'aberto');
-    } catch (e) { console.error("Erro ao carregar status da loja"); }
-}
-
-async function alterarStatusLoja() {
-    const toggle = document.getElementById('toggle-delivery');
-    const novoStatus = toggle.checked ? 'aberto' : 'fechado';
-    
-    try {
-        await fetch(`${API_URL}/loja/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: novoStatus })
-        });
-        // A animação e a cor verde/vermelha agora são feitas 100% pelo CSS!
+        
+        const cortina = document.getElementById('overlay-loja-fechada');
+        
+        if (cortina) {
+            if (data.status === 'fechado') {
+                cortina.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Trava a rolagem da tela
+            } else {
+                cortina.style.display = 'none';
+                document.body.style.overflow = 'auto'; // Libera a rolagem
+            }
+        }
     } catch (e) {
-        alert("Erro de conexão ao alterar o status!");
-        toggle.checked = !toggle.checked; // Se a internet cair, a bolinha volta pro lugar sozinha
+        console.error("Erro ao verificar se a loja está aberta:", e);
     }
 }
+
+// Isso garante que ele só vai tentar baixar a cortina DEPOIS que o site carregar inteiro!
+window.addEventListener('DOMContentLoaded', () => {
+    verificarStatusLoja();
+    // Continua vigiando a cada 30 segundos
+    setInterval(verificarStatusLoja, 30000);
+});
