@@ -10,22 +10,6 @@ function formatarDataBR(dataString) {
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
-// NOVA FUNÇÃO: Extrai YYYY-MM-DD de qualquer formato de data
-function extrairDataYYYYMMDD(data) {
-    if (!data) return null;
-    // Se já for um objeto de data (comum no PostgreSQL/Node)
-    if (data instanceof Date) {
-        const ano = data.getFullYear();
-        const mes = String(data.getMonth() + 1).padStart(2, '0');
-        const dia = String(data.getDate()).padStart(2, '0');
-        return `${ano}-${mes}-${dia}`;
-    }
-    // Se for uma string (ISO ou formatada)
-    const texto = String(data);
-    if (texto.includes('T')) return texto.split('T')[0];
-    return texto.substring(0, 10);
-}
-
 async function carregarVendas() {
     let inicioInput = document.getElementById('filtro-inicio').value;
     let fimInput = document.getElementById('filtro-fim').value;
@@ -48,20 +32,15 @@ async function carregarVendas() {
         let vendasBrutas = await resposta.json();
         if (!Array.isArray(vendasBrutas)) vendasBrutas = [];
 
-        // Prepara os limites do filtro
-        const [anoI, mesI, diaI] = inicioInput.split('-');
-        const dataInicio = new Date(anoI, mesI - 1, diaI, 0, 0, 0);
-        const [anoF, mesF, diaF] = fimInput.split('-');
-        const dataFim = new Date(anoF, mesF - 1, diaF, 23, 59, 59);
-
-        // FILTRAGEM BLINDADA
+        // 🚀 A MÁGICA INFALÍVEL: Filtragem apenas por Texto (Ignora Fuso Horário)
         const vendasFiltradas = vendasBrutas.filter(v => {
-            const dataFormatada = extrairDataYYYYMMDD(v.data_hora);
-            if (!dataFormatada || !dataFormatada.includes('-')) return false;
-
-            const [anoV, mesV, diaV] = dataFormatada.split('-');
-            const dataDaVenda = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
-            return dataDaVenda >= dataInicio && dataDaVenda <= dataFim;
+            if (!v.data_hora) return false;
+            
+            // Pega exatamente a parte "YYYY-MM-DD" que vem do banco de dados
+            let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
+            
+            // Compara os textos! "2026-04-23" é >= "2026-04-23"
+            return dataVendaTexto >= inicioInput && dataVendaTexto <= fimInput;
         });
         
         let faturamento = 0;
@@ -86,24 +65,30 @@ async function carregarVendas() {
                 if (valorNum === 0) {
                     valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
                 }
+            } else if (typeof itensLidos === 'string') {
+                // Prevenção para as vendas antigas
+                let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
+                listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
             }
 
             if (listaTextosDeVenda.length > 0) {
                 faturamento += valorNum; 
                 pedidosValidos++; 
 
-                // Descobre o dia da semana para o gráfico
                 let diaSemanaIndex = new Date().getDay();
-                const dataFormatada = extrairDataYYYYMMDD(v.data_hora);
-                if (dataFormatada) {
-                    const [anoV, mesV, diaV] = dataFormatada.split('-');
-                    diaSemanaIndex = new Date(anoV, mesV - 1, diaV, 12, 0, 0).getDay();
+                if (v.data_hora) {
+                    let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
+                    if (dataVendaTexto.includes('-')) {
+                        const [anoV, mesV, diaV] = dataVendaTexto.split('-');
+                        diaSemanaIndex = new Date(anoV, mesV - 1, diaV, 12, 0, 0).getDay();
+                    }
                 }
                 faturamentoPorDia[diaSemanaIndex] += valorNum; 
                 
                 listaTextosDeVenda.forEach(textoVenda => {
-                    if (!textoVenda) return;
-                    // Limpa prefixos de Balcão, Delivery e Mesas
+                    if (typeof textoVenda !== 'string' || !textoVenda.trim()) return;
+                    
+                    // LIMPAMOS TUDO: Tira "Balcão", "Delivery" e "Mesa XX"
                     let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '').trim();
                     let nomeBase = textoLimpo.split('(')[0].trim();
                     
@@ -120,7 +105,6 @@ async function carregarVendas() {
             }
         });
 
-        // Atualiza os painéis numéricos
         document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toFixed(2).replace('.', ',')}`;
         document.getElementById('dash-ticket').innerText = `R$ ${pedidosValidos > 0 ? (faturamento / pedidosValidos).toFixed(2).replace('.', ',') : '0,00'}`;
         document.getElementById('dash-pedidos').innerText = pedidosValidos;
