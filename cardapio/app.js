@@ -426,40 +426,36 @@ async function verificarStatusLoja() {
         const res = await fetch('https://icesoft-api.onrender.com/api/loja/status');
         const data = await res.json();
 
-        // O .toLowerCase() resolve o problema do "Fechado" vs "fechado"
-        if (data.status.toLowerCase() === 'fechado') {
+        // 🚨 O ESPIÃO: Vai jogar na sua cara o que o banco de dados respondeu!
+        alert("🕵️ ESPIÃO DO STATUS: O servidor disse -> " + JSON.stringify(data));
+
+        // Pegamos o status, transformamos em minúsculo e tiramos espaços em branco
+        const statusAtual = data.status ? data.status.toLowerCase().trim() : '';
+
+        if (statusAtual === 'fechado') {
             let cortina = document.getElementById('cortina-loja-fechada');
-            
-            // Se a cortina ainda não existe, nós criamos ela!
             if (!cortina) {
                 cortina = document.createElement('div');
                 cortina.id = 'cortina-loja-fechada';
-                // Essa estilização cria uma tela preta transparente que bloqueia TUDO (z-index: 99999)
                 cortina.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px);";
-                
                 cortina.innerHTML = `
                     <h1 style="font-size: 4rem; margin: 0;">😴</h1>
                     <h2 style="margin: 10px 0; color: #ffeb3b; font-family: 'Poppins', sans-serif;">Poxa, estamos fechados!</h2>
-                    <p style="font-size: 1.1rem; max-width: 400px; font-family: 'Poppins', sans-serif; color: #ccc;">Nossa loja não está recebendo pedidos no momento. Volte mais tarde para pedir nossas delícias!</p>
+                    <p style="font-size: 1.1rem; max-width: 400px; font-family: 'Poppins', sans-serif; color: #ccc;">Nossa loja não está recebendo pedidos no momento. Volte mais tarde!</p>
                 `;
                 document.body.appendChild(cortina);
-                
-                // Esconde a barra de rolagem do fundo para o cliente não ficar descendo a tela
                 document.body.style.overflow = 'hidden'; 
             }
         } else {
-            // Se o painel for alterado para 'Aberto', a cortina se destrói sozinha!
             const cortina = document.getElementById('cortina-loja-fechada');
             if (cortina) {
                 cortina.remove();
-                document.body.style.overflow = 'auto'; // Devolve a barra de rolagem
+                document.body.style.overflow = 'auto'; 
             }
         }
     } catch (e) {
-        console.error("Erro ao checar status da loja", e);
+        alert("🕵️ ERRO DO ESPIÃO: Não consegui falar com o servidor!");
     }
 }
 
-// Chama o vigia na hora que entra e a cada 1 minuto
 verificarStatusLoja();
-setInterval(verificarStatusLoja, 60000);
