@@ -150,22 +150,23 @@ function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
     
-    // ==========================================
-    // 📸 NOVO TOPO DO MODAL (FOTO GIGANTE + DESCRIÇÃO)
-    // ==========================================
     const topo = document.getElementById('detalhes-produto-topo');
     
-    // 1. Prepara a descrição (se houver)
     const descricaoHTML = produto.descricao && produto.descricao !== 'null'
         ? `<p style="color: #666; font-size: 0.95rem; margin-top: 8px; line-height: 1.4; text-align: left;">${produto.descricao}</p>`
         : ``;
 
-    // 2. A Mágica do CSS: Margem negativa para colar nas bordas do modal!
+    // 📸 NOVO: O wrapper 'area-arraste' com a pílula visual (a manchinha vermelha que você pediu, mas em formato de app!)
     const visualTopo = produto.imagem_url
-        ? `<img src="${produto.imagem_url}" style="width: calc(100% + 40px); height: 220px; object-fit: cover; margin: -20px -20px 15px -20px; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa;">`
-        : `<div style="font-size: 4rem; padding-bottom: 10px; text-align: center;">${produto.emoji || '🍦'}</div>`;
+        ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
+               <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 10px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+               <img src="${produto.imagem_url}" style="width: 100%; height: 220px; object-fit: cover; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa;">
+           </div>`
+        : `<div id="area-arraste" style="position: relative; font-size: 4rem; padding-top: 20px; padding-bottom: 10px; text-align: center;">
+               <div style="position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: #ccc; border-radius: 10px; z-index: 10;"></div>
+               ${produto.emoji || '🍦'}
+           </div>`;
 
-    // 3. Injeta tudo na tela
     topo.innerHTML = `
         ${visualTopo}
         <h2 style="margin: 0; color: #333; font-size: 1.4rem; text-align: left;">${produto.nome}</h2>
@@ -174,7 +175,6 @@ function abrirModalEscolha(produto) {
             <p style="color: var(--cor-primaria, #e91e63); margin: 0; font-weight: bold; font-size: 0.95rem; text-transform: uppercase;">Escolha seus complementos</p>
         </div>
     `;
-    // ==========================================
 
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
@@ -201,6 +201,9 @@ function abrirModalEscolha(produto) {
     
     atualizarPrecoDinamico();
     document.getElementById('modal-opcoes').style.display = 'flex';
+
+    // 👆 CHAMA A FÍSICA DO DEDO SEMPRE QUE ABRIR O MODAL
+    aplicarGestoSwipe();
 }
 
 function toggleOpcional(grupoId, nomeItem, preco, chkId) {
