@@ -369,11 +369,22 @@ function renderizarCarrossel(produtos) {
 
     if (produtosDestaque.length === 0) return secao.style.display = 'none';
 
-    secao.style.display = 'block'; carrossel.innerHTML = '';
+    secao.style.display = 'block'; 
+    carrossel.innerHTML = '';
+    
     produtosDestaque.forEach(p => {
+        // 📸 A MÁGICA DA FOTO: Altura fixa para todos os cards ficarem perfeitamente iguais!
+        const visualProduto = p.imagem_url 
+            ? `<img src="${p.imagem_url}" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
+            : `<div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
+
         carrossel.innerHTML += `
-            <div class="card-destaque" onclick="verificarAdicao(${p.id})">
-                <div><h4>${p.nome}</h4><div class="preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div></div>
+            <div class="card-destaque" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between;">
+                ${visualProduto}
+                <div>
+                    <h4 style="margin: 0 0 5px 0;">${p.nome}</h4>
+                    <div class="preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                </div>
                 <button class="btn-add-destaque">+ Adicionar</button>
             </div>
         `;
