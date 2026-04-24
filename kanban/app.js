@@ -9,6 +9,7 @@ const COLUNAS_ID = {
 };
 
 let pedidosGlobais = []; // Guarda os pedidos pra gente abrir os detalhes depois!
+let qtdPendentesAnterior = -1; // 🛎️ Memória da Campainha (Começa em -1 para não tocar ao abrir a tela)
 
 async function carregarPedidos() {
     try {
@@ -20,10 +21,34 @@ async function carregarPedidos() {
             return Object.keys(COLUNAS_ID).includes(statusLimpo);
         });
 
+        // 🛎️ LÓGICA DA CAMPAINHA
+        const qtdPendentesAtual = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery').length;
+
+        // Se tiver mais pendentes agora do que na última checagem (e não for a primeira vez carregando)
+        if (qtdPendentesAnterior !== -1 && qtdPendentesAtual > qtdPendentesAnterior) {
+             tocarCampainha();
+        }
+        
+        // Atualiza a memória para a próxima checagem
+        qtdPendentesAnterior = qtdPendentesAtual;
+
         pedidosGlobais = pedidosDelivery; // Salva na memória
         renderizarKanban(pedidosDelivery);
     } catch (e) {
         console.error("Erro ao buscar pedidos da nuvem:", e);
+    }
+}
+
+// ==========================================
+// 🛎️ O SOM DA GRANA (CAMPANINHA)
+// ==========================================
+function tocarCampainha() {
+    try {
+        // Áudio clássico de balcão de hotel/recepção
+        const audio = new Audio('https://cdn.pixabay.com/download/audio/2022/01/18/audio_6ab1de4eeb.mp3?filename=service-bell-ring-14610.mp3');
+        audio.play();
+    } catch(e) {
+        console.log("Erro ao tentar tocar a campainha. O navegador pode ter bloqueado.");
     }
 }
 
