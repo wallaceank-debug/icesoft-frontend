@@ -417,3 +417,49 @@ window.addEventListener('DOMContentLoaded', async () => {
     await carregarTudo(); 
     verificarStatusLoja(); setInterval(verificarStatusLoja, 30000);
 });
+
+// ==========================================
+// 🛑 SISTEMA DE TRAVA: LOJA ABERTA / FECHADA
+// ==========================================
+async function verificarStatusLoja() {
+    try {
+        const res = await fetch('https://icesoft-api.onrender.com/api/loja/status');
+        const data = await res.json();
+
+        if (data.status === 'fechado') {
+            // 1. Cria uma faixa vermelha no topo da tela
+            let avisoFechado = document.getElementById('aviso-loja-fechada');
+            if (!avisoFechado) {
+                avisoFechado = document.createElement('div');
+                avisoFechado.id = 'aviso-loja-fechada';
+                avisoFechado.innerHTML = `
+                    <div style="background: #f44336; color: white; text-align: center; padding: 15px; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-family: 'Poppins', sans-serif;">
+                        🛑 Nossa loja está fechada no momento. Retornaremos em breve!
+                    </div>
+                `;
+                document.body.appendChild(avisoFechado);
+            }
+
+            // 2. Trava o botão de abrir o Checkout!
+            // (Substitua a função de abrir o modal por um alerta)
+            window.abrirModalCheckout = function() {
+                alert("Poxa! 🛑 Nossa loja está fechada no momento. Não estamos recebendo pedidos.");
+            };
+        } else {
+            // Se abrir a loja de novo, remove o aviso da tela
+            const aviso = document.getElementById('aviso-loja-fechada');
+            if (aviso) aviso.remove();
+            
+            // Restaura a função de abrir o checkout (caso o cliente tenha deixado a tela aberta)
+            // Nota: Se sua função de abrir o modal tiver outro nome, o cliente só precisará dar F5.
+        }
+    } catch (e) {
+        console.error("Erro ao checar status da loja", e);
+    }
+}
+
+// 1. Chama o vigia assim que o cliente entra no site
+verificarStatusLoja();
+
+// 2. O vigia fica checando a cada 1 minuto (caso o cliente deixe a tela do celular ligada na mesa)
+setInterval(verificarStatusLoja, 60000);
