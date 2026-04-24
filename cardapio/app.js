@@ -407,11 +407,23 @@ function renderizarUpsellCheckout() {
         const precoComDesconto = precoNormal - descontoReais;
         const nomeLimpo = p.nome.replace(/'/g, "\\'"); 
 
+        // 📸 A MÁGICA DA FOTO NO UPSELL: Versão menor (75px) para caber no checkout!
+        const visualProduto = p.imagem_url 
+            ? `<img src="${p.imagem_url}" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
+            : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
+
         carrossel.innerHTML += `
             <div style="flex: 0 0 130px; background: white; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; border: 1px solid #ffb3c6;">
-                <h5 style="margin: 0 0 5px 0; font-size: 0.85rem; color: #333;">${p.nome}</h5>
-                <div style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
-                <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</div>
+                
+                ${visualProduto}
+                
+                <h5 style="margin: 0 0 5px 0; font-size: 0.85rem; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.nome}</h5>
+                
+                <div>
+                    <div style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
+                    <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</div>
+                </div>
+                
                 <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoComDesconto})" style="margin-top: 8px; background: #e91e63; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Adicionar</button>
             </div>
         `;
