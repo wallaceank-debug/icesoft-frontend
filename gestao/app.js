@@ -270,9 +270,13 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-emoji').value = p.emoji;
         document.getElementById('prod-categoria').value = p.categoria || '';
         
-        // 📸 NOVO: Puxa o link da imagem se existir
+        // Puxa o link da imagem se existir
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = p.imagem_url || '';
+        
+        // 🟢 NOVO: Puxa a descrição se existir
+        const campoDescricao = document.getElementById('prod-descricao');
+        if(campoDescricao) campoDescricao.value = (p.descricao && p.descricao !== 'null') ? p.descricao : '';
         
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
     } else { // MODO NOVO PRODUTO
@@ -283,9 +287,13 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-emoji').value = '🍨';
         document.getElementById('prod-categoria').value = '';
         
-        // 📸 NOVO: Limpa o campo de imagem
+        // Limpa o campo de imagem
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = '';
+        
+        // 🟢 NOVO: Limpa o campo de descrição
+        const campoDescricao = document.getElementById('prod-descricao');
+        if(campoDescricao) campoDescricao.value = '';
     }
 
     renderizarSelecaoGrupos();
@@ -353,16 +361,19 @@ async function salvarProduto() {
     const emoji = document.getElementById('prod-emoji').value;
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
     
-    // 📸 NOVO: Pega o link da foto que você digitou/colou
     const campoImagem = document.getElementById('produto-imagem');
     const imagem_url = campoImagem ? campoImagem.value.trim() : '';
+
+    // 🟢 NOVO: Lê o que você digitou na caixa de descrição
+    const campoDescricao = document.getElementById('prod-descricao');
+    const descricao = campoDescricao ? campoDescricao.value.trim() : '';
 
     const grupos_ids = gruposSelecionadosTemporarios;
 
     if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
 
-    // 📸 NOVO: Adicionamos o "imagem_url" no pacote final!
-    const dados = { nome, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url };
+    // 🟢 NOVO: Injetamos a variável 'descricao' no pacote!
+    const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url };
 
     try {
         if (id) {
