@@ -21,6 +21,7 @@ async function carregarTudo() {
         produtosDaNuvem = (await resProd.json()).filter(p => p.ativo !== false);
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
         
+        renderizarMenuCategorias(produtosDaNuvem);
         renderizarCardapio(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
     } catch (e) { console.error("Erro ao carregar:", e); }
@@ -456,3 +457,37 @@ async function verificarStatusLoja() {
 }
 
 verificarStatusLoja();
+
+// ==========================================
+// 🎨 DESENHA O MENU DE CATEGORIAS DINÂMICO
+// ==========================================
+function renderizarMenuCategorias(produtos) {
+    const container = document.getElementById('menu-categorias-dinamico');
+    if (!container) return;
+
+    // Pega todos os produtos, extrai as categorias e remove as repetidas (cria uma lista única)
+    const categoriasUnicas = [...new Set(produtos.map(p => p.categoria).filter(c => c))];
+
+    let html = '';
+
+    categoriasUnicas.forEach(categoria => {
+        // Cria um ID limpo para o link (ex: "Milk Shakes" vira "milk-shakes")
+        const idSecao = categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+        
+        // Inteligência para escolher o Emoji automaticamente!
+        let emoji = '🍔'; // Padrão
+        const catTexto = categoria.toLowerCase();
+        if (catTexto.includes('shake')) emoji = '🥤';
+        else if (catTexto.includes('açaí') || catTexto.includes('acai')) emoji = '💜';
+        else if (catTexto.includes('bebida') || catTexto.includes('suco')) emoji = '🧃';
+        else if (catTexto.includes('sobremesa') || catTexto.includes('doce')) emoji = '🍰';
+        else if (catTexto.includes('combo')) emoji = '🍟';
+
+        html += `
+        <a href="#secao-${idSecao}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.95rem; transition: 0.2s;">
+            <span style="font-size: 1.2rem;">${emoji}</span> ${categoria}
+        </a>`;
+    });
+
+    container.innerHTML = html;
+}

@@ -65,13 +65,14 @@
             </div>
     </section>
 
+    <div id="menu-categorias-dinamico" class="menu-categorias-scroll" style="margin-top: 20px; max-width: 600px; margin-inline: auto; display: flex; gap: 12px; overflow-x: auto; padding: 5px 20px 20px 20px; white-space: nowrap; -webkit-overflow-scrolling: touch;">
+        </div>
+
     <style>
-        /* Esconde a barra de rolagem horizontal pra ficar elegante no celular */
-        #nav-categorias::-webkit-scrollbar { display: none; }
+        .menu-categorias-scroll::-webkit-scrollbar { display: none; }
+        .menu-categorias-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .menu-categorias-scroll a:active { transform: scale(0.95); background: #f8f9fa !important; }
     </style>
-    
-    <nav id="nav-categorias" style="margin-top: 20px; max-width: 600px; margin-inline: auto; display: flex; gap: 15px; overflow-x: auto; padding: 10px 5px; text-align: center; scroll-behavior: smooth;">
-        </nav>
 
     <main id="lista-produtos" style="padding: 20px; padding-bottom: 100px; max-width: 600px; margin: 0 auto;">
         <h2>Cardápio Completo</h2>
@@ -150,7 +151,7 @@
         </div>
     </div>
 
-    <script src="/cardapio/app.js?v=101"></script>
+    <script src="/cardapio/app.js?v=103"></script>
 
 </body>
 </html>
