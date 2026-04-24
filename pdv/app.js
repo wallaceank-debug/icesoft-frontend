@@ -700,25 +700,75 @@ async function salvarMovimentacao() {
     }
 }
 
-// A FUNÇÃO QUE A CHAVE DO SEU PAINEL DEVE CHAMAR
+// ==========================================
+// 🏪 CONTROLE DE STATUS DA LOJA (COM TENTATIVAS AUTOMÁTICAS)
+// ==========================================
 async function alterarStatusLoja(statusDesejado) {
-    // statusDesejado deve ser a palavra exata: 'aberto' ou 'fechado'
-    try {
-        const res = await fetch('https://icesoft-api.onrender.com/api/loja/status', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: statusDesejado }) 
-        });
-        
-        const data = await res.json();
-        if (data.sucesso) {
-            alert("✅ Loja agora está: " + statusDesejado.toUpperCase());
-        } else {
-            alert("❌ Erro ao avisar o servidor.");
+    let tentativas = 3; // O painel vai tentar 3 vezes antes de desistir
+    
+    // Mostra que está processando se for demorar
+    mostrarAvisoFlutuante("🔄 Avisando o servidor...", "#FF9800");
+
+    while (tentativas > 0) {
+        try {
+            const res = await fetch('https://icesoft-api.onrender.com/api/loja/status', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: statusDesejado }) 
+            });
+            
+            // Se o servidor da Render retornar página de erro por estar acordando
+            if (!res.ok) throw new Error("Servidor acordando");
+
+            // Se chegou aqui, o servidor respondeu certo!
+            mostrarAvisoFlutuante(`✅ Loja agora está: ${statusDesejado.toUpperCase()}`, "#4CAF50");
+            return; // Sai da função com sucesso!
+
+        } catch (e) {
+            tentativas--;
+            console.log("Aguardando servidor acordar... Tentativas restantes:", tentativas);
+            
+            if (tentativas === 0) {
+                mostrarAvisoFlutuante("⚠️ O servidor demorou muito. Tente clicar novamente.", "#f44336");
+            } else {
+                // Espera 2.5 segundos e tenta bater na porta do servidor de novo
+                await new Promise(r => setTimeout(r, 2500));
+            }
         }
-    } catch (e) {
-        alert("🔌 Erro de conexão ao mudar status: " + e.message);
     }
+}
+
+// ==========================================
+// 🎨 AVISOS ELEGANTES (Estilo iFood)
+// ==========================================
+function mostrarAvisoFlutuante(mensagem, cor) {
+    // Remove avisos antigos para não acumular na tela
+    const avisoAntigo = document.getElementById('aviso-toast');
+    if (avisoAntigo) avisoAntigo.remove();
+
+    const div = document.createElement('div');
+    div.id = 'aviso-toast';
+    div.innerText = mensagem;
+    div.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: ${cor}; 
+        color: white; 
+        padding: 15px 25px; 
+        border-radius: 8px; 
+        font-weight: bold; 
+        z-index: 9999; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        transition: opacity 0.5s ease-out; 
+        font-family: 'Inter', sans-serif;
+    `;
+    
+    document.body.appendChild(div);
+    
+    // Faz o aviso sumir suavemente depois de 3 segundos
+    setTimeout(() => { div.style.opacity = '0'; }, 3000);
+    setTimeout(() => { div.remove(); }, 3500);
 }
 
 // Isso garante que ele só vai tentar baixar a cortina DEPOIS que o site carregar inteiro!
