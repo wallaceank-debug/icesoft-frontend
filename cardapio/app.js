@@ -239,8 +239,10 @@ function confirmarEscolhasEAdicionar() {
     fecharModalOpcoes();
 }
 
-function fecharModalOpcoes() { document.getElementById('modal-opcoes').style.display = 'none'; }
-
+function fecharModalOpcoes() { 
+    document.getElementById('modal-opcoes').style.display = 'none'; 
+    document.body.style.overflow = 'auto'; // 🔓 DESTRAVA o cardápio lá no fundo!
+}
 function adicionarAoCarrinho(nome, preco) { 
     carrinho.push({ nome, preco: Number(preco) }); 
     atualizarBarraCarrinho();
