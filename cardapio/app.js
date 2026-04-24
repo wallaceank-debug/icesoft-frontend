@@ -70,25 +70,29 @@ function renderizarCardapio(lista) {
         const produtosDestaCategoria = lista.filter(p => (p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos') === catNome);
         
         produtosDestaCategoria.forEach(p => {
+            // Prepara a descrição (se não existir, não mostra nada)
             const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
+            const htmlDescricao = descricaoLimpa 
+                ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
+                : ``;
             
-            // 📸 A MÁGICA ACONTECE AQUI: Foto ou Emoji?
+            // 📸 FOTO OU EMOJI (Agora com o design quadrado igual Anota.ai)
             const visualProduto = p.imagem_url 
-                ? `<img src="${p.imagem_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0;">`
-                : `<div style="font-size: 2.5rem; width: 80px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
+                ? `<img src="${p.imagem_url}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">`
+                : `<div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
 
+            // 🟢 CARD CLICÁVEL: O onclick agora fica na div principal e removemos o botão "+"
             container.innerHTML += `
-                <div class="produto-card" style="display: flex; background: white; margin-bottom: 15px; padding: 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); align-items: center; gap: 15px;">
+                <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
+                    
+                    <div style="flex: 1; padding-right: 15px;">
+                        <h3 style="margin: 0; color: #333; font-size: 1.05rem; font-weight: 600;">${p.nome}</h3>
+                        ${htmlDescricao}
+                        <div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                    </div>
                     
                     ${visualProduto}
                     
-                    <div style="flex: 1;">
-                        <h3 style="margin: 0; color: #333;">${p.nome}</h3>
-                        <p style="margin: 5px 0; color: #777; font-size: 0.85rem;">${descricaoLimpa}</p>
-                        <div style="font-weight: bold; color: var(--cor-primaria, #e91e63);">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
-                    </div>
-                    
-                    <button onclick="verificarAdicao(${p.id})" style="background: var(--cor-primaria, #e91e63); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0;">+</button>
                 </div>
             `;
         });
