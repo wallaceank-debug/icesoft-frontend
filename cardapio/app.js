@@ -592,8 +592,8 @@ async function verificarStatusLoja() {
                 cortina.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px);";
                 cortina.innerHTML = `
                     <h1 style="font-size: 4rem; margin: 0;">😴</h1>
-                    <h2 style="margin: 10px 0; color: #ffeb3b; font-family: 'Poppins', sans-serif;">Poxa, estamos fechados!</h2>
-                    <p style="font-size: 1.1rem; max-width: 400px; font-family: 'Poppins', sans-serif; color: #ccc;">Nossa loja não está recebendo pedidos no momento. Volte mais tarde!</p>
+                    <h2 style="margin: 10px 0; color: #ffeb3b; font-family: 'Inter', sans-serif;">Poxa, estamos fechados!</h2>
+                    <p style="font-size: 1.1rem; max-width: 400px; font-family: 'Inter', sans-serif; color: #ccc;">Nossa loja não está recebendo pedidos no momento. Volte mais tarde!</p>
                 `;
                 document.body.appendChild(cortina);
                 document.body.style.overflow = 'hidden'; 
@@ -606,7 +606,9 @@ async function verificarStatusLoja() {
             }
         }
     } catch (e) {
-        alert("🕵️ ERRO DO ESPIÃO: Não consegui falar com o servidor!");
+        // 🛑 MUDANÇA AQUI: Tiramos o alert() e colocamos um log silencioso
+        // Se a internet falhar ou o servidor dormir, ele não incomoda o cliente.
+        console.log("Servidor dormindo ou internet oscilou. Tentando de novo na próxima rodada silenciosamente...");
     }
 }
 
