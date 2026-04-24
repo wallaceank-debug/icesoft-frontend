@@ -9,22 +9,35 @@ const COLUNAS_ID = {
 };
 
 let pedidosGlobais = []; // Guarda os pedidos pra gente abrir os detalhes depois!
-let qtdPendentesAnterior = -1; // 🛎️ Memória da Campainha (Começa em -1 para não tocar ao abrir a tela)
+let qtdPendentesAnterior = -1; // 🛎️ Memória da Campainha
 
 async function carregarPedidos() {
     try {
         const res = await fetch(`${API_URL}/vendas`);
         const vendas = await res.json();
         
+        // Pega a data exata de hoje (Ex: "Fri Apr 24 2026")
+        const hoje = new Date().toDateString();
+
         const pedidosDelivery = vendas.filter(v => {
             const statusLimpo = v.status ? v.status.trim() : '';
-            return Object.keys(COLUNAS_ID).includes(statusLimpo);
+            if (!Object.keys(COLUNAS_ID).includes(statusLimpo)) return false;
+
+            // 🧹 LIMPEZA DE TELA: Oculta 'Entregue' e 'Cancelado' de dias anteriores
+            if (v.data_hora) {
+                const dataPedido = new Date(v.data_hora).toDateString();
+                if ((statusLimpo === 'Entregue' || statusLimpo === 'Cancelado') && dataPedido !== hoje) {
+                    return false; // Esconde da tela (mas continua a salvo no banco de dados)
+                }
+            }
+            
+            return true; // Mantém pedidos de hoje e qualquer pedido que ainda esteja pendente/preparando
         });
 
         // 🛎️ LÓGICA DA CAMPAINHA
         const qtdPendentesAtual = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery').length;
 
-        // Se tiver mais pendentes agora do que na última checagem (e não for a primeira vez carregando)
+        // Se tiver mais pendentes agora do que na última checagem
         if (qtdPendentesAnterior !== -1 && qtdPendentesAtual > qtdPendentesAnterior) {
              tocarCampainha();
         }
