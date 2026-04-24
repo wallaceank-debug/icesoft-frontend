@@ -704,10 +704,10 @@ async function salvarMovimentacao() {
 // 🏪 CONTROLE DE STATUS DA LOJA (COM TENTATIVAS AUTOMÁTICAS)
 // ==========================================
 async function alterarStatusLoja(statusDesejado) {
-    let tentativas = 3; // O painel vai tentar 3 vezes antes de desistir
+    let tentativas = 8; // ⏱️ Aumentamos para 8 tentativas!
     
-    // Mostra que está processando se for demorar
-    mostrarAvisoFlutuante("🔄 Avisando o servidor...", "#FF9800");
+    // Aviso mais claro para você saber que pode demorar um pouquinho
+    mostrarAvisoFlutuante("🔄 Acordando o servidor... (Pode levar até 30s)", "#FF9800");
 
     while (tentativas > 0) {
         try {
@@ -717,22 +717,21 @@ async function alterarStatusLoja(statusDesejado) {
                 body: JSON.stringify({ status: statusDesejado }) 
             });
             
-            // Se o servidor da Render retornar página de erro por estar acordando
             if (!res.ok) throw new Error("Servidor acordando");
 
             // Se chegou aqui, o servidor respondeu certo!
             mostrarAvisoFlutuante(`✅ Loja agora está: ${statusDesejado.toUpperCase()}`, "#4CAF50");
-            return; // Sai da função com sucesso!
+            return; 
 
         } catch (e) {
             tentativas--;
             console.log("Aguardando servidor acordar... Tentativas restantes:", tentativas);
             
             if (tentativas === 0) {
-                mostrarAvisoFlutuante("⚠️ O servidor demorou muito. Tente clicar novamente.", "#f44336");
+                mostrarAvisoFlutuante("⚠️ O servidor dormiu pesado. Clique na chave novamente.", "#f44336");
             } else {
-                // Espera 2.5 segundos e tenta bater na porta do servidor de novo
-                await new Promise(r => setTimeout(r, 2500));
+                // ⏱️ Espera 4 segundos antes de tentar bater na porta de novo
+                await new Promise(r => setTimeout(r, 4000));
             }
         }
     }
