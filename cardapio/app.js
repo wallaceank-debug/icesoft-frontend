@@ -10,20 +10,27 @@ let descontoUpsellGlobal = 0;
 
 let cuponsGlobais = [];
 let cupomAtivo = null;
+let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 async function carregarTudo() {
     try {
-        const [resProd, resGrupos] = await Promise.all([
+        // 🌐 NOVO: O "motor" agora busca produtos, grupos e BAIRROS ao mesmo tempo!
+        const [resProd, resGrupos, resBairros] = await Promise.all([
             fetch('https://icesoft-api.onrender.com/api/produtos'),
-            fetch('https://icesoft-api.onrender.com/api/grupos')
+            fetch('https://icesoft-api.onrender.com/api/grupos'),
+            fetch('https://icesoft-api.onrender.com/api/bairros')
         ]);
         
         produtosDaNuvem = (await resProd.json()).filter(p => p.ativo !== false);
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
+        bairrosGlobais = await resBairros.json(); // 📥 Guarda os bairros da nuvem
         
         renderizarMenuCategorias(produtosDaNuvem);
         renderizarCardapio(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
+        
+        // 🗺️ NOVO: Pede para desenhar a caixinha de bairros na sacola!
+        renderizarBairros();
     } catch (e) { console.error("Erro ao carregar:", e); }
 }
 
