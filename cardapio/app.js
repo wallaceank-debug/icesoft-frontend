@@ -276,17 +276,45 @@ function aplicarCupom() {
     atualizarTotalCheckout();
 }
 
+// ==========================================
+// 🧮 NOVO CÁLCULO DE TOTAL (COM TAXA DE ENTREGA)
+// ==========================================
 function atualizarTotalCheckout() {
+    // 1. Calcula o Subtotal (Só os produtos)
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    document.getElementById('subtotal-display').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    
+    // 2. Lê a Taxa do Bairro selecionado
+    const selectBairro = document.getElementById('cliente-bairro');
+    let taxaEntrega = 0;
+    
+    if (selectBairro.value) {
+        // Pega o valor "data-taxa" escondido dentro da opção selecionada
+        const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
+        taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
+        document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+    } else {
+        document.getElementById('taxa-entrega-display').innerText = `Selecione acima ⬆️`;
+    }
+
+    // 3. Aplica os Cupons (O desconto incide apenas sobre os produtos, não sobre a entrega)
     let desconto = 0;
+    const linhaDesconto = document.getElementById('desconto-display-linha');
+    const valorDesconto = document.getElementById('desconto-display-valor');
 
     if (cupomAtivo) {
         if (cupomAtivo.tipo === 'porcentagem') desconto = subtotal * (cupomAtivo.valor / 100);
         else desconto = cupomAtivo.valor;
+        
+        linhaDesconto.style.display = 'flex';
+        valorDesconto.innerText = `- R$ ${desconto.toFixed(2).replace('.', ',')}`;
+    } else {
+        linhaDesconto.style.display = 'none';
     }
 
-    let totalFinal = subtotal - desconto;
-    if (totalFinal < 0) totalFinal = 0;
+    // 4. A Conta Final
+    let totalFinal = (subtotal - desconto) + taxaEntrega;
+    if (totalFinal < 0) totalFinal = 0; // Evita cliente ganhar dinheiro do nada 😂
 
     document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
 }
@@ -349,29 +377,55 @@ function finalizarPedidoWhatsApp() {
 
 function fecharModalCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
 
+// ==========================================
+// 📲 NOVO ENVIO PARA O WHATSAPP
+// ==========================================
 async function processarEnvioWhatsApp() {
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefoneCliente = document.getElementById('cliente-telefone').value.trim();
-    const endereco = document.getElementById('cliente-endereco').value.trim();
+    const bairro = document.getElementById('cliente-bairro').value;
+    const rua = document.getElementById('cliente-endereco').value.trim();
     const pagamento = document.getElementById('cliente-pagamento').value;
 
-    if (!nome || !telefoneCliente || !endereco || !pagamento) return alert("⚠️ Preencha todos os campos, incluindo seu telefone!");
+    if (!nome || !telefoneCliente || !bairro || !rua || !pagamento) {
+        return alert("⚠️ Por favor, preencha todos os campos e selecione seu bairro!");
+    }
 
-    await salvarVendaDelivery();
+    // Pega a taxa do bairro para botar no recibo
+    const selectBairro = document.getElementById('cliente-bairro');
+    const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
+    const taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
 
-    let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n👤 *Cliente:* ${nome}\n📱 *WhatsApp:* ${telefoneCliente}\n📍 *Endereço:* ${endereco}\n💳 *Pagamento:* ${pagamento}\n\n📦 *Itens do Pedido:*\n`;
-    let subtotal = 0;
-    carrinho.forEach(item => { textoPedido += `▪️ 1x ${item.nome} - R$ ${Number(item.preco).toFixed(2).replace('.', ',')}\n`; subtotal += Number(item.preco); });
+    const enderecoCompleto = `${bairro} - ${rua}`;
     
+    // Atualiza o input escondido (caso você salve no banco de dados)
+    document.getElementById('cliente-endereco').value = enderecoCompleto;
+
+    await salvarVendaDelivery(); // Salva no banco (sua função continua a mesma)
+
+    let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
+    textoPedido += `👤 *Cliente:* ${nome}\n`;
+    textoPedido += `📱 *WhatsApp:* ${telefoneCliente}\n`;
+    textoPedido += `📍 *Endereço:* ${enderecoCompleto}\n`;
+    textoPedido += `💳 *Pagamento:* ${pagamento}\n\n`;
+    textoPedido += `📦 *Itens do Pedido:*\n`;
+    
+    let subtotal = 0;
+    carrinho.forEach(item => { 
+        textoPedido += `▪️ 1x ${item.nome} - R$ ${Number(item.preco).toFixed(2).replace('.', ',')}\n`; 
+        subtotal += Number(item.preco); 
+    });
+    
+    textoPedido += `\n🛵 *Taxa de Entrega:* R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+
     if (cupomAtivo) {
         let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
-        let totalFinal = subtotal - desconto;
-        if (totalFinal < 0) totalFinal = 0;
-        
         textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
-        textoPedido += `\n💰 *Total c/ Desconto: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
+        let totalFinal = (subtotal - desconto) + taxaEntrega;
+        textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
     } else {
-        textoPedido += `\n💰 *Total: R$ ${subtotal.toFixed(2).replace('.', ',')}*`;
+        let totalFinal = subtotal + taxaEntrega;
+        textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
     }
 
     window.location.href = `https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`;
