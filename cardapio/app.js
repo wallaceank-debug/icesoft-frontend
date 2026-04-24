@@ -530,3 +530,27 @@ window.rolarParaCategoria = function(nomeCategoria) {
         }
     }
 };
+
+// ==========================================
+// 🔍 SISTEMA DE BUSCA EM TEMPO REAL
+// ==========================================
+const inputBusca = document.getElementById('busca-produtos');
+
+if (inputBusca) {
+    inputBusca.addEventListener('input', function() {
+        // 1. Pega o que o cliente digitou, joga pra minúsculo e remove acentos (ex: "acai" acha "Açaí")
+        const termo = this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        // 2. Filtra a nossa lista mestre de produtos que já veio do banco de dados
+        const produtosFiltrados = produtosDaNuvem.filter(p => {
+            const nome = p.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const descricao = p.descricao && p.descricao !== 'null' ? p.descricao.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+            
+            // Retorna verdadeiro se o que o cliente digitou existir no NOME ou na DESCRIÇÃO do produto
+            return nome.includes(termo) || descricao.includes(termo);
+        });
+
+        // 3. Apaga o cardápio antigo e desenha de novo SÓ com os produtos encontrados!
+        renderizarCardapio(produtosFiltrados);
+    });
+}
