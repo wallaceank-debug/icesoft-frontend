@@ -112,51 +112,74 @@
     </div>
 
     <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:4000; padding: 15px; box-sizing: border-box;">
-        <div class="modal-conteudo" style="background:white; padding:20px; border-radius:20px; width:100%; max-width:450px; display:flex; flex-direction:column; gap:15px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
-            
-            <h3 style="text-align: center; margin: 0; color: var(--cor-primaria); flex-shrink: 0;">Resumo e Entrega</h3>
-            
-            <div id="lista-resumo-itens" style="background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 150px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box;"></div>
+    <div class="modal-conteudo" style="background:white; padding:20px; border-radius:20px; width:100%; max-width:450px; display:flex; flex-direction:column; gap:15px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
+        
+        <h3 style="text-align: center; margin: 0; color: var(--cor-primaria); flex-shrink: 0;">Resumo e Entrega</h3>
+        
+        <div id="lista-resumo-itens" style="background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 150px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box;"></div>
 
-            <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-top: 0; flex-shrink: 0; box-sizing: border-box;">
-                <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
-                <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
+        <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-top: 0; flex-shrink: 0; box-sizing: border-box;">
+            <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
+            <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
+        </div>
+
+        <hr style="border: 0.5px solid #eee; margin: 0; flex-shrink: 0;">
+
+        <div style="display: flex; gap: 10px; flex-shrink: 0; width: 100%; box-sizing: border-box;">
+            <input type="text" id="input-cupom" placeholder="Tem um cupom?" style="flex: 1; min-width: 0; padding: 12px; border-radius: 8px; border: 1px solid #ddd; text-transform: uppercase; outline: none; font-family: 'Inter', sans-serif; box-sizing: border-box;">
+            <button type="button" onclick="aplicarCupom()" style="padding: 0 20px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-sizing: border-box;">Aplicar</button>
+        </div>
+        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -10px; display: none; flex-shrink: 0;"></div>
+
+        <div style="background: #f0f2f5; padding: 12px; border-radius: 8px; flex-shrink: 0; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
+                <span>Subtotal:</span>
+                <span id="subtotal-display">R$ 0,00</span>
             </div>
-
-            <hr style="border: 0.5px solid #eee; margin: 0; flex-shrink: 0;">
-
-            <div style="display: flex; gap: 10px; flex-shrink: 0; width: 100%; box-sizing: border-box;">
-                <input type="text" id="input-cupom" placeholder="Tem um cupom?" style="flex: 1; min-width: 0; padding: 12px; border-radius: 8px; border: 1px solid #ddd; text-transform: uppercase; outline: none; font-family: 'Poppins'; box-sizing: border-box;">
-                <button type="button" onclick="aplicarCupom()" style="padding: 0 20px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-sizing: border-box;">Aplicar</button>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
+                <span>Taxa de Entrega:</span>
+                <span id="taxa-entrega-display">Calculando...</span>
             </div>
-            <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -10px; display: none; flex-shrink: 0;"></div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f0f2f5; border-radius: 8px; margin-bottom: 0; flex-shrink: 0; box-sizing: border-box;">
-                <strong style="color: #555;">Total a Pagar:</strong>
+            <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #4CAF50;">
+                <span>Desconto (Cupom):</span>
+                <span id="desconto-display-valor">- R$ 0,00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+                <strong style="color: #333; font-size: 1.1rem;">Total a Pagar:</strong>
                 <strong id="total-checkout-display" style="color: var(--cor-primaria); font-size: 1.3rem;">R$ 0,00</strong>
             </div>
-
-            <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; width: 100%;">
-                <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Poppins'; box-sizing: border-box;">
-                <input type="tel" id="cliente-telefone" placeholder="Seu WhatsApp (Ex: 11 99999-9999)" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Poppins'; box-sizing: border-box;">
-                <input type="text" id="cliente-endereco" placeholder="Endereço de Entrega (Rua, Nº, Bairro)" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Poppins'; box-sizing: border-box;">
-                
-                <select id="cliente-pagamento" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white; font-family:'Poppins'; box-sizing: border-box;">
-                    <option value="" disabled selected>Forma de Pagamento</option>
-                    <option value="Pix">Pix</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Dinheiro">Dinheiro Vivo</option>
-                </select>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-top:5px; flex-shrink: 0;">
-                <button type="button" onclick="fecharModalCheckout()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#eee; color:#333; font-weight:bold; cursor:pointer; box-sizing: border-box;">Voltar</button>
-                <button type="button" onclick="processarEnvioWhatsApp()" style="flex:2; padding:12px; border-radius:8px; border:none; background:#25D366; color:white; font-weight:bold; cursor:pointer; box-sizing: border-box;">Enviar Pedido 🚀</button>
-            </div>
-            
         </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; width: 100%;">
+            <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box;">
+            <input type="tel" id="cliente-telefone" placeholder="Seu WhatsApp (Ex: 11 99999-9999)" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box;">
+            
+            <select id="cliente-bairro" onchange="atualizarTotalCheckout()" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white; font-family:'Inter', sans-serif; box-sizing: border-box; cursor: pointer; border-left: 4px solid var(--cor-primaria);">
+                <option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>
+                <option value="Centro" data-taxa="2.00">Centro - Taxa: R$ 2,00</option>
+                <option value="Jardim Primavera" data-taxa="5.00">Jardim Primavera - Taxa: R$ 5,00</option>
+                <option value="Vila Nova" data-taxa="7.50">Vila Nova - Taxa: R$ 7,50</option>
+                <option value="Retirada no Local" data-taxa="0.00">Retirada no Local - Grátis</option>
+            </select>
+            
+            <input type="text" id="cliente-endereco" placeholder="Rua, Número e Complemento" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box;">
+            
+            <select id="cliente-pagamento" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white; font-family:'Inter', sans-serif; box-sizing: border-box;">
+                <option value="" disabled selected>💳 Forma de Pagamento</option>
+                <option value="Pix">Pix (Na Entrega)</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Dinheiro">Dinheiro Vivo</option>
+            </select>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:5px; flex-shrink: 0;">
+            <button type="button" onclick="fecharModalCheckout()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#eee; color:#333; font-weight:bold; cursor:pointer; box-sizing: border-box;">Voltar</button>
+            <button type="button" onclick="processarEnvioWhatsApp()" style="flex:2; padding:12px; border-radius:8px; border:none; background:#25D366; color:white; font-weight:bold; cursor:pointer; box-sizing: border-box;">Enviar Pedido 🚀</button>
+        </div>
+        
     </div>
+</div>
 
     <script src="/cardapio/app.js?v=106"></script>
 
