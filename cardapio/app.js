@@ -202,6 +202,9 @@ function abrirModalEscolha(produto) {
     atualizarPrecoDinamico();
     document.getElementById('modal-opcoes').style.display = 'flex';
 
+    // 🔒 TRAVA A ROLAGEM DO FUNDO AQUI!
+    document.body.style.overflow = 'hidden';
+    
     // 👆 CHAMA A FÍSICA DO DEDO SEMPRE QUE ABRIR O MODAL
     aplicarGestoSwipe();
 }
