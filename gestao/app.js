@@ -553,3 +553,78 @@ async function excluirCategoria(id) {
         alert("Erro ao excluir categoria.");
     }
 }
+
+// ==========================================
+// 🗺️ SISTEMA DE BAIRROS E TAXAS DE ENTREGA
+// ==========================================
+let listaBairros = [];
+
+function abrirGerenciadorBairros() {
+    document.getElementById('modal-bairros').style.display = 'flex';
+    carregarBairrosAdmin();
+}
+
+function fecharGerenciadorBairros() {
+    document.getElementById('modal-bairros').style.display = 'none';
+}
+
+async function carregarBairrosAdmin() {
+    try {
+        const res = await fetch(`${API_URL}/bairros`);
+        listaBairros = await res.json();
+        renderizarListaBairrosAdmin();
+    } catch (e) { console.error("Erro ao carregar bairros"); }
+}
+
+function renderizarListaBairrosAdmin() {
+    const container = document.getElementById('lista-bairros-gerenciador');
+    container.innerHTML = '';
+
+    if (listaBairros.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhum bairro cadastrado.</p>';
+        return;
+    }
+
+    listaBairros.forEach(b => {
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px; border: 1px solid #eee;">
+                <div>
+                    <strong style="color:#333;">${b.nome}</strong> 
+                    <span style="display:block; font-size:0.85rem; color:#00bcd4; font-weight:bold;">Taxa: R$ ${Number(b.taxa).toFixed(2).replace('.', ',')}</span>
+                </div>
+                <button onclick="excluirBairro(${b.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;">🗑️</button>
+            </div>
+        `;
+    });
+}
+
+async function salvarNovoBairro() {
+    const nome = document.getElementById('novo-bairro-nome').value.trim();
+    const taxa = document.getElementById('novo-bairro-taxa').value.trim();
+
+    if (!nome) return alert("Preencha o nome do bairro!");
+
+    try {
+        await fetch(`${API_URL}/bairros`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ nome, taxa: parseFloat(taxa) || 0 }) 
+        });
+        
+        document.getElementById('novo-bairro-nome').value = '';
+        document.getElementById('novo-bairro-taxa').value = '';
+        await carregarBairrosAdmin(); 
+    } catch (e) {
+        alert("Erro ao salvar bairro.");
+    }
+}
+
+async function excluirBairro(id) {
+    if(!confirm("Tem certeza que deseja excluir este bairro?")) return;
+    try {
+        await fetch(`${API_URL}/bairros/${id}`, { method: 'DELETE' });
+        await carregarBairrosAdmin();
+    } catch (e) {
+        alert("Erro ao excluir bairro.");
+    }
+}
