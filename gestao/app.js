@@ -268,9 +268,11 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-nome').value = p.nome;
         document.getElementById('prod-preco').value = p.preco;
         document.getElementById('prod-emoji').value = p.emoji;
-        
-        // NOVO: Puxa a categoria que estava salva (se não tiver, deixa vazio)
         document.getElementById('prod-categoria').value = p.categoria || '';
+        
+        // 📸 NOVO: Puxa o link da imagem se existir
+        const campoImagem = document.getElementById('produto-imagem');
+        if(campoImagem) campoImagem.value = p.imagem_url || '';
         
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
     } else { // MODO NOVO PRODUTO
@@ -279,9 +281,11 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-nome').value = '';
         document.getElementById('prod-preco').value = '';
         document.getElementById('prod-emoji').value = '🍨';
-        
-        // NOVO: Limpa a categoria
         document.getElementById('prod-categoria').value = '';
+        
+        // 📸 NOVO: Limpa o campo de imagem
+        const campoImagem = document.getElementById('produto-imagem');
+        if(campoImagem) campoImagem.value = '';
     }
 
     renderizarSelecaoGrupos();
@@ -347,16 +351,18 @@ async function salvarProduto() {
     const nome = document.getElementById('prod-nome').value;
     const preco = document.getElementById('prod-preco').value;
     const emoji = document.getElementById('prod-emoji').value;
-    
-    // NOVO: Pega a categoria digitada (se deixar vazio, vira "Outros")
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
+    
+    // 📸 NOVO: Pega o link da foto que você digitou/colou
+    const campoImagem = document.getElementById('produto-imagem');
+    const imagem_url = campoImagem ? campoImagem.value.trim() : '';
 
     const grupos_ids = gruposSelecionadosTemporarios;
 
     if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
 
-    // NOVO: Adicionamos a 'categoria' no pacote que vai pro banco de dados
-    const dados = { nome, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true };
+    // 📸 NOVO: Adicionamos o "imagem_url" no pacote final!
+    const dados = { nome, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url };
 
     try {
         if (id) {

@@ -28,7 +28,7 @@ async function carregarTudo() {
 }
 
 // ==========================================
-// 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS)
+// 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS E FOTOS)
 // ==========================================
 function renderizarCardapio(lista) {
     const container = document.getElementById('lista-produtos');
@@ -71,15 +71,24 @@ function renderizarCardapio(lista) {
         
         produtosDestaCategoria.forEach(p => {
             const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
+            
+            // 📸 A MÁGICA ACONTECE AQUI: Foto ou Emoji?
+            const visualProduto = p.imagem_url 
+                ? `<img src="${p.imagem_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0;">`
+                : `<div style="font-size: 2.5rem; width: 80px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
+
             container.innerHTML += `
                 <div class="produto-card" style="display: flex; background: white; margin-bottom: 15px; padding: 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); align-items: center; gap: 15px;">
-                    <div style="font-size: 2.5rem;">${p.emoji || '🍦'}</div>
+                    
+                    ${visualProduto}
+                    
                     <div style="flex: 1;">
                         <h3 style="margin: 0; color: #333;">${p.nome}</h3>
                         <p style="margin: 5px 0; color: #777; font-size: 0.85rem;">${descricaoLimpa}</p>
                         <div style="font-weight: bold; color: var(--cor-primaria, #e91e63);">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
                     </div>
-                    <button onclick="verificarAdicao(${p.id})" style="background: var(--cor-primaria, #e91e63); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">+</button>
+                    
+                    <button onclick="verificarAdicao(${p.id})" style="background: var(--cor-primaria, #e91e63); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0;">+</button>
                 </div>
             `;
         });

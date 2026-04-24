@@ -65,28 +65,31 @@
             </section>
 
         </main>
-    </div> <div id="modal-produto" class="modal-fundo" style="display:none;">
-        <div class="modal-conteudo">
-            <h2 id="titulo-modal-produto">Novo Produto</h2>
-            <input type="hidden" id="prod-id">
-            <input type="text" id="prod-nome" class="input-padrao" placeholder="Nome do Produto">
-            <input type="number" id="prod-preco" class="input-padrao" placeholder="Preço (Ex: 15.00)" step="0.01">
-            <input type="text" id="prod-emoji" class="input-padrao" placeholder="Emoji (Ex: 🍨)">
-            
-            <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Categoria:</p>
-            <select id="prod-categoria" class="input-padrao" style="width: 100%; cursor: pointer;">
-                <option value="Outros">Outros</option>
-                </select>
+    <div id="modal-produto" class="modal-fundo" style="display:none;">
+    <div class="modal-conteudo">
+        <h2 id="titulo-modal-produto">Novo Produto</h2>
+        <input type="hidden" id="prod-id">
+        <input type="text" id="prod-nome" class="input-padrao" placeholder="Nome do Produto">
+        <input type="number" id="prod-preco" class="input-padrao" placeholder="Preço (Ex: 15.00)" step="0.01">
+        <input type="text" id="prod-emoji" class="input-padrao" placeholder="Emoji (Ex: 🍨)">
+        
+        <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Categoria:</p>
+        <select id="prod-categoria" class="input-padrao" style="width: 100%; cursor: pointer; margin-bottom: 5px;">
+            <option value="Outros">Outros</option>
+        </select>
+        
+        <h3 style="color: #00bcd4; font-size: 1rem; margin-top: 15px; margin-bottom: 5px;">Imagem do Produto:</h3>
+        <input type="url" id="produto-imagem" class="input-padrao" placeholder="Cole o link da foto (Opcional)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins'; box-sizing: border-box; margin-bottom: 10px; outline: none;">
+        
+        <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Grupos Vinculados:</p>
+        <div id="container-checkbox-grupos" style="max-height: 120px; overflow-y:auto; margin-bottom:15px;"></div>
 
-            <p style="margin-top:15px; font-weight:bold; color:#00bcd4;">Grupos Vinculados:</p>
-            <div id="container-checkbox-grupos" style="max-height: 120px; overflow-y:auto; margin-bottom:15px;"></div>
-
-            <div class="modal-botoes">
-                <button onclick="fecharModalProduto()" class="btn-cancelar">Cancelar</button>
-                <button onclick="salvarProduto()" class="btn-salvar">Salvar</button>
-            </div>
+        <div class="modal-botoes">
+            <button onclick="fecharModalProduto()" class="btn-cancelar">Cancelar</button>
+            <button onclick="salvarProduto()" class="btn-salvar">Salvar</button>
         </div>
     </div>
+</div>
 
     <div id="modal-grupo" class="modal-fundo" style="display:none;">
         <div class="modal-conteudo">
