@@ -35,6 +35,27 @@ async function carregarTudo() {
 }
 
 // ==========================================
+// 🗺️ DESENHAR BAIRROS NO CHECKOUT
+// ==========================================
+function renderizarBairros() {
+    const selectBairro = document.getElementById('cliente-bairro');
+    if (!selectBairro) return;
+
+    // Limpa os bairros de teste e coloca a opção padrão
+    selectBairro.innerHTML = '<option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>';
+
+    // Adiciona os bairros que você cadastrou no Painel
+    bairrosGlobais.forEach(b => {
+        const taxa = Number(b.taxa);
+        const textoTaxa = taxa > 0 ? `Taxa: R$ ${taxa.toFixed(2).replace('.', ',')}` : 'Grátis';
+        selectBairro.innerHTML += `<option value="${b.nome}" data-taxa="${taxa}">${b.nome} - ${textoTaxa}</option>`;
+    });
+
+    // Mantém uma opção fixa de retirada no final
+    selectBairro.innerHTML += '<option value="Retirada no Local" data-taxa="0">🏬 Retirada na Loja - Grátis</option>';
+}
+
+// ==========================================
 // 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS E FOTOS)
 // ==========================================
 function renderizarCardapio(lista) {
