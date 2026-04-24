@@ -3,33 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Icesoft - Cardápio Digital</title>
+    <title>Cardápio Digital - Icesoft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/cardapio/style.css">
+    
+    <style>
+        /* A Variável Mágica: O JS vai injetar a cor que você escolheu no painel aqui! */
+        :root {
+            --cor-primaria: #00bcd4; /* Cor Padrão (Azul Icesoft) de segurança */
+        }
+
+        /* Redesign do Cabeçalho para ficar mais imersivo */
+        .header-loja { background-color: var(--cor-primaria) !important; padding: 30px 20px 40px 20px; text-align: center; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header-loja h1 { margin: 0; font-size: 2rem; display: flex; justify-content: center; align-items: center; gap: 10px;}
+        .mensagem-boas-vindas { font-size: 1rem; opacity: 0.95; margin-top: 8px; font-weight: 400; max-width: 400px; margin-inline: auto;}
+
+        /* Ajuste da barra de busca para flutuar sobre o cabeçalho */
+        .area-busca-flutuante { padding: 0 20px; margin-top: -25px; position: relative; z-index: 10; max-width: 600px; margin-inline: auto;}
+        .area-busca-flutuante input { width: 100%; padding: 15px 20px; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Poppins'; font-size: 1rem; box-sizing: border-box; outline: none;}
+
+        /* O Carrossel de Destaques */
+        .area-destaques { padding: 25px 20px 10px 20px; max-width: 600px; margin: 0 auto;}
+        .area-destaques h2 { font-size: 1.2rem; color: #333; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;}
+        .carrossel { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; scroll-snap-type: x mandatory;}
+        .carrossel::-webkit-scrollbar { height: 6px; }
+        .carrossel::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+        
+        .card-destaque { flex: 0 0 160px; background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; transition: 0.3s; cursor: pointer; scroll-snap-align: start; }
+        .card-destaque:active { transform: scale(0.98); border-color: var(--cor-primaria); }
+        .card-destaque h4 { margin: 0 0 10px 0; font-size: 0.95rem; color: #333; line-height: 1.3;}
+        .card-destaque .preco { font-weight: bold; color: var(--cor-primaria); font-size: 1.1rem; }
+        .card-destaque .btn-add-destaque { margin-top: 12px; background: var(--cor-primaria); color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;}
+
+        /* Pintando os botões antigos com a cor nova */
+        .btn-whatsapp { background-color: var(--cor-primaria) !important; }
+        #modal-opcoes button[onclick="confirmarEscolhasEAdicionar()"] { background-color: var(--cor-primaria) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; }
+        #preco-dinamico { color: var(--cor-primaria) !important; }
+        #lista-produtos h2 { max-width: 600px; margin: 0 auto 15px auto;}
+    </style>
 </head>
 <body>
+    
     <div id="overlay-loja-fechada" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; text-align:center; padding: 20px;">
         <h1 style="color: #f44336; font-size: 4rem; margin-bottom: 10px;">🛑</h1>
         <h2 style="color: white; font-family: 'Poppins', sans-serif; font-size: 2rem; margin-bottom: 15px;">Loja Fechada!</h2>
         <p style="color: #ccc; font-family: 'Poppins', sans-serif; font-size: 1.1rem; max-width: 400px;">Nosso delivery está suspenso no momento. Retornaremos em breve durante nosso horário de funcionamento!</p>
-    </div>    
+    </div>  
+
     <header class="header-loja">
-        <div class="logo-area">
-            <h1>🍦 Icesoft</h1>
-        </div>
-        <div class="busca-area">
-            <input type="text" id="busca-produtos" placeholder="O que você quer pedir hoje?">
-        </div>
+        <h1 id="loja-nome-exibicao">🍦 Carregando...</h1>
+        <p id="loja-mensagem-exibicao" class="mensagem-boas-vindas">Buscando informações da loja...</p>
     </header>
 
-    <nav class="stories-container">
-        <div class="story-item">🍨<br>Massas</div>
-        <div class="story-item">🍧<br>Açaí</div>
-        <div class="story-item">🍡<br>Picolés</div>
-        <div class="story-item">🥤<br>Bebidas</div>
-    </nav>
+    <div class="area-busca-flutuante">
+        <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
+    </div>
 
-    <main id="lista-produtos">
-        <h2>Cardápio</h2>
+    <section class="area-destaques" id="secao-destaques" style="display: none;">
+        <h2>⭐ Destaques da Casa</h2>
+        <div class="carrossel" id="carrossel-produtos">
+            </div>
+    </section>
+
+    <style>
+        /* Esconde a barra de rolagem horizontal pra ficar elegante no celular */
+        #nav-categorias::-webkit-scrollbar { display: none; }
+    </style>
+    
+    <nav id="nav-categorias" style="margin-top: 20px; max-width: 600px; margin-inline: auto; display: flex; gap: 15px; overflow-x: auto; padding: 10px 5px; text-align: center; scroll-behavior: smooth;">
+        </nav>
+
+    <main id="lista-produtos" style="padding: 20px; padding-bottom: 100px; max-width: 600px; margin: 0 auto;">
+        <h2>Cardápio Completo</h2>
         <p>Carregando os melhores sorvetes da região...</p>
     </main>
 
@@ -43,18 +88,14 @@
 
     <div id="modal-opcoes" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:3000;">
         <div style="background:white; width:100%; max-width:500px; border-top-left-radius:25px; border-top-right-radius:25px; padding:20px; max-height:85vh; overflow-y:auto; animation: slideUp 0.3s ease-out;">
-            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px;">
-                </div>
-
-            <div id="container-grupos-opcoes">
-                </div>
-
-            <div style="margin-top:20px; padding:10px; background:#fff0f5; border-radius:15px; display:flex; justify-content:space-between; align-items:center;">
+            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px;"></div>
+            <div id="container-grupos-opcoes"></div>
+            <div style="margin-top:20px; padding:10px; background:#f9f9f9; border-radius:15px; display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <span style="font-size:0.9rem; color:#666;">Total do item:</span><br>
-                    <strong id="preco-dinamico" style="font-size:1.3rem; color:#e91e63;">R$ 0,00</strong>
+                    <strong id="preco-dinamico" style="font-size:1.3rem;">R$ 0,00</strong>
                 </div>
-                <button onclick="confirmarEscolhasEAdicionar()" style="background:#e91e63; color:white; border:none; padding:15px 30px; border-radius:30px; font-weight:bold; cursor:pointer; box-shadow:0 4px 10px rgba(233,30,99,0.3);">
+                <button onclick="confirmarEscolhasEAdicionar()" style="color:white; border:none; padding:15px 30px; border-radius:30px; font-weight:bold; cursor:pointer;">
                     Adicionar à sacola
                 </button>
             </div>
@@ -64,18 +105,33 @@
 
     <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:4000;">
         <div class="modal-conteudo" style="background:white; padding:25px; border-radius:20px; width:90%; max-width:400px; display:flex; flex-direction:column; gap:15px; max-height: 90vh; overflow-y: auto;">
-            <h3 style="color: #e91e63; text-align: center; margin: 0;">Resumo e Entrega</h3>
+            <h3 style="text-align: center; margin: 0; color: var(--cor-primaria);">Resumo e Entrega</h3>
             
-            <div id="lista-resumo-itens" style="background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 150px; overflow-y: auto;">
-                </div>
+            <div id="lista-resumo-itens" style="background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 150px; overflow-y: auto;"></div>
 
-            <hr style="border: 0.5px solid #eee; margin: 5px 0;">
+            <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-top: 5px;">
+                <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
+                <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
+            </div>
 
-            <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none;">
-            <input type="tel" id="cliente-telefone" placeholder="Seu WhatsApp (Ex: 11 99999-9999)" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none;">
-            <input type="text" id="cliente-endereco" placeholder="Endereço de Entrega (Rua, Nº, Bairro)" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none;">
+            <hr style="border: 0.5px solid #eee; margin: 10px 0;">
+
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="input-cupom" placeholder="Tem um cupom?" style="flex: 2; padding: 12px; border-radius: 8px; border: 1px solid #ddd; text-transform: uppercase; outline: none; font-family: 'Poppins';">
+                <button type="button" onclick="aplicarCupom()" style="flex: 1; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Aplicar</button>
+            </div>
+            <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -5px; display: none;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f0f2f5; border-radius: 8px; margin-bottom: 5px;">
+                <strong style="color: #555;">Total a Pagar:</strong>
+                <strong id="total-checkout-display" style="color: var(--cor-primaria); font-size: 1.3rem;">R$ 0,00</strong>
+            </div>
+
+            <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Poppins';">
+            <input type="tel" id="cliente-telefone" placeholder="Seu WhatsApp (Ex: 11 99999-9999)" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Poppins';">
+            <input type="text" id="cliente-endereco" placeholder="Endereço de Entrega (Rua, Nº, Bairro)" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Poppins';">
             
-            <select id="cliente-pagamento" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white;">
+            <select id="cliente-pagamento" style="padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white; font-family:'Poppins';">
                 <option value="" disabled selected>Forma de Pagamento</option>
                 <option value="Pix">Pix</option>
                 <option value="Cartão de Crédito">Cartão de Crédito</option>
@@ -90,12 +146,7 @@
         </div>
     </div>
 
-    <style>
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .item-opcional-card { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
-        .item-opcional-card:last-child { border-bottom:none; }
-    </style>
-
     <script src="/cardapio/app.js"></script>
+
 </body>
 </html>
