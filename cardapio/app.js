@@ -419,47 +419,47 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ==========================================
-// 🛑 SISTEMA DE TRAVA: LOJA ABERTA / FECHADA
+// 🛑 SISTEMA DE TRAVA: A CORTINA DE FERRO
 // ==========================================
 async function verificarStatusLoja() {
     try {
         const res = await fetch('https://icesoft-api.onrender.com/api/loja/status');
         const data = await res.json();
 
-        if (data.status === 'fechado') {
-            // 1. Cria uma faixa vermelha no topo da tela
-            let avisoFechado = document.getElementById('aviso-loja-fechada');
-            if (!avisoFechado) {
-                avisoFechado = document.createElement('div');
-                avisoFechado.id = 'aviso-loja-fechada';
-                avisoFechado.innerHTML = `
-                    <div style="background: #f44336; color: white; text-align: center; padding: 15px; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-family: 'Poppins', sans-serif;">
-                        🛑 Nossa loja está fechada no momento. Retornaremos em breve!
-                    </div>
-                `;
-                document.body.appendChild(avisoFechado);
-            }
-
-            // 2. Trava o botão de abrir o Checkout!
-            // (Substitua a função de abrir o modal por um alerta)
-            window.abrirModalCheckout = function() {
-                alert("Poxa! 🛑 Nossa loja está fechada no momento. Não estamos recebendo pedidos.");
-            };
-        } else {
-            // Se abrir a loja de novo, remove o aviso da tela
-            const aviso = document.getElementById('aviso-loja-fechada');
-            if (aviso) aviso.remove();
+        // O .toLowerCase() resolve o problema do "Fechado" vs "fechado"
+        if (data.status.toLowerCase() === 'fechado') {
+            let cortina = document.getElementById('cortina-loja-fechada');
             
-            // Restaura a função de abrir o checkout (caso o cliente tenha deixado a tela aberta)
-            // Nota: Se sua função de abrir o modal tiver outro nome, o cliente só precisará dar F5.
+            // Se a cortina ainda não existe, nós criamos ela!
+            if (!cortina) {
+                cortina = document.createElement('div');
+                cortina.id = 'cortina-loja-fechada';
+                // Essa estilização cria uma tela preta transparente que bloqueia TUDO (z-index: 99999)
+                cortina.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px);";
+                
+                cortina.innerHTML = `
+                    <h1 style="font-size: 4rem; margin: 0;">😴</h1>
+                    <h2 style="margin: 10px 0; color: #ffeb3b; font-family: 'Poppins', sans-serif;">Poxa, estamos fechados!</h2>
+                    <p style="font-size: 1.1rem; max-width: 400px; font-family: 'Poppins', sans-serif; color: #ccc;">Nossa loja não está recebendo pedidos no momento. Volte mais tarde para pedir nossas delícias!</p>
+                `;
+                document.body.appendChild(cortina);
+                
+                // Esconde a barra de rolagem do fundo para o cliente não ficar descendo a tela
+                document.body.style.overflow = 'hidden'; 
+            }
+        } else {
+            // Se o painel for alterado para 'Aberto', a cortina se destrói sozinha!
+            const cortina = document.getElementById('cortina-loja-fechada');
+            if (cortina) {
+                cortina.remove();
+                document.body.style.overflow = 'auto'; // Devolve a barra de rolagem
+            }
         }
     } catch (e) {
         console.error("Erro ao checar status da loja", e);
     }
 }
 
-// 1. Chama o vigia assim que o cliente entra no site
+// Chama o vigia na hora que entra e a cada 1 minuto
 verificarStatusLoja();
-
-// 2. O vigia fica checando a cada 1 minuto (caso o cliente deixe a tela do celular ligada na mesa)
 setInterval(verificarStatusLoja, 60000);
