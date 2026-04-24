@@ -40,15 +40,45 @@ async function carregarPedidos() {
 }
 
 // ==========================================
-// 🛎️ O SOM DA GRANA (CAMPANINHA)
+// 🛎️ SISTEMA DE ALERTA SONORO PROFISSIONAL
 // ==========================================
+let somAtivado = false;
+
+// Troquei para um link mais estável. 
+// DICA DE OURO: Para nunca falhar, baixe um som, coloque na mesma pasta do seu site com o nome "ding.mp3" e mude o link abaixo para './ding.mp3'
+const audioCampainha = new Audio('https://www.myinstants.com/media/sounds/bell.mp3');
+
+function ativarSom() {
+    const btn = document.getElementById('btn-som');
+    somAtivado = !somAtivado; // Inverte o status (Liga/Desliga)
+
+    if (somAtivado) {
+        btn.innerHTML = '🔔 Alerta Sonoro: ATIVADO';
+        btn.style.background = '#4CAF50'; // Fica Verde
+        
+        // Dá um "toque fantasma" baixinho só para o navegador liberar a trava de segurança!
+        audioCampainha.volume = 0.1;
+        audioCampainha.play().then(() => {
+            // Se tocou o fantasma, volta pro volume máximo para os próximos pedidos
+            setTimeout(() => { audioCampainha.volume = 1.0; }, 500);
+        }).catch(e => console.log("Navegador ainda bloqueando."));
+        
+    } else {
+        btn.innerHTML = '🔇 Alerta Sonoro: Desativado';
+        btn.style.background = '#f44336'; // Fica Vermelho
+    }
+}
+
 function tocarCampainha() {
+    // Se o botão estiver vermelho, não toca nada!
+    if (!somAtivado) return; 
+
     try {
-        // Áudio clássico de balcão de hotel/recepção
-        const audio = new Audio('https://cdn.pixabay.com/download/audio/2022/01/18/audio_6ab1de4eeb.mp3?filename=service-bell-ring-14610.mp3');
-        audio.play();
+        audioCampainha.currentTime = 0; // Volta o som para o segundo zero
+        audioCampainha.volume = 1.0; // Volume no máximo
+        audioCampainha.play();
     } catch(e) {
-        console.log("Erro ao tentar tocar a campainha. O navegador pode ter bloqueado.");
+        console.log("Erro ao tocar a campainha:", e);
     }
 }
 
