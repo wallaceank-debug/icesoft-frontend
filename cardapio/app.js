@@ -121,11 +121,38 @@ function verificarAdicao(id) {
 function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
-    document.getElementById('detalhes-produto-topo').innerHTML = `<h2 style="margin:0; color:var(--cor-primaria, #e91e63);">${produto.nome}</h2><p style="color:#777; margin:5px 0;">Escolha seus complementos</p>`;
+    
+    // ==========================================
+    // 📸 NOVO TOPO DO MODAL (FOTO GIGANTE + DESCRIÇÃO)
+    // ==========================================
+    const topo = document.getElementById('detalhes-produto-topo');
+    
+    // 1. Prepara a descrição (se houver)
+    const descricaoHTML = produto.descricao && produto.descricao !== 'null'
+        ? `<p style="color: #666; font-size: 0.95rem; margin-top: 8px; line-height: 1.4; text-align: left;">${produto.descricao}</p>`
+        : ``;
+
+    // 2. A Mágica do CSS: Margem negativa para colar nas bordas do modal!
+    const visualTopo = produto.imagem_url
+        ? `<img src="${produto.imagem_url}" style="width: calc(100% + 40px); height: 220px; object-fit: cover; margin: -20px -20px 15px -20px; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa;">`
+        : `<div style="font-size: 4rem; padding-bottom: 10px; text-align: center;">${produto.emoji || '🍦'}</div>`;
+
+    // 3. Injeta tudo na tela
+    topo.innerHTML = `
+        ${visualTopo}
+        <h2 style="margin: 0; color: #333; font-size: 1.4rem; text-align: left;">${produto.nome}</h2>
+        ${descricaoHTML}
+        <div style="background: #f0f2f5; margin: 15px -20px 0 -20px; padding: 10px 20px;">
+            <p style="color: var(--cor-primaria, #e91e63); margin: 0; font-weight: bold; font-size: 0.95rem; text-transform: uppercase;">Escolha seus complementos</p>
+        </div>
+    `;
+    // ==========================================
+
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
     const gruposDoProduto = produto.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+    
     gruposDoProduto.forEach(grupo => {
         const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
         if (itensAtivos.length === 0) return;
@@ -137,12 +164,13 @@ function abrirModalEscolha(produto) {
             return `
             <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${chkId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
                 <div style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="${chkId}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;"><span>${item.nome}</span></div>
-                <span style="color:#25D366; font-size:0.9rem;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
             </div>`;
         }).join('');
 
-        container.innerHTML += `<div style="margin-bottom:20px;"><div style="background:#f8f8f8; padding:10px; border-radius:10px; display:flex; justify-content:space-between;"><strong style="color:#333;">${grupo.nome}</strong><span style="font-size:0.75rem; color:var(--cor-primaria, #e91e63); background:white; padding:2px 8px; border-radius:10px;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
+        container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem;">${grupo.nome}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
     });
+    
     atualizarPrecoDinamico();
     document.getElementById('modal-opcoes').style.display = 'flex';
 }
