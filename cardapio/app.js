@@ -426,9 +426,6 @@ async function verificarStatusLoja() {
         const res = await fetch('https://icesoft-api.onrender.com/api/loja/status');
         const data = await res.json();
 
-        // 🚨 O ESPIÃO: Vai jogar na sua cara o que o banco de dados respondeu!
-        alert("🕵️ ESPIÃO DO STATUS: O servidor disse -> " + JSON.stringify(data));
-
         // Pegamos o status, transformamos em minúsculo e tiramos espaços em branco
         const statusAtual = data.status ? data.status.toLowerCase().trim() : '';
 

@@ -700,28 +700,24 @@ async function salvarMovimentacao() {
     }
 }
 
-// ==========================================
-// VERIFICAÇÃO DE STATUS DA LOJA (DELIVERY)
-// ==========================================
-async function verificarStatusLoja() {
+// A FUNÇÃO QUE A CHAVE DO SEU PAINEL DEVE CHAMAR
+async function alterarStatusLoja(statusDesejado) {
+    // statusDesejado deve ser a palavra exata: 'aberto' ou 'fechado'
     try {
-        // Coloquei o link direto para garantir que ele ache o servidor de qualquer lugar
-        const res = await fetch(`https://icesoft-api.onrender.com/api/loja/status`);
+        const res = await fetch('https://icesoft-api.onrender.com/api/loja/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: statusDesejado }) 
+        });
+        
         const data = await res.json();
-        
-        const cortina = document.getElementById('overlay-loja-fechada');
-        
-        if (cortina) {
-            if (data.status === 'fechado') {
-                cortina.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Trava a rolagem da tela
-            } else {
-                cortina.style.display = 'none';
-                document.body.style.overflow = 'auto'; // Libera a rolagem
-            }
+        if (data.sucesso) {
+            alert("✅ Loja agora está: " + statusDesejado.toUpperCase());
+        } else {
+            alert("❌ Erro ao avisar o servidor.");
         }
     } catch (e) {
-        console.error("Erro ao verificar se a loja está aberta:", e);
+        alert("🔌 Erro de conexão ao mudar status: " + e.message);
     }
 }
 
