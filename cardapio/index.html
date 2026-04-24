@@ -13,6 +13,11 @@
             --cor-primaria: #00bcd4; /* Cor Padrão (Azul Icesoft) de segurança */
         }
 
+        /* 🟢 ADICIONAMOS A REGRA DO BODY AQUI PARA FORÇAR A FONTE NOVA! */
+        body {
+            font-family: 'Inter', sans-serif !important;
+        }
+
         /* Redesign do Cabeçalho para ficar mais imersivo */
         .header-loja { background-color: var(--cor-primaria) !important; padding: 30px 20px 40px 20px; text-align: center; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header-loja h1 { margin: 0; font-size: 2rem; display: flex; justify-content: center; align-items: center; gap: 10px;}
@@ -20,7 +25,9 @@
 
         /* Ajuste da barra de busca para flutuar sobre o cabeçalho */
         .area-busca-flutuante { padding: 0 20px; margin-top: -25px; position: relative; z-index: 10; max-width: 600px; margin-inline: auto;}
-        .area-busca-flutuante input { width: 100%; padding: 15px 20px; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Poppins'; font-size: 1rem; box-sizing: border-box; outline: none;}
+        
+        /* 🟢 TROCAMOS POPPINS POR INTER AQUI TAMBÉM */
+        .area-busca-flutuante input { width: 100%; padding: 15px 20px; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Inter', sans-serif; font-size: 1rem; box-sizing: border-box; outline: none;}
 
         /* O Carrossel de Destaques */
         .area-destaques { padding: 25px 20px 10px 20px; max-width: 600px; margin: 0 auto;}
@@ -40,7 +47,7 @@
         #modal-opcoes button[onclick="confirmarEscolhasEAdicionar()"] { background-color: var(--cor-primaria) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; }
         #preco-dinamico { color: var(--cor-primaria) !important; }
         #lista-produtos h2 { max-width: 600px; margin: 0 auto 15px auto;}
-    </style>
+</style>
 </head>
 <body>
     
