@@ -258,7 +258,7 @@ async function salvarVendaDelivery() {
     let totalFinal = subtotal - desconto;
     if (totalFinal < 0) totalFinal = 0;
 
-    // Ele puxa os dados digitados na tela!
+    // Pega os dados do HTML
     const pagamento = document.getElementById('cliente-pagamento').value || "WhatsApp / Online";
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = document.getElementById('cliente-telefone').value.trim();
@@ -267,7 +267,7 @@ async function salvarVendaDelivery() {
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
     
     try {
-        await fetch('https://icesoft-api.onrender.com/api/vendas', {
+        const res = await fetch('https://icesoft-api.onrender.com/api/vendas', {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -277,14 +277,20 @@ async function salvarVendaDelivery() {
                 total: totalFinal, 
                 forma_pagamento: pagamento, 
                 status: "Pendente Delivery",
-                // 👇 ESSAS 3 LINHAS SÃO AS RESPONSÁVEIS POR MANDAR OS DADOS!
                 cliente_nome: nome,
                 cliente_telefone: telefone,
                 cliente_endereco: endereco
             })
         });
+
+        // 🧹 LIMPEZA FEITA AQUI: Avisos amigáveis para o cliente!
+        if (!res.ok) {
+            alert("Poxa, tivemos um probleminha para processar seu pedido. Por favor, chame a gente no WhatsApp!");
+        }
+
     } catch (e) { 
-        console.error("Erro ao salvar:", e);
+        // 🧹 LIMPEZA FEITA AQUI TAMBÉM!
+        alert("Ops! Parece que sua internet oscilou. Verifique a conexão e tente novamente.");
     }
 }
 

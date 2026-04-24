@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icesoft - Kanban Delivery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; overflow: hidden; }
+        .conteudo-principal { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header-kanban { background: #00bcd4; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0; }
+        .header-kanban h1 { margin: 0; color: white; font-size: 1.5rem; font-weight: bold; }
+        
+        /* O Quadro Kanban (Rolagem horizontal se a tela for pequena) */
+        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; flex: 1; align-items: flex-start; }
+        
+        /* As Colunas */
+        .coluna { flex: 0 0 320px; background: #eef2f5; border-radius: 12px; display: flex; flex-direction: column; max-height: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .coluna-header { padding: 15px; border-top-left-radius: 12px; border-top-right-radius: 12px; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Cores das Colunas */
+        .header-analise { background: #fff3e0; color: #e65100; border-bottom: 3px solid #ffb74d; }
+        .header-preparar { background: #e3f2fd; color: #1565c0; border-bottom: 3px solid #64b5f6; }
+        .header-entrega { background: #fbe9e7; color: #d84315; border-bottom: 3px solid #ff8a65; }
+        .header-entregue { background: #e8f5e9; color: #2e7d32; border-bottom: 3px solid #81c784; }
+        .header-cancelado { background: #ffebee; color: #c62828; border-bottom: 3px solid #e57373; }
+
+        /* Área onde caem os cartões (rolagem vertical) */
+        .coluna-corpo { padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
+
+        /* Contador de pedidos */
+        .badge { background: rgba(0,0,0,0.1); padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <aside class="menu-lateral" style="width: 250px; background-color: #00bcd4; height: 100vh; padding: 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0;">
+        <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+            <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
+            <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
+            <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
+            <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
+            <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
+            <a href="../dashboard/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Dashboard</a>
+        </div>
+    </aside>
+
+    <div class="conteudo-principal">
+        <header class="header-kanban">
+            <h1>Gestão de Pedidos (Delivery)</h1>
+            <button onclick="carregarPedidos()" style="background: white; color: #00bcd4; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🔄 Atualizar Pedidos</button>
+        </header>
+
+        <main class="board">
+            
+            <div class="coluna" id="col-analise">
+                <div class="coluna-header header-analise">
+                    <span>📋 Em Análise</span>
+                    <span class="badge" id="qtd-analise">0</span>
+                </div>
+                <div class="coluna-corpo" id="corpo-analise">
+                    <p style="text-align: center; color: #999; font-size: 0.9rem; margin-top: 20px;">Nenhum pedido novo.</p>
+                </div>
+            </div>
+
+            <div class="coluna" id="col-preparar">
+                <div class="coluna-header header-preparar">
+                    <span>👨‍🍳 A Preparar</span>
+                    <span class="badge" id="qtd-preparar">0</span>
+                </div>
+                <div class="coluna-corpo" id="corpo-preparar"></div>
+            </div>
+
+            <div class="coluna" id="col-entrega">
+                <div class="coluna-header header-entrega">
+                    <span>🛵 Saiu p/ Entrega</span>
+                    <span class="badge" id="qtd-entrega">0</span>
+                </div>
+                <div class="coluna-corpo" id="corpo-entrega"></div>
+            </div>
+
+            <div class="coluna" id="col-entregue">
+                <div class="coluna-header header-entregue">
+                    <span>✅ Entregue</span>
+                    <span class="badge" id="qtd-entregue">0</span>
+                </div>
+                <div class="coluna-corpo" id="corpo-entregue"></div>
+            </div>
+
+            <div class="coluna" id="col-cancelado">
+                <div class="coluna-header header-cancelado">
+                    <span>❌ Cancelado</span>
+                    <span class="badge" id="qtd-cancelado">0</span>
+                </div>
+                <div class="coluna-corpo" id="corpo-cancelado"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+
+    <div id="modal-detalhes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:9999; padding: 20px; box-sizing: border-box;">
+        <div style="background:white; padding:25px; border-radius:15px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; display:flex; flex-direction:column; gap:15px; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <button onclick="fecharDetalhes()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:2rem; cursor:pointer; color:#888; line-height: 1;">&times;</button>
+            
+            <h2 style="margin:0; color:#00bcd4; border-bottom:2px solid #eee; padding-bottom:10px; display: flex; align-items: center; gap: 8px;">
+                📋 Pedido <span id="detalhe-id" style="color: #333;"></span>
+            </h2>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee; font-size: 0.95rem;">
+                <p style="margin:0 0 8px 0;"><strong>👤 Cliente:</strong> <span id="detalhe-nome"></span></p>
+                <p style="margin:0 0 8px 0;"><strong>📱 WhatsApp:</strong> <span id="detalhe-telefone"></span></p>
+                <p style="margin:0 0 8px 0;"><strong>📍 Endereço:</strong> <span id="detalhe-endereco"></span></p>
+                <p style="margin:0;"><strong>💳 Pagamento:</strong> <span id="detalhe-pagamento" style="background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-weight: bold;"></span></p>
+            </div>
+
+            <h3 style="margin:5px 0 0 0; font-size:1.1rem; color:#333;">🛒 Itens do Pedido:</h3>
+            <div id="detalhe-itens" style="background:#fff; border:1px solid #ddd; padding:10px; border-radius:8px; max-height:200px; overflow-y:auto;">
+                </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f2f5; padding:15px; border-radius:10px; margin-top:5px;">
+                <strong style="color:#555; font-size:1.1rem;">Total a Pagar:</strong>
+                <strong id="detalhe-total" style="color:#e91e63; font-size:1.5rem;">R$ 0,00</strong>
+            </div>
+            
+            <button onclick="fecharDetalhes()" style="width: 100%; padding: 12px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 5px;">Fechar Resumo</button>
+        </div>
+    </div>
+
+</body>
+</html>
