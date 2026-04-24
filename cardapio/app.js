@@ -465,29 +465,36 @@ function renderizarMenuCategorias(produtos) {
     const container = document.getElementById('menu-categorias-dinamico');
     if (!container) return;
 
-    // Pega todos os produtos, extrai as categorias e remove as repetidas (cria uma lista única)
+    // Pega as categorias únicas que vieram do banco de dados (já com os emojis originais)
     const categoriasUnicas = [...new Set(produtos.map(p => p.categoria).filter(c => c))];
 
     let html = '';
 
     categoriasUnicas.forEach(categoria => {
-        // Cria um ID limpo para o link (ex: "Milk Shakes" vira "milk-shakes")
-        const idSecao = categoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
-        
-        // Inteligência para escolher o Emoji automaticamente!
-        let emoji = '🍔'; // Padrão
-        const catTexto = categoria.toLowerCase();
-        if (catTexto.includes('shake')) emoji = '🥤';
-        else if (catTexto.includes('açaí') || catTexto.includes('acai')) emoji = '💜';
-        else if (catTexto.includes('bebida') || catTexto.includes('suco')) emoji = '🧃';
-        else if (catTexto.includes('sobremesa') || catTexto.includes('doce')) emoji = '🍰';
-        else if (catTexto.includes('combo')) emoji = '🍟';
-
+        // Criamos um botão "Pill" limpo. O onclick chama a nossa função ninja!
         html += `
-        <a href="#secao-${idSecao}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.95rem; transition: 0.2s;">
-            <span style="font-size: 1.2rem;">${emoji}</span> ${categoria}
-        </a>`;
+        <div onclick="rolarParaCategoria('${categoria.replace(/'/g, "\\'")}')" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 0.95rem; transition: 0.2s;">
+            ${categoria}
+        </div>`;
     });
 
     container.innerHTML = html;
 }
+
+// 🥷 FUNÇÃO NINJA DE ROLAGEM
+window.rolarParaCategoria = function(nomeCategoria) {
+    // Procura todos os títulos (H2 e H3) dentro da área do cardápio
+    const titulos = document.querySelectorAll('#lista-produtos h2, #lista-produtos h3');
+    
+    for (let titulo of titulos) {
+        // Se achar o título na tela, rola até ele!
+        if (titulo.innerText.trim().includes(nomeCategoria.trim()) || nomeCategoria.trim().includes(titulo.innerText.trim())) {
+            
+            // Rola suavemente deixando uma margem de 80px pra não grudar no topo da tela
+            const posicaoY = titulo.getBoundingClientRect().top + window.scrollY - 80; 
+            window.scrollTo({ top: posicaoY, behavior: 'smooth' });
+            
+            break; // Para de procurar depois que achar
+        }
+    }
+};
