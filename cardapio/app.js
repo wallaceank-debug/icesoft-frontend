@@ -671,3 +671,57 @@ if (inputBusca) {
         renderizarCardapio(produtosFiltrados);
     });
 }
+
+// ==========================================
+// 👆 GESTO DE DESLIZAR PARA FECHAR (SWIPE TO CLOSE)
+// ==========================================
+function aplicarGestoSwipe() {
+    const areaArraste = document.getElementById('area-arraste');
+    const modalBox = document.querySelector('#modal-opcoes > div'); // Pega a caixa branca do modal
+    
+    if (!areaArraste || !modalBox) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    // Remove qualquer listener antigo para não duplicar
+    const novaArea = areaArraste.cloneNode(true);
+    areaArraste.parentNode.replaceChild(novaArea, areaArraste);
+
+    novaArea.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        modalBox.style.transition = 'none'; // Tira o delay para grudar no dedo instantaneamente
+    }, { passive: true });
+
+    novaArea.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const diferenca = currentY - startY;
+
+        // Só permite arrastar a janela para BAIXO (número positivo)
+        if (diferenca > 0) {
+            modalBox.style.transform = `translateY(${diferenca}px)`;
+        }
+    }, { passive: true });
+
+    novaArea.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        const diferenca = currentY - startY;
+
+        // Devolve o "amortecedor" da animação
+        modalBox.style.transition = 'transform 0.3s ease-out';
+
+        // Se o cliente arrastou mais de 100px para baixo, FECHA!
+        if (diferenca > 100) {
+            fecharModalOpcoes();
+            // Reseta a janela para ela não abrir "caída" no próximo produto
+            setTimeout(() => { modalBox.style.transform = 'translateY(0)'; }, 300);
+        } else {
+            // Se puxou pouquinho e soltou, dá o efeito elástico voltando pro lugar
+            modalBox.style.transform = 'translateY(0)';
+        }
+    });
+}
