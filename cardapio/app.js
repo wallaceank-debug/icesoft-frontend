@@ -377,7 +377,7 @@ async function salvarVendaDelivery() {
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
     
     try {
-        const res = await fetch('https://icesoft-api.onrender.com/api/vendas', {
+        const res = await fetch(${API_URL}/vendas, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -474,7 +474,7 @@ async function processarEnvioWhatsApp() {
 
 async function carregarConfiguracoesLoja() {
     try {
-        const res = await fetch(`https://icesoft-api.onrender.com/api/configuracoes`);
+        const res = await fetch(${API_URL}/configuracoes);
         const configs = await res.json();
         
         if (configs.cor_primaria) document.documentElement.style.setProperty('--cor-primaria', configs.cor_primaria);
@@ -562,7 +562,7 @@ function adicionarOfertaAoCarrinho(nome, precoDesconto) {
 
 async function verificarStatusLoja() {
     try {
-        const res = await fetch(`https://icesoft-api.onrender.com/api/loja/status`);
+        const res = await fetch(${API_URL}/status);
         const cortina = document.getElementById('overlay-loja-fechada');
         if (cortina) {
             if ((await res.json()).status === 'fechado') { cortina.style.display = 'flex'; document.body.style.overflow = 'hidden'; } 
@@ -582,7 +582,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ==========================================
 async function verificarStatusLoja() {
     try {
-        const res = await fetch('https://icesoft-api.onrender.com/api/loja/status');
+        const res = await fetch(${API_URL}/status);
         const data = await res.json();
 
         // Pegamos o status, transformamos em minúsculo e tiramos espaços em branco
