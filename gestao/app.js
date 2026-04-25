@@ -1,4 +1,4 @@
-const API_URL = 'http://108.174.146.77:3000/api';
+const API_URL = 'https://api.108.174.146.77.nip.io/api';
 let listaProdutos = [];
 let listaGrupos = [];
 let grupoSelecionadoId = null;
