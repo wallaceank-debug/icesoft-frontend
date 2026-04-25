@@ -1,4 +1,4 @@
-const API_URL = 'https://icesoft-api.onrender.com/api';
+const API_URL = 'https://api.108.174.146.77.nip.io/api';
 let chartInstancia = null;
 
 window.onload = () => { carregarVendas(); };
