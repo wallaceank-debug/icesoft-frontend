@@ -160,7 +160,7 @@ function abrirModalEscolha(produto) {
         ? `<p style="color: #666; font-size: 0.95rem; margin-top: 8px; line-height: 1.4; text-align: left;">${produto.descricao}</p>`
         : ``;
 
-    // 📸 NOVO: O wrapper 'area-arraste' com a pílula visual (a manchinha vermelha que você pediu, mas em formato de app!)
+    // 📸 NOVO: O wrapper 'area-arraste' com a pílula visual
     const visualTopo = produto.imagem_url
         ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 10px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
@@ -328,12 +328,12 @@ function atualizarTotalCheckout() {
     const selectBairro = document.getElementById('cliente-bairro');
     let taxaEntrega = 0;
     
-    if (selectBairro.value) {
+    if (selectBairro && selectBairro.value) {
         // Pega o valor "data-taxa" escondido dentro da opção selecionada
         const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
         taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
         document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
-    } else {
+    } else if (document.getElementById('taxa-entrega-display')) {
         document.getElementById('taxa-entrega-display').innerText = `Selecione acima ⬆️`;
     }
 
@@ -346,17 +346,19 @@ function atualizarTotalCheckout() {
         if (cupomAtivo.tipo === 'porcentagem') desconto = subtotal * (cupomAtivo.valor / 100);
         else desconto = cupomAtivo.valor;
         
-        linhaDesconto.style.display = 'flex';
-        valorDesconto.innerText = `- R$ ${desconto.toFixed(2).replace('.', ',')}`;
+        if (linhaDesconto) linhaDesconto.style.display = 'flex';
+        if (valorDesconto) valorDesconto.innerText = `- R$ ${desconto.toFixed(2).replace('.', ',')}`;
     } else {
-        linhaDesconto.style.display = 'none';
+        if (linhaDesconto) linhaDesconto.style.display = 'none';
     }
 
     // 4. A Conta Final
     let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0; // Evita cliente ganhar dinheiro do nada 😂
 
-    document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
+    if(document.getElementById('total-checkout-display')) {
+        document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
+    }
 }
 
 async function salvarVendaDelivery() {
@@ -377,7 +379,7 @@ async function salvarVendaDelivery() {
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
     
     try {
-        const res = await fetch(${API_URL}/vendas, {
+        const res = await fetch(`${API_URL}/vendas`, {
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -474,12 +476,12 @@ async function processarEnvioWhatsApp() {
 
 async function carregarConfiguracoesLoja() {
     try {
-        const res = await fetch(${API_URL}/configuracoes);
+        const res = await fetch(`${API_URL}/configuracoes`);
         const configs = await res.json();
         
         if (configs.cor_primaria) document.documentElement.style.setProperty('--cor-primaria', configs.cor_primaria);
-        if (configs.nome_loja) document.getElementById('loja-nome-exibicao').innerText = `🍦 ${configs.nome_loja}`;
-        if (configs.mensagem_boas_vindas) document.getElementById('loja-mensagem-exibicao').innerText = configs.mensagem_boas_vindas;
+        if (configs.nome_loja && document.getElementById('loja-nome-exibicao')) document.getElementById('loja-nome-exibicao').innerText = `🍦 ${configs.nome_loja}`;
+        if (configs.mensagem_boas_vindas && document.getElementById('loja-mensagem-exibicao')) document.getElementById('loja-mensagem-exibicao').innerText = configs.mensagem_boas_vindas;
         if (configs.carrossel_destaques) { try { idsDestaquesGlobais = JSON.parse(configs.carrossel_destaques); } catch(e) {} }
         if (configs.upsell_desconto) descontoUpsellGlobal = Number(configs.upsell_desconto);
         if (configs.carrossel_upsell) { try { idsUpsellGlobais = JSON.parse(configs.carrossel_upsell); } catch(e) {} }
@@ -491,6 +493,8 @@ async function carregarConfiguracoesLoja() {
 function renderizarCarrossel(produtos) {
     const secao = document.getElementById('secao-destaques');
     const carrossel = document.getElementById('carrossel-produtos');
+    if (!secao || !carrossel) return;
+
     const produtosDestaque = produtos.filter(p => idsDestaquesGlobais.includes(Number(p.id)) && p.ativo !== false);
 
     if (produtosDestaque.length === 0) return secao.style.display = 'none';
@@ -520,6 +524,8 @@ function renderizarCarrossel(produtos) {
 function renderizarUpsellCheckout() {
     const area = document.getElementById('area-upsell-checkout');
     const carrossel = document.getElementById('carrossel-upsell');
+    if (!area || !carrossel) return;
+
     const produtosUpsell = produtosDaNuvem.filter(p => idsUpsellGlobais.includes(Number(p.id)) && p.ativo !== false);
 
     if (produtosUpsell.length === 0 || descontoUpsellGlobal <= 0) return area.style.display = 'none';
@@ -560,29 +566,12 @@ function adicionarOfertaAoCarrinho(nome, precoDesconto) {
     adicionarAoCarrinho("🔥 Oferta: " + nome, precoDesconto);
 }
 
-async function verificarStatusLoja() {
-    try {
-        const res = await fetch(${API_URL}/status);
-        const cortina = document.getElementById('overlay-loja-fechada');
-        if (cortina) {
-            if ((await res.json()).status === 'fechado') { cortina.style.display = 'flex'; document.body.style.overflow = 'hidden'; } 
-            else { cortina.style.display = 'none'; document.body.style.overflow = 'auto'; }
-        }
-    } catch (e) { console.error("Erro loja:", e); }
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-    await carregarConfiguracoesLoja(); 
-    await carregarTudo(); 
-    verificarStatusLoja(); setInterval(verificarStatusLoja, 30000);
-});
-
 // ==========================================
 // 🛑 SISTEMA DE TRAVA: A CORTINA DE FERRO
 // ==========================================
 async function verificarStatusLoja() {
     try {
-        const res = await fetch(${API_URL}/status);
+        const res = await fetch(`${API_URL}/status`);
         const data = await res.json();
 
         // Pegamos o status, transformamos em minúsculo e tiramos espaços em branco
@@ -611,12 +600,16 @@ async function verificarStatusLoja() {
         }
     } catch (e) {
         // 🛑 MUDANÇA AQUI: Tiramos o alert() e colocamos um log silencioso
-        // Se a internet falhar ou o servidor dormir, ele não incomoda o cliente.
         console.log("Servidor dormindo ou internet oscilou. Tentando de novo na próxima rodada silenciosamente...");
     }
 }
 
-verificarStatusLoja();
+window.addEventListener('DOMContentLoaded', async () => {
+    await carregarConfiguracoesLoja(); 
+    await carregarTudo(); 
+    verificarStatusLoja(); 
+    setInterval(verificarStatusLoja, 30000);
+});
 
 // ==========================================
 // 🎨 DESENHA O MENU DE CATEGORIAS DINÂMICO
