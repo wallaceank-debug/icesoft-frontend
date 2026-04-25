@@ -1,3 +1,5 @@
+const API_URL = 'http://108.174.146.77:3000/api';
+
 let carrinho = [];
 let produtosDaNuvem = [];
 let gruposGlobais = [];
@@ -14,24 +16,26 @@ let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 async function carregarTudo() {
     try {
-        // 🌐 NOVO: O "motor" agora busca produtos, grupos e BAIRROS ao mesmo tempo!
+        // 🌐 O "motor" agora busca no seu NOVO SERVIDOR de alta velocidade!
         const [resProd, resGrupos, resBairros] = await Promise.all([
-            fetch('https://icesoft-api.onrender.com/api/produtos'),
-            fetch('https://icesoft-api.onrender.com/api/grupos'),
-            fetch('https://icesoft-api.onrender.com/api/bairros')
+            fetch(`${API_URL}/produtos`),
+            fetch(`${API_URL}/grupos`),
+            fetch(`${API_URL}/bairros`)
         ]);
-        
+
         produtosDaNuvem = (await resProd.json()).filter(p => p.ativo !== false);
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
-        bairrosGlobais = await resBairros.json(); // 📥 Guarda os bairros da nuvem
-        
+        bairrosGlobais = await resBairros.json(); // 🗺️ Guarda os bairros da nuvem
+
         renderizarMenuCategorias(produtosDaNuvem);
         renderizarCardapio(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
-        
-        // 🗺️ NOVO: Pede para desenhar a caixinha de bairros na sacola!
+
+        // 🗺️ Pede para desenhar a caixinha de bairros na sacola!
         renderizarBairros();
-    } catch (e) { console.error("Erro ao carregar:", e); }
+    } catch (e) { 
+        console.error("Erro ao carregar do servidor novo:", e); 
+    }
 }
 
 // ==========================================

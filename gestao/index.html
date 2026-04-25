@@ -90,9 +90,13 @@
                         <option value="Outros">Outros</option>
                     </select>
 
-                    <input type="url" id="produto-imagem" class="input-padrao" placeholder="Link da Imagem (URL ImgBB) - Opcional" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif;">
+                    <input type="url" id="produto-imagem" class="input-padrao" placeholder="Link da Imagem (URL ImgBB) - Opcional" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; display: none;"> <div style="margin-top: 5px; margin-bottom: 5px; background: #f0f8ff; padding: 10px; border-radius: 8px; border: 1px dashed #00bcd4;">
+                        <label style="font-size: 0.85rem; color: #00bcd4; font-weight: bold;">📸 Enviar Foto do PC/Celular:</label>
+                        <input type="file" id="produto-arquivo-foto" accept="image/*" style="width: 100%; margin-top: 5px; cursor: pointer; font-family: 'Poppins', sans-serif;">
+                    </div>
                     
                     <textarea id="prod-descricao" class="input-padrao" placeholder="Descrição apetitosa do produto... (Ex: Delicioso Milk Shake batido na hora com sorvete artesanal e muita calda!)" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; resize: vertical;"></textarea>
+
                 </div>
 
                 <div style="flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 12px;">

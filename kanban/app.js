@@ -1,4 +1,4 @@
-const API_URL = 'https://icesoft-api.onrender.com/api';
+const API_URL = 'http://108.174.146.77:3000/api';
 
 const COLUNAS_ID = {
     'Pendente Delivery': 'corpo-analise',

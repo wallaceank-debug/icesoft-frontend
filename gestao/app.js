@@ -1,4 +1,4 @@
-const API_URL = 'https://icesoft-api.onrender.com/api';
+const API_URL = 'http://108.174.146.77:3000/api';
 let listaProdutos = [];
 let listaGrupos = [];
 let grupoSelecionadoId = null;
@@ -259,9 +259,9 @@ function abrirModalProduto(id = null) {
     const idInput = document.getElementById('prod-id');
     const titulo = document.getElementById('titulo-modal-produto');
 
-    gruposSelecionadosTemporarios = []; // Reinicia a lista
+    gruposSelecionadosTemporarios = []; 
 
-    if (id) { // MODO EDIÇÃO
+    if (id) { 
         const p = listaProdutos.find(x => x.id === id);
         titulo.innerText = "Editar Produto";
         idInput.value = p.id;
@@ -270,16 +270,14 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-emoji').value = p.emoji;
         document.getElementById('prod-categoria').value = p.categoria || '';
         
-        // Puxa o link da imagem se existir
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = p.imagem_url || '';
         
-        // 🟢 NOVO: Puxa a descrição se existir
         const campoDescricao = document.getElementById('prod-descricao');
         if(campoDescricao) campoDescricao.value = (p.descricao && p.descricao !== 'null') ? p.descricao : '';
         
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
-    } else { // MODO NOVO PRODUTO
+    } else { 
         titulo.innerText = "Novo Produto";
         idInput.value = '';
         document.getElementById('prod-nome').value = '';
@@ -287,14 +285,16 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-emoji').value = '🍨';
         document.getElementById('prod-categoria').value = '';
         
-        // Limpa o campo de imagem
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = '';
         
-        // 🟢 NOVO: Limpa o campo de descrição
         const campoDescricao = document.getElementById('prod-descricao');
         if(campoDescricao) campoDescricao.value = '';
     }
+
+    // 🧹 Limpa o campo de upload do PC toda vez que abrir a janela
+    const inputArquivo = document.getElementById('produto-arquivo-foto');
+    if(inputArquivo) inputArquivo.value = '';
 
     renderizarSelecaoGrupos();
     modal.style.display = 'flex';
@@ -362,9 +362,8 @@ async function salvarProduto() {
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
     
     const campoImagem = document.getElementById('produto-imagem');
-    const imagem_url = campoImagem ? campoImagem.value.trim() : '';
+    let imagem_url = campoImagem ? campoImagem.value.trim() : '';
 
-    // 🟢 NOVO: Lê o que você digitou na caixa de descrição
     const campoDescricao = document.getElementById('prod-descricao');
     const descricao = campoDescricao ? campoDescricao.value.trim() : '';
 
@@ -372,7 +371,30 @@ async function salvarProduto() {
 
     if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
 
-    // 🟢 NOVO: Injetamos a variável 'descricao' no pacote!
+    // 🚀 O NOVO MOTOR DE UPLOAD DIRETO PARA O SERVIDOR
+    const inputArquivo = document.getElementById('produto-arquivo-foto');
+    if (inputArquivo && inputArquivo.files.length > 0) {
+        const formData = new FormData();
+        formData.append('imagem', inputArquivo.files[0]);
+        
+        try {
+            if(typeof mostrarAvisoFlutuante === 'function') mostrarAvisoFlutuante("⏳ Salvando foto no servidor...", "#FF9800");
+            
+            const resUpload = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+            const dataUpload = await resUpload.json();
+            
+            if (dataUpload.sucesso) {
+                // Pega o seu IP (ex: http://108...:3000) e junta com a foto
+                const baseUrl = API_URL.replace('/api', '');
+                imagem_url = baseUrl + dataUpload.url; 
+            } else {
+                return alert("❌ Erro ao salvar a imagem: " + dataUpload.erro);
+            }
+        } catch (e) {
+            return alert("🔌 Erro de conexão na hora de enviar a foto.");
+        }
+    }
+
     const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url };
 
     try {
@@ -383,6 +405,7 @@ async function salvarProduto() {
         }
         fecharModalProduto();
         await carregarTudo(); 
+        if(typeof mostrarAvisoFlutuante === 'function') mostrarAvisoFlutuante("✅ Produto salvo com sucesso!", "#4CAF50");
     } catch (e) {
         alert("❌ Erro ao salvar produto no banco de dados.");
     }
