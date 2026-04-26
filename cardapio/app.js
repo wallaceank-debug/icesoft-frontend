@@ -16,7 +16,7 @@ let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 async function carregarTudo() {
     try {
-        // 🌐 O "motor" busca no seu NOVO SERVIDOR de alta velocidade!
+        // 🌐 O "motor" agora busca no seu NOVO SERVIDOR de alta velocidade!
         const [resProd, resGrupos, resBairros] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
@@ -24,29 +24,29 @@ async function carregarTudo() {
         ]);
 
         let produtosBrutos = await resProd.json();
-        
-        // 📸 O FILTRO MÁGICO DAS FOTOS
+
+        // 📸 O NOVO FILTRO BLINDADO (Corrige a foto quebrada ignorando a sujeira do banco)
         produtosDaNuvem = produtosBrutos.map(p => {
-            // Se o produto tiver foto e ela não começar com 'http' (ou seja, for da nossa própria gaveta)
-            if (p.imagem_url && !p.imagem_url.startsWith('http')) {
-                // Cola o endereço do nosso servidor antes do /uploads/...
-                p.imagem_url = 'https://api.108.174.146.77.nip.io' + p.imagem_url;
+            if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
+                const nomeArquivo = p.imagem_url.split('/').pop(); 
+                p.imagem_url = `https://api.108.174.146.77.nip.io/uploads/${nomeArquivo}`;
             }
             return p;
         }).filter(p => p.ativo !== false);
 
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
-        bairrosGlobais = await resBairros.json(); 
+        bairrosGlobais = await resBairros.json(); // 🗺️ Guarda os bairros da nuvem
 
         renderizarMenuCategorias(produtosDaNuvem);
         renderizarCardapio(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
+
+        // 🗺️ Pede para desenhar a caixinha de bairros na sacola!
         renderizarBairros();
     } catch (e) { 
         console.error("Erro ao carregar do servidor novo:", e); 
     }
 }
-
 // ==========================================
 // 🗺️ DESENHAR BAIRROS NO CHECKOUT
 // ==========================================
