@@ -1,4 +1,4 @@
-const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host';
+const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 
 // Variáveis Globais (A memória do sistema)
 let produtosDaNuvem = [];
