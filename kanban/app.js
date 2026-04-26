@@ -1,4 +1,4 @@
-const API_URL = 'https://api.108.174.146.77.nip.io/api';
+const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host';
 
 const COLUNAS_ID = {
     'Pendente Delivery': 'corpo-analise',
