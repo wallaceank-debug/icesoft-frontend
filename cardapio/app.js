@@ -29,7 +29,7 @@ async function carregarTudo() {
         produtosDaNuvem = produtosBrutos.map(p => {
             if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
                 const nomeArquivo = p.imagem_url.split('/').pop(); 
-                p.imagem_url = `https://api.108.174.146.77.nip.io/uploads/${nomeArquivo}`;
+                p.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
             }
             return p;
         }).filter(p => p.ativo !== false);
