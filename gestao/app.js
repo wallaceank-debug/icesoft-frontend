@@ -13,7 +13,18 @@ async function carregarTudo() {
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`)
         ]);
-        listaProdutos = await resProd.json();
+        
+        let produtosBrutos = await resProd.json();
+        
+        // 📸 O FILTRO MÁGICO DAS FOTOS (Versão Painel de Gestão)
+        listaProdutos = produtosBrutos.map(p => {
+            // Se tiver foto e for da nossa gaveta interna, cola o link do servidor antes!
+            if (p.imagem_url && !p.imagem_url.startsWith('http')) {
+                p.imagem_url = 'https://api.108.174.146.77.nip.io' + p.imagem_url;
+            }
+            return p;
+        });
+
         listaGrupos = await resGrupos.json();
         
         renderizarProdutos();
