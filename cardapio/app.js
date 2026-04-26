@@ -16,22 +16,31 @@ let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 async function carregarTudo() {
     try {
-        // 🌐 O "motor" agora busca no seu NOVO SERVIDOR de alta velocidade!
+        // 🌐 O "motor" busca no seu NOVO SERVIDOR de alta velocidade!
         const [resProd, resGrupos, resBairros] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
             fetch(`${API_URL}/bairros`)
         ]);
 
-        produtosDaNuvem = (await resProd.json()).filter(p => p.ativo !== false);
+        let produtosBrutos = await resProd.json();
+        
+        // 📸 O FILTRO MÁGICO DAS FOTOS
+        produtosDaNuvem = produtosBrutos.map(p => {
+            // Se o produto tiver foto e ela não começar com 'http' (ou seja, for da nossa própria gaveta)
+            if (p.imagem_url && !p.imagem_url.startsWith('http')) {
+                // Cola o endereço do nosso servidor antes do /uploads/...
+                p.imagem_url = 'https://api.108.174.146.77.nip.io' + p.imagem_url;
+            }
+            return p;
+        }).filter(p => p.ativo !== false);
+
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
-        bairrosGlobais = await resBairros.json(); // 🗺️ Guarda os bairros da nuvem
+        bairrosGlobais = await resBairros.json(); 
 
         renderizarMenuCategorias(produtosDaNuvem);
         renderizarCardapio(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
-
-        // 🗺️ Pede para desenhar a caixinha de bairros na sacola!
         renderizarBairros();
     } catch (e) { 
         console.error("Erro ao carregar do servidor novo:", e); 
