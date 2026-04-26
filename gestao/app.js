@@ -24,7 +24,7 @@ async function carregarTudo() {
                 const nomeArquivo = p.imagem_url.split('/').pop(); 
                 
                 // Constrói a URL absoluta, perfeita e limpa direto pro seu servidor
-                p.imagem_url = `https://api.108.174.146.77.nip.io/uploads/${nomeArquivo}`;
+                p.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
             }
             return p;
         }); // 🛑 Note que paramos por aqui! Sem o .filter!
