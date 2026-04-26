@@ -16,18 +16,18 @@ async function carregarTudo() {
         
         let produtosBrutos = await resProd.json();
         
-        // 📸 O NOVO FILTRO BLINDADO
-produtosDaNuvem = produtosBrutos.map(p => {
-    // Verifica se o produto tem foto e NÃO é uma foto antiga do ImgBB
-    if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
-        // Pega APENAS o nome do arquivo no final (ex: foto123.png) e ignora a sujeira do banco
-        const nomeArquivo = p.imagem_url.split('/').pop(); 
-        
-        // Constrói a URL absoluta, perfeita e limpa direto pro seu servidor
-        p.imagem_url = `https://api.108.174.146.77.nip.io/uploads/${nomeArquivo}`;
-    }
-    return p;
-}).filter(p => p.ativo !== false); // (Nota: no gestao/app.js tire essa parte do .filter no final)
+        // 📸 O NOVO FILTRO BLINDADO (Feito sob medida para o Painel de Gestão)
+        listaProdutos = produtosBrutos.map(p => {
+            // Verifica se o produto tem foto e NÃO é uma foto antiga do ImgBB
+            if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
+                // Pega APENAS o nome do arquivo no final e ignora a sujeira do banco
+                const nomeArquivo = p.imagem_url.split('/').pop(); 
+                
+                // Constrói a URL absoluta, perfeita e limpa direto pro seu servidor
+                p.imagem_url = `https://api.108.174.146.77.nip.io/uploads/${nomeArquivo}`;
+            }
+            return p;
+        }); // 🛑 Note que paramos por aqui! Sem o .filter!
 
         listaGrupos = await resGrupos.json();
         
@@ -36,9 +36,10 @@ produtosDaNuvem = produtosBrutos.map(p => {
         
         // Se um grupo já estava selecionado, recarrega a 3ª coluna
         if (grupoSelecionadoId) selecionarGrupo(grupoSelecionadoId);
-    } catch (e) { console.error("Erro", e); }
+    } catch (e) { 
+        console.error("Erro", e); 
+    }
 }
-
 // ==========================================
 // COLUNA 1: PRODUTOS
 // ==========================================
