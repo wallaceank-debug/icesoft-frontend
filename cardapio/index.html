@@ -10,27 +10,28 @@
     <style>
         
     /* ==========================================
-    MENU DE CATEGORIAS FIXO NO TOPO (STICKY)
-    ========================================== */
+   MENU DE CATEGORIAS FIXO NO TOPO (STICKY)
+   ========================================== */
     #menu-categorias-dinamico {
-        position: sticky;
-        top: 0; /* Cola exatamente no topo da tela */
-        z-index: 1000; /* Garante que as categorias fiquem POR CIMA das fotos dos produtos */
-        
-        /* É vital ter uma cor de fundo, senão os produtos vão "vazar" por trás dos botões */
-        background-color: var(--bg-claro, white); 
-        
-        padding: 15px 5px; /* Dá um respiro e espaço ao redor dos botões */
-        margin: 0 -20px; /* Faz o fundo preencher a tela toda de ponta a ponta nas laterais */
-        padding-left: 20px; /* Compensa a margem negativa acima */
-        
-        /* Uma sombrinha leve para separar o menu do resto do cardápio quando ele começar a rolar */
-        box-shadow: 0 5px 10px -5px rgba(0,0,0,0.1); 
-        
-        /* Garante que os botões continuem rolando na horizontal suavemente */
-        overflow-x: auto; 
-        white-space: nowrap;
-    }
+    position: sticky;
+    top: 0; 
+    z-index: 1000; 
+    background-color: var(--bg-claro, #f4f7f6); 
+    
+    /* A MÁGICA DO ALINHAMENTO AQUI */
+    display: flex;
+    align-items: center; /* Centraliza os botões perfeitamente na vertical */
+    gap: 12px; /* Dá um espaço uniforme entre os botões */
+    
+    padding: 15px 20px; /* Mesma distância de respiro em cima, embaixo e nas laterais */
+    margin: 0 -20px; 
+    box-shadow: 0 5px 10px -5px rgba(0,0,0,0.1); 
+    overflow-x: auto; 
+}
+
+#menu-categorias-dinamico::-webkit-scrollbar {
+    display: none;
+}
 
 /* Esconde a barra de rolagem nativa para ficar com cara de App */
 #menu-categorias-dinamico::-webkit-scrollbar {
