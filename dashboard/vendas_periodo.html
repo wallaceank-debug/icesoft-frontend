@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendas por Período - Icesoft</title>
+    <style>
+        /* Estilos Base da Tela */
+        :root { --cor-primaria: #007bff; --bg-claro: #f4f7f6; --texto-escuro: #333; }
+        
+        /* A MÁGICA DO LAYOUT ACONTECE AQUI: display: flex para colocar lado a lado */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-claro); 
+            color: var(--texto-escuro); 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* Área do relatório ocupando o resto da tela */
+        .conteudo-principal {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto; /* Permite rolar apenas o relatório se for muito grande */
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        
+        /* Cabeçalho e Filtros */
+        .header-relatorio { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .filtros { display: flex; gap: 15px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
+        .filtros input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+        .btn-filtrar { padding: 8px 20px; background-color: var(--cor-primaria); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-filtrar:hover { background-color: #0056b3; }
+
+        /* Cards de Resumo */
+        .cards-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: #fff; border-left: 5px solid var(--cor-primaria); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0 0 10px 0; font-size: 14px; color: #666; text-transform: uppercase; }
+        .card p { margin: 0; font-size: 24px; font-weight: bold; color: var(--texto-escuro); }
+
+        /* Tabela de Vendas */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 600; color: #555; }
+        tr:hover { background-color: #f1f5f9; cursor: pointer; }
+        .badge-origem { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .bg-balcao { background: #e0e7ff; color: #3730a3; }
+        .bg-delivery { background: #dcfce7; color: #166534; }
+        .bg-mesas { background: #ffedd5; color: #9a3412; }
+
+        /* Modal de Detalhes do Pedido */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .fechar-modal { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; }
+        .item-pedido { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; }
+    </style>
+</head>
+<body>
+
+<aside class="menu-lateral" style="width: 250px; background-color: #00bcd4; height: 100vh; padding: 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0;">
+    <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
+    
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+        <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
+        <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
+        <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
+        <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
+        <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
+        
+        <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
+            <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
+                📊 Relatórios ▾
+            </button>
+
+            <div id="submenu-relatorios" class="submenu" style="display: flex; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
+                <a href="index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
+                <a href="vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.5);">Vendas por Período</a>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<div class="conteudo-principal">
+    <div class="container">
+        <div class="header-relatorio">
+            <h2>📈 Vendas por Período</h2>
+            
+            <div class="filtros">
+                <div>
+                    <label>Início:</label>
+                    <input type="date" id="dataInicio">
+                </div>
+                <div>
+                    <label>Fim:</label>
+                    <input type="date" id="dataFim">
+                </div>
+                <button class="btn-filtrar" onclick="buscarVendas()">🔍 Filtrar</button>
+            </div>
+        </div>
+
+        <div class="cards-resumo">
+            <div class="card">
+                <h3>💰 Faturamento Total</h3>
+                <p id="resumo-total">R$ 0,00</p>
+            </div>
+            <div class="card">
+                <h3>📦 Qtd. Pedidos</h3>
+                <p id="resumo-qtd">0</p>
+            </div>
+            <div class="card">
+                <h3>💳 Ticket Médio</h3>
+                <p id="resumo-ticket">R$ 0,00</p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Origem</th>
+                    <th>Cliente/Status</th>
+                    <th>Valor Total</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-vendas">
+                <tr><td colspan="4" style="text-align: center;">Carregando vendas...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modalDetalhes" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-titulo">Detalhes do Pedido</h3>
+            <button class="fechar-modal" onclick="fecharModal()">✖</button>
+        </div>
+        <div id="modal-corpo">
+            </div>
+    </div>
+</div>
+
+<script>
+    // URL Corrigida (Sem a barra extra!)
+    const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+    let listaVendas = [];
+
+    function toggleRelatorios() {
+        const submenu = document.getElementById('submenu-relatorios');
+        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    const formatarMoeda = (valor) => Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    const formatarData = (dataISO) => {
+        const data = new Date(dataISO);
+        return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    function configurarDatasPadrao() {
+        const hoje = new Date();
+        const trintaDiasAtras = new Date();
+        trintaDiasAtras.setDate(hoje.getDate() - 30);
+
+        document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
+        document.getElementById('dataInicio').value = trintaDiasAtras.toISOString().split('T')[0];
+    }
+
+    async function buscarVendas() {
+        const inicio = document.getElementById('dataInicio').value;
+        const fim = document.getElementById('dataFim').value;
+        const tbody = document.getElementById('tabela-vendas');
+
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Buscando dados...</td></tr>';
+
+        try {
+            const resposta = await fetch(`${API_URL}/vendas?inicio=${inicio}&fim=${fim}`);
+            listaVendas = await resposta.json();
+            renderizarTela();
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Erro ao carregar vendas.</td></tr>';
+        }
+    }
+
+    function renderizarTela() {
+        let faturamentoTotal = 0;
+        const tbody = document.getElementById('tabela-vendas');
+        tbody.innerHTML = '';
+
+        if (listaVendas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhuma venda encontrada neste período.</td></tr>';
+        }
+
+        listaVendas.forEach((venda, index) => {
+            const valorVenda = parseFloat(venda.valor_total) || 0;
+            faturamentoTotal += valorVenda;
+
+            let corOrigem = 'bg-balcao';
+            if(venda.origem === 'Delivery') corOrigem = 'bg-delivery';
+            if(venda.origem === 'Mesas') corOrigem = 'bg-mesas';
+
+            // ===================================================
+            // 🧹 TRADUTOR DE CÓDIGO PARA TEXTO AMIGÁVEL
+            // ===================================================
+            let arrayItens = [];
+            try { arrayItens = typeof venda.itens === 'string' ? JSON.parse(venda.itens) : (venda.itens || []); } 
+            catch (e) { arrayItens = []; }
+
+            let resumoAmigavel = '';
+            if (arrayItens.length > 0) {
+                // Extrai só os nomes, tira os parênteses de complementos pra não poluir, e separa por " / "
+                resumoAmigavel = arrayItens.map(item => {
+                    let nomeLimpo = item.nome;
+                    if (nomeLimpo.includes('(')) {
+                        nomeLimpo = nomeLimpo.substring(0, nomeLimpo.indexOf('(')).trim();
+                    }
+                    return `${item.quantidade || 1}x ${nomeLimpo}`;
+                }).join(' <span style="color:#ccc;">/</span> ');
+            } else if (venda.produto_nome && !venda.produto_nome.startsWith('[')) {
+                resumoAmigavel = venda.produto_nome; // Se for uma venda antiga salva como texto
+            } else {
+                resumoAmigavel = "Pedido Diversos";
+            }
+
+            // Se for Delivery e tiver Cliente, mostra o Cliente em negrito e o resumo embaixo
+            let textoColunaPrincipal = venda.cliente_nome 
+                ? `<div style="font-weight: bold; color: #333; margin-bottom: 2px;">👤 ${venda.cliente_nome}</div><div style="color: #666; font-size: 0.85rem;">${resumoAmigavel}</div>` 
+                : `<div style="color: #333; font-weight: 500;">${resumoAmigavel}</div>`;
+
+            // ===================================================
+
+            const tr = document.createElement('tr');
+            tr.onclick = () => abrirModalDetalhes(index);
+            tr.innerHTML = `
+                <td>${formatarData(venda.data_hora)}</td>
+                <td><span class="badge-origem ${corOrigem}">${venda.origem || 'Balcão'}</span></td>
+                <td>${textoColunaPrincipal}<div style="margin-top: 4px;"><small style="color:#888; background:#f0f2f5; padding: 2px 6px; border-radius: 4px;">${venda.status}</small></div></td>
+                <td style="font-weight: 900; color: #e91e63; font-size: 1.1rem;">${formatarMoeda(valorVenda)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const qtdPedidos = listaVendas.length;
+        const ticketMedio = qtdPedidos > 0 ? (faturamentoTotal / qtdPedidos) : 0;
+
+        document.getElementById('resumo-total').innerText = formatarMoeda(faturamentoTotal);
+        document.getElementById('resumo-qtd').innerText = qtdPedidos;
+        document.getElementById('resumo-ticket').innerText = formatarMoeda(ticketMedio);
+    }
+
+    function abrirModalDetalhes(index) {
+        const venda = listaVendas[index];
+        document.getElementById('modal-titulo').innerText = `Pedido #${venda.id} - Detalhes`;
+        
+        let htmlItens = '';
+        let arrayItens = [];
+        
+        try { arrayItens = typeof venda.itens === 'string' ? JSON.parse(venda.itens) : venda.itens; } 
+        catch (e) { arrayItens = []; }
+
+        if (!arrayItens || arrayItens.length === 0) {
+            htmlItens = '<p style="text-align:center; color:#888;">Sem detalhes de produtos neste pedido.</p>';
+        } else {
+            arrayItens.forEach(item => {
+                const qtd = item.quantidade || 1;
+                const preco = parseFloat(item.preco) || 0;
+                
+                let nomePrincipal = item.nome;
+                let adicionaisHtml = '';
+
+                // 🕵️‍♂️ O TRUQUE: Separa o nome do produto dos complementos (que estão entre parênteses)
+                if (item.nome.includes('(') && item.nome.includes(')')) {
+                    const primeiroParenteses = item.nome.indexOf('(');
+                    const ultimoParenteses = item.nome.lastIndexOf(')');
+                    
+                    // Pega só o que vem antes do parênteses (Ex: "Açaí - 300ml")
+                    nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
+                    
+                    // Pega o recheio do parênteses e divide a cada vírgula
+                    const adicionaisString = item.nome.substring(primeiroParenteses + 1, ultimoParenteses);
+                    const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
+                    
+                    // Monta a lista com o "+" na frente
+                    listaAdicionais.forEach(adic => {
+                        adicionaisHtml += `<div style="color: #6c757d; font-size: 14px; margin-left: 28px; margin-top: 4px;">+ ${adic}</div>`;
+                    });
+                }
+
+                // Monta o layout HTML idêntico ao Print 2 do seu PDV
+                htmlItens += `
+                    <div class="item-pedido" style="display: flex; flex-direction: column; padding: 15px 0; border-bottom: 1px dashed #ddd;">
+                        <div style="font-size: 16px; font-weight: 700; color: #333; margin-bottom: 5px;">
+                            <span style="color: #888; margin-right: 5px;">${qtd}x</span> ${nomePrincipal}
+                        </div>
+                        ${adicionaisHtml}
+                        <div style="font-weight: 900; color: #e91e63; margin-top: 10px; font-size: 16px; margin-left: 28px;">
+                            ${formatarMoeda(qtd * preco)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // O Total Geral grandão no final
+            htmlItens += `
+                <div style="text-align: right; margin-top: 20px; font-size: 20px; color: #333;">
+                    <strong>Total: ${formatarMoeda(venda.valor_total)}</strong>
+                </div>
+            `;
+        }
+
+        document.getElementById('modal-corpo').innerHTML = htmlItens;
+        document.getElementById('modalDetalhes').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('modalDetalhes').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('modalDetalhes');
+        if (event.target == modal) { fecharModal(); }
+    }
+
+    window.onload = () => {
+        configurarDatasPadrao();
+        buscarVendas(); 
+    };
+</script>
+
+</body>
+</html>

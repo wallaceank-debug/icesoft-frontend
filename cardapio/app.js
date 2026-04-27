@@ -400,7 +400,8 @@ async function salvarVendaDelivery() {
                 status: "Pendente Delivery",
                 cliente_nome: nome,
                 cliente_telefone: telefone,
-                cliente_endereco: endereco
+                cliente_endereco: endereco,
+                origem: "Delivery"
             })
         });
 

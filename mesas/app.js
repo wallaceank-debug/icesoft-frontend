@@ -510,7 +510,8 @@ async function finalizarPagamentoMesa() {
             valor_total: totalCobrado,
             total: totalCobrado,
             forma_pagamento: metodo,
-            status: "Concluída"
+            status: "Concluída",
+            origem: "Mesas"
         };
 
         const resVenda = await fetch(`${API_URL}/vendas`, {

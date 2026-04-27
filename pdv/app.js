@@ -373,7 +373,8 @@ async function finalizarVendaPDV() {
         valor_total: totalFinalGlobal,
         total: totalFinalGlobal,
         forma_pagamento: metodo,
-        status: "Concluída"
+        status: "Concluída",
+        origem: "Balcão"
     };
 
     try {
