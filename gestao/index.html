@@ -142,6 +142,11 @@
             <input type="text" id="grupo-nome" class="input-padrao" placeholder="Nome do Grupo (Ex: Sabores)">
             <input type="number" id="grupo-limite" class="input-padrao" placeholder="Limite de escolha (Ex: 1)">
             
+            <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="grupo-obrigatorio" style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="grupo-obrigatorio" style="font-weight: bold; color: #333; cursor: pointer;">Este grupo é OBRIGATÓRIO?</label>
+            </div>
+
             <div class="modal-botoes">
                 <button onclick="fecharModalGrupo()" class="btn-cancelar">Cancelar</button>
                 <button onclick="salvarGrupo()" class="btn-salvar">Salvar</button>

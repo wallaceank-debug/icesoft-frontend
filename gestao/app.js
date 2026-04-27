@@ -445,6 +445,7 @@ function abrirModalGrupo(id = null) {
     const idInput = document.getElementById('grupo-id');
     const nomeInput = document.getElementById('grupo-nome');
     const limiteInput = document.getElementById('grupo-limite');
+    const obrigatorioInput = document.getElementById('grupo-obrigatorio'); // Puxamos a nova caixinha
 
     if (id) { // MODO EDIÇÃO
         const g = listaGrupos.find(x => x.id === id);
@@ -452,11 +453,14 @@ function abrirModalGrupo(id = null) {
         idInput.value = g.id;
         nomeInput.value = g.nome;
         limiteInput.value = g.limite;
+        // Marca a caixinha se no banco de dados estiver como obrigatório
+        obrigatorioInput.checked = (g.obrigatorio == 1 || g.obrigatorio == true || g.obrigatorio === 'true');
     } else { // MODO NOVO
         titulo.innerText = "Novo Grupo";
         idInput.value = '';
         nomeInput.value = '';
         limiteInput.value = '';
+        obrigatorioInput.checked = false; // Começa desmarcado por padrão
     }
     modal.style.display = 'flex';
 }
@@ -469,17 +473,24 @@ async function salvarGrupo() {
     const id = document.getElementById('grupo-id').value;
     const nome = document.getElementById('grupo-nome').value;
     const limite = document.getElementById('grupo-limite').value;
+    const obrigatorio = document.getElementById('grupo-obrigatorio').checked; // Lemos se está marcado
 
     if (!nome || !limite) return alert("⚠️ Preencha o nome e o limite!");
 
-    // Se for edição, precisamos preservar os itens (adicionais) que já estavam lá dentro
     let itens = [];
     if (id) {
         const gExistente = listaGrupos.find(x => x.id === Number(id));
         if (gExistente && gExistente.itens) itens = gExistente.itens;
     }
 
-    const dados = { nome, limite: parseInt(limite), itens, ativo: true };
+    // Agora incluímos o campo "obrigatorio" nos dados que vão para o servidor
+    const dados = { 
+        nome, 
+        limite: parseInt(limite), 
+        itens, 
+        ativo: true, 
+        obrigatorio: obrigatorio 
+    };
 
     try {
         if (id) {

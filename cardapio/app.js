@@ -209,7 +209,14 @@ function abrirModalEscolha(produto) {
             </div>`;
         }).join('');
 
-        container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem;">${grupo.nome}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
+        // 👇 A MÁGICA DAS ETIQUETAS ACONTECE AQUI
+        const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+        const badgeObrigatorio = isObrigatorio
+            ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
+            : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
+
+        container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
+
     });
     
     atualizarPrecoDinamico();
@@ -249,8 +256,26 @@ function atualizarPrecoDinamico() {
 }
 
 function confirmarEscolhasEAdicionar() {
+    // --- NOVA VALIDAÇÃO DE OBRIGATORIEDADE ---
+    const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+
+    for (let grupo of gruposDoProduto) {
+        const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+        
+        if (isObrigatorio) {
+            const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
+            if (escolhasNesteGrupo.length === 0) {
+                // Se for obrigatório e não marcou nada, trava e avisa o cliente!
+                alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
+                return; // 🛑 Interrompe a função aqui e não deixa ir pro carrinho
+            }
+        }
+    }
+    // -----------------------------------------
+
     let nomeFinal = produtoEmSelecao.nome + (escolhasAtuais.length > 0 ? " (" + escolhasAtuais.map(e => e.nome).join(', ') + ")" : "");
     const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    
     adicionarAoCarrinho(nomeFinal, precoFinal);
     fecharModalOpcoes();
 }
