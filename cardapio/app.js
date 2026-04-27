@@ -409,6 +409,7 @@ async function salvarVendaDelivery() {
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = document.getElementById('cliente-telefone').value.trim();
     const endereco = document.getElementById('cliente-endereco').value.trim();
+    const observacao = document.getElementById('cliente-observacao').value.trim();
 
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
     
@@ -426,7 +427,8 @@ async function salvarVendaDelivery() {
                 cliente_nome: nome,
                 cliente_telefone: telefone,
                 cliente_endereco: endereco,
-                origem: "Delivery"
+                origem: "Delivery",
+                observacoes: observacao
             })
         });
 
@@ -479,6 +481,11 @@ async function processarEnvioWhatsApp() {
     document.getElementById('cliente-endereco').value = enderecoCompleto;
 
     await salvarVendaDelivery(); // Salva no banco (sua função continua a mesma)
+
+    const observacao = document.getElementById('cliente-observacao').value.trim();
+    if (observacao) {
+        textoPedido += `\n📝 *Observações:* ${observacao}\n`;
+    }
 
     let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
     textoPedido += `👤 *Cliente:* ${nome}\n`;

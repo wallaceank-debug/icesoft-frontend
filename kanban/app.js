@@ -144,6 +144,9 @@ function renderizarKanban(pedidos) {
 
         const horaVenda = pedido.data_hora ? new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Hoje';
 
+        // 1. Cria a caixa amarela de observação (se existir)
+        const obsHtml = pedido.observacoes ? `<div style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px;"><strong>📝 Obs:</strong> ${pedido.observacoes}</div>` : '';
+
         const cardHtml = `
             <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--cor-borda, #ccc); display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; align-items: center;">
@@ -156,7 +159,7 @@ function renderizarKanban(pedidos) {
                 
                 <div style="min-height: 40px;">
                     ${itensHtml}
-                </div>
+                    ${obsHtml} </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px; border-radius: 8px;">
                     <span style="font-size: 0.75rem; background: #e0e0e0; color: #333; padding: 4px 8px; border-radius: 10px; font-weight: bold;">💳 ${pedido.forma_pagamento || 'N/A'}</span>
@@ -227,6 +230,19 @@ function abrirDetalhes(id) {
         }
     } catch(e) {}
     
+    // ==========================================
+    // 📝 INJETA A OBSERVAÇÃO AQUI NO FINAL DA LISTA
+    // ==========================================
+    if (pedido.observacoes && pedido.observacoes.trim() !== '') {
+        itensHtml += `
+            <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border: 1px dashed #ffeeba; border-radius: 8px; color: #856404; font-size: 0.95rem;">
+                <strong style="display: block; margin-bottom: 5px;">📝 Observações do Cliente:</strong>
+                ${pedido.observacoes}
+            </div>
+        `;
+    }
+    // ==========================================
+
     document.getElementById('detalhe-itens').innerHTML = itensHtml;
 
     // Abre a janela
