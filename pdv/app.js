@@ -777,3 +777,92 @@ window.addEventListener('DOMContentLoaded', () => {
     // Continua vigiando a cada 30 segundos
     setInterval(verificarStatusLoja, 30000);
 });
+
+// ==========================================
+// 💾 TRANSFERÊNCIA PARA MESAS (QoL)
+// ==========================================
+
+async function abrirModalTransferirMesa() {
+    if (carrinho.length === 0) return alert("⚠️ O carrinho está vazio! Adicione itens antes de transferir.");
+
+    document.getElementById('modal-transferir-mesa').style.display = 'flex';
+    const grid = document.getElementById('grid-mesas-livres');
+    grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #666;">Buscando mesas livres...</p>';
+
+    try {
+        // 1. Busca no servidor quais mesas estão ocupadas agora
+        const resposta = await fetch(`${API_URL}/mesas`);
+        const mesasOcupadas = await resposta.json();
+        const numerosOcupados = mesasOcupadas.map(m => m.numero);
+        
+        grid.innerHTML = '';
+        let temMesaLivre = false;
+
+        // 2. O sistema verifica as 15 mesas. Se não estiver ocupada, cria o botão.
+        for (let i = 1; i <= 15; i++) {
+            const numeroFormatado = String(i).padStart(2, '0');
+            
+            if (!numerosOcupados.includes(numeroFormatado)) {
+                temMesaLivre = true;
+                grid.innerHTML += `
+                    <button onclick="transferirParaMesa('${numeroFormatado}')" style="background: #e0f7fa; border: 1px solid #00bcd4; color: #00838f; padding: 15px 10px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;">
+                        Mesa ${numeroFormatado}
+                    </button>
+                `;
+            }
+        }
+
+        if (!temMesaLivre) {
+            grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #f44336; font-weight: bold;">Todas as 15 mesas estão ocupadas no momento!</p>';
+        }
+    } catch (e) {
+        grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: red;">Erro ao buscar mesas.</p>';
+    }
+}
+
+function fecharModalTransferirMesa() {
+    document.getElementById('modal-transferir-mesa').style.display = 'none';
+}
+
+async function transferirParaMesa(numeroMesa) {
+    // 3. Traduz os itens do formato do PDV para o formato que a Mesa entende
+    const itensParaMesa = carrinho.map(item => {
+        const listaAdicionais = item.adicionais || [];
+        const nomeCompleto = listaAdicionais.length > 0 
+            ? `${item.nomeBase} (${listaAdicionais.join(', ')})` 
+            : item.nomeBase;
+
+        return {
+            nomeBase: item.nomeBase,
+            adicionais: listaAdicionais,
+            nome: nomeCompleto,
+            preco: item.preco
+        };
+    });
+
+    try {
+        const resposta = await fetch(`${API_URL}/mesas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                numero: numeroMesa,
+                itens: itensParaMesa
+            })
+        });
+
+        if (resposta.ok) {
+            mostrarAvisoFlutuante(`✅ Pedido transferido para a Mesa ${numeroMesa}!`, "#4CAF50");
+            
+            // 4. Limpa o carrinho do PDV instantaneamente para atender o próximo da fila
+            carrinho = [];
+            descontoGlobal = 0;
+            acrescimoGlobal = 0;
+            renderizarCarrinho();
+            fecharModalTransferirMesa();
+        } else {
+            alert("Erro ao transferir pedido para a mesa.");
+        }
+    } catch (e) {
+        alert("Erro de conexão. Verifique a internet.");
+    }
+}
