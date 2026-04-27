@@ -113,6 +113,11 @@
             background-color: var(--bg-claro);
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             width: 100%;
+            
+            /* 🛑 CORREÇÃO DO GLITCH (Aceleração de Hardware) */
+            -webkit-transform: translate3d(0,0,0);
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         #menu-categorias-dinamico {

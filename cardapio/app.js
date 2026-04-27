@@ -408,7 +408,9 @@ async function salvarVendaDelivery() {
     const pagamento = document.getElementById('cliente-pagamento').value || "WhatsApp / Online";
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = document.getElementById('cliente-telefone').value.trim();
-    const endereco = document.getElementById('cliente-endereco').value.trim();
+    const bairro = document.getElementById('cliente-bairro').value || '';
+    const rua = document.getElementById('cliente-endereco').value.trim();
+    const endereco = bairro ? `${bairro} - ${rua}` : rua;
     const observacao = document.getElementById('cliente-observacao').value.trim();
 
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
@@ -477,8 +479,6 @@ async function processarEnvioWhatsApp() {
 
     const enderecoCompleto = `${bairro} - ${rua}`;
     
-    // Atualiza o input escondido (caso você salve no banco de dados)
-    document.getElementById('cliente-endereco').value = enderecoCompleto;
 
     await salvarVendaDelivery(); // Salva no banco (sua função continua a mesma)
 
