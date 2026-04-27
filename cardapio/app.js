@@ -454,9 +454,16 @@ function finalizarPedidoWhatsApp() {
     renderizarResumoCarrinho();
     renderizarUpsellCheckout(); 
     modal.style.display = 'flex';
+    
+    // 🛑 A MÁGICA 1: Trava o fundo para o celular parar de tentar renderizar o cardápio por trás!
+    document.body.style.overflow = 'hidden';
 }
 
-function fecharModalCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
+function fecharModalCheckout() { 
+    document.getElementById('modal-checkout').style.display = 'none'; 
+    // 🟢 Destrava o fundo quando o cliente desiste de fechar o pedido
+    document.body.style.overflow = 'auto';
+}
 
 // ==========================================
 // 📲 NOVO ENVIO PARA O WHATSAPP

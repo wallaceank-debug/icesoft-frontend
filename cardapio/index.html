@@ -114,10 +114,16 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             width: 100%;
             
-            /* 🛑 CORREÇÃO DO GLITCH (Aceleração de Hardware) */
-            -webkit-transform: translate3d(0,0,0);
+            /* 🛑 O VERDADEIRO MATADOR DE GLITCHES EM CELULARES */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
             transform: translateZ(0);
-            will-change: transform;
+        }
+
+        /* Aplica a mesma proteção para os modais não piscarem */
+        #modal-checkout, #modal-opcoes {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         #menu-categorias-dinamico {
