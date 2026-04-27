@@ -63,7 +63,9 @@ function renderizarGrade() {
             itens.forEach(item => totalMesa += Number(item.preco));
 
             container.innerHTML += `
-                <div class="mesa-card mesa-ocupada" onclick="abrirMesaOcupada(${mesaOcupada.id})">
+                <div class="mesa-card mesa-ocupada" onclick="abrirMesaOcupada(${mesaOcupada.id})" style="position: relative;">
+                    <button onclick="event.stopPropagation(); cancelarPedidoMesa(${mesaOcupada.id})" style="position: absolute; top: 10px; right: 10px; background: #f44336; color: white; border: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 1.1rem;" title="Cancelar este pedido">🗑️</button>
+                    
                     <h2 style="margin: 0; font-size: 2rem;">Mesa ${numeroMesa}</h2>
                     <p style="margin: 10px 0 0 0; font-weight: bold; color: #555;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
                     <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #888;">${itens.length} itens</p>
@@ -552,5 +554,31 @@ async function finalizarPagamentoMesa() {
     } finally {
         btn.innerText = "💰 Confirmar Pagamento";
         btn.disabled = false;
+    }
+}
+
+// ==========================================
+// FUNÇÃO PARA CANCELAR UMA MESA (LIMPAR)
+// ==========================================
+async function cancelarPedidoMesa(id) {
+    // Pergunta de segurança dupla
+    const confirmacao = confirm("⚠️ ATENÇÃO: Deseja realmente CANCELAR este pedido?\n\nIsso apagará todos os itens e a mesa ficará livre novamente. Esta ação NÃO pode ser desfeita!");
+
+    if (!confirmacao) return;
+
+    try {
+        const res = await fetch(`${API_URL}/mesas/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (res.ok) {
+            await carregarMesas(); // Atualiza a tela automaticamente
+            alert("✅ Pedido cancelado e mesa liberada!");
+        } else {
+            alert("❌ Erro ao cancelar pedido no servidor.");
+        }
+    } catch (e) {
+        console.error("Erro ao cancelar:", e);
+        alert("🔌 Erro de conexão ao tentar cancelar.");
     }
 }
