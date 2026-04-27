@@ -521,6 +521,8 @@ async function carregarConfiguracoesLoja() {
         if (configs.upsell_desconto) descontoUpsellGlobal = Number(configs.upsell_desconto);
         if (configs.carrossel_upsell) { try { idsUpsellGlobais = JSON.parse(configs.carrossel_upsell); } catch(e) {} }
         if (configs.cupons_delivery) { try { cuponsGlobais = JSON.parse(configs.cupons_delivery); } catch(e) {} }
+        if (configs.banner_loja && document.getElementById('img-banner-loja')) document.getElementById('img-banner-loja').src = configs.banner_loja;
+        if (configs.logo_loja && document.getElementById('img-logo-loja')) document.getElementById('img-logo-loja').src = configs.logo_loja;
 
     } catch (e) { console.error("Erro configurações:", e); }
 }

@@ -8,56 +8,123 @@
     <link rel="stylesheet" href="/cardapio/style.css">
     
     <style>
-        
-    /* ==========================================
-    MENU DE CATEGORIAS FIXO NO TOPO (STICKY)
-    ========================================== */
-    #menu-categorias-dinamico {
-        position: sticky;
-        top: 0; 
-        z-index: 1000; 
-        background-color: var(--bg-claro, #f4f7f6); 
-        
-        /* A MÁGICA DO ALINHAMENTO AQUI */
-        display: flex;
-        align-items: center; /* Centraliza os botões perfeitamente na vertical */
-        gap: 12px; /* Dá um espaço uniforme entre os botões */
-        
-        padding: 15px 20px; /* Mesma distância de respiro em cima, embaixo e nas laterais */
-        margin: 0 -20px; 
-        box-shadow: 0 5px 10px -5px rgba(0,0,0,0.1); 
-        overflow-x: auto; 
-    }
-
-#menu-categorias-dinamico::-webkit-scrollbar {
-    display: none;
-}
-
-/* Esconde a barra de rolagem nativa para ficar com cara de App */
-#menu-categorias-dinamico::-webkit-scrollbar {
-    display: none;
-}
-
-        /* A Variável Mágica: O JS vai injetar a cor que você escolheu no painel aqui! */
+        /* A Variável Mágica */
         :root {
-            --cor-primaria: #00bcd4; /* Cor Padrão (Azul Icesoft) de segurança */
+            --cor-primaria: #00bcd4;
+            --bg-claro: #f4f7f6;
         }
 
-        /* 🟢 ADICIONAMOS A REGRA DO BODY AQUI PARA FORÇAR A FONTE NOVA! */
         body {
             font-family: 'Inter', sans-serif !important;
+            background-color: var(--bg-claro);
+            margin: 0;
+            padding: 0;
         }
 
-        /* Redesign do Cabeçalho para ficar mais imersivo */
-        .header-loja { background-color: var(--cor-primaria) !important; padding: 30px 20px 40px 20px; text-align: center; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header-loja h1 { margin: 0; font-size: 2rem; display: flex; justify-content: center; align-items: center; gap: 10px;}
-        .mensagem-boas-vindas { font-size: 1rem; opacity: 0.95; margin-top: 8px; font-weight: 400; max-width: 400px; margin-inline: auto;}
+        /* ==========================================
+           NOVO HEADER DA LOJA (BANNER E LOGO)
+        ========================================== */
+        .header-loja {
+            background: #ffffff;
+            /* Margem negativa não é necessária aqui se o body não tiver padding, mas vamos garantir que ocule 100% da largura */
+            width: 100%; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding-bottom: 20px;
+        }
 
-        /* Ajuste da barra de busca para flutuar sobre o cabeçalho */
-        .area-busca-flutuante { padding: 0 20px; margin-top: -25px; position: relative; z-index: 10; max-width: 600px; margin-inline: auto;}
-        
-        /* 🟢 TROCAMOS POPPINS POR INTER AQUI TAMBÉM */
-        .area-busca-flutuante input { width: 100%; padding: 15px 20px; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: 'Inter', sans-serif; font-size: 1rem; box-sizing: border-box; outline: none;}
+        .banner-loja {
+            width: 100%;
+            height: 180px;
+            background-color: #eee;
+            overflow: hidden;
+        }
+
+        .banner-loja img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .info-loja-container {
+            display: flex;
+            align-items: flex-end;
+            padding: 0 20px;
+            max-width: 600px; /* Alinhado com o resto do cardápio */
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .logo-loja {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            background: #ffffff;
+            margin-top: -55px; /* Puxa a logo para cima do banner */
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+
+        .logo-loja img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .texto-loja {
+            margin-left: 15px;
+            padding-top: 10px;
+            padding-bottom: 5px;
+        }
+
+        .texto-loja h1 {
+            margin: 0 0 4px 0;
+            font-size: 1.4rem;
+            color: #333;
+            font-weight: 800;
+        }
+
+        .texto-loja p {
+            margin: 2px 0;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        /* Ajustes para a tela do celular */
+        @media (max-width: 600px) {
+            .banner-loja { height: 130px; }
+            .logo-loja { width: 85px; height: 85px; margin-top: -42px; border-width: 3px; }
+            .texto-loja h1 { font-size: 1.15rem; }
+        }
+
+        /* Ajuste da barra de busca */
+        .area-busca-flutuante { padding: 0 20px; margin-top: 20px; position: relative; z-index: 10; max-width: 600px; margin-inline: auto;}
+        .area-busca-flutuante input { width: 100%; padding: 15px 20px; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-family: 'Inter', sans-serif; font-size: 1rem; box-sizing: border-box; outline: none;}
+
+        /* ==========================================
+           MENU DE CATEGORIAS FIXO NO TOPO (STICKY)
+        ========================================== */
+        #menu-categorias-dinamico {
+            position: sticky;
+            top: 0; 
+            z-index: 1000; 
+            background-color: var(--bg-claro); 
+            display: flex;
+            align-items: center; 
+            gap: 12px; 
+            padding: 15px 20px; 
+            margin: 0 -20px; 
+            box-shadow: 0 5px 10px -5px rgba(0,0,0,0.1); 
+            overflow-x: auto; 
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #menu-categorias-dinamico::-webkit-scrollbar { display: none; }
+        .menu-categorias-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .menu-categorias-scroll a:active { transform: scale(0.95); background: #f8f9fa !important; }
 
         /* O Carrossel de Destaques */
         .area-destaques { padding: 25px 20px 10px 20px; max-width: 600px; margin: 0 auto;}
@@ -72,12 +139,11 @@
         .card-destaque .preco { font-weight: bold; color: var(--cor-primaria); font-size: 1.1rem; }
         .card-destaque .btn-add-destaque { margin-top: 12px; background: var(--cor-primaria); color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;}
 
-        /* Pintando os botões antigos com a cor nova */
         .btn-whatsapp { background-color: var(--cor-primaria) !important; }
         #modal-opcoes button[onclick="confirmarEscolhasEAdicionar()"] { background-color: var(--cor-primaria) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; }
         #preco-dinamico { color: var(--cor-primaria) !important; }
         #lista-produtos h2 { max-width: 600px; margin: 0 auto 15px auto;}
-</style>
+    </style>
 </head>
 <body>
     
@@ -87,10 +153,23 @@
         <p style="color: #ccc; font-family: 'Poppins', sans-serif; font-size: 1.1rem; max-width: 400px;">Nosso delivery está suspenso no momento. Retornaremos em breve durante nosso horário de funcionamento!</p>
     </div>  
 
-    <header class="header-loja">
-        <h1 id="loja-nome-exibicao">🍦 Carregando...</h1>
-        <p id="loja-mensagem-exibicao" class="mensagem-boas-vindas">Buscando informações da loja...</p>
-    </header>
+    <div class="header-loja">
+        <div class="banner-loja">
+            <img id="img-banner-loja" src="https://images.unsplash.com/photo-1559314809-0d155014e29e?q=80&w=1200&auto=format&fit=crop" alt="Banner da Loja">
+        </div>
+        
+        <div class="info-loja-container">
+            <div class="logo-loja">
+                <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" alt="Logo da Loja">
+            </div>
+            
+            <div class="texto-loja">
+                <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
+                <p id="loja-endereco-exibicao" class="mensagem-boas-vindas">Carregando informações...</p>
+                <p id="loja-status-exibicao" style="color: #25D366; font-weight: bold; font-size: 0.8rem;">● Recebendo pedidos</p>
+            </div>
+        </div>
+    </div>
 
     <div class="area-busca-flutuante">
         <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
@@ -98,18 +177,12 @@
 
     <section class="area-destaques" id="secao-destaques" style="display: none;">
         <h2>⭐ Destaques da Casa</h2>
-        <div class="carrossel" id="carrossel-produtos">
-            </div>
+        <div class="carrossel" id="carrossel-produtos"></div>
     </section>
 
-    <div id="menu-categorias-dinamico" class="menu-categorias-scroll" style="margin-top: 20px; max-width: 600px; margin-inline: auto; display: flex; gap: 12px; overflow-x: auto; padding: 5px 20px 20px 20px; white-space: nowrap; -webkit-overflow-scrolling: touch;">
-        </div>
-
-    <style>
-        .menu-categorias-scroll::-webkit-scrollbar { display: none; }
-        .menu-categorias-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .menu-categorias-scroll a:active { transform: scale(0.95); background: #f8f9fa !important; }
-    </style>
+    <div style="max-width: 600px; margin: 0 auto; padding: 0 20px;">
+        <div id="menu-categorias-dinamico" class="menu-categorias-scroll"></div>
+    </div>
 
     <main id="lista-produtos" style="padding: 20px; padding-bottom: 100px; max-width: 600px; margin: 0 auto;">
         <h2>Cardápio Completo</h2>
