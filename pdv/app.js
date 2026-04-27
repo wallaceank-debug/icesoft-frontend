@@ -88,11 +88,18 @@ function renderizarGradeProdutos(lista) {
     }
 
     lista.forEach(p => {
+        // 📸 LÓGICA DA FOTO: Se tiver imagem_url, exibe a foto. Se não, exibe o emoji.
+        const visualProduto = p.imagem_url 
+            ? `<img src="${p.imagem_url}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`
+            : `<div class="pdv-emoji" style="height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 8px;">${p.emoji || '🍨'}</div>`;
+
         container.innerHTML += `
-            <div class="pdv-card" onclick="verificarAdicao(${p.id})">
-                <div class="pdv-emoji">${p.emoji || '🍨'}</div>
-                <div class="pdv-nome">${p.nome}</div>
-                <div class="pdv-preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+            <div class="pdv-card" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 160px;">
+                <div>
+                    ${visualProduto}
+                    <div class="pdv-nome" style="line-height: 1.2;">${p.nome}</div>
+                </div>
+                <div class="pdv-preco" style="margin-top: 8px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
             </div>
         `;
     });

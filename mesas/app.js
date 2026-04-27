@@ -133,12 +133,18 @@ function filtrarProdutosMesa() {
     }
 
     lista.forEach(p => {
-        // AGORA CHAMA A VERIFICAÇÃO DE ADICIONAIS ANTES DE PULAR PRO CARRINHO
+        // 📸 LÓGICA DA FOTO: Se tiver imagem, mostra ela. Se não, mostra o emoji.
+        const visualProduto = p.imagem_url 
+            ? `<img src="${p.imagem_url}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">`
+            : `<div style="font-size: 2.5rem; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">${p.emoji || '🍨'}</div>`;
+
         container.innerHTML += `
-            <div onclick="verificarAdicaoMesa(${p.id})" style="background:white; border:1px solid #ddd; border-radius:10px; padding:15px; text-align:center; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <div style="font-size:2rem;">${p.emoji || '🍨'}</div>
-                <div style="font-weight:bold; color:#333; font-size:0.9rem; margin:10px 0;">${p.nome}</div>
-                <div style="color:#e91e63; font-weight:bold;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+            <div class="produto-item-pdv" onclick="verificarAdicaoMesa(${p.id})" style="background:white; border:1px solid #ddd; border-radius:10px; padding:12px; text-align:center; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px;">
+                <div>
+                    ${visualProduto}
+                    <div style="font-weight:bold; color:#333; font-size:0.85rem; line-height: 1.2; margin-bottom: 5px;">${p.nome}</div>
+                </div>
+                <div style="color:#e91e63; font-weight:900; font-size: 1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
             </div>
         `;
     });
