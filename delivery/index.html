@@ -10,45 +10,47 @@
         .conteudo-principal { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .header-delivery { background: #00bcd4; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header-delivery h1 { margin: 0; color: white; font-size: 1.5rem; font-weight: bold; }
-        .area-configuracoes { padding: 30px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .area-configuracoes { padding: 30px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; align-items: start; }
         
-        /* Estilo dos Cards de Configuração que vamos usar */
-        .card-config { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .card-config { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px;}
         .card-config h3 { margin-top: 0; color: #333; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 20px; }
+
+        /* Estilo para as miniaturas de imagem no painel */
+        .preview-imagem { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-top: 10px; border: 1px dashed #ccc; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.9rem;}
+        .preview-logo { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-top: 10px; border: 1px dashed #ccc; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.9rem;}
     </style>
 </head>
 <body>
 
     <aside class="menu-lateral" style="width: 250px; background-color: #00bcd4; height: 100vh; padding: 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0;">
-    <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
-    
-    <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
-        <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
-        <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
-        <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
-        <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
-        <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
+        <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
         
-        <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
-            <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
-                📊 Relatórios ▾
-            </button>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+            <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
+            <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
+            <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
+            <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
+            <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
+            
+            <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
+                <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
+                    📊 Relatórios ▾
+                </button>
 
-            <div id="submenu-relatorios" class="submenu" style="display: none; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
-                <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
-                <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
+                <div id="submenu-relatorios" class="submenu" style="display: none; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
+                    <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
+                    <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
+                </div>
             </div>
         </div>
-    </div>
-</aside>
+    </aside>
 
-<script>
-    // Função limpa e única
-    function toggleRelatorios() {
-        const submenu = document.getElementById('submenu-relatorios');
-        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-    }
-</script>
+    <script>
+        function toggleRelatorios() {
+            const submenu = document.getElementById('submenu-relatorios');
+            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+        }
+    </script>
 
     <div class="conteudo-principal">
         <header class="header-delivery">
@@ -57,83 +59,117 @@
 
         <main class="area-configuracoes" id="painel-configuracoes">
             
-            <div class="card-config">
-                <h3>🎨 Aparência da Loja</h3>
-                
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Nome da Loja</label>
-                <input type="text" id="config-nome" placeholder="Ex: Icesoft Gelateria" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; font-size:1rem;">
-
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Cor Principal (Tema)</label>
-                <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
-                    <input type="color" id="config-cor" value="#e91e63" style="width:50px; height:50px; border:none; border-radius:8px; cursor:pointer; padding: 0;">
-                    <span style="color:#666; font-size:0.9rem;">Escolha a cor que combina com a sua marca. Ela pintará os botões do cliente.</span>
-                </div>
-
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Mensagem de Boas-Vindas</label>
-                <textarea id="config-mensagem" rows="3" placeholder="Ex: Bem-vindo! Peça agora e receba em casa com frete grátis." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none; font-size:1rem;"></textarea>
-
-                <button id="btn-salvar-aparencia" onclick="salvarPersonalizacao()" style="width:100%; padding:15px; margin-top:20px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    💾 Salvar Aparência
-                </button>
-            </div>
-
-            <div class="card-config">
-                <h3>⭐ Carrossel de Destaques</h3>
-                <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Selecione os produtos que aparecerão em destaque no topo do cardápio do cliente.</p>
-                
-                <div id="lista-produtos-destaque" style="max-height: 250px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-                    <p style="color: #888; text-align: center;">Carregando produtos...</p>
-                </div>
-
-                <button id="btn-salvar-destaques" onclick="salvarDestaques()" style="width:100%; padding:15px; background:#FF9800; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    ⭐ Salvar Destaques
-                </button>
-
+            <div>
                 <div class="card-config">
-                <h3>🎟️ Cupons de Desconto</h3>
-                <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Crie códigos promocionais para seus clientes usarem no checkout do delivery.</p>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="novo-cupom-codigo" placeholder="Código (Ex: VERAO10)" style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; text-transform: uppercase; font-family: 'Poppins';">
+                    <h3>🎨 Aparência da Loja</h3>
                     
-                    <select id="novo-cupom-tipo" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins'; cursor: pointer;">
-                        <option value="porcentagem">% Porcento</option>
-                        <option value="fixo">R$ Fixo</option>
-                    </select>
-                    
-                    <input type="number" id="novo-cupom-valor" placeholder="Valor" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins';">
-                </div>
-                
-                <button onclick="adicionarCupom()" style="width: 100%; padding: 12px; background: #9C27B0; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    + Adicionar Cupom
-                </button>
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Nome da Loja</label>
+                    <input type="text" id="config-nome" placeholder="Ex: Icesoft Gelateria" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; font-size:1rem;">
 
-                <h4 style="margin: 0 0 10px 0; color: #555; font-size: 0.95rem;">Cupons Ativos:</h4>
-                <div id="lista-cupons" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
-                    </div>
-                
-                <div class="card-config">
-                <h3>🛒 Ofertas de Checkout</h3>
-                <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Ofereça produtos com desconto na hora de fechar o pedido para aumentar seu Ticket Médio.</p>
-
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">% de Desconto da Oferta</label>
-                <input type="number" id="config-upsell-desconto" placeholder="Ex: 15 (Para 15%)" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
-
-                <h4 style="margin: 0 0 10px 0; color: #555; font-size: 0.95rem;">Produtos da Oferta:</h4>
-                <div id="lista-produtos-upsell" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; border: 1px solid #eee; padding: 10px; border-radius: 8px; background: #f9f9f9;">
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Cor Principal (Tema)</label>
+                    <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                        <input type="color" id="config-cor" value="#e91e63" style="width:50px; height:50px; border:none; border-radius:8px; cursor:pointer; padding: 0;">
+                        <span style="color:#666; font-size:0.9rem;">Escolha a cor que combina com a sua marca. Ela pintará os botões do cliente.</span>
                     </div>
 
-                <button onclick="salvarUpsell()" id="btn-salvar-upsell" style="width: 100%; padding: 12px; background: #e91e63; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    🛒 Salvar Ofertas
-                </button>
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Mensagem de Boas-Vindas</label>
+                    <textarea id="config-mensagem" rows="3" placeholder="Ex: Bem-vindo! Peça agora e receba em casa com frete grátis." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none; font-size:1rem; margin-bottom: 20px;"></textarea>
+
+                    <hr style="border: 0; border-top: 1px dashed #ddd; margin-bottom: 20px;">
+
+                    <h4 style="margin: 0 0 15px 0; color: #555;">🖼️ Imagens da Loja</h4>
+                    
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555; font-size: 0.9rem;">Capa / Banner do Cardápio</label>
+                    <input type="file" id="arquivo-banner" accept="image/*" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:8px; background:#f9f9f9; font-family:'Poppins';" onchange="previewImagem(event, 'preview-img-banner')">
+                    <img id="preview-img-banner" class="preview-imagem" src="" alt="Sem banner selecionado">
+
+                    <label style="display:block; margin-top:20px; margin-bottom:5px; font-weight:bold; color:#555; font-size: 0.9rem;">Logo Redonda da Loja</label>
+                    <input type="file" id="arquivo-logo" accept="image/*" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:8px; background:#f9f9f9; font-family:'Poppins';" onchange="previewImagem(event, 'preview-img-logo')">
+                    <div style="display: flex; justify-content: center;">
+                        <img id="preview-img-logo" class="preview-logo" src="" alt="Sem logo">
+                    </div>
+
+                    <button id="btn-salvar-aparencia" onclick="salvarPersonalizacao()" style="width:100%; padding:15px; margin-top:25px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        💾 Salvar Aparência e Imagens
+                    </button>
+                </div>
             </div>
-                
-            </div>
+
+            <div>
+                <div class="card-config">
+                    <h3>⭐ Carrossel de Destaques</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Selecione os produtos que aparecerão em destaque no topo do cardápio do cliente.</p>
+                    
+                    <div id="lista-produtos-destaque" style="max-height: 250px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+                        <p style="color: #888; text-align: center;">Carregando produtos...</p>
+                    </div>
+
+                    <button id="btn-salvar-destaques" onclick="salvarDestaques()" style="width:100%; padding:15px; background:#FF9800; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        ⭐ Salvar Destaques
+                    </button>
+                </div>
+
+                <div class="card-config">
+                    <h3>🎟️ Cupons de Desconto</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Crie códigos promocionais para seus clientes usarem no checkout do delivery.</p>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="novo-cupom-codigo" placeholder="Código (Ex: VERAO10)" style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; text-transform: uppercase; font-family: 'Poppins';">
+                        
+                        <select id="novo-cupom-tipo" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins'; cursor: pointer;">
+                            <option value="porcentagem">% Porcento</option>
+                            <option value="fixo">R$ Fixo</option>
+                        </select>
+                        
+                        <input type="number" id="novo-cupom-valor" placeholder="Valor" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins';">
+                    </div>
+                    
+                    <button onclick="adicionarCupom()" style="width: 100%; padding: 12px; background: #9C27B0; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        + Adicionar Cupom
+                    </button>
+
+                    <h4 style="margin: 0 0 10px 0; color: #555; font-size: 0.95rem;">Cupons Ativos:</h4>
+                    <div id="lista-cupons" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
+                    </div>
+                </div>
+
+                <div class="card-config">
+                    <h3>🛒 Ofertas de Checkout</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Ofereça produtos com desconto na hora de fechar o pedido para aumentar seu Ticket Médio.</p>
+
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">% de Desconto da Oferta</label>
+                    <input type="number" id="config-upsell-desconto" placeholder="Ex: 15 (Para 15%)" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
+
+                    <h4 style="margin: 0 0 10px 0; color: #555; font-size: 0.95rem;">Produtos da Oferta:</h4>
+                    <div id="lista-produtos-upsell" style="max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; border: 1px solid #eee; padding: 10px; border-radius: 8px; background: #f9f9f9;">
+                    </div>
+
+                    <button onclick="salvarUpsell()" id="btn-salvar-upsell" style="width: 100%; padding: 12px; background: #e91e63; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        🛒 Salvar Ofertas
+                    </button>
+                </div>
             </div>
 
         </main>
     </div>
 
+    <script>
+        // Funçãozinha simples para mostrar a miniatura da foto logo que o usuário escolhe o arquivo
+        function previewImagem(event, imgId) {
+            const input = event.target;
+            const preview = document.getElementById(imgId);
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    // Remove o texto do alt se a imagem carregar
+                    preview.alt = ""; 
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

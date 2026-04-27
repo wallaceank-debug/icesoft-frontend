@@ -26,6 +26,10 @@ async function carregarConfiguracoes() {
         if (configs.nome_loja) document.getElementById('config-nome').value = configs.nome_loja;
         if (configs.cor_primaria) document.getElementById('config-cor').value = configs.cor_primaria;
         if (configs.mensagem_boas_vindas) document.getElementById('config-mensagem').value = configs.mensagem_boas_vindas;
+        
+        // 🖼️ Puxa as Imagens Salvas para mostrar no Preview
+        if (configs.banner_loja) document.getElementById('preview-img-banner').src = configs.banner_loja;
+        if (configs.logo_loja) document.getElementById('preview-img-logo').src = configs.logo_loja;
 
         // Card 2
         let destaquesSalvos = [];
@@ -53,19 +57,67 @@ async function carregarConfiguracoes() {
     }
 }
 
-// === FUNÇÕES DO CARD 1 ===
+// === FUNÇÕES DO CARD 1 (AGORA COM UPLOAD DE IMAGEM) ===
 async function salvarPersonalizacao() {
     const btn = document.getElementById('btn-salvar-aparencia');
     const textoOriginal = btn.innerText;
-    btn.innerText = "Salvando...";
-    btn.style.backgroundColor = "#888"; 
+    btn.innerText = "⏳ Fazendo Upload...";
+    btn.style.backgroundColor = "#FF9800"; 
+    btn.disabled = true;
 
     const payload = {
         nome_loja: document.getElementById('config-nome').value,
         cor_primaria: document.getElementById('config-cor').value,
         mensagem_boas_vindas: document.getElementById('config-mensagem').value
     };
-    enviarParaNuvem(payload, btn, textoOriginal, "#4CAF50");
+
+    try {
+        const baseUrl = API_URL.replace('/api', '');
+
+        // 1. UPLOAD DO BANNER (Se o usuário selecionou algum arquivo)
+        const inputBanner = document.getElementById('arquivo-banner');
+        if (inputBanner.files && inputBanner.files.length > 0) {
+            const formDataBanner = new FormData();
+            formDataBanner.append('imagem', inputBanner.files[0]);
+            const resBanner = await fetch(`${API_URL}/upload`, { method: 'POST', body: formDataBanner });
+            const dataBanner = await resBanner.json();
+            if (dataBanner.sucesso) {
+                payload.banner_loja = baseUrl + dataBanner.url;
+            } else {
+                alert("Erro no upload do Banner.");
+            }
+        }
+
+        // 2. UPLOAD DA LOGO (Se o usuário selecionou algum arquivo)
+        const inputLogo = document.getElementById('arquivo-logo');
+        if (inputLogo.files && inputLogo.files.length > 0) {
+            const formDataLogo = new FormData();
+            formDataLogo.append('imagem', inputLogo.files[0]);
+            const resLogo = await fetch(`${API_URL}/upload`, { method: 'POST', body: formDataLogo });
+            const dataLogo = await resLogo.json();
+            if (dataLogo.sucesso) {
+                payload.logo_loja = baseUrl + dataLogo.url;
+            } else {
+                alert("Erro no upload da Logo.");
+            }
+        }
+
+        btn.innerText = "Salvando Configurações...";
+        
+        // 3. Envia os links e as cores pro servidor de configurações
+        await enviarParaNuvem(payload, btn, textoOriginal, "#4CAF50");
+
+        // Limpa os campos de arquivo para não fazer upload duplo se clicar de novo sem querer
+        inputBanner.value = '';
+        inputLogo.value = '';
+
+    } catch(e) {
+        alert("Erro de comunicação ao salvar imagens.");
+        btn.innerText = textoOriginal;
+        btn.style.backgroundColor = "#4CAF50";
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 // === FUNÇÕES DO CARD 2 ===
