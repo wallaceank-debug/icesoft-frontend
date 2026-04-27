@@ -95,6 +95,23 @@
                 </div>
             </div>
 
+            <div class="card-config">
+                <h3>📍 Informações e Horários</h3>
+                
+                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Endereço Físico</label>
+                <input type="text" id="config-endereco" placeholder="Ex: Rua Victor Marcondes Sampaio, 170" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins';">
+
+                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Horários de Funcionamento</label>
+                <textarea id="config-horarios" rows="3" placeholder="Ex: Terça a Domingo das 14:00 às 22:00" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+
+                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Formas de Pagamento Aceitas</label>
+                <textarea id="config-pagamentos" rows="2" placeholder="Ex: Pix, Cartão de Crédito, Débito e Dinheiro Vivo" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+
+                <button id="btn-salvar-infos" onclick="salvarInformacoesLoja()" style="width:100%; padding:15px; margin-top:10px; background:#2196F3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    💾 Salvar Informações
+                </button>
+            </div>
+
             <div>
                 <div class="card-config">
                     <h3>⭐ Carrossel de Destaques</h3>

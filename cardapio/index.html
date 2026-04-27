@@ -173,10 +173,13 @@
             </div>
             
             <div class="texto-loja">
-                <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
-                <p id="loja-endereco-exibicao" class="mensagem-boas-vindas">Carregando informações...</p>
-                <p id="loja-status-exibicao" style="color: #25D366; font-weight: bold; font-size: 0.8rem;">● Recebendo pedidos</p>
-            </div>
+            <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
+            <p style="font-size: 0.85rem; color: #666; margin: 2px 0;">
+                <span id="loja-endereco-texto">Endereço não informado</span> • 
+                <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
+            </p>
+            <p id="loja-status-exibicao" style="color: #25D366; font-weight: bold; font-size: 0.8rem;">● Recebendo pedidos</p>
+        </div>
         </div>
     </div>
 
@@ -294,6 +297,32 @@
         
     </div>
 </div>
+
+<div id="modal-info-loja" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:5000;">
+        <div style="background:white; width:100%; max-width:500px; border-top-left-radius:25px; border-top-right-radius:25px; padding:25px; animation: slideUp 0.3s ease-out; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #333; font-size: 1.3rem;">Sobre a Loja</h2>
+                <button onclick="fecharModalInfoLoja()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888;">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--cor-primaria); font-size: 1rem; display: flex; align-items: center; gap: 8px;">📍 Endereço</h3>
+                <p id="modal-endereco-texto" style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.4;">Não informado</p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--cor-primaria); font-size: 1rem; display: flex; align-items: center; gap: 8px;">🕒 Horários de Funcionamento</h3>
+                <p id="modal-horarios-texto" style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">Não informado</p>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--cor-primaria); font-size: 1rem; display: flex; align-items: center; gap: 8px;">💳 Formas de Pagamento</h3>
+                <p id="modal-pagamentos-texto" style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">Não informado</p>
+            </div>
+            
+            <button onclick="fecharModalInfoLoja()" style="width: 100%; padding: 15px; background: #f0f2f5; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer;">Entendi</button>
+        </div>
+    </div>
 
     <script src="/cardapio/app.js?v=106"></script>
 

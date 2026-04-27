@@ -26,6 +26,9 @@ async function carregarConfiguracoes() {
         if (configs.nome_loja) document.getElementById('config-nome').value = configs.nome_loja;
         if (configs.cor_primaria) document.getElementById('config-cor').value = configs.cor_primaria;
         if (configs.mensagem_boas_vindas) document.getElementById('config-mensagem').value = configs.mensagem_boas_vindas;
+        if (configs.endereco_loja) document.getElementById('config-endereco').value = configs.endereco_loja;
+        if (configs.horarios_loja) document.getElementById('config-horarios').value = configs.horarios_loja;
+        if (configs.pagamentos_loja) document.getElementById('config-pagamentos').value = configs.pagamentos_loja;
         
         // 🖼️ Puxa as Imagens Salvas para mostrar no Preview
         if (configs.banner_loja) document.getElementById('preview-img-banner').src = configs.banner_loja;
@@ -226,4 +229,19 @@ async function enviarParaNuvem(payload, botao, textoOriginal, corOriginal) {
             setTimeout(() => { botao.style.backgroundColor = corOriginal; botao.innerText = textoOriginal; }, 3000);
         } else { alert("Erro ao salvar."); botao.innerText = textoOriginal; botao.style.backgroundColor = corOriginal; }
     } catch (e) { alert("Erro de conexão."); botao.innerText = textoOriginal; botao.style.backgroundColor = corOriginal; }
+}
+
+async function salvarInformacoesLoja() {
+    const btn = document.getElementById('btn-salvar-infos');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Salvando...";
+    btn.style.backgroundColor = "#888";
+
+    const payload = {
+        endereco_loja: document.getElementById('config-endereco').value,
+        horarios_loja: document.getElementById('config-horarios').value,
+        pagamentos_loja: document.getElementById('config-pagamentos').value
+    };
+
+    enviarParaNuvem(payload, btn, textoOriginal, "#2196F3");
 }

@@ -524,6 +524,13 @@ async function carregarConfiguracoesLoja() {
         if (configs.banner_loja && document.getElementById('img-banner-loja')) document.getElementById('img-banner-loja').src = configs.banner_loja;
         if (configs.logo_loja && document.getElementById('img-logo-loja')) document.getElementById('img-logo-loja').src = configs.logo_loja;
 
+        if (configs.endereco_loja) {
+            document.getElementById('loja-endereco-texto').innerText = configs.endereco_loja;
+            document.getElementById('modal-endereco-texto').innerText = configs.endereco_loja;
+        }
+        if (configs.horarios_loja) document.getElementById('modal-horarios-texto').innerText = configs.horarios_loja;
+        if (configs.pagamentos_loja) document.getElementById('modal-pagamentos-texto').innerText = configs.pagamentos_loja;
+
     } catch (e) { console.error("Erro configurações:", e); }
 }
 
@@ -765,4 +772,17 @@ function aplicarGestoSwipe() {
             modalBox.style.transform = 'translateY(0)';
         }
     });
+}
+
+// ==========================================
+// MODAL DE INFORMAÇÕES DA LOJA
+// ==========================================
+function abrirModalInfoLoja() {
+    document.getElementById('modal-info-loja').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Trava o fundo
+}
+
+function fecharModalInfoLoja() {
+    document.getElementById('modal-info-loja').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Destrava o fundo
 }
