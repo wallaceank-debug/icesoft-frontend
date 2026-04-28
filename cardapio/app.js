@@ -6,7 +6,7 @@ let gruposGlobais = [];
 let produtoEmSelecao = null;
 let escolhasAtuais = [];
 let idsDestaquesGlobais = [];
-
+let lojaAberta = true; // Impede adicionar se estiver fechada
 let idsUpsellGlobais = [];
 let descontoUpsellGlobal = 0;
 
@@ -163,6 +163,13 @@ function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
     
+    
+    if (!lojaAberta) {
+        alert("🛑 A loja está fechada no momento! Verifique nosso horário de funcionamento no topo da página.");
+        return;
+    }
+    // ... resto da função continua igualzinho
+
     const topo = document.getElementById('detalhes-produto-topo');
     
     const descricaoHTML = produto.descricao && produto.descricao !== 'null'
@@ -544,6 +551,54 @@ async function carregarConfiguracoesLoja() {
         }
         if (configs.horarios_loja) document.getElementById('modal-horarios-texto').innerText = configs.horarios_loja;
         if (configs.pagamentos_loja) document.getElementById('modal-pagamentos-texto').innerText = configs.pagamentos_loja;
+
+        // === MÁGICA DA LOJA FECHADA / ABERTA (AGORA DENTRO DO TRY) ===
+        const status = configs.status_delivery || 'aberto';
+        const statusText = document.getElementById('loja-status-exibicao');
+        
+        if (status === 'fechado') {
+            lojaAberta = false;
+            let textoAbertura = "em breve";
+            
+            // Calculadora do próximo dia
+            try {
+                const horarios = JSON.parse(configs.horarios_funcionamento_auto);
+                const diasSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+                const hoje = new Date();
+                const diaAtual = hoje.getDay(); 
+                const horaAtual = hoje.getHours() * 60 + hoje.getMinutes();
+
+                // 1. Ainda abre HOJE?
+                if (horarios[diaAtual] && horarios[diaAtual].ativo && horarios[diaAtual].abre) {
+                    const [h, m] = horarios[diaAtual].abre.split(':').map(Number);
+                    if (horaAtual < (h * 60 + m)) textoAbertura = `hoje às ${horarios[diaAtual].abre}`;
+                }
+                
+                // 2. Se não for hoje, procura o próximo dia!
+                if (textoAbertura === "em breve") {
+                    for (let i = 1; i <= 6; i++) {
+                        let proximoDia = (diaAtual + i) % 7;
+                        if (horarios[proximoDia] && horarios[proximoDia].ativo) {
+                            const nomeDia = (i === 1) ? "Amanhã" : diasSemana[proximoDia];
+                            textoAbertura = `${nomeDia} às ${horarios[proximoDia].abre}`;
+                            break;
+                        }
+                    }
+                }
+            } catch(e) {}
+
+            statusText.innerText = `● Estamos fechados no momento, abre ${textoAbertura}`;
+            statusText.style.color = "#f44336"; // Vermelho
+            
+            // SOME COM A TELA PRETA ANTIGA SE ELA EXISTIR!
+            const telaPreta = document.getElementById('overlay-loja-fechada');
+            if (telaPreta) telaPreta.style.display = 'none';
+
+        } else {
+            lojaAberta = true;
+            statusText.innerText = "● Recebendo pedidos";
+            statusText.style.color = "#25D366"; // Verde
+        }
 
     } catch (e) { console.error("Erro configurações:", e); }
 }

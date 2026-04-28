@@ -55,6 +55,20 @@ async function carregarConfiguracoes() {
         }
         renderizarListaUpsell(upsellSalvos);
 
+        // Puxa a escala de horários salva (AGORA DENTRO DO TRY)
+        if (configs.horarios_funcionamento_auto) {
+            try {
+                const horarios = JSON.parse(configs.horarios_funcionamento_auto);
+                for (let i = 0; i <= 6; i++) {
+                    if (horarios[i]) {
+                        document.getElementById(`chk-dia-${i}`).checked = horarios[i].ativo;
+                        document.getElementById(`abre-dia-${i}`).value = horarios[i].abre;
+                        document.getElementById(`fecha-dia-${i}`).value = horarios[i].fecha;
+                    }
+                }
+            } catch(e) {}
+        }
+
     } catch (e) {
         console.error("Erro ao carregar configurações:", e);
     }
@@ -244,4 +258,21 @@ async function salvarInformacoesLoja() {
     };
 
     enviarParaNuvem(payload, btn, textoOriginal, "#2196F3");
+}
+
+async function salvarHorariosLoja() {
+    const btn = document.getElementById('btn-salvar-horarios');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Salvando...";
+    
+    const horarios = {};
+    for (let i = 0; i <= 6; i++) {
+        horarios[i] = {
+            ativo: document.getElementById(`chk-dia-${i}`).checked,
+            abre: document.getElementById(`abre-dia-${i}`).value,
+            fecha: document.getElementById(`fecha-dia-${i}`).value
+        };
+    }
+    
+    enviarParaNuvem({ horarios_funcionamento_auto: JSON.stringify(horarios) }, btn, textoOriginal, "#FF9800");
 }

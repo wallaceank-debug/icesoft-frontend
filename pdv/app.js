@@ -873,3 +873,27 @@ async function transferirParaMesa(numeroMesa) {
         alert("Erro de conexão. Verifique a internet.");
     }
 }
+
+// === BOTÃO DO CARDÁPIO ONLINE (PDV) ===
+async function alterarStatusLoja() {
+    const checkbox = document.getElementById('toggle-delivery');
+    const novoStatus = checkbox.checked ? 'aberto' : 'fechado';
+    
+    try {
+        // Faz o botão dar uma "piscada" para mostrar que está salvando
+        if (checkbox.parentElement) checkbox.parentElement.style.opacity = '0.5';
+
+        await fetch(`${API_URL}/loja/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: novoStatus })
+        });
+        
+        if (checkbox.parentElement) {
+            setTimeout(() => checkbox.parentElement.style.opacity = '1', 500);
+        }
+    } catch(e) {
+        alert("🔌 Erro ao ligar/desligar a loja. Verifique a internet.");
+        checkbox.checked = !checkbox.checked; // Volta a chavinha se der erro
+    }
+}

@@ -93,23 +93,108 @@
                         💾 Salvar Aparência e Imagens
                     </button>
                 </div>
+
+                <div class="card-config">
+                    <h3>📍 Informações e Horários</h3>
+                    
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Endereço Físico</label>
+                    <input type="text" id="config-endereco" placeholder="Ex: Rua Victor Marcondes Sampaio, 170" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins';">
+
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Horários de Funcionamento</label>
+                    <textarea id="config-horarios" rows="3" placeholder="Ex: Terça a Domingo das 14:00 às 22:00" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+
+                    <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Formas de Pagamento Aceitas</label>
+                    <textarea id="config-pagamentos" rows="2" placeholder="Ex: Pix, Cartão de Crédito, Débito e Dinheiro Vivo" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+
+                    <button id="btn-salvar-infos" onclick="salvarInformacoesLoja()" style="width:100%; padding:15px; margin-top:10px; background:#2196F3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        💾 Salvar Informações
+                    </button>
+                </div>
             </div>
 
-            <div class="card-config">
-                <h3>📍 Informações e Horários</h3>
-                
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Endereço Físico</label>
-                <input type="text" id="config-endereco" placeholder="Ex: Rua Victor Marcondes Sampaio, 170" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins';">
+            <div>
+                <div class="card-config">
+                    <h3>⏰ Horários (Automático)</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Configure os dias em que a loja abre. O cardápio usará isso para calcular e avisar o cliente exatamente quando você vai abrir de novo se o PDV estiver fechado.</p>
 
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Horários de Funcionamento</label>
-                <textarea id="config-horarios" rows="3" placeholder="Ex: Terça a Domingo das 14:00 às 22:00" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+                    <div style="display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-0" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Domingo</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-0" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-0" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
 
-                <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Formas de Pagamento Aceitas</label>
-                <textarea id="config-pagamentos" rows="2" placeholder="Ex: Pix, Cartão de Crédito, Débito e Dinheiro Vivo" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-1" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Segunda</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-1" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-1" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
 
-                <button id="btn-salvar-infos" onclick="salvarInformacoesLoja()" style="width:100%; padding:15px; margin-top:10px; background:#2196F3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    💾 Salvar Informações
-                </button>
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-2" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Terça</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-2" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-2" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-3" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Quarta</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-3" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-3" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-4" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Quinta</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-4" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-4" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-5" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Sexta</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-5" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-5" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-dia-6" style="width:18px; height:18px; cursor: pointer;"> 
+                                <label style="font-weight: bold; color: #333; width: 65px;">Sábado</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="time" id="abre-dia-6" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;"> <span style="color:#666; font-size:0.85rem;">às</span> <input type="time" id="fecha-dia-6" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-family: 'Poppins'; font-size: 0.85rem;">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <button id="btn-salvar-horarios" onclick="salvarHorariosLoja()" style="width:100%; padding:15px; margin-top:20px; background:#FF9800; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        💾 Salvar Escala Automática
+                    </button>
+                </div>
             </div>
 
             <div>
