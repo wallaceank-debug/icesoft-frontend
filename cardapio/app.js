@@ -154,6 +154,13 @@ function rolarParaCategoria(id) {
 // RESTANTE DO SISTEMA DE VENDAS
 // ==========================================
 function verificarAdicao(id) {
+    
+    // 🛑 TRAVA DE SEGURANÇA: Bloqueia o clique IMEDIATAMENTE se estiver fechado
+    if (!lojaAberta) {
+        alert("🛑 A loja está fechada no momento! Verifique nosso horário de funcionamento no topo da página.");
+        return;
+    }
+    
     const produto = produtosDaNuvem.find(p => p.id === id);
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) return adicionarAoCarrinho(produto.nome, Number(produto.preco));
     abrirModalEscolha(produto);
@@ -162,13 +169,6 @@ function verificarAdicao(id) {
 function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
-    
-    
-    if (!lojaAberta) {
-        alert("🛑 A loja está fechada no momento! Verifique nosso horário de funcionamento no topo da página.");
-        return;
-    }
-    // ... resto da função continua igualzinho
 
     const topo = document.getElementById('detalhes-produto-topo');
     
