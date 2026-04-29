@@ -480,7 +480,8 @@ function abrirModalGrupo(id = null) {
     const idInput = document.getElementById('grupo-id');
     const nomeInput = document.getElementById('grupo-nome');
     const limiteInput = document.getElementById('grupo-limite');
-    const obrigatorioInput = document.getElementById('grupo-obrigatorio'); // Puxamos a nova caixinha
+    const obrigatorioInput = document.getElementById('grupo-obrigatorio');
+    const btnExcluir = document.getElementById('btn-excluir-grupo'); // 🛠️ O novo botão!
 
     if (id) { // MODO EDIÇÃO
         const g = listaGrupos.find(x => x.id === id);
@@ -488,16 +489,50 @@ function abrirModalGrupo(id = null) {
         idInput.value = g.id;
         nomeInput.value = g.nome;
         limiteInput.value = g.limite;
-        // Marca a caixinha se no banco de dados estiver como obrigatório
         obrigatorioInput.checked = (g.obrigatorio == 1 || g.obrigatorio == true || g.obrigatorio === 'true');
+        
+        // Se estamos editando algo que já existe, mostra a lixeira!
+        if(btnExcluir) btnExcluir.style.display = 'block'; 
     } else { // MODO NOVO
         titulo.innerText = "Novo Grupo";
         idInput.value = '';
         nomeInput.value = '';
         limiteInput.value = '';
-        obrigatorioInput.checked = false; // Começa desmarcado por padrão
+        obrigatorioInput.checked = false;
+        
+        // Se estamos criando do zero, esconde a lixeira!
+        if(btnExcluir) btnExcluir.style.display = 'none'; 
     }
     modal.style.display = 'flex';
+}
+
+// Função ninja de exclusão segura
+async function excluirGrupoModal() {
+    const id = document.getElementById('grupo-id').value;
+    if (!id) return;
+    
+    // Trava de segurança dupla
+    if(!confirm("⚠️ Tem certeza que deseja EXCLUIR este grupo e todos os complementos dentro dele?\nEles sumirão do cardápio digital de todos os produtos vinculados.")) return;
+
+    try {
+        const res = await fetch(`${API_URL}/grupos/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            fecharModalGrupo();
+            
+            // Se o grupo excluído era exatamente o que estava aberto na 3ª coluna, a gente limpa a tela!
+            if (grupoSelecionadoId === Number(id)) {
+                grupoSelecionadoId = null;
+                document.getElementById('lista-adicionais').innerHTML = '<p class="carregando" style="opacity: 0.6;">Selecione um Grupo na coluna ao lado para ver os adicionais.</p>';
+                document.getElementById('btn-novo-adicional').style.display = 'none';
+            }
+            
+            await carregarTudo(); // Sincroniza tudo com o banco de dados
+        } else {
+            alert("❌ Erro ao excluir o grupo no servidor.");
+        }
+    } catch (e) {
+        alert("🔌 Erro de conexão ao tentar excluir o grupo.");
+    }
 }
 
 function abrirEdicaoGrupo(id) {
