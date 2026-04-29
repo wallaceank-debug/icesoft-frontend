@@ -160,9 +160,8 @@
             <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Defina a ordem em que os botões aparecerão no PDV (Ex: 1, 2, 3...)</p>
             
             <div style="display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
-                <input type="text" id="nova-cat-nome" class="input-padrao" placeholder="Nome (Ex: Promoções)">
-                <input type="number" id="nova-cat-ordem" class="input-padrao" placeholder="Ordem (Ex: 1)" style="width: 80px;">
-                <button onclick="salvarNovaCategoria()" class="btn-salvar" style="padding: 10px;">Adicionar</button>
+                <input type="text" id="nova-cat-nome" class="input-padrao" style="flex: 1;" placeholder="Nome da Categoria (Ex: Promoções)">
+                <button onclick="salvarNovaCategoria()" class="btn-salvar" style="padding: 10px 20px;">Adicionar</button>
             </div>
 
             <div id="lista-categorias-gerenciador" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;">

@@ -321,8 +321,10 @@ document.querySelector('.btn-limpar').onclick = limparCarrinho;
 document.querySelector('.btn-cancelar').onclick = limparCarrinho;
 
 // ==========================================
-// SISTEMA DE COBRANÇA (CHECKOUT)
+// SISTEMA DE COBRANÇA (CHECKOUT DIVIDIDO)
 // ==========================================
+
+let isPagamentoDividido = false;
 
 function abrirModalCheckout() {
     if (caixaAtual.status === 'Fechado') {
@@ -330,42 +332,148 @@ function abrirModalCheckout() {
     }
     
     document.getElementById('checkout-total').innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
+    
+    // Reset da interface para o padrão (1 Pagamento)
+    isPagamentoDividido = false;
+    document.getElementById('area-pagamento-2').style.display = 'none';
+    document.getElementById('btn-add-pagamento').style.display = 'block';
+    
+    document.getElementById('checkout-metodo-1').value = 'Dinheiro';
+    document.getElementById('checkout-valor-1').value = totalFinalGlobal.toFixed(2);
+    document.getElementById('checkout-valor-1').readOnly = true; // Trava o valor no total
+    
     document.getElementById('checkout-recebido').value = '';
     document.getElementById('checkout-troco').innerText = 'R$ 0,00';
     document.getElementById('checkout-troco').style.color = '#25D366';
     
     document.getElementById('modal-checkout').style.display = 'flex';
     verificarMetodoPagamento(); 
-    setTimeout(() => document.getElementById('checkout-recebido').focus(), 100);
+    
+    setTimeout(() => {
+        if(document.getElementById('checkout-metodo-1').value === 'Dinheiro'){
+            document.getElementById('checkout-recebido').focus();
+        }
+    }, 100);
 }
 
 function fecharModalCheckout() { document.getElementById('modal-checkout').style.display = 'none'; }
 
+function togglePagamentoDividido() {
+    isPagamentoDividido = !isPagamentoDividido;
+    const areaPag2 = document.getElementById('area-pagamento-2');
+    const btnAdd = document.getElementById('btn-add-pagamento');
+    const inputValor1 = document.getElementById('checkout-valor-1');
+    
+    if (isPagamentoDividido) {
+        areaPag2.style.display = 'block';
+        btnAdd.style.display = 'none';
+        inputValor1.readOnly = false; // Destrava para o operador digitar o primeiro valor
+        inputValor1.focus();
+        inputValor1.select();
+    } else {
+        areaPag2.style.display = 'none';
+        btnAdd.style.display = 'block';
+        inputValor1.readOnly = true; // Trava novamente
+    }
+    calcularTroco();
+    verificarMetodoPagamento();
+}
+
 function verificarMetodoPagamento() {
-    const metodo = document.getElementById('checkout-metodo').value;
+    const m1 = document.getElementById('checkout-metodo-1').value;
+    const m2 = isPagamentoDividido ? document.getElementById('checkout-metodo-2').value : null;
     const areaTroco = document.getElementById('area-troco');
-    areaTroco.style.display = (metodo === 'Dinheiro') ? 'block' : 'none';
+    
+    // Se ALGUM dos métodos for Dinheiro, mostra a área de troco
+    if (m1 === 'Dinheiro' || m2 === 'Dinheiro') {
+        areaTroco.style.display = 'block';
+    } else {
+        areaTroco.style.display = 'none';
+        document.getElementById('checkout-recebido').value = ''; // zera para não bugar o caixa
+    }
+    calcularTroco();
 }
 
 function calcularTroco() {
-    const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
-    const troco = recebido - totalFinalGlobal;
-    const displayTroco = document.getElementById('checkout-troco');
+    // 1. Matemática da Divisão de Pagamento
+    let v1 = parseFloat(document.getElementById('checkout-valor-1').value) || 0;
     
-    if (troco >= 0) {
-        displayTroco.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
-        displayTroco.style.color = '#25D366';
+    if (v1 > totalFinalGlobal) {
+        v1 = totalFinalGlobal; // Não deixa digitar mais que o total na parcela 1
+        document.getElementById('checkout-valor-1').value = v1.toFixed(2);
+    }
+    
+    let v2 = 0;
+    if (isPagamentoDividido) {
+        v2 = totalFinalGlobal - v1;
+        document.getElementById('checkout-valor-2').value = v2.toFixed(2); // Calcula o resto automático
     } else {
-        displayTroco.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
-        displayTroco.style.color = '#f44336'; 
+        v1 = totalFinalGlobal;
+        document.getElementById('checkout-valor-1').value = v1.toFixed(2);
+    }
+
+    // 2. Matemática do Troco em Dinheiro
+    const m1 = document.getElementById('checkout-metodo-1').value;
+    const m2 = isPagamentoDividido ? document.getElementById('checkout-metodo-2').value : null;
+    
+    let dinheiroEsperado = 0;
+    if (m1 === 'Dinheiro') dinheiroEsperado += v1;
+    if (m2 === 'Dinheiro') dinheiroEsperado += v2;
+
+    const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
+    const displayTroco = document.getElementById('checkout-troco');
+
+    if (dinheiroEsperado > 0) {
+        const troco = recebido - dinheiroEsperado;
+        if (troco >= 0) {
+            displayTroco.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
+            displayTroco.style.color = '#25D366';
+        } else {
+            displayTroco.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
+            displayTroco.style.color = '#f44336'; 
+        }
+    } else {
+        displayTroco.innerText = `R$ 0,00`;
+        displayTroco.style.color = '#25D366';
     }
 }
 
 async function finalizarVendaPDV() {
     if (carrinho.length === 0) return alert("Carrinho vazio!");
 
-    const metodo = document.getElementById('checkout-metodo').value;
+    const m1 = document.getElementById('checkout-metodo-1').value;
+    const v1 = parseFloat(document.getElementById('checkout-valor-1').value) || 0;
+    let metodoFinalTexto = m1;
     
+    // Validações da divisão
+    if (isPagamentoDividido) {
+        const m2 = document.getElementById('checkout-metodo-2').value;
+        const v2 = parseFloat(document.getElementById('checkout-valor-2').value) || 0;
+        
+        if (v1 <= 0 || v2 <= 0) return alert("⚠️ Ambos os valores devem ser maiores que zero na divisão.");
+        if (m1 === m2) return alert("⚠️ As duas formas de pagamento não podem ser iguais.");
+        
+        metodoFinalTexto = `${m1} e ${m2}`; // Formato amigável pro Dashboard
+    }
+    
+    // Validação de Dinheiro vs Recebido
+    let dinheiroEsperado = 0;
+    if (m1 === 'Dinheiro') dinheiroEsperado += v1;
+    if (isPagamentoDividido && document.getElementById('checkout-metodo-2').value === 'Dinheiro') {
+        dinheiroEsperado += parseFloat(document.getElementById('checkout-valor-2').value);
+    }
+
+    const recebido = parseFloat(document.getElementById('checkout-recebido').value) || 0;
+    let trocoComprovante = 0;
+
+    if (dinheiroEsperado > 0) {
+        if (recebido < dinheiroEsperado) {
+            return alert(`⚠️ O cliente precisa entregar pelo menos R$ ${dinheiroEsperado.toFixed(2)} em dinheiro.`);
+        }
+        trocoComprovante = recebido - dinheiroEsperado;
+    }
+
+    // Montando dados para a Nuvem
     const itensFormatados = carrinho.map(item => {
         let nomeCompleto = "Balcão: " + item.nomeBase;
         if (item.adicionais && item.adicionais.length > 0) {
@@ -379,7 +487,7 @@ async function finalizarVendaPDV() {
         produto_nome: JSON.stringify(itensFormatados), 
         valor_total: totalFinalGlobal,
         total: totalFinalGlobal,
-        forma_pagamento: metodo,
+        forma_pagamento: metodoFinalTexto, // Ex: "Dinheiro e PIX"
         status: "Concluída",
         origem: "Balcão"
     };
@@ -392,15 +500,14 @@ async function finalizarVendaPDV() {
         });
 
         if (resposta.ok) {
-            const recebido = parseFloat(document.getElementById('checkout-recebido').value) || totalFinalGlobal;
-            const troco = recebido - totalFinalGlobal;
-            
             const querImprimir = document.getElementById('checkout-imprimir').checked;
             if (querImprimir) {
-                imprimirComanda(metodo, recebido, troco); 
+                // Passa o recebido real se for dinheiro, se não, passa o total
+                const valorImpressao = dinheiroEsperado > 0 ? recebido : totalFinalGlobal; 
+                imprimirComanda(metodoFinalTexto, valorImpressao, trocoComprovante); 
             }
 
-            alert(`✅ Venda Finalizada!\nPagamento: ${metodo}\nTotal: R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`);
+            alert(`✅ Venda Finalizada!\nPagamento: ${metodoFinalTexto}\nTotal: R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`);
             carrinho = []; 
             descontoGlobal = 0;
             acrescimoGlobal = 0;
@@ -711,6 +818,28 @@ async function salvarMovimentacao() {
 // ==========================================
 // 🏪 CONTROLE DE STATUS DA LOJA (COM TENTATIVAS AUTOMÁTICAS)
 // ==========================================
+
+async function verificarStatusLoja() {
+    try {
+        const res = await fetch(`${API_URL}/loja/status`);
+        if (res.ok) {
+            const dados = await res.json();
+            const checkbox = document.getElementById('toggle-delivery');
+            if (checkbox) {
+                // Deixa a chavinha vermelha (desligada) ou verde (ligada) conforme o banco de dados
+                checkbox.checked = (dados.status === 'aberto');
+            }
+        }
+    } catch (e) {
+        console.log("Aguardando servidor carregar o status da loja...");
+    }
+}
+
+// Essa função existe apenas para ser chamada quando a página carrega pela primeira vez
+async function carregarStatusLoja() {
+    await verificarStatusLoja();
+}
+
 async function alterarStatusLoja(statusDesejado) {
     let tentativas = 8; // ⏱️ Aumentamos para 8 tentativas!
     

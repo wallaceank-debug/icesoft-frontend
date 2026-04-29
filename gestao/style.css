@@ -67,18 +67,66 @@ body {
 .btn-topo:hover { transform: scale(1.05); }
 .btn-add-mini { background: #00bcd4; color: white; border: none; padding: 5px 15px; border-radius: 15px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
 
-/* LAYOUT 3 COLUNAS */
-.gestao-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; height: calc(100vh - 90px); }
+/* ==========================================
+   LAYOUT 3 COLUNAS (DESIGN CLEAN E MINIMALISTA)
+   ========================================== */
+.gestao-container { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 0; /* Removemos o buraco entre as colunas para usar a linha divisória */
+    padding: 30px; 
+    max-width: 1400px; 
+    margin: 0 auto; 
+    width: 100%; 
+    height: calc(100vh - 90px); 
+}
 
-.coluna-card { background: #00bcd4; border-radius: 25px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 20px rgba(0, 188, 212, 0.2); }
-.coluna-header { padding: 20px; text-align: center; color: white; }
-.coluna-header h2 { font-size: 1.2rem; font-weight: 600; margin: 0; letter-spacing: 1px; }
+/* Colunas agora são transparentes, sem borda redonda e sem sombra pesada */
+.coluna-card { 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+    background: transparent; 
+    border-right: 1px solid #00bcd4; /* A linha fina divisória que você desenhou */
+    padding: 0 25px; 
+}
+.coluna-card:last-child { 
+    border-right: none; /* Remove a linha da última coluna para não sobrar na ponta */
+}
 
-.coluna-lista { flex: 1; background: rgba(255,255,255,0.95); margin: 0 10px 10px 10px; border-radius: 15px; overflow-y: auto; padding: 10px; }
-.coluna-lista::-webkit-scrollbar { width: 6px; }
-.coluna-lista::-webkit-scrollbar-thumb { background: #00bcd4; border-radius: 10px; }
+/* Cabeçalho da coluna elegante e com linha embaixo */
+.coluna-header { 
+    padding: 10px 0; 
+    text-align: center; 
+    color: #555; 
+    border-bottom: 1px solid #555; 
+    margin-bottom: 15px; 
+}
+.coluna-header h2 { 
+    font-size: 1.1rem; 
+    font-weight: 400; 
+    margin: 0; 
+    letter-spacing: 1px; 
+    text-transform: uppercase; 
+}
 
-.carregando { text-align: center; margin-top: 20px; color: #777; font-size: 0.9rem; }
+/* A lista de itens perde o fundo branco e ganha respiro */
+.coluna-lista { 
+    flex: 1; 
+    background: transparent; 
+    margin: 0; 
+    overflow-y: auto; 
+    padding: 0 10px 10px 0; 
+}
+.coluna-lista::-webkit-scrollbar { width: 4px; }
+.coluna-lista::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+.carregando { 
+    text-align: center; 
+    margin-top: 20px; 
+    color: #777; 
+    font-size: 0.9rem; 
+}
 
 /* ITENS DA LISTA */
 .item-linha { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; transition: 0.2s; cursor: pointer; }

@@ -509,6 +509,7 @@ async function salvarGrupo() {
 // SISTEMA DE CATEGORIAS (CRUD)
 // ==========================================
 let listaCategorias = [];
+let categoriaArrastadaIndex = null;
 
 // Substitui a função carregarTudo antiga para puxar as categorias também
 async function carregarTudo() {
@@ -558,12 +559,17 @@ function renderizarListaCategoriasAdmin() {
         return;
     }
 
-    listaCategorias.forEach(cat => {
+    listaCategorias.forEach((cat, index) => {
+        // Agora cada linha tem a função "draggable" (arrastável) e um ícone de menu hambúrguer ☰
         container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px;">
-                <div>
-                    <strong>${cat.nome}</strong> 
-                    <span style="font-size:0.8rem; color:#888; margin-left:10px;">Ordem: ${cat.ordem}</span>
+            <div draggable="true"
+                 ondragstart="dragStartCategoria(${index})"
+                 ondragover="dragOverCategoria(event)"
+                 ondrop="dropCategoria(${index})"
+                 style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px 15px; border-radius:8px; margin-bottom:8px; cursor:grab; border: 1px solid #eee; transition: 0.2s;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: #ccc; cursor: grab; font-size: 1.2rem;">☰</span>
+                    <strong style="color: #333;">${cat.nome}</strong> 
                 </div>
                 <button onclick="excluirCategoria(${cat.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;">🗑️</button>
             </div>
@@ -571,9 +577,49 @@ function renderizarListaCategoriasAdmin() {
     });
 }
 
+// === LÓGICA DE ARRASTAR E SOLTAR ===
+function dragStartCategoria(index) {
+    categoriaArrastadaIndex = index;
+}
+
+function dragOverCategoria(event) {
+    event.preventDefault(); // Necessário para permitir que o item caia aqui
+}
+
+async function dropCategoria(indexDestino) {
+    if (categoriaArrastadaIndex === null || categoriaArrastadaIndex === indexDestino) return;
+
+    // 1. Tira o item da posição antiga e joga na posição nova na memória
+    const itemArrastado = listaCategorias.splice(categoriaArrastadaIndex, 1)[0];
+    listaCategorias.splice(indexDestino, 0, itemArrastado);
+
+    // 2. Atualiza a tela imediatamente para o operador ver que funcionou
+    renderizarListaCategoriasAdmin();
+
+    // 3. Monta o pacote dizendo "Categoria X agora é a número 1, Categoria Y é a número 2..."
+    const novaOrdemPayload = listaCategorias.map((cat, idx) => {
+        return { id: cat.id, ordem: idx + 1 };
+    });
+
+    try {
+        await fetch(`${API_URL}/categorias/ordem`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(novaOrdemPayload)
+        });
+        await carregarTudo(); // Sincroniza com o banco de dados
+    } catch (e) {
+        alert("Erro de conexão ao salvar a nova ordem no servidor.");
+    } finally {
+        categoriaArrastadaIndex = null;
+    }
+}
+
+// === CRIAÇÃO DE NOVA CATEGORIA (Automática) ===
 async function salvarNovaCategoria() {
-    const nome = document.getElementById('nova-cat-nome').value;
-    const ordem = document.getElementById('nova-cat-ordem').value;
+    const nome = document.getElementById('nova-cat-nome').value.trim();
+    // A nova categoria sempre vai para o final da fila automaticamente
+    const ordem = listaCategorias.length + 1; 
 
     if (!nome) return alert("Preencha o nome da categoria!");
 
@@ -581,13 +627,12 @@ async function salvarNovaCategoria() {
         await fetch(`${API_URL}/categorias`, { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ nome, ordem: parseInt(ordem) || 0 }) 
+            body: JSON.stringify({ nome, ordem: ordem }) 
         });
         
         document.getElementById('nova-cat-nome').value = '';
-        document.getElementById('nova-cat-ordem').value = '';
         await carregarTudo();
-        renderizarListaCategoriasAdmin(); // Atualiza a janelinha
+        renderizarListaCategoriasAdmin(); 
     } catch (e) {
         alert("Erro ao salvar categoria.");
     }

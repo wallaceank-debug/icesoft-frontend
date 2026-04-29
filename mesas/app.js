@@ -7,6 +7,7 @@ let gruposGlobais = []; // NOVA MEMÓRIA: Adicionais
 
 // Memória do Modal de Lançamento
 let mesaEmEdicao = null;
+let idMesaEmAdicao = null; // NOVO: Lembra se estamos apenas adicionando itens em uma mesa existente
 let carrinhoLancamento = [];
 let categoriaAtivaMesa = 'Todos';
 
@@ -62,13 +63,15 @@ function renderizarGrade() {
             const itens = mesaOcupada.itens || [];
             itens.forEach(item => totalMesa += Number(item.preco));
 
+            // Cartão da mesa ocupada com o botão "+" verde colado no rodapé
             container.innerHTML += `
-                <div class="mesa-card mesa-ocupada" onclick="abrirMesaOcupada(${mesaOcupada.id})" style="position: relative;">
-                    <button onclick="event.stopPropagation(); cancelarPedidoMesa(${mesaOcupada.id})" style="position: absolute; top: 10px; right: 10px; background: #f44336; color: white; border: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 1.1rem;" title="Cancelar este pedido">🗑️</button>
-                    
-                    <h2 style="margin: 0; font-size: 2rem;">Mesa ${numeroMesa}</h2>
-                    <p style="margin: 10px 0 0 0; font-weight: bold; color: #555;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
-                    <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #888;">${itens.length} itens</p>
+                <div class="mesa-card mesa-ocupada" style="position: relative; padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div onclick="abrirMesaOcupada(${mesaOcupada.id})" style="padding: 20px; flex: 1;">
+                        <h2 style="margin: 0; font-size: 2rem;">Mesa ${numeroMesa}</h2>
+                        <p style="margin: 10px 0 0 0; font-weight: bold; color: #333;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">${itens.length} itens</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); abrirAdicaoMesa(${mesaOcupada.id}, '${numeroMesa}')" style="background: #00c853; color: white; border: none; width: 100%; padding: 8px; font-size: 2rem; font-weight: bold; cursor: pointer; line-height: 1; transition: 0.2s;">+</button>
                 </div>
             `;
         } else {
@@ -93,10 +96,25 @@ function abrirModalNovaMesa() {
 
 function abrirNovaMesa(numero) {
     mesaEmEdicao = numero;
+    idMesaEmAdicao = null; // Informa ao sistema que é uma mesa NOVA
     carrinhoLancamento = [];
     categoriaAtivaMesa = 'Todos';
     
     document.getElementById('titulo-modal-mesa').innerText = `Lançando na Mesa ${numero}`;
+    document.getElementById('modal-lancamento').style.display = 'flex';
+
+    renderizarCategoriasMesa();
+    filtrarProdutosMesa();
+    renderizarCarrinhoMesa();
+}
+
+function abrirAdicaoMesa(id, numero) {
+    mesaEmEdicao = numero;
+    idMesaEmAdicao = id; // Informa ao sistema que a mesa JÁ EXISTE
+    carrinhoLancamento = []; // Começa com o carrinho vazio só para os itens novos
+    categoriaAtivaMesa = 'Todos';
+
+    document.getElementById('titulo-modal-mesa').innerText = `Adicionando à Mesa ${numero}`;
     document.getElementById('modal-lancamento').style.display = 'flex';
 
     renderizarCategoriasMesa();
@@ -322,22 +340,41 @@ async function confirmarLancamentoMesa() {
         const textoOriginal = btn.innerText;
         btn.innerText = "Enviando...";
 
-        const resposta = await fetch(`${API_URL}/mesas`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                numero: mesaEmEdicao,
-                itens: carrinhoLancamento
-            })
-        });
+        if (idMesaEmAdicao) {
+            // MESA JÁ EXISTE: Soma os itens antigos com os novos e atualiza (PUT)
+            const mesaAtual = mesasAbertas.find(m => m.id === idMesaEmAdicao);
+            const itensAntigos = mesaAtual.itens || [];
+            const itensCombinados = itensAntigos.concat(carrinhoLancamento);
 
-        if (resposta.ok) {
-            fecharModalLancamento();
-            await carregarMesas(); // Recarrega o mapa atualizado
+            const resposta = await fetch(`${API_URL}/mesas/${idMesaEmAdicao}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itens: itensCombinados })
+            });
+
+            if (resposta.ok) {
+                fecharModalLancamento();
+                await carregarMesas(); 
+            } else { alert("Erro ao adicionar novos itens na mesa."); }
+
         } else {
-            alert("Erro ao abrir mesa no servidor.");
-            btn.innerText = textoOriginal;
+            // MESA NOVA: Cria a mesa do zero (POST)
+            const resposta = await fetch(`${API_URL}/mesas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    numero: mesaEmEdicao,
+                    itens: carrinhoLancamento
+                })
+            });
+
+            if (resposta.ok) {
+                fecharModalLancamento();
+                await carregarMesas(); 
+            } else { alert("Erro ao abrir mesa no servidor."); }
         }
+        
+        btn.innerText = textoOriginal;
     } catch (e) {
         alert("Erro de conexão. Verifique a internet.");
     }
@@ -352,6 +389,7 @@ let itensRestantesNaMesa = []; // Lado Esquerdo
 let itensSendoPagos = [];      // Lado Direito
 let descontoMesa = 0;
 let acrescimoMesa = 0;
+let isPagamentoDivididoMesa = false; // Estado do botão de divisão
 
 function abrirMesaOcupada(idMesa) {
     const mesa = mesasAbertas.find(m => m.id === idMesa);
@@ -360,16 +398,29 @@ function abrirMesaOcupada(idMesa) {
     idMesaEmPagamento = mesa.id;
     numeroMesaEmPagamento = mesa.numero;
     
-    // Fazemos uma cópia exata dos itens da mesa para o Lado Esquerdo
     itensRestantesNaMesa = JSON.parse(JSON.stringify(mesa.itens || []));
-    itensSendoPagos = []; // Lado direito começa vazio
+    itensSendoPagos = []; 
     descontoMesa = 0;
     acrescimoMesa = 0;
+
+    // Reseta a interface de pagamento para o padrão sempre que abrir uma mesa
+    isPagamentoDivididoMesa = false;
+    document.getElementById('mesa-metodo-1').value = 'Dinheiro';
+    document.getElementById('recebido-pagamento-mesa').value = '';
+    const areaPag2 = document.getElementById('area-pagamento-2-mesa');
+    const btnAdd = document.getElementById('btn-add-pagamento-mesa');
+    const inputValor1 = document.getElementById('mesa-valor-1');
+    if(areaPag2) areaPag2.style.display = 'none';
+    if(btnAdd) btnAdd.style.display = 'block';
+    if(inputValor1) inputValor1.readOnly = true;
 
     document.getElementById('titulo-pagamento-mesa').innerText = `Mesa ${mesa.numero}`;
     document.getElementById('modal-pagamento-mesa').style.display = 'flex';
 
     renderizarTelasDePagamento();
+    
+    // 🛠️ CORREÇÃO: Força o sistema a mostrar a gaveta de troco se o padrão for Dinheiro
+    verificarMetodoMesa(); 
 }
 
 function fecharModalPagamentoMesa() {
@@ -384,42 +435,74 @@ function renderizarTelasDePagamento() {
     listaPagamento.innerHTML = '';
     let subtotalPagamento = 0;
 
-    // 1. Desenha os Itens que ainda estão na mesa (Lado Esquerdo)
+    // 1. Itens restantes na mesa (Esquerda)
     if (itensRestantesNaMesa.length === 0) {
         listaMesa.innerHTML = '<p style="text-align:center; color:#888;">Nenhum item restando na mesa.</p>';
     } else {
         itensRestantesNaMesa.forEach((item, index) => {
-            listaMesa.innerHTML += `
-                <div style="background: white; border: 1px solid #eee; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    <div>
-                        <div style="font-weight: bold; color: #333; font-size: 0.95rem;">${item.nomeBase || item.nome}</div>
-                        <div style="color: #666; font-size: 0.9rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+            // LÓGICA DE UI: Desempacota os adicionais em linhas separadas
+            let htmlAdicionais = '';
+            if (item.adicionais && item.adicionais.length > 0) {
+                htmlAdicionais = item.adicionais.map(adc => `
+                    <div style="color: #666; font-size: 0.9rem; padding-left: 20px; margin-top: 4px;">
+                        + ${adc}
                     </div>
-                    <button onclick="moverParaPagamento(${index})" style="background: #e91e63; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Pagar ➡</button>
+                `).join('');
+            }
+
+            listaMesa.innerHTML += `
+                <div style="background: white; border: 1px solid #eee; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 700; font-size: 1rem; color: #888;">1x</span>
+                            <span style="font-weight: bold; color: #333; font-size: 1.1rem;">${item.nomeBase || item.nome}</span>
+                        </div>
+                        ${htmlAdicionais}
+                        <div style="color: #e91e63; font-weight: 900; font-size: 1.1rem; margin-top: 8px; padding-left: 28px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button onclick="removerItemDaMesa(${index})" style="background: #fff0f4; color: #f44336; border: 1px solid #ffcdd2; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 1rem;" title="Cancelar este item">🗑️</button>
+                        <button onclick="moverParaPagamento(${index})" style="background: #e91e63; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">Pagar ➡</button>
+                    </div>
                 </div>
             `;
         });
     }
 
-    // 2. Desenha os Itens que estão sendo pagos (Lado Direito)
+    // 2. Itens sendo pagos agora (Direita)
     if (itensSendoPagos.length === 0) {
         listaPagamento.innerHTML = '<p style="text-align:center; color:#888;">Selecione os itens ao lado que serão pagos agora.</p>';
     } else {
         itensSendoPagos.forEach((item, index) => {
             subtotalPagamento += Number(item.preco);
+            
+            // LÓGICA DE UI: Repete a formatação limpa para o lado direito também
+            let htmlAdicionais = '';
+            if (item.adicionais && item.adicionais.length > 0) {
+                htmlAdicionais = item.adicionais.map(adc => `
+                    <div style="color: #666; font-size: 0.9rem; padding-left: 20px; margin-top: 4px;">
+                        + ${adc}
+                    </div>
+                `).join('');
+            }
+
             listaPagamento.innerHTML += `
-                <div style="background: white; border: 1px solid #00bcd4; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <button onclick="voltarParaMesa(${index})" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 1.2rem;" title="Devolver para a mesa">⬅</button>
-                    <div style="flex: 1; margin-left: 10px;">
-                        <div style="font-weight: bold; color: #00838f; font-size: 0.95rem;">${item.nomeBase || item.nome}</div>
-                        <div style="color: #333; font-weight: bold;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+                <div style="background: white; border: 1px solid #00bcd4; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <button onclick="voltarParaMesa(${index})" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 1.5rem; padding: 0 15px 0 5px;" title="Devolver para a mesa">⬅</button>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 700; font-size: 1rem; color: #888;">1x</span>
+                            <span style="font-weight: bold; color: #00838f; font-size: 1.1rem;">${item.nomeBase || item.nome}</span>
+                        </div>
+                        ${htmlAdicionais}
+                        <div style="color: #e91e63; font-weight: 900; font-size: 1.1rem; margin-top: 8px; padding-left: 28px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                     </div>
                 </div>
             `;
         });
     }
 
-    // 3. Calcula os Totais com Desconto/Acréscimo
+    // 3. Calcula e Atualiza Totais
     let totalFinal = subtotalPagamento - descontoMesa + acrescimoMesa;
     if (totalFinal < 0) totalFinal = 0;
 
@@ -428,20 +511,22 @@ function renderizarTelasDePagamento() {
     document.getElementById('acrescimo-pagamento-mesa').innerText = `+ R$ ${acrescimoMesa.toFixed(2).replace('.', ',')}`;
     document.getElementById('total-pagamento-mesa').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
 
-    // Guarda o valor na memória invisível do botão para usarmos na hora de salvar
     document.getElementById('btn-finalizar-mesa').dataset.total = totalFinal;
+
+    if (!isPagamentoDivididoMesa) {
+        const inputValor1 = document.getElementById('mesa-valor-1');
+        if(inputValor1) inputValor1.value = totalFinal.toFixed(2);
+    }
+    calcularTrocoMesa();
 }
 
-// Ações de mover os itens de um lado para o outro
 function moverParaPagamento(index) {
-    const item = itensRestantesNaMesa.splice(index, 1)[0];
-    itensSendoPagos.push(item);
+    itensSendoPagos.push(itensRestantesNaMesa.splice(index, 1)[0]);
     renderizarTelasDePagamento();
 }
 
 function voltarParaMesa(index) {
-    const item = itensSendoPagos.splice(index, 1)[0];
-    itensRestantesNaMesa.push(item);
+    itensRestantesNaMesa.push(itensSendoPagos.splice(index, 1)[0]);
     renderizarTelasDePagamento();
 }
 
@@ -451,7 +536,6 @@ function moverTodosParaPagamento() {
     renderizarTelasDePagamento();
 }
 
-// Descontos e Acréscimos (Igual ao PDV)
 function pedirDescontoMesa() {
     let valor = prompt("✏️ Digite o valor do DESCONTO em R$:");
     if (valor !== null) {
@@ -469,41 +553,125 @@ function pedirAcrescimoMesa() {
 }
 
 // ==========================================
-// FUNÇÕES DE CÁLCULO DE TROCO (MESA)
+// FUNÇÕES DE DIVISÃO E TROCO (MESAS)
 // ==========================================
+
+function togglePagamentoDivididoMesa() {
+    isPagamentoDivididoMesa = !isPagamentoDivididoMesa;
+    const areaPag2 = document.getElementById('area-pagamento-2-mesa');
+    const btnAdd = document.getElementById('btn-add-pagamento-mesa');
+    const inputValor1 = document.getElementById('mesa-valor-1');
+    
+    if (isPagamentoDivididoMesa) {
+        areaPag2.style.display = 'block';
+        btnAdd.style.display = 'none';
+        inputValor1.readOnly = false;
+        inputValor1.focus();
+        inputValor1.select();
+    } else {
+        areaPag2.style.display = 'none';
+        btnAdd.style.display = 'block';
+        inputValor1.readOnly = true;
+    }
+    calcularTrocoMesa();
+    verificarMetodoMesa();
+}
+
 function verificarMetodoMesa() {
-    const metodo = document.getElementById('metodo-pagamento-mesa').value;
-    document.getElementById('area-troco-mesa').style.display = (metodo === 'Dinheiro') ? 'block' : 'none';
+    const m1 = document.getElementById('mesa-metodo-1').value;
+    const m2 = isPagamentoDivididoMesa ? document.getElementById('mesa-metodo-2').value : null;
+    const areaTroco = document.getElementById('area-troco-mesa');
+    
+    if (m1 === 'Dinheiro' || m2 === 'Dinheiro') {
+        areaTroco.style.display = 'block';
+    } else {
+        areaTroco.style.display = 'none';
+        document.getElementById('recebido-pagamento-mesa').value = ''; 
+    }
+    calcularTrocoMesa();
 }
 
 function calcularTrocoMesa() {
-    const recebido = parseFloat(document.getElementById('recebido-pagamento-mesa').value) || 0;
     const total = Number(document.getElementById('btn-finalizar-mesa').dataset.total) || 0;
-    const troco = recebido - total;
+    
+    let v1 = parseFloat(document.getElementById('mesa-valor-1').value) || 0;
+    if (v1 > total) {
+        v1 = total;
+        document.getElementById('mesa-valor-1').value = v1.toFixed(2);
+    }
+    
+    let v2 = 0;
+    if (isPagamentoDivididoMesa) {
+        v2 = total - v1;
+        document.getElementById('mesa-valor-2').value = v2.toFixed(2);
+    } else {
+        v1 = total;
+        document.getElementById('mesa-valor-1').value = v1.toFixed(2);
+    }
+
+    const m1 = document.getElementById('mesa-metodo-1').value;
+    const m2 = isPagamentoDivididoMesa ? document.getElementById('mesa-metodo-2').value : null;
+    
+    let dinheiroEsperado = 0;
+    if (m1 === 'Dinheiro') dinheiroEsperado += v1;
+    if (m2 === 'Dinheiro') dinheiroEsperado += v2;
+
+    const recebido = parseFloat(document.getElementById('recebido-pagamento-mesa').value) || 0;
     const display = document.getElementById('troco-pagamento-mesa');
     
-    if (troco >= 0) {
-        display.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
-        display.style.color = '#25D366';
+    if (dinheiroEsperado > 0) {
+        const troco = recebido - dinheiroEsperado;
+        if (troco >= 0) {
+            display.innerText = `R$ ${troco.toFixed(2).replace('.', ',')}`;
+            display.style.color = '#25D366';
+        } else {
+            display.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
+            display.style.color = '#f44336';
+        }
     } else {
-        display.innerText = `Faltam R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`;
-        display.style.color = '#f44336';
+        display.innerText = `R$ 0,00`;
+        display.style.color = '#25D366';
     }
 }
 
-// O Grande Momento: Finalizar e Mandar pro Servidor!
+// ==========================================
+// FINALIZAR E MANDAR PRO SERVIDOR
+// ==========================================
 async function finalizarPagamentoMesa() {
     if (itensSendoPagos.length === 0) return alert("Selecione pelo menos um item para pagar!");
 
-    const metodo = document.getElementById('metodo-pagamento-mesa').value;
     const totalCobrado = Number(document.getElementById('btn-finalizar-mesa').dataset.total);
-    const btn = document.getElementById('btn-finalizar-mesa');
     
+    const m1 = document.getElementById('mesa-metodo-1').value;
+    const v1 = parseFloat(document.getElementById('mesa-valor-1').value) || 0;
+    let metodoFinalTexto = m1;
+
+    if (isPagamentoDivididoMesa) {
+        const m2 = document.getElementById('mesa-metodo-2').value;
+        const v2 = parseFloat(document.getElementById('mesa-valor-2').value) || 0;
+        
+        if (v1 <= 0 || v2 <= 0) return alert("⚠️ Ambos os valores devem ser maiores que zero na divisão.");
+        if (m1 === m2) return alert("⚠️ As duas formas de pagamento não podem ser iguais.");
+        
+        metodoFinalTexto = `${m1} e ${m2}`;
+    }
+
+    let dinheiroEsperado = 0;
+    if (m1 === 'Dinheiro') dinheiroEsperado += v1;
+    if (isPagamentoDivididoMesa && document.getElementById('mesa-metodo-2').value === 'Dinheiro') {
+        dinheiroEsperado += parseFloat(document.getElementById('mesa-valor-2').value);
+    }
+
+    const recebido = parseFloat(document.getElementById('recebido-pagamento-mesa').value) || 0;
+    if (dinheiroEsperado > 0 && recebido < dinheiroEsperado) {
+        return alert(`⚠️ O cliente precisa entregar pelo menos R$ ${dinheiroEsperado.toFixed(2)} em dinheiro.`);
+    }
+
+    const btn = document.getElementById('btn-finalizar-mesa');
     btn.innerText = "Processando...";
     btn.disabled = true;
 
     try {
-        // MÁGICA AQUI: Colocamos a etiqueta "Mesa XX:" no nome de cada produto
         const itensFormatadosDashboard = itensSendoPagos.map(item => {
             return { 
                 nome: `Mesa ${numeroMesaEmPagamento} - ${item.nome}`, 
@@ -511,13 +679,16 @@ async function finalizarPagamentoMesa() {
             };
         });
 
-        // PARTE 1: Registrar a Venda Oficial no seu Caixa (Dashboard)
+        // 🛠️ FIX: Cria um resumo de texto limpo para não estourar o limite do Banco de Dados
+        const nomesApenas = itensSendoPagos.map(item => item.nome).join(' + ');
+        const nomeCurto = nomesApenas.length > 250 ? nomesApenas.substring(0, 247) + '...' : nomesApenas;
+
         const vendaPayload = {
-            itens: JSON.stringify(itensFormatadosDashboard),
-            produto_nome: JSON.stringify(itensFormatadosDashboard),
+            itens: itensFormatadosDashboard, // Enviamos como lista, o servidor cuida da formatação pesada
+            produto_nome: nomeCurto, // Título resumido que cabe perfeitamente no limite do banco
             valor_total: totalCobrado,
             total: totalCobrado,
-            forma_pagamento: metodo,
+            forma_pagamento: metodoFinalTexto, 
             status: "Concluída",
             origem: "Mesas"
         };
@@ -530,22 +701,18 @@ async function finalizarPagamentoMesa() {
 
         if (!resVenda.ok) throw new Error("Erro ao salvar a venda financeira.");
 
-        // PARTE 2: Atualizar ou Fechar a Mesa
         if (itensRestantesNaMesa.length === 0) {
-            // Conta paga por completo -> Exclui a mesa
             await fetch(`${API_URL}/mesas/${idMesaEmPagamento}`, { method: 'DELETE' });
-            alert(`✅ Mesa ${numeroMesaEmPagamento} encerrada com sucesso!`);
+            alert(`✅ Mesa ${numeroMesaEmPagamento} encerrada com sucesso!\nPagamento: ${metodoFinalTexto}`);
         } else {
-            // Pagamento Parcial -> Atualiza a mesa só com o que sobrou
             await fetch(`${API_URL}/mesas/${idMesaEmPagamento}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ itens: itensRestantesNaMesa })
             });
-            alert(`✅ Pagamento parcial registrado! A mesa continua aberta.`);
+            alert(`✅ Pagamento parcial registrado!\nPagamento: ${metodoFinalTexto}\nA mesa continua aberta com o restante.`);
         }
 
-        // Tudo deu certo, recarrega a tela!
         fecharModalPagamentoMesa();
         await carregarMesas(); 
 
@@ -558,27 +725,39 @@ async function finalizarPagamentoMesa() {
 }
 
 // ==========================================
-// FUNÇÃO PARA CANCELAR UMA MESA (LIMPAR)
+// FUNÇÃO PARA CANCELAR ITEM INDIVIDUAL DA MESA
 // ==========================================
-async function cancelarPedidoMesa(id) {
-    // Pergunta de segurança dupla
-    const confirmacao = confirm("⚠️ ATENÇÃO: Deseja realmente CANCELAR este pedido?\n\nIsso apagará todos os itens e a mesa ficará livre novamente. Esta ação NÃO pode ser desfeita!");
-
+async function removerItemDaMesa(index) {
+    const confirmacao = confirm("⚠️ Tem certeza que deseja cancelar este item?\nEle será removido da mesa e do sistema.");
     if (!confirmacao) return;
 
-    try {
-        const res = await fetch(`${API_URL}/mesas/${id}`, {
-            method: 'DELETE'
-        });
+    // Remove o item da lista visual da esquerda
+    itensRestantesNaMesa.splice(index, 1);
+    
+    // Junta os itens que sobraram na mesa com os que já estão separados para pagar (se houver)
+    const todosItensAtuais = itensRestantesNaMesa.concat(itensSendoPagos);
 
-        if (res.ok) {
-            await carregarMesas(); // Atualiza a tela automaticamente
-            alert("✅ Pedido cancelado e mesa liberada!");
+    try {
+        if (todosItensAtuais.length === 0) {
+            // Se o operador deletou o único/último item que tinha na mesa, a mesa some do banco
+            await fetch(`${API_URL}/mesas/${idMesaEmPagamento}`, { method: 'DELETE' });
+            alert("✅ Último item cancelado. Mesa liberada!");
+            fecharModalPagamentoMesa();
         } else {
-            alert("❌ Erro ao cancelar pedido no servidor.");
+            // Se ainda tem itens, atualiza o banco de dados apenas com o que sobrou
+            await fetch(`${API_URL}/mesas/${idMesaEmPagamento}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itens: todosItensAtuais })
+            });
         }
+        
+        // Recarrega as telas para mostrar a alteração
+        renderizarTelasDePagamento();
+        await carregarMesas(); 
+
     } catch (e) {
-        console.error("Erro ao cancelar:", e);
-        alert("🔌 Erro de conexão ao tentar cancelar.");
+        console.error("Erro ao cancelar item:", e);
+        alert("🔌 Erro de conexão ao tentar cancelar o item. Verifique a internet.");
     }
 }
