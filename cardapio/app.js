@@ -17,15 +17,16 @@ let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 async function carregarTudo() {
     try {
-        // 🌐 O "motor" agora busca no seu NOVO SERVIDOR de alta velocidade!
-        const [resProd, resGrupos, resBairros] = await Promise.all([
+        // 🌐 O "motor" agora busca as categorias também!
+        const [resProd, resGrupos, resBairros, resCat] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
-            fetch(`${API_URL}/bairros`)
+            fetch(`${API_URL}/bairros`),
+            fetch(`${API_URL}/categorias`)
         ]);
 
         let produtosBrutos = await resProd.json();
-
+        
         // 📸 O NOVO FILTRO BLINDADO (Corrige a foto quebrada ignorando a sujeira do banco)
         produtosDaNuvem = produtosBrutos.map(p => {
             if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
