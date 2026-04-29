@@ -59,8 +59,12 @@
         <main class="gestao-container">
             
             <section class="coluna-card">
-                <div class="coluna-header">
+                <div class="coluna-header" style="padding-bottom: 10px;">
                     <h2>PRODUTOS</h2>
+                </div>
+                <!-- NOVO FILTRO DE PESQUISA -->
+                <div style="padding: 0 15px 10px 15px; border-bottom: 1px solid #00bcd4; margin-bottom: 10px;">
+                    <input type="text" id="filtro-produtos-gestao" placeholder="🔍 Buscar produto..." oninput="filtrarProdutosGestao()" class="input-padrao" style="width: 100%; box-sizing: border-box; font-size: 0.95rem; padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9;">
                 </div>
                 <div class="coluna-lista" id="lista-produtos">
                     <p class="carregando">Carregando...</p>
