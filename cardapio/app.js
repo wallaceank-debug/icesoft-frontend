@@ -75,69 +75,52 @@ function renderizarBairros() {
 // ==========================================
 // 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS E FOTOS)
 // ==========================================
+function obterOrdemDasCategorias(listaProdutosAtual) {
+    // Pega a lista oficial (ordenada) do banco de dados
+    const categoriasOficiais = categoriasGlobaisDelivery.map(c => c.nome);
+    
+    // Verifica se tem algum produto solto (ex: "Outros") e joga pro final da lista
+    const categoriasExtras = [...new Set(listaProdutosAtual.map(p => p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos'))]
+        .filter(c => !categoriasOficiais.includes(c));
+
+    return [...categoriasOficiais, ...categoriasExtras];
+}
+
 function renderizarCardapio(lista) {
     const container = document.getElementById('lista-produtos');
-    const navCategorias = document.getElementById('nav-categorias'); 
-    
     container.innerHTML = '<h2 style="margin-bottom: 20px;">Cardápio Completo</h2>';
-    if (navCategorias) navCategorias.innerHTML = '';
 
-    // 1. Agrupa os produtos por categoria e captura o primeiro emoji pra ilustrar
-    const mapCategorias = new Map();
-    lista.forEach(p => {
-        const catNome = p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos';
-        if (!mapCategorias.has(catNome)) {
-            mapCategorias.set(catNome, p.emoji || '🍦');
-        }
-    });
+    // Chama a nossa nova inteligência de ordenação
+    const categoriasOrdenadas = obterOrdemDasCategorias(lista);
 
-    // 2. Monta as Bolinhas (Stories) e as Seções do Cardápio
-    mapCategorias.forEach((emojiGeral, catNome) => {
-        // Cria um ID seguro para a página rolar até ele
-        const catId = 'categoria-' + catNome.replace(/[^a-zA-Z0-9]/g, '');
-
-        // Injeta a bolinha no menu de navegação do topo
-        if (navCategorias) {
-            navCategorias.innerHTML += `
-                <div onclick="rolarParaCategoria('${catId}')" style="cursor: pointer; flex: 0 0 auto; transition: 0.2s;">
-                    <div style="font-size: 1.8rem; border: 2px solid var(--cor-primaria, #e91e63); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                        ${emojiGeral}
-                    </div>
-                    <span style="font-size: 0.85rem; font-weight: bold; color: #555;">${catNome}</span>
-                </div>
-            `;
-        }
-
-        // Injeta o Título da Categoria no corpo do Cardápio
-        container.innerHTML += `<h3 id="${catId}" style="color: var(--cor-primaria, #e91e63); margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px;">${catNome}</h3>`;
-
-        // Filtra e injeta apenas os Produtos desta Categoria abaixo do título
+    categoriasOrdenadas.forEach(catNome => {
         const produtosDestaCategoria = lista.filter(p => (p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos') === catNome);
         
+        if (produtosDestaCategoria.length === 0) return; // Não desenha seção vazia!
+
+        const catId = 'categoria-' + catNome.replace(/[^a-zA-Z0-9]/g, '');
+
+        // Injeta o Título da Categoria
+        container.innerHTML += `<h3 id="${catId}" style="color: var(--cor-primaria, #e91e63); margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px;">${catNome}</h3>`;
+
         produtosDestaCategoria.forEach(p => {
-            // Prepara a descrição (se não existir, não mostra nada)
             const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
             const htmlDescricao = descricaoLimpa 
                 ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
                 : ``;
             
-            // 📸 FOTO OU EMOJI (Agora com o design quadrado igual Anota.ai)
             const visualProduto = p.imagem_url 
                 ? `<img src="${p.imagem_url}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">`
                 : `<div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
 
-            // 🟢 CARD CLICÁVEL: O onclick agora fica na div principal e removemos o botão "+"
             container.innerHTML += `
                 <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
-                    
                     <div style="flex: 1; padding-right: 15px;">
                         <h3 style="margin: 0; color: #333; font-size: 1.05rem; font-weight: 600;">${p.nome}</h3>
                         ${htmlDescricao}
                         <div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
                     </div>
-                    
                     ${visualProduto}
-                    
                 </div>
             `;
         });
@@ -740,21 +723,22 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ==========================================
 // 🎨 DESENHA O MENU DE CATEGORIAS DINÂMICO
 // ==========================================
-function renderizarMenuCategorias(produtos) {
+function renderizarMenuCategorias(lista) {
     const container = document.getElementById('menu-categorias-dinamico');
     if (!container) return;
 
-    // Pega as categorias únicas que vieram do banco de dados (já com os emojis originais)
-    const categoriasUnicas = [...new Set(produtos.map(p => p.categoria).filter(c => c))];
-
+    // A mesma inteligência de ordenação aplicada nos botões bolha (Pills)
+    const categoriasOrdenadas = obterOrdemDasCategorias(lista);
     let html = '';
 
-    categoriasUnicas.forEach(categoria => {
-        // Criamos um botão "Pill" limpo. O onclick chama a nossa função ninja!
-        html += `
-        <div onclick="rolarParaCategoria('${categoria.replace(/'/g, "\\'")}')" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 0.95rem; transition: 0.2s;">
-            ${categoria}
-        </div>`;
+    categoriasOrdenadas.forEach(catNome => {
+        const temProduto = lista.some(p => (p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos') === catNome);
+        if (temProduto) {
+            html += `
+            <div onclick="rolarParaCategoria('${catNome.replace(/'/g, "\\'")}')" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 0.95rem; transition: 0.2s;">
+                ${catNome}
+            </div>`;
+        }
     });
 
     container.innerHTML = html;
