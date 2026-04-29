@@ -9,6 +9,7 @@ let idsDestaquesGlobais = [];
 let lojaAberta = true; // Impede adicionar se estiver fechada
 let idsUpsellGlobais = [];
 let descontoUpsellGlobal = 0;
+let categoriasGlobaisDelivery = [];
 
 let cuponsGlobais = [];
 let cupomAtivo = null;
