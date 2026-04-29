@@ -640,9 +640,9 @@ function renderizarUpsellCheckout() {
         const precoComDesconto = precoNormal - descontoReais;
         const nomeLimpo = p.nome.replace(/'/g, "\\'"); 
 
-        // 📸 A MÁGICA DA FOTO NO UPSELL: Versão menor (75px) para caber no checkout!
+        // 🚀 LOADING LAZY NAS OFERTAS
         const visualProduto = p.imagem_url 
-            ? `<img src="${p.imagem_url}" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
+            ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
             : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
 
         carrossel.innerHTML += `
