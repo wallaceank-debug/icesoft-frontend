@@ -721,6 +721,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     await carregarConfiguracoesLoja(); 
     await carregarTudo(); 
     verificarStatusLoja(); 
+    // Espera um pouquinho para as fotos processarem e esconde a tela branca
+    setTimeout(() => {
+        const telaLoading = document.getElementById('tela-carregamento');
+        if (telaLoading) {
+            telaLoading.style.opacity = '0'; // Faz ela ficar transparente devagar
+            setTimeout(() => telaLoading.style.display = 'none', 400); // Remove ela de vez da frente
+        }
+    }, 500); // Meio segundo de carinho para a foto baixar
+
     setInterval(verificarStatusLoja, 30000);
 });
 
