@@ -363,7 +363,7 @@ function atualizarTotalCheckout() {
         taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
         document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
     } else if (document.getElementById('taxa-entrega-display')) {
-        document.getElementById('taxa-entrega-display').innerText = `Selecione acima ⬆️`;
+        document.getElementById('taxa-entrega-display').innerText = `Selecione o bairro 🔽 `;
     }
 
     // 3. Aplica os Cupons (O desconto incide apenas sobre os produtos, não sobre a entrega)
