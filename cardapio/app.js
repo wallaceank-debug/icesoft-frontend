@@ -37,12 +37,14 @@ async function carregarTudo() {
         }).filter(p => p.ativo !== false);
 
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
-        bairrosGlobais = await resBairros.json(); // 🗺️ Guarda os bairros da nuvem
+        bairrosGlobais = await resBairros.json(); 
+        categoriasGlobaisDelivery = await resCat.json(); // Salva a ordem oficial!
 
-        renderizarMenuCategorias(produtosDaNuvem);
         renderizarCardapio(produtosDaNuvem);
+        renderizarMenuCategorias(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
-
+        renderizarBairros();
+        
         // 🗺️ Pede para desenhar a caixinha de bairros na sacola!
         renderizarBairros();
     } catch (e) { 
