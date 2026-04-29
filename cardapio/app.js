@@ -109,8 +109,9 @@ function renderizarCardapio(lista) {
                 ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
                 : ``;
             
+            // 🚀 A MÁGICA DA VELOCIDADE AQUI: loading="lazy"
             const visualProduto = p.imagem_url 
-                ? `<img src="${p.imagem_url}" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">`
+                ? `<img src="${p.imagem_url}" loading="lazy" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">`
                 : `<div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
 
             container.innerHTML += `
