@@ -316,27 +316,49 @@ function abrirModalProduto(id = null) {
     modal.style.display = 'flex';
 }
 
-// Nova função para desenhar a lista de grupos com botões de ordem
+let grupoArrastadoIndex = null;
+
+// Nova função Inteligente (Separa marcados e desmarcados)
 function renderizarSelecaoGrupos() {
     const container = document.getElementById('container-checkbox-grupos');
-    container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e use as setas para ordenar o passo a passo:</p>';
+    container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e arraste (☰) para montar o roteiro do cliente:</p>';
 
-    listaGrupos.forEach(g => {
-        const isChecked = gruposSelecionadosTemporarios.includes(g.id);
-        const index = gruposSelecionadosTemporarios.indexOf(g.id);
-        
+    // 1. Filtra os grupos já marcados (respeitando a ordem do array)
+    const gruposMarcados = gruposSelecionadosTemporarios.map(id => listaGrupos.find(g => g.id === id)).filter(g => g);
+    
+    // 2. Filtra os grupos que não estão marcados (para ficarem no fim da lista)
+    const gruposDesmarcados = listaGrupos.filter(g => !gruposSelecionadosTemporarios.includes(g.id));
+
+    // Desenha os marcados no topo (COM Drag and Drop)
+    gruposMarcados.forEach((g, index) => {
         container.innerHTML += `
-            <div style="display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; padding:8px; border-radius:8px; margin-bottom:5px; border: 1px solid ${isChecked ? '#00bcd4' : '#eee'}">
-                <label style="cursor:pointer; display:flex; align-items:center; gap:8px; flex:1;">
-                    <input type="checkbox" value="${g.id}" ${isChecked ? 'checked' : ''} onchange="toggleGrupoNoProduto(${g.id})">
-                    ${g.nome}
+            <div draggable="true"
+                 ondragstart="dragStartGrupo(${index})"
+                 ondragover="dragOverGrupo(event)"
+                 ondrop="dropGrupo(${index})"
+                 style="display:flex; align-items:center; justify-content:space-between; background:#e0f7fa; padding:10px; border-radius:8px; margin-bottom:5px; border: 1px solid #00bcd4; cursor: grab; transition: 0.2s;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:10px; flex:1; margin: 0;">
+                    <span style="color: #00bcd4; font-size: 1.2rem; cursor: grab;">☰</span>
+                    <input type="checkbox" value="${g.id}" checked onchange="toggleGrupoNoProduto(${g.id})" style="width: 18px; height: 18px; accent-color: #00bcd4;">
+                    <strong style="color: #00838f;">${g.nome}</strong>
                 </label>
-                ${isChecked ? `
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="moverGrupo(${index}, -1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px;">↑</button>
-                        <button onclick="moverGrupo(${index}, 1)" style="border:none; background:#eee; border-radius:4px; cursor:pointer; padding:2px 5px;">↓</button>
-                    </div>
-                ` : ''}
+            </div>
+        `;
+    });
+
+    // Coloca uma linha divisória elegante se houver itens nas duas listas
+    if (gruposMarcados.length > 0 && gruposDesmarcados.length > 0) {
+        container.innerHTML += '<hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">';
+    }
+
+    // Desenha os desmarcados no fundo (SEM drag and drop)
+    gruposDesmarcados.forEach(g => {
+        container.innerHTML += `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:5px; border: 1px solid #eee;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:10px; flex:1; margin: 0;">
+                    <input type="checkbox" value="${g.id}" onchange="toggleGrupoNoProduto(${g.id})" style="width: 18px; height: 18px; accent-color: #00bcd4;">
+                    <span style="color: #555;">${g.nome}</span>
+                </label>
             </div>
         `;
     });
@@ -345,21 +367,34 @@ function renderizarSelecaoGrupos() {
 function toggleGrupoNoProduto(id) {
     const index = gruposSelecionadosTemporarios.indexOf(id);
     if (index > -1) {
+        // Se desmarcou, tira da fila
         gruposSelecionadosTemporarios.splice(index, 1);
     } else {
-        gruposSelecionadosTemporarios.push(id); // Adiciona ao final da fila
+        // Se marcou, joga lá pro final da fila dos selecionados
+        gruposSelecionadosTemporarios.push(id); 
     }
     renderizarSelecaoGrupos();
 }
 
-function moverGrupo(index, direcao) {
-    const novaPos = index + direcao;
-    if (novaPos < 0 || novaPos >= gruposSelecionadosTemporarios.length) return;
-    
-    // Troca de posição no array
-    const item = gruposSelecionadosTemporarios.splice(index, 1)[0];
-    gruposSelecionadosTemporarios.splice(novaPos, 0, item);
+// === MÁGICA DO DRAG AND DROP PARA GRUPOS ===
+function dragStartGrupo(index) {
+    grupoArrastadoIndex = index;
+}
+
+function dragOverGrupo(event) {
+    event.preventDefault(); // Permite que a área receba a soltura
+}
+
+function dropGrupo(indexDestino) {
+    if (grupoArrastadoIndex === null || grupoArrastadoIndex === indexDestino) return;
+
+    // 1. Tira o ID do grupo da posição antiga e insere na nova
+    const idArrastado = gruposSelecionadosTemporarios.splice(grupoArrastadoIndex, 1)[0];
+    gruposSelecionadosTemporarios.splice(indexDestino, 0, idArrastado);
+
+    // 2. Repinta a tela com a nova ordem instantaneamente
     renderizarSelecaoGrupos();
+    grupoArrastadoIndex = null;
 }
 
 // Na sua função salvarProduto(), mude a linha que pega os IDs:
