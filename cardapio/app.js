@@ -604,9 +604,9 @@ function renderizarCarrossel(produtos) {
     carrossel.innerHTML = '';
     
     produtosDestaque.forEach(p => {
-        // 📸 A MÁGICA DA FOTO: Altura fixa para todos os cards ficarem perfeitamente iguais!
+        // 🚀 LOADING LAZY NOS DESTAQUES
         const visualProduto = p.imagem_url 
-            ? `<img src="${p.imagem_url}" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
+            ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
             : `<div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
 
         carrossel.innerHTML += `
