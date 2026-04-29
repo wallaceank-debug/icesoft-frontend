@@ -43,10 +43,27 @@ async function carregarTudo() {
 // ==========================================
 // COLUNA 1: PRODUTOS
 // ==========================================
-function renderizarProdutos() {
+// ==========================================
+// COLUNA 1: PRODUTOS (COM FILTRO EM TEMPO REAL)
+// ==========================================
+function renderizarProdutos(filtro = '') {
     const div = document.getElementById('lista-produtos');
     div.innerHTML = '';
-    listaProdutos.forEach(p => {
+    
+    // Tratamento para a busca ignorar letras maiúsculas e acentos
+    const termo = filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    const produtosFiltrados = listaProdutos.filter(p => {
+        const nome = p.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return nome.includes(termo);
+    });
+
+    if (produtosFiltrados.length === 0) {
+        div.innerHTML = '<p class="carregando" style="margin-top: 20px;">Nenhum produto encontrado.</p>';
+        return;
+    }
+
+    produtosFiltrados.forEach(p => {
         const isAtivo = p.ativo !== false;
         const classeInativo = isAtivo ? '' : 'item-inativo';
         div.innerHTML += `
@@ -66,6 +83,11 @@ function renderizarProdutos() {
             </div>
         `;
     });
+}
+
+function filtrarProdutosGestao() {
+    const termo = document.getElementById('filtro-produtos-gestao').value;
+    renderizarProdutos(termo);
 }
 
 async function duplicarProduto(id) {
