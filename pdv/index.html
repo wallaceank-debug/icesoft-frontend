@@ -78,6 +78,25 @@
         <main class="pdv-container">
             
             <section class="painel-esquerdo">
+                
+                <!-- FIX DE ENQUADRAMENTO (NÃO ESMAGAR BOTÕES) -->
+                <style>
+                    .barra-categorias {
+                        display: flex;
+                        overflow-x: auto; /* Permite rolar para o lado */
+                        gap: 10px;
+                        padding-bottom: 10px;
+                        flex-shrink: 0; /* Protege a barra inteira de ser esmagada */
+                    }
+                    .categoria-btn {
+                        flex-shrink: 0 !important; /* A MÁGICA: Proíbe o botão de encolher */
+                        white-space: nowrap !important; /* Impede o texto de quebrar de linha */
+                    }
+                    /* Barra de rolagem elegante para os filtros */
+                    .barra-categorias::-webkit-scrollbar { height: 6px; }
+                    .barra-categorias::-webkit-scrollbar-thumb { background: #00bcd4; border-radius: 10px; }
+                </style>
+
                 <nav class="barra-categorias" id="barra-categorias">
                     <button class="categoria-btn ativo">Todos</button>
                 </nav>
