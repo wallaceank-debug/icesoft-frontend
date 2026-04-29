@@ -524,7 +524,7 @@ async function carregarConfiguracoesLoja() {
         const configs = await res.json();
         
         if (configs.cor_primaria) document.documentElement.style.setProperty('--cor-primaria', configs.cor_primaria);
-        if (configs.nome_loja && document.getElementById('loja-nome-exibicao')) document.getElementById('loja-nome-exibicao').innerText = `🍦 ${configs.nome_loja}`;
+        if (configs.nome_loja && document.getElementById('loja-nome-exibicao')) document.getElementById('loja-nome-exibicao').innerText = `${configs.nome_loja}`;
         if (configs.mensagem_boas_vindas && document.getElementById('loja-mensagem-exibicao')) document.getElementById('loja-mensagem-exibicao').innerText = configs.mensagem_boas_vindas;
         if (configs.carrossel_destaques) { try { idsDestaquesGlobais = JSON.parse(configs.carrossel_destaques); } catch(e) {} }
         if (configs.upsell_desconto) descontoUpsellGlobal = Number(configs.upsell_desconto);
