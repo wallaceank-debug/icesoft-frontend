@@ -22,34 +22,50 @@
 </head>
 <body>
 
-    <aside class="menu-lateral" style="width: 250px; background-color: #00bcd4; height: 100vh; padding: 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0;">
-    <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
+    <aside class="menu-lateral">
+    <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;">🍦 <span class="menu-texto">Icesoft</span></h2>
     
-    <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
-        <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
-        <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
-        <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
-        <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
-        <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
-        
-        <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
-            <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
-                📊 Relatórios ▾
-            </button>
+    <a href="../pdv/" class="menu-item">
+        <span class="menu-icone">📋</span>
+        <span class="menu-texto">Balcão PDV</span>
+    </a>
+    
+    <a href="../mesas/" class="menu-item">
+        <span class="menu-icone">🪑</span>
+        <span class="menu-texto">Mesas/Comandas</span>
+    </a>
+    
+    <a href="../gestao/" class="menu-item">
+        <span class="menu-icone">🍔</span>
+        <span class="menu-texto">Cardápio</span>
+    </a>
+    
+    <a href="../delivery/" class="menu-item">
+        <span class="menu-icone">🛵</span>
+        <span class="menu-texto">Gestão Delivery</span>
+    </a>
+    
+    <a href="../kanban/" class="menu-item">
+        <span class="menu-icone">📱</span>
+        <span class="menu-texto">Painel Kanban</span>
+    </a>
+    
+    <!-- BLOCO DE RELATÓRIOS COM GAVETA -->
+    <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+            <span class="menu-icone">📊</span>
+            <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+        </div>
 
-            <div id="submenu-relatorios" class="submenu" style="display: none; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
-                <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
-                <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
-                
-                <!-- 👇 O CRM AGORA ESTÁ DENTRO DA GAVETA CORRETA 👇 -->
-                <a href="../crm/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">CRM & Fidelidade</a>
-            </div>
+        <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+            <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
+            <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+            <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
         </div>
     </div>
 </aside>
 
 <script>
-    // Função limpa e única
     function toggleRelatorios() {
         const submenu = document.getElementById('submenu-relatorios');
         submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
