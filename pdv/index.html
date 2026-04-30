@@ -38,10 +38,19 @@
         <span class="menu-texto">Painel Kanban</span>
     </a>
     
-    <a href="../dashboard/index.html" class="menu-item">
-        <span class="menu-icone">📈</span>
-        <span class="menu-texto">Relatórios</span>
-    </a>
+    <!-- BLOCO DE RELATÓRIOS COM GAVETA -->
+    <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+            <span class="menu-icone">📊</span>
+            <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+        </div>
+
+        <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+            <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
+            <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+            <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+        </div>
+    </div>
 </aside>
 
 <script>
