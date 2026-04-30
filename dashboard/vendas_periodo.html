@@ -77,13 +77,24 @@
                 📊 Relatórios ▾
             </button>
 
-            <div id="submenu-relatorios" class="submenu" style="display: flex; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
-                <a href="index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
-                <a href="vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.5);">Vendas por Período</a>
+            <div id="submenu-relatorios" class="submenu" style="display: none; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
+                <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
+                <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
+                
+                <!-- 👇 O CRM AGORA ESTÁ DENTRO DA GAVETA CORRETA 👇 -->
+                <a href="../crm/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">CRM & Fidelidade</a>
             </div>
         </div>
     </div>
 </aside>
+
+<script>
+    // Função limpa e única
+    function toggleRelatorios() {
+        const submenu = document.getElementById('submenu-relatorios');
+        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+    }
+</script>
 
 <div class="conteudo-principal">
     <div class="container">
