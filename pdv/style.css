@@ -332,3 +332,30 @@ input:checked + .slider:before { transform: translateX(18px); }
 
     @page { margin: 0; }
 }
+
+/* ==========================================
+   SUBMENU DE RELATÓRIOS (Para o Menu Slim)
+   ========================================== */
+.submenu-link {
+    color: white;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    white-space: nowrap;
+    transition: background 0.2s, opacity 0.2s;
+    opacity: 0; /* Fica invisível quando o menu está fechado */
+    pointer-events: none; /* Evita cliques acidentais quando invisível */
+}
+
+/* Quando passar o mouse no menu inteiro, o submenu aparece */
+.menu-lateral:hover .submenu-link {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.submenu-link:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
