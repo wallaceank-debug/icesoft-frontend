@@ -258,6 +258,57 @@
         const venda = listaVendas[index];
         document.getElementById('modal-titulo').innerText = `Pedido #${venda.id} - Detalhes`;
         
+        // ==========================================
+        // 1. CABEÇALHO DE INTELIGÊNCIA (Metadados)
+        // ==========================================
+        const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
+        
+        let htmlInteligencia = `
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; color: #444; border: 1px solid #eee; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 1.1rem;">📅</span> 
+                        <div><span style="color: #888; font-size: 0.8rem; display: block;">Data e Hora</span> <strong>${dataFormatada}</strong></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 1.1rem;">💳</span> 
+                        <div><span style="color: #888; font-size: 0.8rem; display: block;">Pagamento</span> <strong style="color: #e91e63;">${venda.forma_pagamento || 'Não Informado'}</strong></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 1.1rem;">📍</span> 
+                        <div><span style="color: #888; font-size: 0.8rem; display: block;">Origem</span> <strong>${venda.origem || 'Balcão'}</strong></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 1.1rem;">🚦</span> 
+                        <div><span style="color: #888; font-size: 0.8rem; display: block;">Status</span> <strong style="color: ${venda.status === 'Cancelada' ? '#f44336' : '#25D366'}">${venda.status || 'Concluída'}</strong></div>
+                    </div>
+                </div>
+        `;
+
+        // Adiciona dados do cliente apenas se existirem
+        if (venda.cliente_nome && venda.cliente_nome !== 'null') {
+             htmlInteligencia += `<hr style="border: 0; border-top: 1px dashed #ddd; margin: 12px 0;">`;
+             htmlInteligencia += `<div style="margin-bottom: 6px;"><strong>👤 Cliente:</strong> ${venda.cliente_nome} <span style="color: #00bcd4; font-weight: bold;">${venda.cliente_telefone ? `(${venda.cliente_telefone})` : ''}</span></div>`;
+             
+             if (venda.cliente_endereco && venda.cliente_endereco !== 'null') {
+                 htmlInteligencia += `<div style="line-height: 1.3;"><strong>🛵 Endereço:</strong> ${venda.cliente_endereco}</div>`;
+             }
+        }
+
+        // Destaca as observações operacionais
+        if (venda.observacoes && venda.observacoes !== 'null') {
+            htmlInteligencia += `
+                <div style="margin-top: 10px; background: #fff0f4; padding: 10px; border-radius: 8px; border-left: 4px solid #e91e63;">
+                    <strong style="color: #e91e63;">📝 Observações:</strong> <span style="color: #555;">${venda.observacoes}</span>
+                </div>
+            `;
+        }
+
+        htmlInteligencia += `</div>`; // Fecha o cabeçalho
+        
+        // ==========================================
+        // 2. LISTA DE PRODUTOS
+        // ==========================================
         let htmlItens = '';
         let arrayItens = [];
         
@@ -274,25 +325,20 @@
                 let nomePrincipal = item.nome;
                 let adicionaisHtml = '';
 
-                // 🕵️‍♂️ O TRUQUE: Separa o nome do produto dos complementos (que estão entre parênteses)
                 if (item.nome.includes('(') && item.nome.includes(')')) {
                     const primeiroParenteses = item.nome.indexOf('(');
                     const ultimoParenteses = item.nome.lastIndexOf(')');
                     
-                    // Pega só o que vem antes do parênteses (Ex: "Açaí - 300ml")
                     nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
                     
-                    // Pega o recheio do parênteses e divide a cada vírgula
                     const adicionaisString = item.nome.substring(primeiroParenteses + 1, ultimoParenteses);
                     const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
                     
-                    // Monta a lista com o "+" na frente
                     listaAdicionais.forEach(adic => {
                         adicionaisHtml += `<div style="color: #6c757d; font-size: 14px; margin-left: 28px; margin-top: 4px;">+ ${adic}</div>`;
                     });
                 }
 
-                // Monta o layout HTML idêntico ao Print 2 do seu PDV
                 htmlItens += `
                     <div class="item-pedido" style="display: flex; flex-direction: column; padding: 15px 0; border-bottom: 1px dashed #ddd;">
                         <div style="font-size: 16px; font-weight: 700; color: #333; margin-bottom: 5px;">
@@ -306,7 +352,6 @@
                 `;
             });
             
-            // O Total Geral grandão no final
             htmlItens += `
                 <div style="text-align: right; margin-top: 20px; font-size: 20px; color: #333;">
                     <strong>Total: ${formatarMoeda(venda.valor_total)}</strong>
@@ -314,7 +359,8 @@
             `;
         }
 
-        document.getElementById('modal-corpo').innerHTML = htmlItens;
+        // 3. INJETA TUDO NA TELA
+        document.getElementById('modal-corpo').innerHTML = htmlInteligencia + htmlItens;
         document.getElementById('modalDetalhes').style.display = 'flex';
     }
 
