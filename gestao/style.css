@@ -1,4 +1,26 @@
 /* ==========================================
+   LAYOUT PRINCIPAL: MENU + CONTEÚDO
+   ========================================== */
+body { 
+    background-color: #ffffff; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Poppins', sans-serif; 
+    display: flex; /* Cria a divisão 1/2 na tela */
+    height: 100vh; 
+    overflow: hidden; 
+}
+
+.conteudo-principal {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; 
+    position: relative;
+    background-color: #f8f9fa; /* Fundo suave para a área de gestão */
+}
+
+/* ==========================================
    MENU LATERAL SLIM (Retrátil) - UNIVERSAL
    ========================================== */
 .menu-lateral {
@@ -104,33 +126,50 @@
 }
 
 /* ==========================================
+   CABEÇALHO DA GESTÃO
+   ========================================== */
+.gestao-header { 
+    background-color: #00bcd4; 
+    color: white; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 15px 30px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    z-index: 10;
+}
+.titulo-area h1 { margin: 0; font-size: 1.6rem; letter-spacing: 2px; }
+.botoes-area { display: flex; gap: 15px; }
+.btn-topo { background: white; color: #00bcd4; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.btn-topo:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+
+/* ==========================================
    LAYOUT 3 COLUNAS (DESIGN CLEAN E MINIMALISTA)
    ========================================== */
 .gestao-container { 
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
-    gap: 0; /* Removemos o buraco entre as colunas para usar a linha divisória */
+    gap: 0; 
     padding: 30px; 
     max-width: 1400px; 
     margin: 0 auto; 
     width: 100%; 
     height: calc(100vh - 90px); 
+    box-sizing: border-box;
 }
 
-/* Colunas agora são transparentes, sem borda redonda e sem sombra pesada */
 .coluna-card { 
     display: flex; 
     flex-direction: column; 
     overflow: hidden; 
     background: transparent; 
-    border-right: 1px solid #00bcd4; /* A linha fina divisória que você desenhou */
+    border-right: 1px solid #00bcd4; 
     padding: 0 25px; 
 }
 .coluna-card:last-child { 
-    border-right: none; /* Remove a linha da última coluna para não sobrar na ponta */
+    border-right: none; 
 }
 
-/* Cabeçalho da coluna elegante e com linha embaixo */
 .coluna-header { 
     padding: 10px 0; 
     text-align: center; 
@@ -146,7 +185,6 @@
     text-transform: uppercase; 
 }
 
-/* A lista de itens perde o fundo branco e ganha respiro */
 .coluna-lista { 
     flex: 1; 
     background: transparent; 
@@ -180,18 +218,19 @@
 .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: #4CAF50; }
 input:checked + .slider:before { transform: translateX(14px); }
-/* Chavinha desligada/indisponível */
 .item-inativo { opacity: 0.5; text-decoration: line-through; }
 
 /* BOTOES MINI */
 .btn-icone { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.7; transition: 0.2s; }
 .btn-icone:hover { opacity: 1; transform: scale(1.1); }
+.btn-add-mini { background: #00bcd4; color: white; border: none; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+.btn-add-mini:hover { background: #0097a7; }
 
 /* MODAIS BÁSICOS */
 .modal-fundo { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
 .modal-conteudo { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; }
 .modal-conteudo h2 { color: #00bcd4; text-align: center; margin-bottom: 10px; }
-.input-padrao { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; font-size: 1rem; }
+.input-padrao { padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none; font-size: 1rem; font-family: inherit; }
 .modal-botoes { display: flex; gap: 10px; margin-top: 15px; }
 .modal-botoes button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
 .btn-cancelar { background: #eee; color: #333; }
