@@ -488,7 +488,7 @@ function fecharModalCheckout() {
 }
 
 // ==========================================
-// 📲 NOVO ENVIO PARA O WHATSAPP
+// 📲 NOVO ENVIO PARA O WHATSAPP (CORRIGIDO)
 // ==========================================
 async function processarEnvioWhatsApp() {
     const nome = document.getElementById('cliente-nome').value.trim();
@@ -508,19 +508,22 @@ async function processarEnvioWhatsApp() {
 
     const enderecoCompleto = `${bairro} - ${rua}`;
     
+    // 1. Salva no banco de dados primeiro
+    await salvarVendaDelivery(); 
 
-    await salvarVendaDelivery(); // Salva no banco (sua função continua a mesma)
-
-    const observacao = document.getElementById('cliente-observacao').value.trim();
-    if (observacao) {
-        textoPedido += `\n📝 *Observações:* ${observacao}\n`;
-    }
-
+    // 2. 🚀 A CORREÇÃO: Cria a mensagem base do WhatsApp PRIMEIRO
     let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
     textoPedido += `👤 *Cliente:* ${nome}\n`;
     textoPedido += `📱 *WhatsApp:* ${telefoneCliente}\n`;
     textoPedido += `📍 *Endereço:* ${enderecoCompleto}\n`;
     textoPedido += `💳 *Pagamento:* ${pagamento}\n\n`;
+
+    // 3. AGORA SIM, se tiver observação, joga dentro do texto
+    const observacao = document.getElementById('cliente-observacao').value.trim();
+    if (observacao) {
+        textoPedido += `📝 *Observações:* ${observacao}\n\n`;
+    }
+
     textoPedido += `📦 *Itens do Pedido:*\n`;
     
     let subtotal = 0;
@@ -541,8 +544,13 @@ async function processarEnvioWhatsApp() {
         textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
     }
 
+    // 4. Redireciona o cliente para o WhatsApp com o texto pronto
     window.location.href = `https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`;
-    carrinho = []; atualizarBarraCarrinho(); fecharModalCheckout();
+    
+    // 5. Limpa a tela do cliente
+    carrinho = []; 
+    atualizarBarraCarrinho(); 
+    fecharModalCheckout();
 }
 
 async function carregarConfiguracoesLoja() {
