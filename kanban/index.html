@@ -156,5 +156,30 @@
         </div>
     </div>
 
+<!-- MÓDULO DE IMPRESSÃO TÉRMICA (Invisível na tela, visível na impressora) -->
+<div id="cupom-kanban" style="display: none;"></div>
+
+<style>
+    /* CSS EXCLUSIVO PARA A IMPRESSORA ELGIN i8 (80mm) */
+    @media print {
+        /* Esconde o Kanban inteiro na hora de imprimir */
+        body * { visibility: hidden; }
+        
+        /* Mostra apenas o nosso cupom e reseta margens */
+        #cupom-kanban, #cupom-kanban * { visibility: visible; }
+        #cupom-kanban { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 80mm; 
+            font-family: monospace; 
+            font-size: 14px; 
+            color: black; 
+            padding-right: 5mm;
+        }
+        @page { margin: 0; }
+    }
+</style>
+    
 </body>
 </html>
