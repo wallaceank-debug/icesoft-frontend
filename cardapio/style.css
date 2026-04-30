@@ -6,6 +6,8 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /* 🚀 A VACINA: Desliga o clarão cinza/azul nativo dos celulares ao clicar */
+    -webkit-tap-highlight-color: transparent; 
 }
 
 body {
@@ -99,6 +101,17 @@ main#lista-produtos h2 {
     color: #222;
     margin-bottom: 15px;
 }
+
+/* 🚀 NOVO: Efeito de "afundar" suavemente quando o cliente clica no produto */
+.produto-card {
+    transition: transform 0.15s ease, background-color 0.15s ease !important;
+}
+
+.produto-card:active {
+    transform: scale(0.97) !important;
+    background-color: #f8f9fa !important;
+}
+
 
 /* =========================================
    RODAPÉ DO CARRINHO (ESTILO FIXO)
