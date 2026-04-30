@@ -23,34 +23,38 @@
 <body>
 
     <aside class="menu-lateral" style="width: 250px; background-color: #00bcd4; height: 100vh; padding: 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0;">
-        <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">Icesoft</h2>
+    <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
+    
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+        <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
+        <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
+        <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
+        <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
+        <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
         
-        <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
-            <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
-            <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
-            <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
-            <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
-            <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
-            
-            <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
-                <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
-                    📊 Relatórios ▾
-                </button>
+        <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
+            <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
+                📊 Relatórios ▾
+            </button>
 
-                <div id="submenu-relatorios" class="submenu" style="display: none; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
-                    <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
-                    <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
-                </div>
+            <div id="submenu-relatorios" class="submenu" style="display: none; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
+                <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
+                <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
+                
+                <!-- 👇 O CRM AGORA ESTÁ DENTRO DA GAVETA CORRETA 👇 -->
+                <a href="../crm/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">CRM & Fidelidade</a>
             </div>
         </div>
-    </aside>
+    </div>
+</aside>
 
-    <script>
-        function toggleRelatorios() {
-            const submenu = document.getElementById('submenu-relatorios');
-            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-        }
-    </script>
+<script>
+    // Função limpa e única
+    function toggleRelatorios() {
+        const submenu = document.getElementById('submenu-relatorios');
+        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+    }
+</script>
 
     <div class="conteudo-principal">
         <header class="header-delivery">
