@@ -220,34 +220,94 @@ input:checked + .slider:before { transform: translateX(18px); }
     margin-top: auto; 
 }
 
-/* LADO DIREITO (Carrinho) */
-.painel-direito { flex: 1; min-width: 320px; max-width: 380px; background: white; display: flex; flex-direction: column; border-left: 1px solid #eee; box-shadow: -2px 0 10px rgba(0,0,0,0.02); }
-.cabecalho-carrinho { padding: 20px 15px; background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+/* ==========================================
+   LADO DIREITO (Carrinho e Resumo do Pedido)
+   ========================================== */
+.painel-direito { 
+    flex: 1; 
+    min-width: 320px; 
+    max-width: 380px; 
+    background: white; 
+    display: flex; 
+    flex-direction: column; 
+    border-left: 1px solid #eee; 
+    box-shadow: -2px 0 10px rgba(0,0,0,0.02); 
+}
+
+.cabecalho-carrinho { 
+    padding: 20px 15px; 
+    background: white; 
+    border-bottom: 1px solid #eee; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
 .cabecalho-carrinho h2 { font-size: 1.2rem; color: #333; margin: 0; font-weight: 700; }
-.btn-limpar { background: none; border: none; color: #f44336; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.btn-limpar { background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
 
 .lista-carrinho { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
 .carrinho-vazio { text-align: center; color: #999; margin-top: 50px; font-style: italic; }
 
-.area-totais { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 8px; }
+/* Subtotais e Total */
+.area-totais { 
+    padding: 15px; 
+    background: white; 
+    border-top: 1px solid #eee; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; 
+}
 .linha-total { display: flex; justify-content: space-between; font-size: 0.95rem; color: #555; font-weight: 600; }
 .linha-total.total-final { font-size: 1.4rem; color: #333; margin-top: 5px; font-weight: 800; }
 
 /* ==========================================
    RODAPÉ (Botões Sólidos Alinhados ao Design)
    ========================================== */
-.area-botoes-acao { display: flex; gap: 10px; padding: 15px; background: white; }
-.btn-acao { flex: 1; padding: 15px 5px; border: none; border-radius: 8px; font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: 0.2s; color: white; display: flex; align-items: center; justify-content: center; text-align: center; }
+.area-botoes-acao { 
+    display: flex; 
+    gap: 10px; 
+    padding: 15px; 
+    background: white; 
+}
 
-/* As 3 Cores Sólidas */
-.btn-cancelar { background: #f44336; } /* Vermelho Sólido */
-.btn-cancelar:hover { background: #d32f2f; }
+.btn-acao { 
+    flex: 1; 
+    padding: 15px 5px; 
+    border: none; 
+    border-radius: 8px; /* Cantos levemente arredondados igual ao Print 2 */
+    font-size: 1.05rem; 
+    font-weight: 700; 
+    cursor: pointer; 
+    transition: transform 0.1s ease, background 0.2s; 
+    color: white; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+}
 
-.btn-mesa { background: #00bcd4; flex: 0.8; } /* Ciano Sólido (Ligeiramente menor) */
+.btn-acao:active {
+    transform: scale(0.96); /* Dá aquele efeito de 'clique' suave */
+}
+
+/* As 3 Cores Sólidas do Print 2 */
+.btn-cancelar { 
+    background: #ff4d4d; /* Vermelho Sólido Suave */
+} 
+.btn-cancelar:hover { background: #ff3333; }
+
+.btn-mesa { 
+    background: #00bcd4; /* Ciano Sólido Icesoft */
+    flex: 0.8; /* Deixa o botão do meio um pouco menor */
+} 
 .btn-mesa:hover { background: #0097a7; }
 
-.btn-cobrar { background: #00E676; flex: 1.2; box-shadow: 0 4px 10px rgba(0, 230, 118, 0.3); } /* Verde Brilhante (Ligeiramente maior) */
-.btn-cobrar:hover { background: #00c853; }
+.btn-cobrar { 
+    background: #00d26a; /* Verde Brilhante Sólido */
+    flex: 1.2; /* Deixa o botão principal de Cobrar maior */
+    box-shadow: 0 4px 10px rgba(0, 210, 106, 0.3); /* Um brilho verde de fundo */
+} 
+.btn-cobrar:hover { background: #00b359; }
 
 /* ==========================================
    SISTEMA DE IMPRESSÃO (CUPOM TÉRMICO 80mm)
