@@ -17,7 +17,8 @@ body {
     flex-direction: column;
     overflow-y: auto; 
     position: relative;
-    background-color: #f8f9fa; /* Fundo suave para a área de gestão */
+    background-color: #f8f9fa; 
+    z-index: 1; /* Garante que o conteúdo fique clicável */
 }
 
 /* ==========================================
