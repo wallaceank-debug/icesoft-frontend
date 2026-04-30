@@ -8,44 +8,48 @@ const COLUNAS_ID = {
     'Cancelado': 'corpo-cancelado'
 };
 
-let pedidosGlobais = []; // Guarda os pedidos pra gente abrir os detalhes depois!
-let qtdPendentesAnterior = -1; // 🛎️ Memória da Campainha
+let pedidosGlobais = []; 
+let qtdPendentesAnterior = -1; 
+let pedidosJaImpressos = []; // 🖨️ Memória da impressora
 
 async function carregarPedidos() {
     try {
         const res = await fetch(`${API_URL}/vendas`);
         const vendas = await res.json();
         
-        // Pega a data exata de hoje (Ex: "Fri Apr 24 2026")
         const hoje = new Date().toDateString();
 
         const pedidosDelivery = vendas.filter(v => {
             const statusLimpo = v.status ? v.status.trim() : '';
             if (!Object.keys(COLUNAS_ID).includes(statusLimpo)) return false;
 
-            // 🧹 LIMPEZA DE TELA: Oculta 'Entregue' e 'Cancelado' de dias anteriores
             if (v.data_hora) {
                 const dataPedido = new Date(v.data_hora).toDateString();
                 if ((statusLimpo === 'Entregue' || statusLimpo === 'Cancelado') && dataPedido !== hoje) {
-                    return false; // Esconde da tela (mas continua a salvo no banco de dados)
+                    return false; 
                 }
             }
-            
-            return true; // Mantém pedidos de hoje e qualquer pedido que ainda esteja pendente/preparando
+            return true; 
         });
 
         // 🛎️ LÓGICA DA CAMPAINHA
-        const qtdPendentesAtual = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery').length;
+        const pendentesAgora = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery');
+        const qtdPendentesAtual = pendentesAgora.length;
 
-        // Se tiver mais pendentes agora do que na última checagem
         if (qtdPendentesAnterior !== -1 && qtdPendentesAtual > qtdPendentesAnterior) {
              tocarCampainha();
         }
-        
-        // Atualiza a memória para a próxima checagem
         qtdPendentesAnterior = qtdPendentesAtual;
+        
+        // 🖨️ LÓGICA DA IMPRESSÃO AUTOMÁTICA
+        pendentesAgora.forEach(pedido => {
+            if (!pedidosJaImpressos.includes(pedido.id)) {
+                imprimirComandaKanban(pedido);
+                pedidosJaImpressos.push(pedido.id);
+            }
+        });
 
-        pedidosGlobais = pedidosDelivery; // Salva na memória
+        pedidosGlobais = pedidosDelivery; 
         renderizarKanban(pedidosDelivery);
     } catch (e) {
         console.error("Erro ao buscar pedidos da nuvem:", e);
@@ -56,39 +60,32 @@ async function carregarPedidos() {
 // 🛎️ SISTEMA DE ALERTA SONORO PROFISSIONAL
 // ==========================================
 let somAtivado = false;
-
-// Troquei para um link mais estável. 
-// DICA DE OURO: Para nunca falhar, baixe um som, coloque na mesma pasta do seu site com o nome "ding.mp3" e mude o link abaixo para './ding.mp3'
 const audioCampainha = new Audio('https://www.myinstants.com/media/sounds/bell.mp3');
 
 function ativarSom() {
     const btn = document.getElementById('btn-som');
-    somAtivado = !somAtivado; // Inverte o status (Liga/Desliga)
+    somAtivado = !somAtivado; 
 
     if (somAtivado) {
         btn.innerHTML = '🔔 Alerta Sonoro: ATIVADO';
-        btn.style.background = '#4CAF50'; // Fica Verde
+        btn.style.background = '#4CAF50'; 
         
-        // Dá um "toque fantasma" baixinho só para o navegador liberar a trava de segurança!
         audioCampainha.volume = 0.1;
         audioCampainha.play().then(() => {
-            // Se tocou o fantasma, volta pro volume máximo para os próximos pedidos
             setTimeout(() => { audioCampainha.volume = 1.0; }, 500);
         }).catch(e => console.log("Navegador ainda bloqueando."));
-        
     } else {
         btn.innerHTML = '🔇 Alerta Sonoro: Desativado';
-        btn.style.background = '#f44336'; // Fica Vermelho
+        btn.style.background = '#f44336'; 
     }
 }
 
 function tocarCampainha() {
-    // Se o botão estiver vermelho, não toca nada!
     if (!somAtivado) return; 
 
     try {
-        audioCampainha.currentTime = 0; // Volta o som para o segundo zero
-        audioCampainha.volume = 1.0; // Volume no máximo
+        audioCampainha.currentTime = 0; 
+        audioCampainha.volume = 1.0; 
         audioCampainha.play();
     } catch(e) {
         console.log("Erro ao tocar a campainha:", e);
@@ -109,7 +106,6 @@ function renderizarKanban(pedidos) {
 
         contadores[pedido.status]++;
 
-        // Formata os itens do pedido
         let itensHtml = "";
         try {
             const itensParse = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
@@ -143,8 +139,6 @@ function renderizarKanban(pedidos) {
         }
 
         const horaVenda = pedido.data_hora ? new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Hoje';
-
-        // 1. Cria a caixa amarela de observação (se existir)
         const obsHtml = pedido.observacoes ? `<div style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px;"><strong>📝 Obs:</strong> ${pedido.observacoes}</div>` : '';
 
         const cardHtml = `
@@ -153,13 +147,18 @@ function renderizarKanban(pedidos) {
                     <strong style="color: #333; font-size: 1.1rem;">#${pedido.id}</strong>
                     <div style="display: flex; gap: 5px;">
                         <span style="color: #888; font-size: 0.8rem; background: #f0f2f5; padding: 4px 8px; border-radius: 10px;">⏱️ ${horaVenda}</span>
-                        <button onclick="abrirDetalhes(${pedido.id})" style="background: #333; color: white; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🔍 Detalhes</button>
+                        
+                        <!-- 🖨️ O NOVO BOTÃO DE IMPRIMIR NA MÃO -->
+                        <button onclick="imprimirComandaKanban(pedidosGlobais.find(v => v.id === ${pedido.id}))" style="background: #e0e0e0; color: #333; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;" title="Reimprimir Comanda">🖨️</button>
+                        
+                        <button onclick="abrirDetalhes(${pedido.id})" style="background: #333; color: white; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🔍</button>
                     </div>
                 </div>
                 
                 <div style="min-height: 40px;">
                     ${itensHtml}
-                    ${obsHtml} </div>
+                    ${obsHtml} 
+                </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px; border-radius: 8px;">
                     <span style="font-size: 0.75rem; background: #e0e0e0; color: #333; padding: 4px 8px; border-radius: 10px; font-weight: bold;">💳 ${pedido.forma_pagamento || 'N/A'}</span>
@@ -207,7 +206,6 @@ function abrirDetalhes(id) {
     const pedido = pedidosGlobais.find(p => p.id === id);
     if (!pedido) return;
 
-    // Preenche os dados
     document.getElementById('detalhe-id').innerText = `#${pedido.id}`;
     document.getElementById('detalhe-nome').innerText = pedido.cliente_nome || "Não informado";
     document.getElementById('detalhe-telefone').innerText = pedido.cliente_telefone || "Não informado";
@@ -215,7 +213,6 @@ function abrirDetalhes(id) {
     document.getElementById('detalhe-pagamento').innerText = pedido.forma_pagamento || "N/A";
     document.getElementById('detalhe-total').innerText = `R$ ${Number(pedido.valor_total).toFixed(2).replace('.', ',')}`;
 
-    // Monta os itens novamente na janela grande
     let itensHtml = "";
     try {
         const itensParse = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
@@ -230,9 +227,6 @@ function abrirDetalhes(id) {
         }
     } catch(e) {}
     
-    // ==========================================
-    // 📝 INJETA A OBSERVAÇÃO AQUI NO FINAL DA LISTA
-    // ==========================================
     if (pedido.observacoes && pedido.observacoes.trim() !== '') {
         itensHtml += `
             <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border: 1px dashed #ffeeba; border-radius: 8px; color: #856404; font-size: 0.95rem;">
@@ -241,11 +235,8 @@ function abrirDetalhes(id) {
             </div>
         `;
     }
-    // ==========================================
 
     document.getElementById('detalhe-itens').innerHTML = itensHtml;
-
-    // Abre a janela
     document.getElementById('modal-detalhes').style.display = 'flex';
 }
 
@@ -253,19 +244,13 @@ function fecharDetalhes() {
     document.getElementById('modal-detalhes').style.display = 'none';
 }
 
-window.onload = carregarPedidos;
-setInterval(carregarPedidos, 15000);
-
-// Memória do sistema para saber quais pedidos JÁ FORAM impressos automaticamente
-let pedidosJaImpressos = [];
-
 // ==========================================
 // 🖨️ MOTOR DE IMPRESSÃO TÉRMICA (80mm)
 // ==========================================
 function imprimirComandaKanban(venda) {
+    if(!venda) return;
     const areaImpressao = document.getElementById('cupom-kanban');
     
-    // Desempacota os itens do pedido
     let arrayItens = [];
     try { arrayItens = typeof venda.itens === 'string' ? JSON.parse(venda.itens) : venda.itens; } 
     catch (e) { arrayItens = []; }
@@ -273,7 +258,6 @@ function imprimirComandaKanban(venda) {
     let htmlItens = '';
     arrayItens.forEach(item => {
         let nomeBase = item.nome;
-        // Pega complementos se houver
         if (nomeBase.includes('(')) nomeBase = nomeBase.replace('(', '<br>&nbsp;&nbsp;+ ').replace(')', '');
         
         htmlItens += `
@@ -285,7 +269,6 @@ function imprimirComandaKanban(venda) {
 
     const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
     
-    // Desenha o cupom formato 80mm
     areaImpressao.innerHTML = `
         <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; text-align: center;">
             <h2 style="margin: 0;">ICESOFT</h2>
@@ -321,8 +304,10 @@ function imprimirComandaKanban(venda) {
         </div>
     `;
 
-    // Mostra o cupom temporariamente para o navegador capturar
     areaImpressao.style.display = 'block';
     window.print();
     areaImpressao.style.display = 'none';
 }
+
+window.onload = carregarPedidos;
+setInterval(carregarPedidos, 15000);
