@@ -4,36 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendas por Período - Icesoft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos Base da Tela */
-        :root { --cor-primaria: #007bff; --bg-claro: #f4f7f6; --texto-escuro: #333; }
-        
-        /* A MÁGICA DO LAYOUT ACONTECE AQUI: display: flex para colocar lado a lado */
+        /* ==========================================
+           1. LAYOUT BASE (Obrigatório em todas as telas)
+           ========================================== */
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg-claro); 
-            color: var(--texto-escuro); 
             margin: 0; 
             padding: 0; 
-            display: flex; 
+            font-family: 'Poppins', sans-serif; 
+            display: flex; /* Isso faz o menu ficar na esquerda e o conteúdo na direita */
             height: 100vh; 
             overflow: hidden; 
+            background-color: #f4f7f6; /* Fundo padrão do painel */
         }
 
-        /* Área do relatório ocupando o resto da tela */
         .conteudo-principal {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto; /* Permite rolar apenas o relatório se for muito grande */
+            flex: 1; /* Ocupa todo o espaço que sobrar do menu */
+            overflow-y: auto; 
+            position: relative;
+            padding: 30px; 
+            z-index: 1;
         }
 
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        /* ==========================================
+           2. MENU LATERAL SLIM (Retrátil) - UNIVERSAL
+           ========================================== */
+        .menu-lateral {
+            width: 80px;
+            background-color: #00bcd4;
+            height: 100vh;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+
+        .menu-lateral:hover {
+            width: 250px;
+            align-items: flex-start;
+            padding: 20px 15px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            white-space: nowrap;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .menu-lateral:hover .menu-item {
+            width: 100%;
+            border-radius: 25px; 
+        }
+
+        .menu-item:hover {
+            background-color: #e0f7fa;
+            transform: scale(1.05);
+        }
+
+        /* Marcação de Aba Ativa */
+        .menu-item.ativo {
+            background-color: #e0f7fa;
+            color: #00bcd4;
+            border: 2px solid white;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            pointer-events: none;
+        }
+
+        .menu-icone {
+            min-width: 50px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
+        .menu-texto {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            margin-left: 5px;
+            font-size: 1rem;
+        }
+
+        .menu-lateral:hover .menu-texto {
+            opacity: 1;
+            transition-delay: 0.1s; 
+        }
+
+        /* SUBMENU RELATÓRIOS */
+        .submenu-link {
+            color: white;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            white-space: nowrap;
+            transition: background 0.2s, opacity 0.2s;
+            opacity: 0; 
+            pointer-events: none; 
+        }
+
+        .menu-lateral:hover .submenu-link {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .submenu-link:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* ==========================================
+           3. ESTILOS ESPECÍFICOS: VENDAS POR PERÍODO
+           ========================================== */
+        :root { --cor-primaria: #00bcd4; --texto-escuro: #333; }
+        
+        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box;}
         
         /* Cabeçalho e Filtros */
         .header-relatorio { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .header-relatorio h2 { color: var(--cor-primaria); margin: 0;}
         .filtros { display: flex; gap: 15px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
-        .filtros input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
-        .btn-filtrar { padding: 8px 20px; background-color: var(--cor-primaria); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .filtros input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;}
+        .btn-filtrar { padding: 8px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: inherit;}
         .btn-filtrar:hover { background-color: #0056b3; }
 
         /* Cards de Resumo */
@@ -53,7 +164,7 @@
         .bg-mesas { background: #ffedd5; color: #9a3412; }
 
         /* Modal de Detalhes do Pedido */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: #fff; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .fechar-modal { background: none; border: none; font-size: 20px; cursor: pointer; color: #888; }
@@ -92,14 +203,15 @@
     
     <!-- BLOCO DE RELATÓRIOS COM GAVETA -->
     <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+        <div class="menu-item ativo" onclick="toggleRelatorios()" style="justify-content: flex-start;">
             <span class="menu-icone">📊</span>
             <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
         </div>
 
         <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
             <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
-            <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+            <!-- Botão destacado para indicar onde estamos -->
+            <a href="../dashboard/vendas_periodo.html" class="submenu-link" style="background: rgba(255,255,255,0.2);">Vendas por Período</a>
             <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
         </div>
     </div>
@@ -173,14 +285,8 @@
 </div>
 
 <script>
-    // URL Corrigida (Sem a barra extra!)
     const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
     let listaVendas = [];
-
-    function toggleRelatorios() {
-        const submenu = document.getElementById('submenu-relatorios');
-        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-    }
 
     const formatarMoeda = (valor) => Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
@@ -232,16 +338,12 @@
             if(venda.origem === 'Delivery') corOrigem = 'bg-delivery';
             if(venda.origem === 'Mesas') corOrigem = 'bg-mesas';
 
-            // ===================================================
-            // 🧹 TRADUTOR DE CÓDIGO PARA TEXTO AMIGÁVEL
-            // ===================================================
             let arrayItens = [];
             try { arrayItens = typeof venda.itens === 'string' ? JSON.parse(venda.itens) : (venda.itens || []); } 
             catch (e) { arrayItens = []; }
 
             let resumoAmigavel = '';
             if (arrayItens.length > 0) {
-                // Extrai só os nomes, tira os parênteses de complementos pra não poluir, e separa por " / "
                 resumoAmigavel = arrayItens.map(item => {
                     let nomeLimpo = item.nome;
                     if (nomeLimpo.includes('(')) {
@@ -250,17 +352,14 @@
                     return `${item.quantidade || 1}x ${nomeLimpo}`;
                 }).join(' <span style="color:#ccc;">/</span> ');
             } else if (venda.produto_nome && !venda.produto_nome.startsWith('[')) {
-                resumoAmigavel = venda.produto_nome; // Se for uma venda antiga salva como texto
+                resumoAmigavel = venda.produto_nome; 
             } else {
                 resumoAmigavel = "Pedido Diversos";
             }
 
-            // Se for Delivery e tiver Cliente, mostra o Cliente em negrito e o resumo embaixo
             let textoColunaPrincipal = venda.cliente_nome 
                 ? `<div style="font-weight: bold; color: #333; margin-bottom: 2px;">👤 ${venda.cliente_nome}</div><div style="color: #666; font-size: 0.85rem;">${resumoAmigavel}</div>` 
                 : `<div style="color: #333; font-weight: 500;">${resumoAmigavel}</div>`;
-
-            // ===================================================
 
             const tr = document.createElement('tr');
             tr.onclick = () => abrirModalDetalhes(index);
@@ -285,9 +384,6 @@
         const venda = listaVendas[index];
         document.getElementById('modal-titulo').innerText = `Pedido #${venda.id} - Detalhes`;
         
-        // ==========================================
-        // 1. CABEÇALHO DE INTELIGÊNCIA (Metadados)
-        // ==========================================
         const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
         
         let htmlInteligencia = `
@@ -312,7 +408,6 @@
                 </div>
         `;
 
-        // Adiciona dados do cliente apenas se existirem
         if (venda.cliente_nome && venda.cliente_nome !== 'null') {
              htmlInteligencia += `<hr style="border: 0; border-top: 1px dashed #ddd; margin: 12px 0;">`;
              htmlInteligencia += `<div style="margin-bottom: 6px;"><strong>👤 Cliente:</strong> ${venda.cliente_nome} <span style="color: #00bcd4; font-weight: bold;">${venda.cliente_telefone ? `(${venda.cliente_telefone})` : ''}</span></div>`;
@@ -322,7 +417,6 @@
              }
         }
 
-        // Destaca as observações operacionais
         if (venda.observacoes && venda.observacoes !== 'null') {
             htmlInteligencia += `
                 <div style="margin-top: 10px; background: #fff0f4; padding: 10px; border-radius: 8px; border-left: 4px solid #e91e63;">
@@ -331,11 +425,8 @@
             `;
         }
 
-        htmlInteligencia += `</div>`; // Fecha o cabeçalho
+        htmlInteligencia += `</div>`;
         
-        // ==========================================
-        // 2. LISTA DE PRODUTOS
-        // ==========================================
         let htmlItens = '';
         let arrayItens = [];
         
@@ -386,7 +477,6 @@
             `;
         }
 
-        // 3. INJETA TUDO NA TELA
         document.getElementById('modal-corpo').innerHTML = htmlInteligencia + htmlItens;
         document.getElementById('modalDetalhes').style.display = 'flex';
     }
