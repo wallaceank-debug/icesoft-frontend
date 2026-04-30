@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM & Fidelidade - Icesoft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f6; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; display: flex; height: 100vh; overflow: hidden; color: #333; }
+        .menu-lateral { width: 250px; background-color: #00bcd4; display: flex; flex-direction: column; padding: 20px 15px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .menu-lateral a { display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; margin-bottom: 15px; transition: 0.2s; }
+        .conteudo-principal { flex: 1; padding: 30px; overflow-y: auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Cabeçalho */
+        .header-crm { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header-crm h2 { margin: 0; font-size: 2rem; color: #00bcd4; }
+
+        /* Card de Configuração de Fidelidade */
+        .card-fidelidade { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-top: 5px solid #e91e63; margin-bottom: 30px; }
+        .card-fidelidade h3 { margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 10px; }
+        .controles-fidelidade { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: #666; }
+        .form-group input, .form-group select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit; font-size: 1rem; outline: none; }
+        .btn-salvar { background: #00bcd4; color: white; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; height: 42px; }
+        .btn-salvar:hover { background: #0097a7; }
+
+        /* Tabela de Clientes */
+        .card-tabela { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .busca-container { margin-bottom: 20px; }
+        .busca-container input { width: 100%; max-width: 400px; padding: 12px 15px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-family: inherit; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #555; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; }
+        tr:hover { background-color: #f9f9f9; }
+        
+        /* Barra de Progresso */
+        .barra-fundo { background: #eee; height: 10px; border-radius: 10px; width: 100%; overflow: hidden; margin-top: 5px; }
+        .barra-progresso { background: #e91e63; height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+        .status-fidelidade { font-size: 0.8rem; font-weight: bold; color: #e91e63; margin-top: 5px; display: inline-block; }
+        .premio-destravado { background: #25D366; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<aside class="menu-lateral" style="width: 250px; background-color: #00bcd4; height: 100vh; padding: 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; box-shadow: 2px 0 10px rgba(0,0,0,0.1); flex-shrink: 0;">
+    <h2 style="color: white; font-size: 2rem; margin-top: 10px; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; font-weight: bold;">🍦 Icesoft</h2>
+    
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+        <a href="../pdv/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Balcão PDV</a>
+        <a href="../mesas/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Mesas/Comandas</a>
+        <a href="../gestao/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Cardápio</a>
+        <a href="../delivery/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); box-sizing: border-box; transition: 0.2s;">Gestão Delivery</a>
+        <a href="../kanban/" style="display: block; width: 100%; padding: 15px; background-color: white; color: #333; text-decoration: none; font-weight: bold; font-size: 1.1rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; transition: 0.2s;">Painel Kanban</a>
+        
+        <div class="menu-item-dropdown" style="width: 100%; text-align: center; margin-bottom: 15px;">
+            <button onclick="toggleRelatorios()" style="width: 100%; padding: 15px; background-color: white; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; font-family: inherit;">
+                📊 Relatórios ▾
+            </button>
+
+            <!-- Menu aberto por padrão com o CRM em destaque -->
+            <div id="submenu-relatorios" class="submenu" style="display: flex; padding: 10px; flex-direction: column; gap: 8px; background-color: rgba(0,0,0,0.1); border-radius: 12px; margin-top: 10px;">
+                <a href="../dashboard/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Visão Geral</a>
+                <a href="../dashboard/vendas_periodo.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 8px;">Vendas por Período</a>
+                <a href="../crm/index.html" style="color: #ffffff; text-decoration: none; font-weight: 700; font-size: 14px; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.5);">CRM & Fidelidade</a>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<script>
+    function toggleRelatorios() {
+        const submenu = document.getElementById('submenu-relatorios');
+        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+    }
+</script>
+
+<div class="conteudo-principal">
+    <div class="container">
+        
+        <div class="header-crm">
+            <h2>Gestão de Clientes (CRM)</h2>
+        </div>
+
+        <div class="card-fidelidade">
+            <h3>🎁 Programa de Fidelidade</h3>
+            <div class="controles-fidelidade">
+                <div class="form-group" style="flex: 0 0 120px;">
+                    <label>Status</label>
+                    <select id="fidelidade-ativo">
+                        <option value="true">Ligado</option>
+                        <option value="false">Desligado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Meta de Pedidos</label>
+                    <input type="number" id="fidelidade-meta" placeholder="Ex: 10">
+                </div>
+                <div class="form-group">
+                    <label>Tipo do Prêmio</label>
+                    <select id="fidelidade-tipo">
+                        <option value="porcentagem">Desconto em %</option>
+                        <option value="valor">Desconto em R$</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Valor do Prêmio</label>
+                    <input type="number" id="fidelidade-valor" placeholder="Ex: 15">
+                </div>
+                <button onclick="salvarConfigFidelidade()" class="btn-salvar">Salvar Regras</button>
+            </div>
+        </div>
+
+        <div class="card-tabela">
+            <div class="busca-container">
+                <input type="text" id="busca-cliente" oninput="filtrarClientes()" placeholder="🔍 Buscar cliente por nome ou telefone...">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Lifetime Value (Gasto Total)</th>
+                        <th>Última Compra</th>
+                        <th>Progresso Fidelidade</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-clientes">
+                    <tr><td colspan="4" style="text-align: center;">Carregando sua base de clientes...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
