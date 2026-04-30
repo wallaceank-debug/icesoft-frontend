@@ -255,3 +255,74 @@ function fecharDetalhes() {
 
 window.onload = carregarPedidos;
 setInterval(carregarPedidos, 15000);
+
+// Memória do sistema para saber quais pedidos JÁ FORAM impressos automaticamente
+let pedidosJaImpressos = [];
+
+// ==========================================
+// 🖨️ MOTOR DE IMPRESSÃO TÉRMICA (80mm)
+// ==========================================
+function imprimirComandaKanban(venda) {
+    const areaImpressao = document.getElementById('cupom-kanban');
+    
+    // Desempacota os itens do pedido
+    let arrayItens = [];
+    try { arrayItens = typeof venda.itens === 'string' ? JSON.parse(venda.itens) : venda.itens; } 
+    catch (e) { arrayItens = []; }
+
+    let htmlItens = '';
+    arrayItens.forEach(item => {
+        let nomeBase = item.nome;
+        // Pega complementos se houver
+        if (nomeBase.includes('(')) nomeBase = nomeBase.replace('(', '<br>&nbsp;&nbsp;+ ').replace(')', '');
+        
+        htmlItens += `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold;">
+            <span style="flex: 1;">${item.quantidade || 1}x ${nomeBase}</span>
+            <span style="margin-left: 10px;">R$ ${Number(item.preco * (item.quantidade || 1)).toFixed(2).replace('.',',')}</span>
+        </div>`;
+    });
+
+    const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
+    
+    // Desenha o cupom formato 80mm
+    areaImpressao.innerHTML = `
+        <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; text-align: center;">
+            <h2 style="margin: 0;">ICESOFT</h2>
+            <strong>COMANDA DE PRODUÇÃO</strong><br>
+            ${dataFormatada}
+        </div>
+        
+        <div style="font-size: 16px; margin-bottom: 10px; text-align: center;">
+            <strong style="font-size: 20px;">PEDIDO #${venda.id}</strong><br>
+            <strong style="background: black; color: white; padding: 2px 5px;">${(venda.origem || 'Balcão').toUpperCase()}</strong>
+        </div>
+
+        <div style="margin-bottom: 10px; border-bottom: 1px dashed black; padding-bottom: 10px;">
+            <strong>Cliente:</strong> ${venda.cliente_nome || 'Balcão/Mesa'}<br>
+            <strong>WhatsApp:</strong> ${venda.cliente_telefone || '---'}<br>
+            <strong>Endereço:</strong> ${venda.cliente_endereco || 'Retirada no Local'}
+        </div>
+        
+        <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px;">
+            ${htmlItens}
+        </div>
+        
+        <div style="text-align: right; font-size: 18px; margin-bottom: 10px;">
+            <strong>TOTAL: R$ ${Number(venda.valor_total).toFixed(2).replace('.',',')}</strong>
+        </div>
+        
+        <div style="margin-bottom: 10px; font-size: 16px;">
+            <strong>Pagamento:</strong> ${venda.forma_pagamento || '---'}<br>
+            ${venda.observacoes && venda.observacoes !== 'null' ? `<div style="margin-top: 10px; border: 2px solid black; padding: 5px;"><strong>⚠️ OBSERVAÇÃO:</strong><br>${venda.observacoes}</div>` : ''}
+        </div>
+        <div style="text-align: center; margin-top: 20px; font-size: 12px;">
+            -- Icesoft Sistema --
+        </div>
+    `;
+
+    // Mostra o cupom temporariamente para o navegador capturar
+    areaImpressao.style.display = 'block';
+    window.print();
+    areaImpressao.style.display = 'none';
+}
