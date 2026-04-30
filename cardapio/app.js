@@ -139,24 +139,30 @@ function rolarParaCategoria(id) {
 }
 
 // ==========================================
-// RESTANTE DO SISTEMA DE VENDAS
+// SISTEMA DE ADIÇÃO E MODAL DE PRODUTO
 // ==========================================
+let quantidadeModal = 1; // NOVO: Controla a quantidade de itens no modal
+
 function verificarAdicao(id) {
-    
-    // 🛑 TRAVA DE SEGURANÇA: Bloqueia o clique IMEDIATAMENTE se estiver fechado
     if (!lojaAberta) {
         alert("🛑 A loja está fechada no momento! Verifique nosso horário de funcionamento no topo da página.");
         return;
     }
     
     const produto = produtosDaNuvem.find(p => p.id === id);
-    if (!produto.grupos_ids || produto.grupos_ids.length === 0) return adicionarAoCarrinho(produto.nome, Number(produto.preco));
+    
+    // 💡 REMOVIDO o atalho que ia direto pro carrinho. Agora TUDO abre a foto e a descrição!
     abrirModalEscolha(produto);
 }
 
 function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
+    quantidadeModal = 1; // Reseta para 1 sempre que abrir um novo produto
+    
+    if(document.getElementById('quantidade-modal-display')) {
+        document.getElementById('quantidade-modal-display').innerText = quantidadeModal;
+    }
 
     const topo = document.getElementById('detalhes-produto-topo');
     
@@ -164,7 +170,6 @@ function abrirModalEscolha(produto) {
         ? `<p style="color: #666; font-size: 0.95rem; margin-top: 8px; line-height: 1.4; text-align: left;">${produto.descricao}</p>`
         : ``;
 
-    // 📸 NOVO: O wrapper 'area-arraste' com a pílula visual
     const visualTopo = produto.imagem_url
         ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 10px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
@@ -175,52 +180,55 @@ function abrirModalEscolha(produto) {
                ${produto.emoji || '🍦'}
            </div>`;
 
+    // 💡 INTELIGÊNCIA: Mostra ou esconde a faixa "Escolha seus complementos"
+    const temAdicionais = produto.grupos_ids && produto.grupos_ids.length > 0;
+    const htmlFaixaComplementos = temAdicionais 
+        ? `<div style="background: #f0f2f5; margin: 15px -20px 0 -20px; padding: 10px 20px;">
+            <p style="color: var(--cor-primaria, #e91e63); margin: 0; font-weight: bold; font-size: 0.95rem; text-transform: uppercase;">Escolha seus complementos</p>
+           </div>`
+        : ``;
+
     topo.innerHTML = `
         ${visualTopo}
         <h2 style="margin: 0; color: #333; font-size: 1.4rem; text-align: left;">${produto.nome}</h2>
         ${descricaoHTML}
-        <div style="background: #f0f2f5; margin: 15px -20px 0 -20px; padding: 10px 20px;">
-            <p style="color: var(--cor-primaria, #e91e63); margin: 0; font-weight: bold; font-size: 0.95rem; text-transform: uppercase;">Escolha seus complementos</p>
-        </div>
+        ${htmlFaixaComplementos}
     `;
 
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
-    const gruposDoProduto = produto.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
-    
-    gruposDoProduto.forEach(grupo => {
-        const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
-        if (itensAtivos.length === 0) return;
+    // Se o produto tiver adicionais, nós montamos a lista. Se não tiver, o container fica vazio e limpo!
+    if (temAdicionais) {
+        const gruposDoProduto = produto.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+        
+        gruposDoProduto.forEach(grupo => {
+            const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+            if (itensAtivos.length === 0) return;
 
-        let itensHtml = itensAtivos.map((item, idx) => {
-            let precoSeguro = Number(item.preco) || 0;
-            let nomeSeguro = item.nome.replace(/'/g, "\\'"); 
-            let chkId = `chk-${grupo.id}-${idx}`;
-            return `
-            <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${chkId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
-                <div style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="${chkId}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;"><span>${item.nome}</span></div>
-                <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
-            </div>`;
-        }).join('');
+            let itensHtml = itensAtivos.map((item, idx) => {
+                let precoSeguro = Number(item.preco) || 0;
+                let nomeSeguro = item.nome.replace(/'/g, "\\'"); 
+                let chkId = `chk-${grupo.id}-${idx}`;
+                return `
+                <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${chkId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="${chkId}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;"><span>${item.nome}</span></div>
+                    <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                </div>`;
+            }).join('');
 
-        // 👇 A MÁGICA DAS ETIQUETAS ACONTECE AQUI
-        const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
-        const badgeObrigatorio = isObrigatorio
-            ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
-            : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
+            const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+            const badgeObrigatorio = isObrigatorio
+                ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
+                : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
 
-        container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
-
-    });
+            container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
+        });
+    }
     
     atualizarPrecoDinamico();
     document.getElementById('modal-opcoes').style.display = 'flex';
-
-    // 🔒 TRAVA A ROLAGEM DO FUNDO AQUI!
-    document.body.style.overflow = 'hidden';
-    
-    // 👆 CHAMA A FÍSICA DO DEDO SEMPRE QUE ABRIR O MODAL
+    document.body.style.overflow = 'hidden'; 
     aplicarGestoSwipe();
 }
 
@@ -245,40 +253,59 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     atualizarPrecoDinamico();
 }
 
+// 💡 A NOVA FUNÇÃO DE MATEMÁTICA DA QUANTIDADE
+function alterarQuantidadeModal(delta) {
+    quantidadeModal += delta;
+    if (quantidadeModal < 1) quantidadeModal = 1; // Trava para não zerar
+    
+    const display = document.getElementById('quantidade-modal-display');
+    if(display) display.innerText = quantidadeModal;
+    
+    atualizarPrecoDinamico();
+}
+
 function atualizarPrecoDinamico() {
-    const totalGeral = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    // Calcula o valor de 1 unidade (Produto base + Complementos)
+    const valorUnidade = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    
+    // Multiplica pela quantidade escolhida
+    const totalGeral = valorUnidade * quantidadeModal;
+    
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
 }
 
 function confirmarEscolhasEAdicionar() {
-    // --- NOVA VALIDAÇÃO DE OBRIGATORIEDADE ---
-    const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+    if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
+        const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
 
-    for (let grupo of gruposDoProduto) {
-        const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
-        
-        if (isObrigatorio) {
-            const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
-            if (escolhasNesteGrupo.length === 0) {
-                // Se for obrigatório e não marcou nada, trava e avisa o cliente!
-                alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
-                return; // 🛑 Interrompe a função aqui e não deixa ir pro carrinho
+        for (let grupo of gruposDoProduto) {
+            const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+            if (isObrigatorio) {
+                const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
+                if (escolhasNesteGrupo.length === 0) {
+                    alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
+                    return; 
+                }
             }
         }
     }
-    // -----------------------------------------
 
     let nomeFinal = produtoEmSelecao.nome + (escolhasAtuais.length > 0 ? " (" + escolhasAtuais.map(e => e.nome).join(', ') + ")" : "");
     const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
     
-    adicionarAoCarrinho(nomeFinal, precoFinal);
+    // 💡 LOOP DE INJEÇÃO: Adiciona a mesma configuração X vezes na sacola
+    for (let i = 0; i < quantidadeModal; i++) {
+        adicionarAoCarrinho(nomeFinal, precoFinal);
+    }
+    
     fecharModalOpcoes();
 }
 
 function fecharModalOpcoes() { 
     document.getElementById('modal-opcoes').style.display = 'none'; 
-    document.body.style.overflow = 'auto'; // 🔓 DESTRAVA o cardápio lá no fundo!
+    document.body.style.overflow = 'auto'; 
 }
+
 function adicionarAoCarrinho(nome, preco) { 
     carrinho.push({ nome, preco: Number(preco) }); 
     atualizarBarraCarrinho();

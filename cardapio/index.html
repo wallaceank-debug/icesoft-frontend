@@ -247,13 +247,21 @@
 
             <div style="padding: 15px 20px 20px 20px; background: white; border-top: 1px solid #eee; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 10;">
                 
-                <div style="background:#f9f9f9; border-radius:15px; display:flex; justify-content:space-between; align-items:center; padding:10px;">
-                    <div>
-                        <span style="font-size:0.9rem; color:#666;">Total do item:</span><br>
-                        <strong id="preco-dinamico" style="font-size:1.3rem;">R$ 0,00</strong>
+                <div style="background:#f9f9f9; border-radius:15px; display:flex; justify-content:space-between; align-items:center; padding:10px; gap: 10px;">
+                    <div style="flex-shrink: 0;">
+                        <span style="font-size:0.8rem; color:#666;">Total:</span><br>
+                        <strong id="preco-dinamico" style="font-size:1.2rem; color: var(--cor-primaria, #e91e63);">R$ 0,00</strong>
                     </div>
-                    <button onclick="confirmarEscolhasEAdicionar()" style="color:white; border:none; padding:15px 30px; border-radius:30px; font-weight:bold; cursor:pointer;">
-                        Adicionar à sacola
+                    
+                    <!-- NOVO SELETOR DE QUANTIDADE -->
+                    <div style="display: flex; align-items: center; background: white; border: 1px solid #ddd; border-radius: 30px; padding: 3px; gap: 8px;">
+                        <button onclick="alterarQuantidadeModal(-1)" style="background: none; border: none; font-size: 1.3rem; color: #555; cursor: pointer; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;">-</button>
+                        <span id="quantidade-modal-display" style="font-weight: bold; font-size: 1.1rem; color: #333; min-width: 20px; text-align: center;">1</span>
+                        <button onclick="alterarQuantidadeModal(1)" style="background: none; border: none; font-size: 1.3rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;">+</button>
+                    </div>
+
+                    <button onclick="confirmarEscolhasEAdicionar()" style="flex: 1; color:white; border:none; padding:12px 15px; border-radius:30px; font-weight:bold; cursor:pointer; background: var(--cor-primaria, #e91e63);">
+                        Adicionar
                     </button>
                 </div>
                 
