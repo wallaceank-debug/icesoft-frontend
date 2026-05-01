@@ -51,6 +51,7 @@ async function carregarTudo() {
         console.error("Erro ao carregar do servidor novo:", e); 
     }
 }
+
 // ==========================================
 // 🗺️ DESENHAR BAIRROS NO CHECKOUT
 // ==========================================
@@ -58,17 +59,14 @@ function renderizarBairros() {
     const selectBairro = document.getElementById('cliente-bairro');
     if (!selectBairro) return;
 
-    // Limpa os bairros de teste e coloca a opção padrão
     selectBairro.innerHTML = '<option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>';
 
-    // Adiciona os bairros que você cadastrou no Painel
     bairrosGlobais.forEach(b => {
         const taxa = Number(b.taxa);
         const textoTaxa = taxa > 0 ? `Taxa: R$ ${taxa.toFixed(2).replace('.', ',')}` : 'Grátis';
         selectBairro.innerHTML += `<option value="${b.nome}" data-taxa="${taxa}">${b.nome} - ${textoTaxa}</option>`;
     });
 
-    // Mantém uma opção fixa de retirada no final
     selectBairro.innerHTML += '<option value="Retirada no Local" data-taxa="0">🏬 Retirada na Loja - Grátis</option>';
 }
 
@@ -76,10 +74,7 @@ function renderizarBairros() {
 // 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS E FOTOS)
 // ==========================================
 function obterOrdemDasCategorias(listaProdutosAtual) {
-    // Pega a lista oficial (ordenada) do banco de dados
     const categoriasOficiais = categoriasGlobaisDelivery.map(c => c.nome);
-    
-    // Verifica se tem algum produto solto (ex: "Outros") e joga pro final da lista
     const categoriasExtras = [...new Set(listaProdutosAtual.map(p => p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos'))]
         .filter(c => !categoriasOficiais.includes(c));
 
@@ -90,17 +85,15 @@ function renderizarCardapio(lista) {
     const container = document.getElementById('lista-produtos');
     container.innerHTML = '<h2 style="margin-bottom: 20px;">Cardápio Completo</h2>';
 
-    // Chama a nossa nova inteligência de ordenação
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
 
     categoriasOrdenadas.forEach(catNome => {
         const produtosDestaCategoria = lista.filter(p => (p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos') === catNome);
         
-        if (produtosDestaCategoria.length === 0) return; // Não desenha seção vazia!
+        if (produtosDestaCategoria.length === 0) return;
 
         const catId = 'categoria-' + catNome.replace(/[^a-zA-Z0-9]/g, '');
 
-        // Injeta o Título da Categoria
         container.innerHTML += `<h3 id="${catId}" style="color: var(--cor-primaria, #e91e63); margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px;">${catNome}</h3>`;
 
         produtosDestaCategoria.forEach(p => {
@@ -109,7 +102,6 @@ function renderizarCardapio(lista) {
                 ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
                 : ``;
             
-            // 🚀 A MÁGICA DA VELOCIDADE AQUI: loading="lazy"
             const visualProduto = p.imagem_url 
                 ? `<img src="${p.imagem_url}" loading="lazy" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">`
                 : `<div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
@@ -128,11 +120,9 @@ function renderizarCardapio(lista) {
     });
 }
 
-// 🪄 Função de Mágica (Desce a página suavemente até a categoria clicada)
 function rolarParaCategoria(id) {
     const elemento = document.getElementById(id);
     if (elemento) {
-        // Pega a distância do item até o topo e dá um pequeno respiro de 20px
         const y = elemento.getBoundingClientRect().top + window.scrollY - 20; 
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
@@ -141,7 +131,7 @@ function rolarParaCategoria(id) {
 // ==========================================
 // SISTEMA DE ADIÇÃO E MODAL DE PRODUTO
 // ==========================================
-let quantidadeModal = 1; // NOVO: Controla a quantidade de itens no modal
+let quantidadeModal = 1; 
 
 function verificarAdicao(id) {
     if (!lojaAberta) {
@@ -150,15 +140,13 @@ function verificarAdicao(id) {
     }
     
     const produto = produtosDaNuvem.find(p => p.id === id);
-    
-    // 💡 REMOVIDO o atalho que ia direto pro carrinho. Agora TUDO abre a foto e a descrição!
     abrirModalEscolha(produto);
 }
 
 function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
-    quantidadeModal = 1; // Reseta para 1 sempre que abrir um novo produto
+    quantidadeModal = 1; 
     
     if(document.getElementById('quantidade-modal-display')) {
         document.getElementById('quantidade-modal-display').innerText = quantidadeModal;
@@ -180,7 +168,6 @@ function abrirModalEscolha(produto) {
                ${produto.emoji || '🍦'}
            </div>`;
 
-    // 💡 INTELIGÊNCIA: Mostra ou esconde a faixa "Escolha seus complementos"
     const temAdicionais = produto.grupos_ids && produto.grupos_ids.length > 0;
     const htmlFaixaComplementos = temAdicionais 
         ? `<div style="background: #f0f2f5; margin: 15px -20px 0 -20px; padding: 10px 20px;">
@@ -198,7 +185,6 @@ function abrirModalEscolha(produto) {
     const container = document.getElementById('container-grupos-opcoes');
     container.innerHTML = '';
     
-    // Se o produto tiver adicionais, nós montamos a lista. Se não tiver, o container fica vazio e limpo!
     if (temAdicionais) {
         const gruposDoProduto = produto.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
         
@@ -209,12 +195,29 @@ function abrirModalEscolha(produto) {
             let itensHtml = itensAtivos.map((item, idx) => {
                 let precoSeguro = Number(item.preco) || 0;
                 let nomeSeguro = item.nome.replace(/'/g, "\\'"); 
-                let chkId = `chk-${grupo.id}-${idx}`;
-                return `
-                <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${chkId}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
-                    <div style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="${chkId}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;"><span>${item.nome}</span></div>
-                    <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
-                </div>`;
+                let identificador = `opc-${grupo.id}-${idx}`;
+
+                // 🚀 LÓGICA INTELIGENTE DE LAYOUT (Checkbox vs Contador)
+                if (grupo.limite === 1) {
+                    return `
+                    <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                        <div style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="${identificador}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;"><span>${item.nome}</span></div>
+                        <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                    </div>`;
+                } else {
+                    return `
+                    <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <span style="font-weight:600; color:#333;">${item.nome}</span>
+                            <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; background: #f4f7f6; border: 1px solid #ddd; border-radius: 8px; padding: 2px;">
+                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
+                            <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">0</span>
+                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
+                        </div>
+                    </div>`;
+                }
             }).join('');
 
             const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
@@ -232,31 +235,72 @@ function abrirModalEscolha(produto) {
     aplicarGestoSwipe();
 }
 
+// 🚀 FUNÇÃO PARA GRUPOS COM LIMITE = 1 (Checkbox Clássico)
 function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
     const chk = document.getElementById(chkId);
     const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
 
-    if (index > -1) { escolhasAtuais.splice(index, 1); chk.checked = false; } else {
+    if (index > -1) { 
+        escolhasAtuais.splice(index, 1); 
+        chk.checked = false; 
+    } else {
         const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
-        if (grupo.limite === 1) {
-            if (escolhasNoGrupo.length > 0) {
-                const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
-                escolhasAtuais.splice(idxAnterior, 1);
-                document.querySelectorAll(`input[id^="chk-${grupoId}-"]`).forEach(c => c.checked = false);
-            }
-        } else if (escolhasNoGrupo.length >= grupo.limite) { return alert(`Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}`); }
+        if (escolhasNoGrupo.length > 0) {
+            const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
+            escolhasAtuais.splice(idxAnterior, 1);
+            document.querySelectorAll(`input[id^="chk-${grupoId}-"]`).forEach(c => c.checked = false);
+        }
         
-        escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco) });
+        // Agora toda escolha salva a quantidade (padrão 1 para checkbox)
+        escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco), quantidade: 1 });
         chk.checked = true;
     }
     atualizarPrecoDinamico();
 }
 
-// 💡 A NOVA FUNÇÃO DE MATEMÁTICA DA QUANTIDADE
+// 🚀 NOVA FUNÇÃO PARA GRUPOS COM LIMITE > 1 (Botões - / +)
+function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
+    const grupo = gruposGlobais.find(g => g.id === grupoId);
+    
+    // Conta quantos itens no total já foram escolhidos neste grupo
+    let totalSelecionadoNoGrupo = 0;
+    escolhasAtuais.forEach(e => {
+        if (e.grupoId === grupoId) totalSelecionadoNoGrupo += e.quantidade;
+    });
+
+    const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
+    let itemAtual = index > -1 ? escolhasAtuais[index] : null;
+    let qtdAtual = itemAtual ? itemAtual.quantidade : 0;
+
+    if (delta > 0) { // Tentando Adicionar
+        if (totalSelecionadoNoGrupo >= grupo.limite) {
+            return alert(`Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}`);
+        }
+        qtdAtual++;
+        if (itemAtual) {
+            itemAtual.quantidade = qtdAtual;
+        } else {
+            escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco), quantidade: qtdAtual });
+        }
+    } else if (delta < 0) { // Tentando Remover
+        if (qtdAtual > 0) {
+            qtdAtual--;
+            if (qtdAtual === 0) {
+                escolhasAtuais.splice(index, 1); // Remove da lista se zerou
+            } else {
+                itemAtual.quantidade = qtdAtual;
+            }
+        }
+    }
+
+    document.getElementById(spanId).innerText = qtdAtual;
+    atualizarPrecoDinamico();
+}
+
 function alterarQuantidadeModal(delta) {
     quantidadeModal += delta;
-    if (quantidadeModal < 1) quantidadeModal = 1; // Trava para não zerar
+    if (quantidadeModal < 1) quantidadeModal = 1; 
     
     const display = document.getElementById('quantidade-modal-display');
     if(display) display.innerText = quantidadeModal;
@@ -265,10 +309,11 @@ function alterarQuantidadeModal(delta) {
 }
 
 function atualizarPrecoDinamico() {
-    // Calcula o valor de 1 unidade (Produto base + Complementos)
-    const valorUnidade = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    // 🚀 LÓGICA ATUALIZADA: Soma preço do produto + (preço do adicional * quantidade escolhida do adicional)
+    const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
+    const valorUnidade = Number(produtoEmSelecao.preco) + valorComplementos;
     
-    // Multiplica pela quantidade escolhida
+    // Multiplica pela quantidade de vezes que ele quer o PRODUTO INTEIRO
     const totalGeral = valorUnidade * quantidadeModal;
     
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
@@ -290,10 +335,19 @@ function confirmarEscolhasEAdicionar() {
         }
     }
 
-    let nomeFinal = produtoEmSelecao.nome + (escolhasAtuais.length > 0 ? " (" + escolhasAtuais.map(e => e.nome).join(', ') + ")" : "");
-    const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    // 🚀 FORMATAÇÃO INTELIGENTE DO NOME: Exibe "2x Nutella" se a quantidade for maior que 1
+    let nomeFinal = produtoEmSelecao.nome;
+    if (escolhasAtuais.length > 0) {
+        let stringComplementos = escolhasAtuais.map(e => {
+            if (e.quantidade > 1) return `${e.quantidade}x ${e.nome}`;
+            return e.nome;
+        }).join(', ');
+        nomeFinal += ` (${stringComplementos})`;
+    }
+
+    const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
+    const precoFinal = Number(produtoEmSelecao.preco) + valorComplementos;
     
-    // 💡 LOOP DE INJEÇÃO: Adiciona a mesma configuração X vezes na sacola
     for (let i = 0; i < quantidadeModal; i++) {
         adicionarAoCarrinho(nomeFinal, precoFinal);
     }
@@ -376,16 +430,13 @@ function aplicarCupom() {
 // 🧮 NOVO CÁLCULO DE TOTAL (COM TAXA DE ENTREGA)
 // ==========================================
 function atualizarTotalCheckout() {
-    // 1. Calcula o Subtotal (Só os produtos)
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
     document.getElementById('subtotal-display').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
     
-    // 2. Lê a Taxa do Bairro selecionado
     const selectBairro = document.getElementById('cliente-bairro');
     let taxaEntrega = 0;
     
     if (selectBairro && selectBairro.value) {
-        // Pega o valor "data-taxa" escondido dentro da opção selecionada
         const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
         taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
         document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
@@ -393,7 +444,6 @@ function atualizarTotalCheckout() {
         document.getElementById('taxa-entrega-display').innerText = `Selecione o bairro 🔽 `;
     }
 
-    // 3. Aplica os Cupons (O desconto incide apenas sobre os produtos, não sobre a entrega)
     let desconto = 0;
     const linhaDesconto = document.getElementById('desconto-display-linha');
     const valorDesconto = document.getElementById('desconto-display-valor');
@@ -408,9 +458,8 @@ function atualizarTotalCheckout() {
         if (linhaDesconto) linhaDesconto.style.display = 'none';
     }
 
-    // 4. A Conta Final
     let totalFinal = (subtotal - desconto) + taxaEntrega;
-    if (totalFinal < 0) totalFinal = 0; // Evita cliente ganhar dinheiro do nada 😂
+    if (totalFinal < 0) totalFinal = 0; 
 
     if(document.getElementById('total-checkout-display')) {
         document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
@@ -426,7 +475,6 @@ async function salvarVendaDelivery() {
     let totalFinal = subtotal - desconto;
     if (totalFinal < 0) totalFinal = 0;
 
-    // Pega os dados do HTML
     const pagamento = document.getElementById('cliente-pagamento').value || "WhatsApp / Online";
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = document.getElementById('cliente-telefone').value.trim();
@@ -456,13 +504,11 @@ async function salvarVendaDelivery() {
             })
         });
 
-        // 🧹 LIMPEZA FEITA AQUI: Avisos amigáveis para o cliente!
         if (!res.ok) {
             alert("Poxa, tivemos um probleminha para processar seu pedido. Por favor, chame a gente no WhatsApp!");
         }
 
     } catch (e) { 
-        // 🧹 LIMPEZA FEITA AQUI TAMBÉM!
         alert("Ops! Parece que sua internet oscilou. Verifique a conexão e tente novamente.");
     }
 }
@@ -476,14 +522,11 @@ function finalizarPedidoWhatsApp() {
     renderizarResumoCarrinho();
     renderizarUpsellCheckout(); 
     modal.style.display = 'flex';
-    
-    // 🛑 A MÁGICA 1: Trava o fundo para o celular parar de tentar renderizar o cardápio por trás!
     document.body.style.overflow = 'hidden';
 }
 
 function fecharModalCheckout() { 
     document.getElementById('modal-checkout').style.display = 'none'; 
-    // 🟢 Destrava o fundo quando o cliente desiste de fechar o pedido
     document.body.style.overflow = 'auto';
 }
 
@@ -501,24 +544,20 @@ async function processarEnvioWhatsApp() {
         return alert("⚠️ Por favor, preencha todos os campos e selecione seu bairro!");
     }
 
-    // Pega a taxa do bairro para botar no recibo
     const selectBairro = document.getElementById('cliente-bairro');
     const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
     const taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
 
     const enderecoCompleto = `${bairro} - ${rua}`;
     
-    // 1. Salva no banco de dados primeiro
     await salvarVendaDelivery(); 
 
-    // 2. 🚀 A CORREÇÃO: Cria a mensagem base do WhatsApp PRIMEIRO
     let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
     textoPedido += `👤 *Cliente:* ${nome}\n`;
     textoPedido += `📱 *WhatsApp:* ${telefoneCliente}\n`;
     textoPedido += `📍 *Endereço:* ${enderecoCompleto}\n`;
     textoPedido += `💳 *Pagamento:* ${pagamento}\n\n`;
 
-    // 3. AGORA SIM, se tiver observação, joga dentro do texto
     const observacao = document.getElementById('cliente-observacao').value.trim();
     if (observacao) {
         textoPedido += `📝 *Observações:* ${observacao}\n\n`;
@@ -544,10 +583,8 @@ async function processarEnvioWhatsApp() {
         textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
     }
 
-    // 4. Redireciona o cliente para o WhatsApp com o texto pronto
     window.location.href = `https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`;
     
-    // 5. Limpa a tela do cliente
     carrinho = []; 
     atualizarBarraCarrinho(); 
     fecharModalCheckout();
@@ -575,7 +612,6 @@ async function carregarConfiguracoesLoja() {
         if (configs.horarios_loja) document.getElementById('modal-horarios-texto').innerText = configs.horarios_loja;
         if (configs.pagamentos_loja) document.getElementById('modal-pagamentos-texto').innerText = configs.pagamentos_loja;
 
-        // === MÁGICA DA LOJA FECHADA / ABERTA (AGORA DENTRO DO TRY) ===
         const status = configs.status_delivery || 'aberto';
         const statusText = document.getElementById('loja-status-exibicao');
         
@@ -583,7 +619,6 @@ async function carregarConfiguracoesLoja() {
             lojaAberta = false;
             let textoAbertura = "em breve";
             
-            // Calculadora do próximo dia
             try {
                 const horarios = JSON.parse(configs.horarios_funcionamento_auto);
                 const diasSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -591,13 +626,11 @@ async function carregarConfiguracoesLoja() {
                 const diaAtual = hoje.getDay(); 
                 const horaAtual = hoje.getHours() * 60 + hoje.getMinutes();
 
-                // 1. Ainda abre HOJE?
                 if (horarios[diaAtual] && horarios[diaAtual].ativo && horarios[diaAtual].abre) {
                     const [h, m] = horarios[diaAtual].abre.split(':').map(Number);
                     if (horaAtual < (h * 60 + m)) textoAbertura = `hoje às ${horarios[diaAtual].abre}`;
                 }
                 
-                // 2. Se não for hoje, procura o próximo dia!
                 if (textoAbertura === "em breve") {
                     for (let i = 1; i <= 6; i++) {
                         let proximoDia = (diaAtual + i) % 7;
@@ -611,16 +644,15 @@ async function carregarConfiguracoesLoja() {
             } catch(e) {}
 
             statusText.innerText = `● Estamos fechados no momento, abre ${textoAbertura}`;
-            statusText.style.color = "#f44336"; // Vermelho
+            statusText.style.color = "#f44336"; 
             
-            // SOME COM A TELA PRETA ANTIGA SE ELA EXISTIR!
             const telaPreta = document.getElementById('overlay-loja-fechada');
             if (telaPreta) telaPreta.style.display = 'none';
 
         } else {
             lojaAberta = true;
             statusText.innerText = "● Recebendo pedidos";
-            statusText.style.color = "#25D366"; // Verde
+            statusText.style.color = "#25D366"; 
         }
 
     } catch (e) { console.error("Erro configurações:", e); }
@@ -639,7 +671,6 @@ function renderizarCarrossel(produtos) {
     carrossel.innerHTML = '';
     
     produtosDestaque.forEach(p => {
-        // 🚀 LOADING LAZY NOS DESTAQUES
         const visualProduto = p.imagem_url 
             ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
             : `<div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
@@ -675,7 +706,6 @@ function renderizarUpsellCheckout() {
         const precoComDesconto = precoNormal - descontoReais;
         const nomeLimpo = p.nome.replace(/'/g, "\\'"); 
 
-        // 🚀 LOADING LAZY NAS OFERTAS
         const visualProduto = p.imagem_url 
             ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
             : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
@@ -710,7 +740,6 @@ async function verificarStatusLoja() {
         const res = await fetch(`${API_URL}/status`);
         const data = await res.json();
 
-        // Pegamos o status, transformamos em minúsculo e tiramos espaços em branco
         const statusAtual = data.status ? data.status.toLowerCase().trim() : '';
 
         if (statusAtual === 'fechado') {
@@ -735,7 +764,6 @@ async function verificarStatusLoja() {
             }
         }
     } catch (e) {
-        // 🛑 MUDANÇA AQUI: Tiramos o alert() e colocamos um log silencioso
         console.log("Servidor dormindo ou internet oscilou. Tentando de novo na próxima rodada silenciosamente...");
     }
 }
@@ -744,14 +772,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     await carregarConfiguracoesLoja(); 
     await carregarTudo(); 
     verificarStatusLoja(); 
-    // Espera um pouquinho para as fotos processarem e esconde a tela branca
     setTimeout(() => {
         const telaLoading = document.getElementById('tela-carregamento');
         if (telaLoading) {
-            telaLoading.style.opacity = '0'; // Faz ela ficar transparente devagar
-            setTimeout(() => telaLoading.style.display = 'none', 400); // Remove ela de vez da frente
+            telaLoading.style.opacity = '0'; 
+            setTimeout(() => telaLoading.style.display = 'none', 400); 
         }
-    }, 500); // Meio segundo de carinho para a foto baixar
+    }, 500); 
 
     setInterval(verificarStatusLoja, 30000);
 });
@@ -763,7 +790,6 @@ function renderizarMenuCategorias(lista) {
     const container = document.getElementById('menu-categorias-dinamico');
     if (!container) return;
 
-    // A mesma inteligência de ordenação aplicada nos botões bolha (Pills)
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
     let html = '';
 
@@ -780,20 +806,14 @@ function renderizarMenuCategorias(lista) {
     container.innerHTML = html;
 }
 
-// 🥷 FUNÇÃO NINJA DE ROLAGEM
 window.rolarParaCategoria = function(nomeCategoria) {
-    // Procura todos os títulos (H2 e H3) dentro da área do cardápio
     const titulos = document.querySelectorAll('#lista-produtos h2, #lista-produtos h3');
     
     for (let titulo of titulos) {
-        // Se achar o título na tela, rola até ele!
         if (titulo.innerText.trim().includes(nomeCategoria.trim()) || nomeCategoria.trim().includes(titulo.innerText.trim())) {
-            
-            // Rola suavemente deixando uma margem de 80px pra não grudar no topo da tela
             const posicaoY = titulo.getBoundingClientRect().top + window.scrollY - 80; 
             window.scrollTo({ top: posicaoY, behavior: 'smooth' });
-            
-            break; // Para de procurar depois que achar
+            break; 
         }
     }
 };
@@ -805,19 +825,15 @@ const inputBusca = document.getElementById('busca-produtos');
 
 if (inputBusca) {
     inputBusca.addEventListener('input', function() {
-        // 1. Pega o que o cliente digitou, joga pra minúsculo e remove acentos (ex: "acai" acha "Açaí")
         const termo = this.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // 2. Filtra a nossa lista mestre de produtos que já veio do banco de dados
         const produtosFiltrados = produtosDaNuvem.filter(p => {
             const nome = p.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const descricao = p.descricao && p.descricao !== 'null' ? p.descricao.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
             
-            // Retorna verdadeiro se o que o cliente digitou existir no NOME ou na DESCRIÇÃO do produto
             return nome.includes(termo) || descricao.includes(termo);
         });
 
-        // 3. Apaga o cardápio antigo e desenha de novo SÓ com os produtos encontrados!
         renderizarCardapio(produtosFiltrados);
     });
 }
@@ -827,7 +843,7 @@ if (inputBusca) {
 // ==========================================
 function aplicarGestoSwipe() {
     const areaArraste = document.getElementById('area-arraste');
-    const modalBox = document.querySelector('#modal-opcoes > div'); // Pega a caixa branca do modal
+    const modalBox = document.querySelector('#modal-opcoes > div'); 
     
     if (!areaArraste || !modalBox) return;
 
@@ -835,14 +851,13 @@ function aplicarGestoSwipe() {
     let currentY = 0;
     let isDragging = false;
 
-    // Remove qualquer listener antigo para não duplicar
     const novaArea = areaArraste.cloneNode(true);
     areaArraste.parentNode.replaceChild(novaArea, areaArraste);
 
     novaArea.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
         isDragging = true;
-        modalBox.style.transition = 'none'; // Tira o delay para grudar no dedo instantaneamente
+        modalBox.style.transition = 'none'; 
     }, { passive: true });
 
     novaArea.addEventListener('touchmove', (e) => {
@@ -850,7 +865,6 @@ function aplicarGestoSwipe() {
         currentY = e.touches[0].clientY;
         const diferenca = currentY - startY;
 
-        // Só permite arrastar a janela para BAIXO (número positivo)
         if (diferenca > 0) {
             modalBox.style.transform = `translateY(${diferenca}px)`;
         }
@@ -861,16 +875,12 @@ function aplicarGestoSwipe() {
         isDragging = false;
         const diferenca = currentY - startY;
 
-        // Devolve o "amortecedor" da animação
         modalBox.style.transition = 'transform 0.3s ease-out';
 
-        // Se o cliente arrastou mais de 100px para baixo, FECHA!
         if (diferenca > 100) {
             fecharModalOpcoes();
-            // Reseta a janela para ela não abrir "caída" no próximo produto
             setTimeout(() => { modalBox.style.transform = 'translateY(0)'; }, 300);
         } else {
-            // Se puxou pouquinho e soltou, dá o efeito elástico voltando pro lugar
             modalBox.style.transform = 'translateY(0)';
         }
     });
@@ -881,10 +891,10 @@ function aplicarGestoSwipe() {
 // ==========================================
 function abrirModalInfoLoja() {
     document.getElementById('modal-info-loja').style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // Trava o fundo
+    document.body.style.overflow = 'hidden'; 
 }
 
 function fecharModalInfoLoja() {
     document.getElementById('modal-info-loja').style.display = 'none';
-    document.body.style.overflow = 'auto'; // Destrava o fundo
+    document.body.style.overflow = 'auto'; 
 }
