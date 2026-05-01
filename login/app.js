@@ -1,14 +1,28 @@
 document.getElementById('form-login').addEventListener('submit', async function(evento) {
-    // Evita que a página recarregue ao apertar Enter
+    // 1. Impede a página de recarregar
     evento.preventDefault();
 
-    const usernameDigitado = document.getElementById('username').value;
-    const senhaDigitada = document.getElementById('senha').value;
+    // 2. Pega os valores que o usuário digitou
+    const usernameDigitado = document.getElementById('username').value.trim();
+    const senhaDigitada = document.getElementById('senha').value.trim();
+    
     const mensagemErro = document.getElementById('mensagem-erro');
+    const botaoEntrar = document.getElementById('btn-submit');
+
+    // 3. Validação Básica
+    if (!usernameDigitado || !senhaDigitada) {
+        mostrarErro("Preencha o usuário e a senha.");
+        return;
+    }
+
+    // Muda o botão para mostrar que está carregando
+    botaoEntrar.disabled = true;
+    botaoEntrar.innerText = 'Verificando...';
+    mensagemErro.className = 'erro-oculto';
 
     try {
-        // Envia os dados para a nuvem validar (Não esqueça de manter o seu link do Render aqui!)
-        const resposta = await fetch('https://icesoft-api.onrender.com/api/login', {
+        // 4. Bate na porta da sua NOVA API (Easypanel)
+        const resposta = await fetch('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -21,23 +35,33 @@ document.getElementById('form-login').addEventListener('submit', async function(
 
         const resultado = await resposta.json();
 
+        // 5. Verifica se o servidor deixou entrar
         if (resultado.sucesso) {
-            // LOGIN APROVADO! Guarda o "crachá" na memória do navegador
+            
+            // Sucesso! Guarda o crachá no navegador
             localStorage.setItem('icesoft_token', resultado.token);
             localStorage.setItem('icesoft_usuario', usernameDigitado);
             
-            // Esconde o erro e avisa que deu certo
-            mensagemErro.className = 'erro-oculto';
-            alert(`Bem-vindo(a), ${usernameDigitado}! Acesso liberado.`);
+            // Joga o usuário direto para o Kanban ou Dashboard
+            window.location.href = '../dashboard/index.html'; 
             
-            // Redireciona direto para o caixa da loja
-		window.location.href = '/pdv/';
         } else {
-            // LOGIN NEGADO! Mostra a mensagem vermelha
-            mensagemErro.className = 'erro-visivel';
+            // Acesso negado
+            mostrarErro("Usuário ou senha incorretos.");
+            botaoEntrar.disabled = false;
+            botaoEntrar.innerText = 'Acessar Sistema';
         }
+
     } catch (erro) {
-        console.error("Erro ao tentar fazer login:", erro);
-        alert("Erro de conexão com o servidor. Tente novamente.");
+        console.error("Falha ao contatar servidor de login:", erro);
+        mostrarErro("Sem conexão com o servidor. Tente novamente.");
+        botaoEntrar.disabled = false;
+        botaoEntrar.innerText = 'Acessar Sistema';
     }
 });
+
+function mostrarErro(mensagem) {
+    const boxErro = document.getElementById('mensagem-erro');
+    boxErro.innerText = `⚠️ ${mensagem}`;
+    boxErro.className = 'erro-visivel';
+}

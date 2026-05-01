@@ -5,32 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Icesoft - Login Restrito</title>
     <link rel="stylesheet" href="./style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="login-container">
+        
+        <!-- O Card Branco -->
         <div class="login-card">
-            <div class="logo">🍦 Icesoft</div>
-            <h2>Acesso Restrito</h2>
-            <p>Área exclusiva para funcionários</p>
+            
+            <div class="logo-area">
+                <span class="icone">🍦</span>
+                <span class="texto">Icesoft</span>
+            </div>
+            
+            <h2>Área Restrita</h2>
+            <p>Acesse o sistema com suas credenciais.</p>
             
             <form id="form-login">
                 <div class="input-group">
                     <label for="username">Usuário</label>
-                    <input type="text" id="username" required placeholder="Digite seu usuário">
+                    <input type="text" id="username" required placeholder="Seu usuário" autocomplete="username">
                 </div>
                 
                 <div class="input-group">
                     <label for="senha">Senha</label>
-                    <input type="password" id="senha" required placeholder="Digite sua senha">
+                    <input type="password" id="senha" required placeholder="Sua senha" autocomplete="current-password">
                 </div>
                 
-                <p id="mensagem-erro" class="erro-oculto">Usuário ou senha incorretos!</p>
+                <div id="mensagem-erro" class="erro-oculto">
+                    ⚠️ Usuário ou senha incorretos!
+                </div>
                 
-                <button type="submit" class="btn-entrar">Entrar no Sistema</button>
+                <button type="submit" id="btn-submit" class="btn-entrar">Acessar Sistema</button>
             </form>
+            
         </div>
+        
     </div>
+
     <script src="./app.js"></script>
 </body>
 </html>
