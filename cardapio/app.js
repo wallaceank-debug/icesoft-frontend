@@ -1181,3 +1181,28 @@ function fecharModalInfoLoja() {
     document.getElementById('modal-info-loja').style.display = 'none';
     document.body.style.overflow = 'auto'; 
 }
+
+// ==========================================
+// 🛡️ MÁSCARA E PADRONIZAÇÃO DE TELEFONE
+// ==========================================
+const inputTelefone = document.getElementById('cliente-telefone');
+if(inputTelefone) {
+    inputTelefone.addEventListener('input', function (e) {
+        // Formata automaticamente enquanto o cliente digita: (XX) XXXXX-XXXX
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+    });
+}
+
+function padronizarTelefone(numeroBruto) {
+    let limpo = numeroBruto.replace(/\D/g, ''); // Tira tudo que não é número (espaço, traço, etc)
+    if (limpo.startsWith('55') && limpo.length > 11) limpo = limpo.substring(2); // Remove o 55 do Brasil se tiver
+    
+    // Devolve formatado perfeitamente
+    if (limpo.length === 11) {
+        return `(${limpo.substring(0,2)}) ${limpo.substring(2,7)}-${limpo.substring(7,11)}`;
+    } else if (limpo.length === 10) {
+        return `(${limpo.substring(0,2)}) ${limpo.substring(2,6)}-${limpo.substring(6,10)}`;
+    }
+    return numeroBruto; // Retorna original apenas se for um formato desconhecido
+}
