@@ -197,7 +197,6 @@ function abrirModalEscolha(produto) {
                 let nomeSeguro = item.nome.replace(/'/g, "\\'"); 
                 let identificador = `opc-${grupo.id}-${idx}`;
 
-                // 🚀 LÓGICA INTELIGENTE DE LAYOUT (Checkbox vs Contador)
                 if (grupo.limite === 1) {
                     return `
                     <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
@@ -235,7 +234,6 @@ function abrirModalEscolha(produto) {
     aplicarGestoSwipe();
 }
 
-// 🚀 FUNÇÃO PARA GRUPOS COM LIMITE = 1 (Checkbox Clássico)
 function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
     const chk = document.getElementById(chkId);
@@ -252,18 +250,15 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
             document.querySelectorAll(`input[id^="chk-${grupoId}-"]`).forEach(c => c.checked = false);
         }
         
-        // Agora toda escolha salva a quantidade (padrão 1 para checkbox)
         escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco), quantidade: 1 });
         chk.checked = true;
     }
     atualizarPrecoDinamico();
 }
 
-// 🚀 NOVA FUNÇÃO PARA GRUPOS COM LIMITE > 1 (Botões - / +)
 function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
     
-    // Conta quantos itens no total já foram escolhidos neste grupo
     let totalSelecionadoNoGrupo = 0;
     escolhasAtuais.forEach(e => {
         if (e.grupoId === grupoId) totalSelecionadoNoGrupo += e.quantidade;
@@ -273,7 +268,7 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     let itemAtual = index > -1 ? escolhasAtuais[index] : null;
     let qtdAtual = itemAtual ? itemAtual.quantidade : 0;
 
-    if (delta > 0) { // Tentando Adicionar
+    if (delta > 0) { 
         if (totalSelecionadoNoGrupo >= grupo.limite) {
             return alert(`Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}`);
         }
@@ -283,11 +278,11 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
         } else {
             escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco), quantidade: qtdAtual });
         }
-    } else if (delta < 0) { // Tentando Remover
+    } else if (delta < 0) { 
         if (qtdAtual > 0) {
             qtdAtual--;
             if (qtdAtual === 0) {
-                escolhasAtuais.splice(index, 1); // Remove da lista se zerou
+                escolhasAtuais.splice(index, 1); 
             } else {
                 itemAtual.quantidade = qtdAtual;
             }
@@ -309,11 +304,8 @@ function alterarQuantidadeModal(delta) {
 }
 
 function atualizarPrecoDinamico() {
-    // 🚀 LÓGICA ATUALIZADA: Soma preço do produto + (preço do adicional * quantidade escolhida do adicional)
     const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
     const valorUnidade = Number(produtoEmSelecao.preco) + valorComplementos;
-    
-    // Multiplica pela quantidade de vezes que ele quer o PRODUTO INTEIRO
     const totalGeral = valorUnidade * quantidadeModal;
     
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
@@ -335,7 +327,6 @@ function confirmarEscolhasEAdicionar() {
         }
     }
 
-    // 🚀 FORMATAÇÃO INTELIGENTE DO NOME: Exibe "2x Nutella" se a quantidade for maior que 1
     let nomeFinal = produtoEmSelecao.nome;
     if (escolhasAtuais.length > 0) {
         let stringComplementos = escolhasAtuais.map(e => {
@@ -427,21 +418,195 @@ function aplicarCupom() {
 }
 
 // ==========================================
-// 🧮 NOVO CÁLCULO DE TOTAL (COM TAXA DE ENTREGA)
+// 🚀 NOVO SISTEMA DE CHECKOUT EM PASSOS
 // ==========================================
+let passoCheckoutAtual = 1;
+
+function finalizarPedidoWhatsApp() {
+    cupomAtivo = null;
+    document.getElementById('input-cupom').value = '';
+    document.getElementById('msg-cupom').style.display = 'none';
+    
+    irParaPasso(1);
+    
+    renderizarResumoCarrinho();
+    renderizarUpsellCheckout(); 
+    document.getElementById('modal-checkout').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function fecharModalCheckout() { 
+    document.getElementById('modal-checkout').style.display = 'none'; 
+    document.body.style.overflow = 'auto';
+}
+
+function mudarTipoEntrega() {
+    const tipo = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    const areaEndereco = document.getElementById('area-endereco');
+    
+    document.getElementById('label-entrega').classList.remove('ativo');
+    document.getElementById('label-retirada').classList.remove('ativo');
+    document.querySelectorAll('#label-entrega .radio-customizado, #label-retirada .radio-customizado').forEach(el => el.classList.remove('marcado'));
+
+    if (tipo === 'delivery') {
+        document.getElementById('label-entrega').classList.add('ativo');
+        document.querySelector('#label-entrega .radio-customizado').classList.add('marcado');
+        areaEndereco.style.display = 'block';
+    } else {
+        document.getElementById('label-retirada').classList.add('ativo');
+        document.querySelector('#label-retirada .radio-customizado').classList.add('marcado');
+        areaEndereco.style.display = 'none';
+        document.getElementById('cliente-bairro').value = "Retirada no Local";
+    }
+    atualizarTotalCheckout();
+}
+
+function selecionarPagamento(elemento, forma) {
+    document.querySelectorAll('input[name="forma_pag"]').forEach(radio => radio.checked = false);
+    elemento.querySelector('input').checked = true;
+    
+    document.querySelectorAll('#checkout-passo-2 .card-selecao').forEach(card => {
+        card.classList.remove('ativo');
+        card.querySelector('.radio-customizado').classList.remove('marcado');
+    });
+    
+    elemento.classList.add('ativo');
+    elemento.querySelector('.radio-customizado').classList.add('marcado');
+
+    const areaTroco = document.getElementById('area-troco');
+    if (forma === 'Dinheiro') {
+        areaTroco.style.display = 'block';
+    } else {
+        areaTroco.style.display = 'none';
+        document.getElementById('cliente-troco').value = '';
+    }
+}
+
+function validarPasso1() {
+    const nome = document.getElementById('cliente-nome').value.trim();
+    const tel = document.getElementById('cliente-telefone').value.trim();
+    const tipo = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    
+    if (!nome || !tel) return "Preencha seu Nome e WhatsApp.";
+    
+    if (tipo === 'delivery') {
+        const bairro = document.getElementById('cliente-bairro').value;
+        const rua = document.getElementById('cliente-rua').value.trim();
+        const numero = document.getElementById('cliente-numero').value.trim();
+        if (!bairro || !rua || !numero) return "Preencha Bairro, Rua e Número para a entrega.";
+    }
+    return null;
+}
+
+function validarPasso2() {
+    const pag = document.querySelector('input[name="forma_pag"]:checked');
+    if (!pag) return "Selecione uma forma de pagamento.";
+    return null;
+}
+
+function construirResumoPasso3() {
+    const nome = document.getElementById('cliente-nome').value.trim();
+    const tel = document.getElementById('cliente-telefone').value.trim();
+    const tipo = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    const pag = document.querySelector('input[name="forma_pag"]:checked').value;
+    
+    document.getElementById('resumo-identificacao').innerHTML = `<strong>👤 Nome:</strong> ${nome}<br><strong>📱 Tel:</strong> ${tel}`;
+    
+    if (tipo === 'delivery') {
+        const bairro = document.getElementById('cliente-bairro').value;
+        const rua = document.getElementById('cliente-rua').value.trim();
+        const num = document.getElementById('cliente-numero').value.trim();
+        const comp = document.getElementById('cliente-complemento').value.trim();
+        const textoComp = comp ? ` - ${comp}` : '';
+        document.getElementById('resumo-endereco').innerHTML = `<strong>🛵 Entrega em:</strong><br>${rua}, ${num}${textoComp}<br>${bairro}`;
+    } else {
+        document.getElementById('resumo-endereco').innerHTML = `<strong>🏬 Retirada na Loja</strong>`;
+    }
+
+    let textoPagamento = `💳 ${pag}`;
+    if (pag === 'Dinheiro') {
+        const troco = document.getElementById('cliente-troco').value.trim();
+        textoPagamento += troco ? ` (Troco para ${troco})` : ` (Sem troco)`;
+    }
+    document.getElementById('resumo-pagamento').innerText = textoPagamento;
+}
+
+function avancarPassoCheckout() {
+    if (passoCheckoutAtual === 1) {
+        const erro = validarPasso1();
+        if (erro) return alert("⚠️ " + erro);
+        irParaPasso(2);
+    } 
+    else if (passoCheckoutAtual === 2) {
+        const erro = validarPasso2();
+        if (erro) return alert("⚠️ " + erro);
+        construirResumoPasso3();
+        atualizarTotalCheckout(); 
+        irParaPasso(3);
+    }
+    else if (passoCheckoutAtual === 3) {
+        processarEnvioWhatsApp();
+    }
+}
+
+function voltarPassoCheckout() {
+    if (passoCheckoutAtual > 1) {
+        irParaPasso(passoCheckoutAtual - 1);
+    }
+}
+
+function irParaPasso(passo) {
+    passoCheckoutAtual = passo;
+    
+    document.querySelectorAll('.checkout-passo').forEach(el => el.classList.remove('ativo'));
+    document.getElementById(`checkout-passo-${passo}`).classList.add('ativo');
+
+    for (let i = 1; i <= 3; i++) {
+        const indicador = document.getElementById(`ind-passo-${i}`);
+        indicador.className = 'progresso-passo'; 
+        if (i < passo) indicador.classList.add('concluido');
+        else if (i === passo) indicador.classList.add('ativo');
+    }
+
+    const btnAvancar = document.getElementById('btn-avancar-checkout');
+    const btnVoltar = document.getElementById('btn-voltar-topo');
+    
+    if (passo === 1) {
+        btnVoltar.style.display = 'none';
+        btnAvancar.innerText = 'Continuar para Pagamento';
+        btnAvancar.style.background = '#333';
+    } else if (passo === 2) {
+        btnVoltar.style.display = 'block';
+        btnAvancar.innerText = 'Revisar Pedido';
+        btnAvancar.style.background = '#333';
+    } else if (passo === 3) {
+        btnVoltar.style.display = 'block';
+        btnAvancar.innerText = 'Enviar Pedido 🚀';
+        btnAvancar.style.background = '#25D366'; 
+    }
+}
+
 function atualizarTotalCheckout() {
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
     document.getElementById('subtotal-display').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
     
-    const selectBairro = document.getElementById('cliente-bairro');
+    const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
+    const tipoEntrega = tipoEntregaChecked ? tipoEntregaChecked.value : 'delivery';
     let taxaEntrega = 0;
     
-    if (selectBairro && selectBairro.value) {
-        const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
-        taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
-        document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
-    } else if (document.getElementById('taxa-entrega-display')) {
-        document.getElementById('taxa-entrega-display').innerText = `Selecione o bairro 🔽 `;
+    if (tipoEntrega === 'delivery') {
+        const selectBairro = document.getElementById('cliente-bairro');
+        if (selectBairro && selectBairro.value) {
+            const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
+            taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
+            document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+            document.getElementById('taxa-entrega-display').style.color = "#666";
+        } else {
+            document.getElementById('taxa-entrega-display').innerText = `Selecione o bairro`;
+        }
+    } else {
+        document.getElementById('taxa-entrega-display').innerText = `Grátis`;
+        document.getElementById('taxa-entrega-display').style.color = "#25D366";
     }
 
     let desconto = 0;
@@ -460,10 +625,7 @@ function atualizarTotalCheckout() {
 
     let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0; 
-
-    if(document.getElementById('total-checkout-display')) {
-        document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
-    }
+    document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
 }
 
 async function salvarVendaDelivery() {
@@ -472,15 +634,29 @@ async function salvarVendaDelivery() {
     if (cupomAtivo) {
         desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
     }
-    let totalFinal = subtotal - desconto;
+    
+    const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    let taxaEntrega = 0;
+    let endereco = "Retirada na Loja";
+    
+    if(tipoEntrega === 'delivery') {
+        const selectBairro = document.getElementById('cliente-bairro');
+        const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
+        taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
+        
+        const bairro = selectBairro.value;
+        const rua = document.getElementById('cliente-rua').value.trim();
+        const num = document.getElementById('cliente-numero').value.trim();
+        const comp = document.getElementById('cliente-complemento').value.trim();
+        endereco = `${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro}`;
+    }
+
+    let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0;
 
-    const pagamento = document.getElementById('cliente-pagamento').value || "WhatsApp / Online";
+    const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = document.getElementById('cliente-telefone').value.trim();
-    const bairro = document.getElementById('cliente-bairro').value || '';
-    const rua = document.getElementById('cliente-endereco').value.trim();
-    const endereco = bairro ? `${bairro} - ${rua}` : rua;
     const observacao = document.getElementById('cliente-observacao').value.trim();
 
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
@@ -499,89 +675,74 @@ async function salvarVendaDelivery() {
                 cliente_nome: nome,
                 cliente_telefone: telefone,
                 cliente_endereco: endereco,
-                origem: "Delivery",
+                origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
                 observacoes: observacao
             })
         });
 
-        if (!res.ok) {
-            alert("Poxa, tivemos um probleminha para processar seu pedido. Por favor, chame a gente no WhatsApp!");
-        }
-
+        if (!res.ok) console.log("Aviso: Falha ao registrar na nuvem, mas seguirá pro WhatsApp.");
     } catch (e) { 
-        alert("Ops! Parece que sua internet oscilou. Verifique a conexão e tente novamente.");
+        console.log("Aviso: Falha de rede ao registrar, mas seguirá pro WhatsApp.");
     }
 }
 
-function finalizarPedidoWhatsApp() {
-    const modal = document.getElementById('modal-checkout');
-    cupomAtivo = null;
-    document.getElementById('input-cupom').value = '';
-    document.getElementById('msg-cupom').style.display = 'none';
-
-    renderizarResumoCarrinho();
-    renderizarUpsellCheckout(); 
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-function fecharModalCheckout() { 
-    document.getElementById('modal-checkout').style.display = 'none'; 
-    document.body.style.overflow = 'auto';
-}
-
-// ==========================================
-// 📲 NOVO ENVIO PARA O WHATSAPP (CORRIGIDO)
-// ==========================================
 async function processarEnvioWhatsApp() {
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefoneCliente = document.getElementById('cliente-telefone').value.trim();
-    const bairro = document.getElementById('cliente-bairro').value;
-    const rua = document.getElementById('cliente-endereco').value.trim();
-    const pagamento = document.getElementById('cliente-pagamento').value;
-
-    if (!nome || !telefoneCliente || !bairro || !rua || !pagamento) {
-        return alert("⚠️ Por favor, preencha todos os campos e selecione seu bairro!");
+    const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
+    
+    let enderecoFormatado = "🏬 *Retirada na Loja*";
+    let taxaEntrega = 0;
+    
+    if (tipoEntrega === 'delivery') {
+        const selectBairro = document.getElementById('cliente-bairro');
+        const bairro = selectBairro.value;
+        const rua = document.getElementById('cliente-rua').value.trim();
+        const num = document.getElementById('cliente-numero').value.trim();
+        const comp = document.getElementById('cliente-complemento').value.trim();
+        
+        taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+        enderecoFormatado = `📍 *Endereço:* ${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro}`;
     }
 
-    const selectBairro = document.getElementById('cliente-bairro');
-    const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
-    const taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
-
-    const enderecoCompleto = `${bairro} - ${rua}`;
-    
     await salvarVendaDelivery(); 
 
     let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
     textoPedido += `👤 *Cliente:* ${nome}\n`;
     textoPedido += `📱 *WhatsApp:* ${telefoneCliente}\n`;
-    textoPedido += `📍 *Endereço:* ${enderecoCompleto}\n`;
-    textoPedido += `💳 *Pagamento:* ${pagamento}\n\n`;
+    textoPedido += `${enderecoFormatado}\n`;
+    
+    let txtPagamento = `💳 *Pagamento:* ${pagamento}`;
+    if (pagamento === 'Dinheiro') {
+        const troco = document.getElementById('cliente-troco').value.trim();
+        txtPagamento += troco ? ` (Troco para ${troco})` : ` (Sem troco)`;
+    }
+    textoPedido += `${txtPagamento}\n\n`;
 
     const observacao = document.getElementById('cliente-observacao').value.trim();
-    if (observacao) {
-        textoPedido += `📝 *Observações:* ${observacao}\n\n`;
-    }
+    if (observacao) textoPedido += `📝 *Observações:* ${observacao}\n\n`;
 
     textoPedido += `📦 *Itens do Pedido:*\n`;
-    
     let subtotal = 0;
     carrinho.forEach(item => { 
         textoPedido += `▪️ 1x ${item.nome} - R$ ${Number(item.preco).toFixed(2).replace('.', ',')}\n`; 
         subtotal += Number(item.preco); 
     });
     
-    textoPedido += `\n🛵 *Taxa de Entrega:* R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+    if (tipoEntrega === 'delivery') {
+        textoPedido += `\n🛵 *Taxa de Entrega:* R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+    }
+
+    let totalFinal = subtotal + taxaEntrega;
 
     if (cupomAtivo) {
         let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
         textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
-        let totalFinal = (subtotal - desconto) + taxaEntrega;
-        textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
-    } else {
-        let totalFinal = subtotal + taxaEntrega;
-        textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
+        totalFinal = totalFinal - desconto;
     }
+    
+    textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
 
     window.location.href = `https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`;
     

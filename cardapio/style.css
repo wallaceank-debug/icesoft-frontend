@@ -387,3 +387,36 @@ main#lista-produtos h2 {
     cursor: pointer;
     font-weight: bold;
 }
+
+/* =========================================
+   NOVO DESIGN DO CHECKOUT (WIZARD)
+   ========================================= */
+.checkout-passo { display: none; animation: fadeIn 0.3s ease; }
+.checkout-passo.ativo { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.secao-checkout { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); margin-bottom: 15px; }
+.secao-checkout h4 { margin: 0 0 15px 0; color: #333; font-size: 1rem; }
+
+/* Inputs Limpos e Claros */
+.input-clean { width: 100%; padding: 15px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif; outline: none; transition: 0.2s; box-sizing: border-box; margin-bottom: 10px; background: #fafafa; }
+.input-clean:focus { border-color: #25D366; background: white; }
+.select-clean { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto; }
+
+/* Cartões Selecionáveis (Estilo Saipos) */
+.card-selecao { display: flex; align-items: center; padding: 15px; border: 1px solid #e0e0e0; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; background: white; }
+.card-selecao.ativo { border-color: #25D366; background: #f0fdf4; }
+.radio-customizado { width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 50%; position: relative; }
+.radio-customizado.marcado { border-color: #25D366; }
+.radio-customizado.marcado::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; background: #25D366; border-radius: 50%; }
+
+/* Barra de Progresso */
+.progresso-container { display: flex; justify-content: space-between; align-items: center; position: relative; padding: 0 10px; }
+.progresso-linha { position: absolute; top: 12px; left: 15%; right: 15%; height: 2px; background: #e0e0e0; z-index: 1; }
+.progresso-passo { display: flex; flex-direction: column; align-items: center; z-index: 2; gap: 5px; }
+.progresso-passo .bolinha { width: 26px; height: 26px; border-radius: 50%; background: #e0e0e0; color: white; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: bold; transition: 0.3s; }
+.progresso-passo span { font-size: 0.75rem; color: #999; font-weight: 600; }
+.progresso-passo.ativo .bolinha { background: #25D366; }
+.progresso-passo.ativo span { color: #25D366; }
+.progresso-passo.concluido .bolinha { background: #25D366; content: "✓"; color: transparent; position: relative; }
+.progresso-passo.concluido .bolinha::after { content: "✓"; color: white; position: absolute; }

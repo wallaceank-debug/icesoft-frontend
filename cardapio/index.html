@@ -272,74 +272,189 @@
         </div>
     </div>
 
-    <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:4000; padding: 15px; box-sizing: border-box;">
-    <div class="modal-conteudo" style="background:white; padding:20px; border-radius:20px; width:100%; max-width:450px; display:flex; flex-direction:column; gap:15px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
-        
-        <h3 style="text-align: center; margin: 0; color: var(--cor-primaria); flex-shrink: 0;">Resumo e Entrega</h3>
-        
-        <div id="lista-resumo-itens" style="background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 150px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box;"></div>
-
-        <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-top: 0; flex-shrink: 0; box-sizing: border-box;">
-            <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
-            <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
-        </div>
-
-        <hr style="border: 0.5px solid #eee; margin: 0; flex-shrink: 0;">
-
-        <div style="display: flex; gap: 10px; flex-shrink: 0; width: 100%; box-sizing: border-box;">
-            <input type="text" id="input-cupom" placeholder="Tem um cupom?" style="flex: 1; min-width: 0; padding: 12px; border-radius: 8px; border: 1px solid #ddd; text-transform: uppercase; outline: none; font-family: 'Inter', sans-serif; box-sizing: border-box;">
-            <button type="button" onclick="aplicarCupom()" style="padding: 0 20px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-sizing: border-box;">Aplicar</button>
-        </div>
-        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -10px; display: none; flex-shrink: 0;"></div>
-
-        <div style="background: #f0f2f5; padding: 12px; border-radius: 8px; flex-shrink: 0; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
-                <span>Subtotal:</span>
-                <span id="subtotal-display">R$ 0,00</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
-                <span>Taxa de Entrega:</span>
-                <span id="taxa-entrega-display">Calculando...</span>
-            </div>
-            <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #4CAF50;">
-                <span>Desconto (Cupom):</span>
-                <span id="desconto-display-valor">- R$ 0,00</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
-                <strong style="color: #333; font-size: 1.1rem;">Total a Pagar:</strong>
-                <strong id="total-checkout-display" style="color: var(--cor-primaria); font-size: 1.3rem;">R$ 0,00</strong>
-            </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; width: 100%;">
-            <input type="text" id="cliente-nome" placeholder="Seu Nome Completo" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box;">
-            <input type="tel" id="cliente-telefone" placeholder="Seu WhatsApp (Ex: 11 99999-9999)" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box;">
+    <!-- ==========================================
+         NOVO MODAL DE CHECKOUT EM ETAPAS
+         ========================================== -->
+    <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:flex-end; z-index:4000;">
+        <div class="modal-conteudo checkout-container" style="background:#f4f7f6; padding:0; border-top-left-radius:20px; border-top-right-radius:20px; width:100%; max-width:500px; display:flex; flex-direction:column; height: 90vh; overflow: hidden; position: relative; animation: slideUp 0.3s ease-out;">
             
-            <select id="cliente-bairro" onchange="atualizarTotalCheckout()" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white; font-family:'Inter', sans-serif; box-sizing: border-box; cursor: pointer; border-left: 4px solid var(--cor-primaria);">
-                <option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>
-                <option value="Centro" data-taxa="2.00">Centro - Taxa: R$ 2,00</option>
-                <option value="Jardim Primavera" data-taxa="5.00">Jardim Primavera - Taxa: R$ 5,00</option>
-                <option value="Vila Nova" data-taxa="7.50">Vila Nova - Taxa: R$ 7,50</option>
-                <option value="Retirada no Local" data-taxa="0.00">Retirada no Local - Grátis</option>
-            </select>
-            
-            <input type="text" id="cliente-endereco" placeholder="Rua, Número e Complemento" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box;">
-            
-            <select id="cliente-pagamento" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; background:white; font-family:'Inter', sans-serif; box-sizing: border-box;">
-                <option value="" disabled selected>💳 Forma de Pagamento</option>
-                <option value="Pix">Pix (Na Entrega)</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Dinheiro">Dinheiro</option>
-            </select>
-            <textarea id="cliente-observacao" placeholder="📝 Alguma observação? (Ex: Sem cebola, troco para R$ 50...)" rows="2" style="width: 100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-family:'Inter', sans-serif; box-sizing: border-box; resize: none;"></textarea>
-        </div>
+            <!-- CABEÇALHO COM PROGRESSO -->
+            <div class="checkout-header" style="background: white; padding: 20px 20px 15px 20px; border-bottom: 1px solid #eee; text-align: center; border-top-left-radius:20px; border-top-right-radius:20px; flex-shrink: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button onclick="voltarPassoCheckout()" id="btn-voltar-topo" style="background: none; border: none; font-size: 1.2rem; color: #666; cursor: pointer; display: none;">❮</button>
+                    <h3 style="margin: 0; color: #333; font-size: 1.2rem; flex: 1;">Finalizar Pedido</h3>
+                    <button onclick="fecharModalCheckout()" style="background: none; border: none; font-size: 1.5rem; color: #999; cursor: pointer;">&times;</button>
+                </div>
+                
+                <div class="progresso-container">
+                    <div class="progresso-linha"></div>
+                    <div class="progresso-passo ativo" id="ind-passo-1"><div class="bolinha">1</div><span>Entrega</span></div>
+                    <div class="progresso-passo" id="ind-passo-2"><div class="bolinha">2</div><span>Pagamento</span></div>
+                    <div class="progresso-passo" id="ind-passo-3"><div class="bolinha">3</div><span>Resumo</span></div>
+                </div>
+            </div>
 
-        <div style="display:flex; gap:10px; margin-top:5px; flex-shrink: 0;">
-            <button type="button" onclick="fecharModalCheckout()" style="flex:1; padding:12px; border-radius:8px; border:none; background:#eee; color:#333; font-weight:bold; cursor:pointer; box-sizing: border-box;">Voltar</button>
-            <button type="button" onclick="processarEnvioWhatsApp()" style="flex:2; padding:12px; border-radius:8px; border:none; background:#25D366; color:white; font-weight:bold; cursor:pointer; box-sizing: border-box;">Enviar Pedido 🚀</button>
+            <!-- ÁREA DE ROLAGEM DOS PASSOS -->
+            <div style="flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;">
+                
+                <!-- PASSO 1: IDENTIFICAÇÃO E ENTREGA -->
+                <div id="checkout-passo-1" class="checkout-passo ativo">
+                    <div class="secao-checkout">
+                        <h4>Seus Dados</h4>
+                        <input type="text" id="cliente-nome" class="input-clean" placeholder="Nome Completo" autocomplete="name">
+                        <input type="tel" id="cliente-telefone" class="input-clean" placeholder="WhatsApp (Ex: 24 99999-9999)" autocomplete="tel">
+                    </div>
+
+                    <div class="secao-checkout">
+                        <h4>Opções de entrega</h4>
+                        
+                        <label class="card-selecao ativo" id="label-entrega">
+                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                                <input type="radio" name="tipo_entrega" value="delivery" checked onchange="mudarTipoEntrega()" style="display: none;">
+                                <span style="font-size: 1.2rem;">🛵</span>
+                                <div style="flex: 1;">
+                                    <strong style="display: block; color: #333;">Receber no endereço</strong>
+                                </div>
+                                <div class="radio-customizado marcado"></div>
+                            </div>
+                        </label>
+
+                        <div id="area-endereco" style="margin-top: 15px;">
+                            <select id="cliente-bairro" class="input-clean select-clean" onchange="atualizarTotalCheckout()">
+                                <option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>
+                            </select>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua" style="flex: 2;">
+                                <input type="text" id="cliente-numero" class="input-clean" placeholder="Nº" style="flex: 1;">
+                            </div>
+                            
+                            <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-top: 10px;">
+                        </div>
+
+                        <label class="card-selecao" id="label-retirada" style="margin-top: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                                <input type="radio" name="tipo_entrega" value="retirada" onchange="mudarTipoEntrega()" style="display: none;">
+                                <span style="font-size: 1.2rem;">🏬</span>
+                                <div style="flex: 1;">
+                                    <strong style="display: block; color: #333;">Retirar na loja</strong>
+                                    <span style="font-size: 0.8rem; color: #25D366; font-weight: bold;">GRÁTIS</span>
+                                </div>
+                                <div class="radio-customizado"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- PASSO 2: PAGAMENTO -->
+                <div id="checkout-passo-2" class="checkout-passo">
+                    <div class="secao-checkout">
+                        <h4>Como você prefere pagar?</h4>
+                        
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Pix')">
+                            <input type="radio" name="forma_pag" value="Pix" style="display: none;">
+                            <span style="font-size: 1.2rem;">💠</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Pix</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+                        
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Crédito')">
+                            <input type="radio" name="forma_pag" value="Cartão de Crédito" style="display: none;">
+                            <span style="font-size: 1.2rem;">💳</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Cartão de Crédito</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+                        
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Débito')">
+                            <input type="radio" name="forma_pag" value="Cartão de Débito" style="display: none;">
+                            <span style="font-size: 1.2rem;">💳</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Cartão de Débito</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+                        
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Dinheiro')">
+                            <input type="radio" name="forma_pag" value="Dinheiro" style="display: none;">
+                            <span style="font-size: 1.2rem;">💵</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Dinheiro</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+
+                        <!-- Campo de troco (aparece só se escolher dinheiro) -->
+                        <div id="area-troco" style="display: none; margin-top: 10px; padding-left: 45px;">
+                            <input type="text" id="cliente-troco" class="input-clean" placeholder="Troco para quanto? (Deixe em branco se não precisar)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASSO 3: RESUMO E CONCLUSÃO -->
+                <div id="checkout-passo-3" class="checkout-passo">
+                    
+                    <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
+                        <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
+                    </div>
+
+                    <div class="secao-checkout">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0;">Informações</h4>
+                            <span onclick="irParaPasso(1)" style="color: var(--cor-primaria); font-size: 0.85rem; font-weight: bold; cursor: pointer;">Editar</span>
+                        </div>
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; font-size: 0.9rem; color: #555;">
+                            <div id="resumo-identificacao"><strong>Nome:</strong> ...<br><strong>Tel:</strong> ...</div>
+                            <div id="resumo-endereco" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                                <strong>Endereço:</strong> ...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="secao-checkout">
+                        <h4>Seu Pedido</h4>
+                        <div id="lista-resumo-itens" style="margin-bottom: 15px;"></div>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" id="input-cupom" placeholder="Cupom de desconto" class="input-clean" style="flex: 1; text-transform: uppercase;">
+                            <button type="button" onclick="aplicarCupom()" style="padding: 0 15px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold;">Aplicar</button>
+                        </div>
+                        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -10px; margin-bottom: 10px; display: none;"></div>
+
+                        <textarea id="cliente-observacao" class="input-clean" placeholder="Alguma observação no pedido?" rows="2" style="resize: none;"></textarea>
+                    </div>
+
+                    <div class="secao-checkout">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0;">Pagamento</h4>
+                            <span onclick="irParaPasso(2)" style="color: var(--cor-primaria); font-size: 0.85rem; font-weight: bold; cursor: pointer;">Editar</span>
+                        </div>
+                        <div id="resumo-pagamento" style="background: #f9f9f9; padding: 15px; border-radius: 10px; font-size: 0.95rem; color: #333; font-weight: bold;">
+                            ...
+                        </div>
+                    </div>
+
+                    <div class="secao-checkout" style="background: white;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
+                            <span>Subtotal</span><span id="subtotal-display">R$ 0,00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
+                            <span>Taxa de Entrega</span><span id="taxa-entrega-display">R$ 0,00</span>
+                        </div>
+                        <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #4CAF50;">
+                            <span>Desconto</span><span id="desconto-display-valor">- R$ 0,00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                            <strong style="color: #333; font-size: 1.1rem;">Total</strong>
+                            <strong id="total-checkout-display" style="color: #25D366; font-size: 1.4rem;">R$ 0,00</strong>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RODAPÉ DE AÇÕES FIXO -->
+            <div style="padding: 15px 20px 20px 20px; background: white; border-top: 1px solid #eee; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.02);">
+                <button id="btn-avancar-checkout" onclick="avancarPassoCheckout()" style="width: 100%; background: #25D366; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;">Continuar</button>
+            </div>
+
         </div>
-        
     </div>
 </div>
 
