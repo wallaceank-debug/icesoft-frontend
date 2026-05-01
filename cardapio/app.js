@@ -1182,26 +1182,106 @@ function fecharModalInfoLoja() {
 }
 
 // ==========================================
-// 🛡️ MÁSCARA E PADRONIZAÇÃO DE TELEFONE
+// 🛡️ CRM INTELIGENTE: MÁSCARA E AUTOPREENCHIMENTO
 // ==========================================
 const inputTelefone = document.getElementById('cliente-telefone');
 if(inputTelefone) {
     inputTelefone.addEventListener('input', function (e) {
-        // Formata automaticamente enquanto o cliente digita: (XX) XXXXX-XXXX
+        // 1. Aplica a Máscara Visual (XX) XXXXX-XXXX
         let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
         e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+
+        // 2. O Gatilho: Se o número estiver completinho (15 caracteres)
+        if (e.target.value.length === 15) {
+            buscarDadosClienteCRM(e.target.value);
+        } else {
+            // Se ele apagar um número, esconde o selo
+            document.getElementById('badge-crm').style.display = 'none';
+        }
     });
 }
 
 function padronizarTelefone(numeroBruto) {
-    let limpo = numeroBruto.replace(/\D/g, ''); // Tira tudo que não é número (espaço, traço, etc)
-    if (limpo.startsWith('55') && limpo.length > 11) limpo = limpo.substring(2); // Remove o 55 do Brasil se tiver
+    let limpo = numeroBruto.replace(/\D/g, ''); 
+    if (limpo.startsWith('55') && limpo.length > 11) limpo = limpo.substring(2); 
     
-    // Devolve formatado perfeitamente
     if (limpo.length === 11) {
         return `(${limpo.substring(0,2)}) ${limpo.substring(2,7)}-${limpo.substring(7,11)}`;
     } else if (limpo.length === 10) {
         return `(${limpo.substring(0,2)}) ${limpo.substring(2,6)}-${limpo.substring(6,10)}`;
     }
-    return numeroBruto; // Retorna original apenas se for um formato desconhecido
+    return numeroBruto; 
+}
+
+// 3. A Mágica de Puxar a Ficha do Cliente
+async function buscarDadosClienteCRM(telefoneFormatado) {
+    const badge = document.getElementById('badge-crm');
+    
+    try {
+        if(badge) {
+            badge.innerText = '⏳ Buscando...';
+            badge.style.background = '#FF9800';
+            badge.style.boxShadow = 'none';
+            badge.style.display = 'block';
+        }
+
+        const res = await fetch(`${API_URL}/vendas`);
+        const vendas = await res.json();
+        
+        // Acha o histórico do cliente pelo WhatsApp
+        const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
+        
+        if (compras.length > 0) {
+            // Pega o pedido mais recente dele
+            const ultimoPedido = compras.reduce((max, p) => p.id > max.id ? p : max, compras[0]);
+            
+            // 🎯 Preenche o NOME
+            if (ultimoPedido.cliente_nome) {
+                document.getElementById('cliente-nome').value = ultimoPedido.cliente_nome;
+            }
+
+            // 🎯 Preenche o ENDEREÇO
+            const endereco = ultimoPedido.cliente_endereco;
+            if (endereco && !endereco.includes("Retirada")) {
+                
+                // Força a opção para Delivery e mostra os campos
+                document.querySelector('input[name="tipo_entrega"][value="delivery"]').checked = true;
+                mudarTipoEntrega();
+
+                // Engenharia Reversa: Quebra o endereço que estava salvo para preencher os inputs
+                let partes = endereco.split(' - ');
+                let bairroSalvo = partes.pop().trim(); // O último bloco sempre é o bairro
+                
+                // Tenta achar o bairro na listinha
+                const selectBairro = document.getElementById('cliente-bairro');
+                let optionBairro = Array.from(selectBairro.options).find(opt => opt.value === bairroSalvo);
+                if(optionBairro) {
+                    selectBairro.value = bairroSalvo;
+                    atualizarTotalCheckout(); // Atualiza a taxa de entrega!
+                }
+
+                if (partes.length > 0) {
+                    let ruaNum = partes[0].split(',');
+                    document.getElementById('cliente-rua').value = ruaNum[0] ? ruaNum[0].trim() : '';
+                    document.getElementById('cliente-numero').value = ruaNum[1] ? ruaNum[1].trim() : '';
+                    
+                    // Se tiver complemento no meio
+                    let complemento = partes.length > 1 ? partes.slice(1).join(' - ').trim() : '';
+                    document.getElementById('cliente-complemento').value = complemento;
+                }
+            }
+
+            if(badge) {
+                badge.innerText = '✅ Cliente Encontrado';
+                badge.style.background = '#25D366';
+                badge.style.boxShadow = '0 2px 5px rgba(37, 211, 102, 0.3)';
+            }
+        } else {
+            // Cliente novo, nunca comprou
+            if(badge) badge.style.display = 'none'; 
+        }
+    } catch (e) {
+        console.log("Falha ao buscar CRM invisível:", e);
+        if(badge) badge.style.display = 'none';
+    }
 }
