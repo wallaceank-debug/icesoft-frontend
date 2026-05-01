@@ -194,26 +194,42 @@ function abrirModalEscolha(produto) {
 
             let itensHtml = itensAtivos.map((item, idx) => {
                 let precoSeguro = Number(item.preco) || 0;
-                let nomeSeguro = item.nome.replace(/'/g, "\\'"); 
+                let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
                 let identificador = `opc-${grupo.id}-${idx}`;
+
+                // 🚀 O INTERCEPTADOR DE TAGS ENTRA EM AÇÃO AQUI
+                let tagHtml = '';
+                let nomeLimpoVisual = nomeCompleto;
+                const matchTag = nomeCompleto.match(/\[(.*?)\]/); // Procura qualquer texto entre [ ]
+                
+                if (matchTag) {
+                    tagHtml = `<span class="tag-recomendacao">${matchTag[1]}</span>`;
+                    nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); // Remove a tag do nome para ficar limpo
+                }
 
                 if (grupo.limite === 1) {
                     return `
-                    <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
-                        <div style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="${identificador}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;"><span>${item.nome}</span></div>
+                    <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="${identificador}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;">
+                            <span style="font-weight: 500; color: #333;">${nomeLimpoVisual} ${tagHtml}</span>
+                        </div>
                         <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
                     </div>`;
                 } else {
                     return `
                     <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            <span style="font-weight:600; color:#333;">${item.nome}</span>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="display: flex; align-items: center;">
+                                <span style="font-weight:600; color:#333;">${nomeLimpoVisual}</span>
+                                ${tagHtml}
+                            </div>
                             <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
                         </div>
                         <div style="display: flex; align-items: center; background: #f4f7f6; border: 1px solid #ddd; border-radius: 8px; padding: 2px;">
-                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
+                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
                             <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">0</span>
-                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeSeguro}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
+                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
                         </div>
                     </div>`;
                 }
