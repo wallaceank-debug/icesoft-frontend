@@ -671,16 +671,15 @@ async function salvarVendaDelivery() {
     let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0;
 
-    // 👇 A MÁGICA: Captura o troco e envia junto com a forma de pagamento 👇
     let pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
     if (pagamento === 'Dinheiro') {
         const troco = document.getElementById('cliente-troco').value.trim();
         if (troco) pagamento += ` (Troco para ${troco})`;
     }
-    // 👆 FIM DA MÁGICA 👆
 
     const nome = document.getElementById('cliente-nome').value.trim();
-    const telefone = document.getElementById('cliente-telefone').value.trim();
+    // 🚀 Salvando no Banco de Dados perfeitamente padronizado
+    const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     const observacao = document.getElementById('cliente-observacao').value.trim();
 
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
