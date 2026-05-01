@@ -420,3 +420,30 @@ main#lista-produtos h2 {
 .progresso-passo.ativo span { color: #25D366; }
 .progresso-passo.concluido .bolinha { background: #25D366; content: "✓"; color: transparent; position: relative; }
 .progresso-passo.concluido .bolinha::after { content: "✓"; color: white; position: absolute; }
+
+/* =========================================
+   TELA DE RASTREIO PÓS-COMPRA
+   ========================================= */
+.timeline-rastreio { display: flex; flex-direction: column; gap: 25px; position: relative; margin-left: 10px; }
+.timeline-rastreio::before { content: ''; position: absolute; left: 22px; top: 20px; bottom: 20px; width: 3px; background: #f0f0f0; z-index: 1; border-radius: 5px; }
+
+.step-rastreio { display: flex; align-items: center; gap: 20px; position: relative; z-index: 2; opacity: 0.4; transition: 0.4s ease; }
+
+.icon-rastreio { width: 48px; height: 48px; border-radius: 50%; background: #f0f0f0; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; transition: 0.4s ease; box-shadow: 0 0 0 6px white; }
+.text-rastreio { font-weight: 600; color: #888; font-size: 1.05rem; transition: 0.4s ease; }
+
+/* Status Ativo (Piscando) */
+.step-rastreio.ativo { opacity: 1; transform: scale(1.05); transform-origin: left center;}
+.step-rastreio.ativo .icon-rastreio { background: #ffb74d; color: white; animation: pulseRastreio 1.5s infinite; }
+.step-rastreio.ativo .text-rastreio { color: #ff9800; font-weight: bold; }
+
+/* Status Concluído (Verde) */
+.step-rastreio.concluido { opacity: 1; }
+.step-rastreio.concluido .icon-rastreio { background: #25D366; color: white; }
+.step-rastreio.concluido .text-rastreio { color: #25D366; font-weight: bold; }
+
+@keyframes pulseRastreio { 
+    0% { box-shadow: 0 0 0 0 rgba(255, 183, 77, 0.4), 0 0 0 6px white; } 
+    70% { box-shadow: 0 0 0 12px rgba(255, 183, 77, 0), 0 0 0 6px white; } 
+    100% { box-shadow: 0 0 0 0 rgba(255, 183, 77, 0), 0 0 0 6px white; } 
+}

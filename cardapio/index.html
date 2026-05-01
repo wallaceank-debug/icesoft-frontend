@@ -484,6 +484,55 @@
         </div>
     </div>
 
+<!-- ==========================================
+         TELA DE RASTREIO PÓS-COMPRA
+         ========================================== -->
+    <div id="modal-rastreio" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f4f7f6; z-index:9999; flex-direction:column;">
+        
+        <div style="background: var(--cor-primaria); padding: 30px 20px; color: white; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+            <h2 style="margin: 0; font-size: 1.8rem;">Pedido Enviado! 🎉</h2>
+            <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;">Acompanhe o status em tempo real</p>
+        </div>
+        
+        <div style="padding: 20px; flex: 1; overflow-y: auto;">
+            
+            <!-- Clube de Fidelidade -->
+            <div style="background: linear-gradient(135deg, #333, #555); border-radius: 15px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                <div style="font-size: 2.5rem; background: rgba(255,255,255,0.1); width: 65px; height: 65px; display: flex; justify-content: center; align-items: center; border-radius: 50%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);">🎁</div>
+                <div>
+                    <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; color: #ffeb3b;">Clube Fidelidade</h3>
+                    <p style="margin: 0; font-size: 0.95rem; opacity: 0.9;">Você tem <strong id="rastreio-fidelidade-qtd" style="font-size: 1.3rem; color: white;">0</strong> pedidos com a gente!</p>
+                </div>
+            </div>
+
+            <!-- Timeline do Pedido -->
+            <div style="background: white; border-radius: 15px; padding: 25px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <h3 style="margin: 0 0 20px 0; color: #333; text-align: center; font-size: 1.1rem;">Status do Pedido</h3>
+                
+                <div class="timeline-rastreio">
+                    <div class="step-rastreio" id="step-pendente">
+                        <div class="icon-rastreio">🕒</div>
+                        <div class="text-rastreio">Aguardando aceitação</div>
+                    </div>
+                    <div class="step-rastreio" id="step-preparando">
+                        <div class="icon-rastreio">👨‍🍳</div>
+                        <div class="text-rastreio">Em produção</div>
+                    </div>
+                    <div class="step-rastreio" id="step-entrega">
+                        <div class="icon-rastreio">🛵</div>
+                        <div class="text-rastreio">Saiu para entrega</div>
+                    </div>
+                    <div class="step-rastreio" id="step-entregue">
+                        <div class="icon-rastreio">✅</div>
+                        <div class="text-rastreio">Entregue / Finalizado</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="fecharTelaRastreio()" style="width: 100%; margin-top: 25px; padding: 15px; border-radius: 12px; border: 2px solid var(--cor-primaria); background: transparent; color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;">Fazer um Novo Pedido</button>
+        </div>
+    </div>
+
     <script src="/cardapio/app.js?v=106"></script>
 
 </body>

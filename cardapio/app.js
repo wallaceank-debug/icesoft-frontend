@@ -693,9 +693,16 @@ async function salvarVendaDelivery() {
     }
 }
 
+// ==========================================
+// 📲 ENVIO PARA O WHATSAPP E RASTREIO
+// ==========================================
+let rastreioIntervalo = null;
+let rastreioPedidoId = null;
+let rastreioTelefoneCliente = "";
+
 async function processarEnvioWhatsApp() {
     const nome = document.getElementById('cliente-nome').value.trim();
-    const telefoneCliente = document.getElementById('cliente-telefone').value.trim();
+    rastreioTelefoneCliente = document.getElementById('cliente-telefone').value.trim();
     const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
     const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
     
@@ -717,7 +724,7 @@ async function processarEnvioWhatsApp() {
 
     let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
     textoPedido += `👤 *Cliente:* ${nome}\n`;
-    textoPedido += `📱 *WhatsApp:* ${telefoneCliente}\n`;
+    textoPedido += `📱 *WhatsApp:* ${rastreioTelefoneCliente}\n`;
     textoPedido += `${enderecoFormatado}\n`;
     
     let txtPagamento = `💳 *Pagamento:* ${pagamento}`;
@@ -751,11 +758,103 @@ async function processarEnvioWhatsApp() {
     
     textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
 
-    window.location.href = `https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`;
+    // 🚀 A MÁGICA DE ABRIR EM NOVA ABA E ACIONAR O RASTREIO
+    window.open(`https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`, '_blank');
     
     carrinho = []; 
     atualizarBarraCarrinho(); 
     fecharModalCheckout();
+    
+    // Inicia a super experiência do usuário
+    abrirTelaRastreio();
+}
+
+// ==========================================
+// 📡 RADAR DE RASTREIO E FIDELIDADE
+// ==========================================
+async function abrirTelaRastreio() {
+    document.getElementById('modal-rastreio').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    try {
+        // Puxa as vendas para achar o ID exato desse pedido recém-criado e contar a fidelidade
+        const res = await fetch(`${API_URL}/vendas`);
+        const vendas = await res.json();
+        
+        // Filtra pelo telefone do cliente atual
+        const comprasDesteCliente = vendas.filter(v => v.cliente_telefone === rastreioTelefoneCliente);
+        
+        if (comprasDesteCliente.length > 0) {
+            // O pedido mais recente é o de maior ID
+            const ultimoPedido = comprasDesteCliente.reduce((max, p) => p.id > max.id ? p : max, comprasDesteCliente[0]);
+            rastreioPedidoId = ultimoPedido.id;
+            
+            // Atualiza a bolha do CRM Fidelidade
+            document.getElementById('rastreio-fidelidade-qtd').innerText = comprasDesteCliente.length;
+            
+            // Atualiza a cor visual na tela
+            atualizarStatusVisualRastreio(ultimoPedido.status);
+            
+            // Liga o radar (Busca no servidor a cada 10 segundos)
+            if(rastreioIntervalo) clearInterval(rastreioIntervalo);
+            rastreioIntervalo = setInterval(buscarStatusAtualizado, 10000);
+        }
+    } catch (e) {
+        console.log("Erro ao iniciar o radar de rastreio.", e);
+    }
+}
+
+async function buscarStatusAtualizado() {
+    if (!rastreioPedidoId) return;
+    try {
+        const res = await fetch(`${API_URL}/vendas`);
+        const vendas = await res.json();
+        const pedidoVigiado = vendas.find(v => v.id === rastreioPedidoId);
+        
+        if (pedidoVigiado) {
+            atualizarStatusVisualRastreio(pedidoVigiado.status);
+        }
+    } catch(e) {}
+}
+
+function atualizarStatusVisualRastreio(statusKanban) {
+    const passos = ['step-pendente', 'step-preparando', 'step-entrega', 'step-entregue'];
+    
+    // Zera tudo
+    passos.forEach(p => document.getElementById(p).classList.remove('ativo', 'concluido'));
+
+    let nivelAtivo = 0;
+    const statusLimpo = statusKanban ? statusKanban.trim() : '';
+
+    if (statusLimpo === 'Pendente Delivery') nivelAtivo = 0;
+    else if (statusLimpo === 'A Preparar') nivelAtivo = 1;
+    else if (statusLimpo === 'Saiu p/ Entrega') nivelAtivo = 2;
+    else if (statusLimpo === 'Entregue') nivelAtivo = 3;
+    else if (statusLimpo === 'Cancelado') {
+        document.getElementById('step-pendente').innerHTML = '<div class="icon-rastreio" style="background:#f44336; color:white;">❌</div><div class="text-rastreio" style="color:#f44336;">Pedido Cancelado</div>';
+        document.getElementById('step-pendente').classList.add('ativo');
+        if(rastreioIntervalo) clearInterval(rastreioIntervalo);
+        return;
+    }
+
+    // Pinta de verde (concluído) tudo o que ficou para trás
+    for (let i = 0; i < nivelAtivo; i++) {
+        document.getElementById(passos[i]).classList.add('concluido');
+    }
+    
+    // Pinta de laranja piscante o passo atual
+    document.getElementById(passos[nivelAtivo]).classList.add('ativo');
+    
+    // Se foi entregue, desliga o radar para economizar internet do cliente
+    if (nivelAtivo === 3 && rastreioIntervalo) {
+        clearInterval(rastreioIntervalo);
+    }
+}
+
+function fecharTelaRastreio() {
+    document.getElementById('modal-rastreio').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    if(rastreioIntervalo) clearInterval(rastreioIntervalo);
 }
 
 async function carregarConfiguracoesLoja() {
