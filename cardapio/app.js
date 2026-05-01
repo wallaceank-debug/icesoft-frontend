@@ -522,7 +522,8 @@ function validarPasso2() {
 
 function construirResumoPasso3() {
     const nome = document.getElementById('cliente-nome').value.trim();
-    const tel = document.getElementById('cliente-telefone').value.trim();
+    // 🚀 Passando pelo Padronizador
+    const tel = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     const tipo = document.querySelector('input[name="tipo_entrega"]:checked').value;
     const pag = document.querySelector('input[name="forma_pag"]:checked').value;
     
