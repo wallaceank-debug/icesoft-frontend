@@ -300,9 +300,16 @@
                 <!-- PASSO 1: IDENTIFICAÇÃO E ENTREGA -->
                 <div id="checkout-passo-1" class="checkout-passo ativo">
                     <div class="secao-checkout">
-                        <h4>Seus Dados</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="margin: 0;">Seus Dados</h4>
+                            <span id="badge-crm" style="display: none; background: #25D366; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3); animation: pulseRastreio 2s infinite;">✅ Cliente Encontrado</span>
+                        </div>
+                        
+                        <!-- Telefone primeiro para ativar o gatilho -->
+                        <input type="tel" id="cliente-telefone" class="input-clean" placeholder="WhatsApp (Ex: 24 99999-9999)" autocomplete="tel" style="font-size: 1.1rem; font-weight: bold; letter-spacing: 1px;">
+                        
+                        <!-- Nome vem depois -->
                         <input type="text" id="cliente-nome" class="input-clean" placeholder="Nome Completo" autocomplete="name">
-                        <input type="tel" id="cliente-telefone" class="input-clean" placeholder="WhatsApp (Ex: 24 99999-9999)" autocomplete="tel">
                     </div>
 
                     <div class="secao-checkout">
