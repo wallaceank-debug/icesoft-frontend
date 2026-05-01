@@ -718,7 +718,8 @@ let rastreioTelefoneCliente = "";
 
 async function processarEnvioWhatsApp() {
     const nome = document.getElementById('cliente-nome').value.trim();
-    rastreioTelefoneCliente = document.getElementById('cliente-telefone').value.trim();
+    // 🚀 Passando para o Rastreio/WhatsApp padronizado
+    rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
     const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
     
@@ -774,14 +775,12 @@ async function processarEnvioWhatsApp() {
     
     textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
 
-    // 🚀 A MÁGICA DE ABRIR EM NOVA ABA E ACIONAR O RASTREIO
     window.open(`https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`, '_blank');
     
     carrinho = []; 
     atualizarBarraCarrinho(); 
     fecharModalCheckout();
     
-    // Inicia a super experiência do usuário
     abrirTelaRastreio();
 }
 
