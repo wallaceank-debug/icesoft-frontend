@@ -10,7 +10,7 @@ const COLUNAS_ID = {
 
 let pedidosGlobais = []; 
 let qtdPendentesAnterior = -1; 
-let pedidosJaImpressos = []; // 🖨️ Memória da impressora
+let pedidosJaImpressos = []; 
 
 async function carregarPedidos() {
     try {
@@ -32,7 +32,6 @@ async function carregarPedidos() {
             return true; 
         });
 
-        // 🛎️ LÓGICA DA CAMPAINHA
         const pendentesAgora = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery');
         const qtdPendentesAtual = pendentesAgora.length;
 
@@ -41,7 +40,6 @@ async function carregarPedidos() {
         }
         qtdPendentesAnterior = qtdPendentesAtual;
         
-        // 🖨️ LÓGICA DA IMPRESSÃO AUTOMÁTICA
         pendentesAgora.forEach(pedido => {
             if (!pedidosJaImpressos.includes(pedido.id)) {
                 imprimirComandaKanban(pedido);
@@ -56,9 +54,6 @@ async function carregarPedidos() {
     }
 }
 
-// ==========================================
-// 🛎️ SISTEMA DE ALERTA SONORO PROFISSIONAL
-// ==========================================
 let somAtivado = false;
 const audioCampainha = new Audio('https://www.myinstants.com/media/sounds/bell.mp3');
 
@@ -90,6 +85,41 @@ function tocarCampainha() {
     } catch(e) {
         console.log("Erro ao tocar a campainha:", e);
     }
+}
+
+// 🧮 FUNÇÃO NOVA: CALCULADORA DE TROCO INTELIGENTE
+function formatarPagamentoComTroco(pagamentoOriginal, valorTotal) {
+    if (!pagamentoOriginal) return 'N/A';
+    
+    const textoPagamento = pagamentoOriginal.toString();
+    
+    if (textoPagamento.includes('Troco para')) {
+        try {
+            const regex = /Troco para ([\d.,]+)/i;
+            const match = textoPagamento.match(regex);
+            
+            if (match && match[1]) {
+                const valorParaTroco = parseFloat(match[1].replace(',', '.'));
+                const totalPedido = parseFloat(valorTotal);
+                
+                if (!isNaN(valorParaTroco) && !isNaN(totalPedido)) {
+                    const valorTrocoCalculado = valorParaTroco - totalPedido;
+                    
+                    if (valorTrocoCalculado > 0) {
+                        return `Dinheiro (Levar R$ ${valorTrocoCalculado.toFixed(2).replace('.', ',')} de troco)`;
+                    } else if (valorTrocoCalculado === 0) {
+                        return `Dinheiro (Sem troco)`;
+                    } else {
+                        return `Dinheiro (⚠️ Troco solicitado é MENOR que o pedido)`;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao calcular o troco:", e);
+        }
+    }
+    
+    return textoPagamento;
 }
 
 function renderizarKanban(pedidos) {
@@ -141,6 +171,9 @@ function renderizarKanban(pedidos) {
         const horaVenda = pedido.data_hora ? new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Hoje';
         const obsHtml = pedido.observacoes ? `<div style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px;"><strong>📝 Obs:</strong> ${pedido.observacoes}</div>` : '';
 
+        // 🧮 USA O TRADUTOR DE TROCO AQUI!
+        const pagamentoDisplay = formatarPagamentoComTroco(pedido.forma_pagamento, pedido.valor_total);
+
         const cardHtml = `
             <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--cor-borda, #ccc); display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; align-items: center;">
@@ -148,7 +181,6 @@ function renderizarKanban(pedidos) {
                     <div style="display: flex; gap: 5px;">
                         <span style="color: #888; font-size: 0.8rem; background: #f0f2f5; padding: 4px 8px; border-radius: 10px;">⏱️ ${horaVenda}</span>
                         
-                        <!-- 🖨️ O NOVO BOTÃO DE IMPRIMIR NA MÃO -->
                         <button onclick="imprimirComandaKanban(pedidosGlobais.find(v => v.id === ${pedido.id}))" style="background: #e0e0e0; color: #333; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;" title="Reimprimir Comanda">🖨️</button>
                         
                         <button onclick="abrirDetalhes(${pedido.id})" style="background: #333; color: white; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🔍</button>
@@ -160,9 +192,11 @@ function renderizarKanban(pedidos) {
                     ${obsHtml} 
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px; border-radius: 8px;">
-                    <span style="font-size: 0.75rem; background: #e0e0e0; color: #333; padding: 4px 8px; border-radius: 10px; font-weight: bold;">💳 ${pedido.forma_pagamento || 'N/A'}</span>
-                    <strong style="color: #e91e63; font-size: 1.1rem;">R$ ${Number(pedido.valor_total).toFixed(2).replace('.', ',')}</strong>
+                <div style="display: flex; flex-direction: column; background: #fafafa; padding: 8px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <strong style="color: #e91e63; font-size: 1.1rem;">R$ ${Number(pedido.valor_total).toFixed(2).replace('.', ',')}</strong>
+                    </div>
+                    <span style="font-size: 0.8rem; color: #333; font-weight: bold; margin-top: 4px; border-top: 1px dashed #ccc; padding-top: 4px;">💳 ${pagamentoDisplay}</span>
                 </div>
 
                 <div style="display: flex; gap: 8px; margin-top: 5px;">
@@ -199,18 +233,18 @@ async function mudarStatus(id, novoStatus) {
     }
 }
 
-// ==========================================
-// MÁGICA DA JANELA DE DETALHES
-// ==========================================
 function abrirDetalhes(id) {
     const pedido = pedidosGlobais.find(p => p.id === id);
     if (!pedido) return;
+
+    // 🧮 USA O TRADUTOR DE TROCO AQUI TAMBÉM!
+    const pagamentoDisplay = formatarPagamentoComTroco(pedido.forma_pagamento, pedido.valor_total);
 
     document.getElementById('detalhe-id').innerText = `#${pedido.id}`;
     document.getElementById('detalhe-nome').innerText = pedido.cliente_nome || "Não informado";
     document.getElementById('detalhe-telefone').innerText = pedido.cliente_telefone || "Não informado";
     document.getElementById('detalhe-endereco').innerText = pedido.cliente_endereco || "Retirada Balcão / Não informado";
-    document.getElementById('detalhe-pagamento').innerText = pedido.forma_pagamento || "N/A";
+    document.getElementById('detalhe-pagamento').innerText = pagamentoDisplay;
     document.getElementById('detalhe-total').innerText = `R$ ${Number(pedido.valor_total).toFixed(2).replace('.', ',')}`;
 
     let itensHtml = "";
@@ -244,9 +278,6 @@ function fecharDetalhes() {
     document.getElementById('modal-detalhes').style.display = 'none';
 }
 
-// ==========================================
-// 🖨️ MOTOR DE IMPRESSÃO TÉRMICA (80mm)
-// ==========================================
 function imprimirComandaKanban(venda) {
     if(!venda) return;
     const areaImpressao = document.getElementById('cupom-kanban');
@@ -268,6 +299,9 @@ function imprimirComandaKanban(venda) {
     });
 
     const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
+    
+    // 🧮 E, CLARO, NA IMPRESSORA TAMBÉM!
+    const pagamentoDisplay = formatarPagamentoComTroco(venda.forma_pagamento, venda.valor_total);
     
     areaImpressao.innerHTML = `
         <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; text-align: center;">
@@ -295,8 +329,9 @@ function imprimirComandaKanban(venda) {
             <strong>TOTAL: R$ ${Number(venda.valor_total).toFixed(2).replace('.',',')}</strong>
         </div>
         
-        <div style="margin-bottom: 10px; font-size: 16px;">
-            <strong>Pagamento:</strong> ${venda.forma_pagamento || '---'}<br>
+        <div style="margin-bottom: 10px; font-size: 16px; border-top: 2px dashed black; padding-top: 10px;">
+            <strong>PAGAMENTO:</strong><br> 
+            <span style="font-size: 18px; font-weight: bold;">${pagamentoDisplay}</span><br>
             ${venda.observacoes && venda.observacoes !== 'null' ? `<div style="margin-top: 10px; border: 2px solid black; padding: 5px;"><strong>⚠️ OBSERVAÇÃO:</strong><br>${venda.observacoes}</div>` : ''}
         </div>
         <div style="text-align: center; margin-top: 20px; font-size: 12px;">
