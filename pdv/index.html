@@ -10,7 +10,6 @@
 <body>
 
     <aside class="menu-lateral">
-    <!-- Deixei a logo centralizada, mas ela some ou muda quando retrai -->
     <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">DirectMenu</span></h2>
     
     <a href="../pdv/" class="menu-item">
@@ -38,7 +37,6 @@
         <span class="menu-texto">Painel Kanban</span>
     </a>
     
-    <!-- BLOCO DE RELATÓRIOS COM GAVETA -->
     <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
             <span class="menu-icone">📊</span>
@@ -54,7 +52,6 @@
 </aside>
 
 <script>
-    // Função limpa e única
     function toggleRelatorios() {
         const submenu = document.getElementById('submenu-relatorios');
         submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
@@ -100,20 +97,9 @@
             
             <section class="painel-esquerdo">
                 
-                <!-- FIX DE ENQUADRAMENTO (NÃO ESMAGAR BOTÕES) -->
                 <style>
-                    .barra-categorias {
-                        display: flex;
-                        overflow-x: auto; /* Permite rolar para o lado */
-                        gap: 10px;
-                        padding-bottom: 10px;
-                        flex-shrink: 0; /* Protege a barra inteira de ser esmagada */
-                    }
-                    .categoria-btn {
-                        flex-shrink: 0 !important; /* A MÁGICA: Proíbe o botão de encolher */
-                        white-space: nowrap !important; /* Impede o texto de quebrar de linha */
-                    }
-                    /* Barra de rolagem elegante para os filtros */
+                    .barra-categorias { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; flex-shrink: 0; }
+                    .categoria-btn { flex-shrink: 0 !important; white-space: nowrap !important; }
                     .barra-categorias::-webkit-scrollbar { height: 6px; }
                     .barra-categorias::-webkit-scrollbar-thumb { background: #00bcd4; border-radius: 10px; }
                 </style>
@@ -152,19 +138,12 @@
                     <div class="linha-total total-final"><span>Total a Cobrar</span> <strong id="pdv-total">R$ 0,00</strong></div>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin: 15px 10px 20px 10px;">
-    
-                    <button class="btn-cancelar" style="flex: 1; padding: 12px 5px; border-radius: 8px; border: none; background: #ff5252; color: white; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s;">
-                        Cancelar
-                    </button>
-                    
-                    <button onclick="abrirModalTransferirMesa()" style="flex: 1; padding: 12px 5px; border-radius: 8px; border: none; background: #00acc1; color: white; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s;">
-                        Mesa
-                    </button>
-                    
-                    <button class="btn-cobrar" style="flex: 1.2; padding: 12px 5px; border-radius: 8px; border: none; background: #00c853; color: white; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s;">
-                        Cobrar (F12)
-                    </button>
+                <!-- 🚀 BARRA DE BOTÕES INFERIOR COM O NOVO BOTÃO DE DELIVERY 🚀 -->
+                <div class="area-botoes-acao">
+                    <button class="btn-acao btn-cancelar" onclick="limparCarrinho()">Cancelar</button>
+                    <button class="btn-acao btn-mesa" onclick="abrirModalTransferirMesa()">Mesa</button>
+                    <button class="btn-acao btn-cobrar" onclick="abrirModalCheckout()">Cobrar (F12)</button>
+                    <button class="btn-acao btn-delivery" onclick="abrirModalDeliveryPDV()">Delivery</button>
                 </div>
 
             </aside>
@@ -172,14 +151,11 @@
         </main>
     </div> 
 
+    <!-- Modais Originais -->
     <div id="modal-opcoes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000;">
         <div style="background:white; width:90%; max-width:500px; border-radius:20px; padding:25px; max-height:90vh; overflow-y:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px;">
-            </div>
-
-            <div id="container-grupos-opcoes">
-            </div>
-
+            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px;"></div>
+            <div id="container-grupos-opcoes"></div>
             <div style="margin-top:20px; padding:20px; background:#e0f7fa; border-radius:15px; display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <span style="font-size:0.9rem; color:#555;">Total deste item:</span><br>
@@ -202,7 +178,6 @@
                 <div id="checkout-total" style="color:#e91e63; font-size:2rem; font-weight:bold;">R$ 0,00</div>
             </div>
 
-            <!-- NOVO SISTEMA DE PAGAMENTO (SIMPLES E DIVIDIDO) -->
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #eee;">
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 1</label>
                 <select id="checkout-metodo-1" class="input-padrao" style="width:100%; margin-top:5px; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoPagamento()">
@@ -219,7 +194,6 @@
                 + Dividir em 2 Pagamentos
             </button>
 
-            <!-- Pagamento 2 (Oculto por padrão) -->
             <div id="area-pagamento-2" style="display:none; background:#f0f4f8; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px dashed #90caf9;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                     <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 2</label>
@@ -242,7 +216,6 @@
                     Troco a devolver: <span id="checkout-troco" style="color:#25D366; font-size:1.2rem;">R$ 0,00</span>
                 </div>
             </div>
-            <!-- FIM DO NOVO SISTEMA -->
 
             <div style="margin-bottom: 20px; text-align: left; background: #e0f7fa; padding: 10px; border-radius: 8px;">
                 <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; color: #00838f;">
@@ -252,52 +225,95 @@
             </div>
 
             <div class="modal-botoes" style="display: flex; gap: 10px;">
-                <button onclick="fecharModalCheckout()" class="btn-cancelar" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
-                <button onclick="finalizarVendaPDV()" class="btn-salvar" style="flex: 2; padding: 12px; font-size: 1.1rem; background-color: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">💰 Concluir (Enter)</button>
+                <button onclick="fecharModalCheckout()" class="btn-cancelar btn-acao" style="background: #f0f0f0; color: #333;">Voltar</button>
+                <button onclick="finalizarVendaPDV()" class="btn-cobrar btn-acao" style="flex: 2; border-radius: 8px;">💰 Concluir (Enter)</button>
             </div>
         </div>
     </div>
 
-    <div id="cupom-impressao" style="display:none; padding: 10px;">
-    </div>
-
+    <!-- Modais do Caixa, Movimentação e Mesa Originais -->
+    <div id="cupom-impressao" style="display:none; padding: 10px;"></div>
     <div id="modal-caixa" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2500;">
-        <div id="conteudo-modal-caixa" style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;">
-            </div>
+        <div id="conteudo-modal-caixa" style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;"></div>
     </div>
-
     <div id="modal-movimentacao" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:2600;">
         <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center;">
             <h2 id="titulo-movimentacao" style="color:#333; margin-top:0;">Nova Movimentação</h2>
-            
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Valor (R$)</label>
                 <input type="number" id="input-valor-mov" class="input-padrao" placeholder="Ex: 50.00" style="width:100%; margin-top:5px; font-size:1.5rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
             </div>
-
             <div style="text-align: left; margin-bottom: 20px;">
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Motivo / Observação</label>
                 <input type="text" id="input-motivo-mov" class="input-padrao" placeholder="Ex: Compra de Gelo" style="width:100%; margin-top:5px; font-size:1.1rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
             </div>
-
             <div style="display: flex; gap: 10px;">
                 <button onclick="document.getElementById('modal-movimentacao').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Cancelar</button>
                 <button id="btn-salvar-mov" onclick="salvarMovimentacao()" style="flex: 2; padding: 12px; font-size: 1.1rem; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Salvar</button>
             </div>
         </div>
     </div>
-    
     <div id="modal-transferir-mesa" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 9999;">
-    <div style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-        <h2 style="margin-top: 0; color: #333; text-align: center;">🍽️ Transferir para Mesa</h2>
-        <p style="color: #666; text-align: center; margin-bottom: 20px;">Selecione uma mesa <strong>LIVRE</strong> para enviar este pedido:</p>
-        
-        <div id="grid-mesas-livres" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; max-height: 300px; overflow-y: auto; padding-right: 5px;">
+        <div style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+            <h2 style="margin-top: 0; color: #333; text-align: center;">🍽️ Transferir para Mesa</h2>
+            <p style="color: #666; text-align: center; margin-bottom: 20px;">Selecione uma mesa <strong>LIVRE</strong> para enviar este pedido:</p>
+            <div id="grid-mesas-livres" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; max-height: 300px; overflow-y: auto; padding-right: 5px;"></div>
+            <button onclick="fecharModalTransferirMesa()" style="width: 100%; padding: 12px; margin-top: 20px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer; font-weight: bold; color: #555;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         NOVO MODAL DE LANÇAMENTO DELIVERY (PDV)
+         ========================================== -->
+    <div id="modal-delivery-pdv" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:9999;">
+        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width:500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                <h2 style="margin:0; color:#6200ea; display: flex; align-items: center; gap: 10px;">🛵 Lançar Delivery</h2>
+                <button onclick="fecharModalDeliveryPDV()" style="background:none; border:none; font-size:1.8rem; cursor:pointer; color:#999;">&times;</button>
             </div>
 
-        <button onclick="fecharModalTransferirMesa()" style="width: 100%; padding: 12px; margin-top: 20px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer; font-weight: bold; color: #555;">Cancelar</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label style="font-weight: bold; color: #555; font-size: 0.9rem;">📱 WhatsApp Cliente</label>
+                <span id="badge-crm-pdv" style="display: none; background: #25D366; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">✅ Encontrado</span>
+            </div>
+            <input type="tel" id="pdv-cliente-telefone" placeholder="(24) 99999-9999" style="width:100%; padding:12px; border:2px solid #ddd; border-radius:8px; margin-bottom:15px; font-size: 1.1rem; font-weight: bold; outline: none; box-sizing: border-box;">
+
+            <label style="font-weight: bold; color: #555; font-size: 0.9rem;">👤 Nome Completo</label>
+            <input type="text" id="pdv-cliente-nome" placeholder="Ex: Wallace Santos" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-bottom:15px; font-size: 1rem; outline: none; box-sizing: border-box;">
+
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 15px;">
+                <label style="font-weight: bold; color: #555; font-size: 0.9rem;">📍 Endereço de Entrega</label>
+                <input type="text" id="pdv-cliente-bairro" placeholder="Bairro" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top: 5px; margin-bottom:10px; font-size: 0.95rem; box-sizing: border-box;">
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="pdv-cliente-rua" placeholder="Rua" style="flex: 2; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; box-sizing: border-box;">
+                    <input type="text" id="pdv-cliente-numero" placeholder="Nº" style="flex: 1; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; box-sizing: border-box;">
+                </div>
+                <input type="text" id="pdv-cliente-complemento" placeholder="Complemento / Referência" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; box-sizing: border-box;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label style="font-weight: bold; color: #555; font-size: 0.9rem;">💳 Pagamento</label>
+                    <select id="pdv-forma-pagamento" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; margin-top: 5px;">
+                        <option value="Dinheiro">💵 Dinheiro</option>
+                        <option value="Pix">💠 Pix</option>
+                        <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                        <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight: bold; color: #555; font-size: 0.9rem;">💵 Troco p/ (Opcional)</label>
+                    <input type="text" id="pdv-cliente-troco" placeholder="Ex: 50" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; margin-top: 5px; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
+                <button onclick="fecharModalDeliveryPDV()" style="padding: 10px 15px; background: #eee; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+                <button onclick="finalizarDeliveryPDV()" style="padding: 10px 20px; background: #6200ea; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 10px rgba(98, 0, 234, 0.3);">🚀 Enviar p/ Cozinha</button>
+            </div>
+        </div>
     </div>
-</div>
 
     <script src="app.js"></script>
 </body>

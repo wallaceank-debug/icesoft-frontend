@@ -11,7 +11,6 @@ let escolhasAtuais = [];
 let subtotalGlobalPDV = 0;
 let caixaAtual = { id: null, status: 'Fechado' };
 
-// Memória dos Descontos e Acréscimos
 let descontoGlobal = 0;
 let acrescimoGlobal = 0;
 let totalFinalGlobal = 0; 
@@ -48,7 +47,6 @@ async function carregarDadosIniciais() {
 // ==========================================
 // FILTROS E CATEGORIAS DINÂMICAS
 // ==========================================
-
 function renderizarBotoesCategoria() {
     const nav = document.getElementById('barra-categorias');
     nav.innerHTML = '';
@@ -88,7 +86,6 @@ function renderizarGradeProdutos(lista) {
     }
 
     lista.forEach(p => {
-        // 📸 LÓGICA DA FOTO: Se tiver imagem_url, exibe a foto. Se não, exibe o emoji.
         const visualProduto = p.imagem_url 
             ? `<img src="${p.imagem_url}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`
             : `<div class="pdv-emoji" style="height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 8px;">${p.emoji || '🍨'}</div>`;
@@ -108,7 +105,6 @@ function renderizarGradeProdutos(lista) {
 // ==========================================
 // LÓGICA DE ADIÇÃO E MODAL (ADICIONAIS)
 // ==========================================
-
 function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
@@ -176,7 +172,6 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
         chk.checked = false;
     } else {
         const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
-        
         if (grupo.limite === 1) {
             if (escolhasNoGrupo.length > 0) {
                 const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
@@ -187,7 +182,6 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
             alert(`Limite de ${grupo.limite} itens atingido para este grupo.`);
             return;
         }
-        
         escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco) });
         chk.checked = true;
     }
@@ -206,7 +200,6 @@ function confirmarEscolhasEAdicionar() {
     const nomeBase = produtoEmSelecao.nome;
     const listaAdicionais = escolhasAtuais.map(e => e.nome);
     const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
-    
     adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal);
     fecharModalOpcoes();
 }
@@ -214,7 +207,6 @@ function confirmarEscolhasEAdicionar() {
 // ==========================================
 // MÓDULO DE DESCONTOS E ACRÉSCIMOS
 // ==========================================
-
 function pedirDesconto() {
     let valor = prompt("✏️ Digite o valor do DESCONTO em R$ (Ex: 5.50)\n(Ou deixe em branco para zerar):");
     if (valor !== null) {
@@ -252,7 +244,6 @@ function atualizarTotais() {
 // ==========================================
 // GESTÃO DO CARRINHO
 // ==========================================
-
 function adicionarAoCarrinho(nomeBase, adicionais, preco) {
     carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1 });
     renderizarCarrinho();
@@ -278,13 +269,10 @@ function renderizarCarrinho() {
 
     carrinho.forEach((item, index) => {
         subtotal += item.preco;
-
         let htmlAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
             htmlAdicionais = item.adicionais.map(adc => `
-                <div style="color: #666; font-size: 0.85rem; padding-left: 25px; margin-top: 3px;">
-                    + ${adc}
-                </div>
+                <div style="color: #666; font-size: 0.85rem; padding-left: 25px; margin-top: 3px;">+ ${adc}</div>
             `).join('');
         }
 
@@ -317,13 +305,9 @@ function limparCarrinho() {
     }
 }
 
-document.querySelector('.btn-limpar').onclick = limparCarrinho;
-document.querySelector('.btn-cancelar').onclick = limparCarrinho;
-
 // ==========================================
 // SISTEMA DE COBRANÇA (CHECKOUT DIVIDIDO)
 // ==========================================
-
 let isPagamentoDividido = false;
 
 function abrirModalCheckout() {
@@ -332,15 +316,13 @@ function abrirModalCheckout() {
     }
     
     document.getElementById('checkout-total').innerText = `R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}`;
-    
-    // Reset da interface para o padrão (1 Pagamento)
     isPagamentoDividido = false;
     document.getElementById('area-pagamento-2').style.display = 'none';
     document.getElementById('btn-add-pagamento').style.display = 'block';
     
     document.getElementById('checkout-metodo-1').value = 'Dinheiro';
     document.getElementById('checkout-valor-1').value = totalFinalGlobal.toFixed(2);
-    document.getElementById('checkout-valor-1').readOnly = true; // Trava o valor no total
+    document.getElementById('checkout-valor-1').readOnly = true; 
     
     document.getElementById('checkout-recebido').value = '';
     document.getElementById('checkout-troco').innerText = 'R$ 0,00';
@@ -367,13 +349,13 @@ function togglePagamentoDividido() {
     if (isPagamentoDividido) {
         areaPag2.style.display = 'block';
         btnAdd.style.display = 'none';
-        inputValor1.readOnly = false; // Destrava para o operador digitar o primeiro valor
+        inputValor1.readOnly = false; 
         inputValor1.focus();
         inputValor1.select();
     } else {
         areaPag2.style.display = 'none';
         btnAdd.style.display = 'block';
-        inputValor1.readOnly = true; // Trava novamente
+        inputValor1.readOnly = true; 
     }
     calcularTroco();
     verificarMetodoPagamento();
@@ -384,35 +366,32 @@ function verificarMetodoPagamento() {
     const m2 = isPagamentoDividido ? document.getElementById('checkout-metodo-2').value : null;
     const areaTroco = document.getElementById('area-troco');
     
-    // Se ALGUM dos métodos for Dinheiro, mostra a área de troco
     if (m1 === 'Dinheiro' || m2 === 'Dinheiro') {
         areaTroco.style.display = 'block';
     } else {
         areaTroco.style.display = 'none';
-        document.getElementById('checkout-recebido').value = ''; // zera para não bugar o caixa
+        document.getElementById('checkout-recebido').value = ''; 
     }
     calcularTroco();
 }
 
 function calcularTroco() {
-    // 1. Matemática da Divisão de Pagamento
     let v1 = parseFloat(document.getElementById('checkout-valor-1').value) || 0;
     
     if (v1 > totalFinalGlobal) {
-        v1 = totalFinalGlobal; // Não deixa digitar mais que o total na parcela 1
+        v1 = totalFinalGlobal; 
         document.getElementById('checkout-valor-1').value = v1.toFixed(2);
     }
     
     let v2 = 0;
     if (isPagamentoDividido) {
         v2 = totalFinalGlobal - v1;
-        document.getElementById('checkout-valor-2').value = v2.toFixed(2); // Calcula o resto automático
+        document.getElementById('checkout-valor-2').value = v2.toFixed(2); 
     } else {
         v1 = totalFinalGlobal;
         document.getElementById('checkout-valor-1').value = v1.toFixed(2);
     }
 
-    // 2. Matemática do Troco em Dinheiro
     const m1 = document.getElementById('checkout-metodo-1').value;
     const m2 = isPagamentoDividido ? document.getElementById('checkout-metodo-2').value : null;
     
@@ -445,18 +424,14 @@ async function finalizarVendaPDV() {
     const v1 = parseFloat(document.getElementById('checkout-valor-1').value) || 0;
     let metodoFinalTexto = m1;
     
-    // Validações da divisão
     if (isPagamentoDividido) {
         const m2 = document.getElementById('checkout-metodo-2').value;
         const v2 = parseFloat(document.getElementById('checkout-valor-2').value) || 0;
-        
         if (v1 <= 0 || v2 <= 0) return alert("⚠️ Ambos os valores devem ser maiores que zero na divisão.");
         if (m1 === m2) return alert("⚠️ As duas formas de pagamento não podem ser iguais.");
-        
-        metodoFinalTexto = `${m1} e ${m2}`; // Formato amigável pro Dashboard
+        metodoFinalTexto = `${m1} e ${m2}`; 
     }
     
-    // Validação de Dinheiro vs Recebido
     let dinheiroEsperado = 0;
     if (m1 === 'Dinheiro') dinheiroEsperado += v1;
     if (isPagamentoDividido && document.getElementById('checkout-metodo-2').value === 'Dinheiro') {
@@ -473,7 +448,6 @@ async function finalizarVendaPDV() {
         trocoComprovante = recebido - dinheiroEsperado;
     }
 
-    // Montando dados para a Nuvem
     const itensFormatados = carrinho.map(item => {
         let nomeCompleto = "Balcão: " + item.nomeBase;
         if (item.adicionais && item.adicionais.length > 0) {
@@ -487,7 +461,7 @@ async function finalizarVendaPDV() {
         produto_nome: JSON.stringify(itensFormatados), 
         valor_total: totalFinalGlobal,
         total: totalFinalGlobal,
-        forma_pagamento: metodoFinalTexto, // Ex: "Dinheiro e PIX"
+        forma_pagamento: metodoFinalTexto, 
         status: "Concluída",
         origem: "Balcão"
     };
@@ -502,7 +476,6 @@ async function finalizarVendaPDV() {
         if (resposta.ok) {
             const querImprimir = document.getElementById('checkout-imprimir').checked;
             if (querImprimir) {
-                // Passa o recebido real se for dinheiro, se não, passa o total
                 const valorImpressao = dinheiroEsperado > 0 ? recebido : totalFinalGlobal; 
                 imprimirComanda(metodoFinalTexto, valorImpressao, trocoComprovante); 
             }
@@ -531,12 +504,9 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-document.querySelector('.btn-cobrar').onclick = abrirModalCheckout;
-
 // ==========================================
 // MÓDULO DE IMPRESSÃO (ELGIN i8 - 80mm)
 // ==========================================
-
 function imprimirComanda(metodoPagamento, valorRecebido, troco) {
     const cupom = document.getElementById('cupom-impressao');
     const dataHora = new Date().toLocaleString('pt-BR');
@@ -560,12 +530,8 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
     });
 
     let extraHtml = '';
-    if (descontoGlobal > 0) {
-        extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Desconto: - R$ ${descontoGlobal.toFixed(2).replace('.', ',')}</div>`;
-    }
-    if (acrescimoGlobal > 0) {
-        extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Acréscimo: + R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}</div>`;
-    }
+    if (descontoGlobal > 0) extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Desconto: - R$ ${descontoGlobal.toFixed(2).replace('.', ',')}</div>`;
+    if (acrescimoGlobal > 0) extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Acréscimo: + R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}</div>`;
 
     cupom.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
@@ -573,11 +539,9 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
             <p style="margin: 2px 0; font-size: 14px;">Cupom Não Fiscal</p>
             <p style="margin: 2px 0; font-size: 14px;">${dataHora}</p>
         </div>
-        
         <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin-bottom: 15px;">
             ${itensHtml}
         </div>
-        
         <div style="text-align: right; font-size: 15px;">
             <div style="font-size: 14px; color: #555;">Subtotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}</div>
             ${extraHtml}
@@ -585,7 +549,6 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
             Pagamento: ${metodoPagamento}<br>
             ${metodoPagamento === 'Dinheiro' ? `Recebido: R$ ${valorRecebido.toFixed(2).replace('.', ',')}<br>Troco: R$ ${troco.toFixed(2).replace('.', ',')}` : ''}
         </div>
-        
         <div style="text-align: center; margin-top: 20px; font-size: 14px;">
             <p style="margin: 2px 0;">Obrigado pela preferência!</p>
             <p style="margin: 2px 0;">~ Icesoft Sistema PDV ~</p>
@@ -598,7 +561,7 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
 }
 
 // ==========================================
-// CONTROLE DE CAIXA (Painel e Movimentações)
+// CONTROLE DE CAIXA
 // ==========================================
 let tipoMovimentacaoAtual = ''; 
 
@@ -641,75 +604,44 @@ function abrirPainelCaixa() {
         container.innerHTML = `
             <h2 style="color:#333; margin-top:0;">💵 Gerenciar Caixa</h2>
             <p style="color:#666; font-size:0.85rem; margin-bottom: 20px;">Aberto em: ${dataAbertura}</p>
-            
             <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
                 <button onclick="abrirModalMovimentacao('Suprimento')" style="padding: 15px; font-size: 1.1rem; background-color: #2196F3; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">➕ Suprimento (Entrada)</button>
                 <button onclick="abrirModalMovimentacao('Sangria')" style="padding: 15px; font-size: 1.1rem; background-color: #FF9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">➖ Sangria (Retirada)</button>
             </div>
-
             <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
-
             <button onclick="abrirTelaFechamento()" style="width: 100%; padding: 15px; font-size: 1.1rem; background-color: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🔒 INICIAR FECHAMENTO</button>
             <button onclick="document.getElementById('modal-caixa').style.display='none'" style="width: 100%; padding: 12px; margin-top: 10px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
         `;
     }
-
     document.getElementById('modal-caixa').style.display = 'flex';
 }
 
 async function abrirTelaFechamento() {
     const container = document.getElementById('conteudo-modal-caixa');
-    
-    container.innerHTML = `
-        <div style="text-align: center; padding: 30px;">
-            <h2 style="color:#333; margin-bottom: 10px;">⏳ Calculando...</h2>
-            <p style="color: #666;">Buscando vendas e movimentações no servidor.</p>
-        </div>
-    `;
+    container.innerHTML = `<div style="text-align: center; padding: 30px;"><h2 style="color:#333; margin-bottom: 10px;">⏳ Calculando...</h2><p style="color: #666;">Buscando vendas e movimentações no servidor.</p></div>`;
 
     try {
         const res = await fetch(`${API_URL}/caixa/resumo/${caixaAtual.id}`);
         const resumo = await res.json();
-        
         if (!res.ok) throw new Error(resumo.erro || "Falha ao calcular resumo");
 
         window.esperadoAtual = resumo.esperado; 
 
         container.innerHTML = `
             <h2 style="color:#333; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Conferência de Caixa</h2>
-
             <div style="text-align: left; margin-bottom: 20px; font-size: 0.95rem; color: #555;">
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>Abertura de Caixa (+)</span>
-                    <span style="color: #25D366; font-weight: bold;">R$ ${resumo.fundo.toFixed(2).replace('.', ',')}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>Vendas em Dinheiro (+)</span>
-                    <span style="color: #25D366; font-weight: bold;">R$ ${resumo.vendas_dinheiro.toFixed(2).replace('.', ',')}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>Reforços/Suprimento (+)</span>
-                    <span style="color: #2196F3; font-weight: bold;">R$ ${resumo.suprimentos.toFixed(2).replace('.', ',')}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>Retiradas/Sangrias (-)</span>
-                    <span style="color: #f44336; font-weight: bold;">R$ ${resumo.sangrias.toFixed(2).replace('.', ',')}</span>
-                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>Abertura de Caixa (+)</span><span style="color: #25D366; font-weight: bold;">R$ ${resumo.fundo.toFixed(2).replace('.', ',')}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>Vendas em Dinheiro (+)</span><span style="color: #25D366; font-weight: bold;">R$ ${resumo.vendas_dinheiro.toFixed(2).replace('.', ',')}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>Reforços/Suprimento (+)</span><span style="color: #2196F3; font-weight: bold;">R$ ${resumo.suprimentos.toFixed(2).replace('.', ',')}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>Retiradas/Sangrias (-)</span><span style="color: #f44336; font-weight: bold;">R$ ${resumo.sangrias.toFixed(2).replace('.', ',')}</span></div>
                 <hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">
-                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 1.1rem; color: #333;">
-                    <strong>Esperado na Gaveta</strong>
-                    <strong>R$ ${resumo.esperado.toFixed(2).replace('.', ',')}</strong>
-                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0; font-size: 1.1rem; color: #333;"><strong>Esperado na Gaveta</strong><strong>R$ ${resumo.esperado.toFixed(2).replace('.', ',')}</strong></div>
             </div>
-
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #ccc;">
                 <label style="color:#333; font-weight:700; font-size:1rem;">Dinheiro Real na Gaveta</label>
                 <input type="number" id="input-valor-caixa" class="input-padrao" placeholder="Ex: 150.00" style="width:100%; margin-top:10px; font-size:1.5rem; text-align: center; padding: 10px; border: 1px solid #00bcd4; border-radius: 8px; font-weight: bold;" onkeyup="calcularDiferencaCaixa()" onchange="calcularDiferencaCaixa()">
             </div>
-
-            <div id="area-diferenca" style="margin-bottom: 20px; font-size: 1.1rem; font-weight: bold; height: 25px;">
-            </div>
-
+            <div id="area-diferenca" style="margin-bottom: 20px; font-size: 1.1rem; font-weight: bold; height: 25px;"></div>
             <div style="display: flex; gap: 10px;">
                 <button onclick="abrirPainelCaixa()" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Voltar</button>
                 <button onclick="processarCaixa('fechar')" style="flex: 2; padding: 12px; font-size: 1rem; background-color: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🔒 CONFIRMAR</button>
@@ -738,7 +670,6 @@ async function processarCaixa(acao) {
             alert(`✅ Caixa ABERTO! Fundo: R$ ${valor.toFixed(2)}`);
         } else if (acao === 'fechar') {
             if(!confirm("Atenção: Conferiu os valores? O caixa será fechado definitivamente.")) return;
-            
             await fetch(`${API_URL}/caixa/fechar/${caixaAtual.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -746,7 +677,6 @@ async function processarCaixa(acao) {
             });
             alert(`🔒 Caixa FECHADO com sucesso!`);
         }
-        
         document.getElementById('modal-caixa').style.display = 'none';
         await verificarStatusCaixa(); 
     } catch (e) { alert("❌ Erro ao comunicar com o servidor."); }
@@ -756,11 +686,7 @@ function calcularDiferencaCaixa() {
     const valorInformado = parseFloat(document.getElementById('input-valor-caixa').value);
     const divDiferenca = document.getElementById('area-diferenca');
     
-    if (isNaN(valorInformado)) {
-        divDiferenca.innerHTML = "";
-        return;
-    }
-
+    if (isNaN(valorInformado)) { divDiferenca.innerHTML = ""; return; }
     const esperado = window.esperadoAtual || 0;
     const diferenca = valorInformado - esperado;
 
@@ -778,17 +704,13 @@ function abrirModalMovimentacao(tipo) {
     document.getElementById('titulo-movimentacao').innerText = `Registrar ${tipo}`;
     document.getElementById('input-valor-mov').value = '';
     document.getElementById('input-motivo-mov').value = '';
-    
-    const btn = document.getElementById('btn-salvar-mov');
-    btn.style.backgroundColor = (tipo === 'Sangria') ? '#FF9800' : '#2196F3';
-    
+    document.getElementById('btn-salvar-mov').style.backgroundColor = (tipo === 'Sangria') ? '#FF9800' : '#2196F3';
     document.getElementById('modal-movimentacao').style.display = 'flex';
 }
 
 async function salvarMovimentacao() {
     const valor = parseFloat(document.getElementById('input-valor-mov').value);
     const motivo = document.getElementById('input-motivo-mov').value;
-
     if (!valor || valor <= 0) return alert("Digite um valor válido!");
     if (!motivo) return alert("Informe o motivo da movimentação!");
 
@@ -796,137 +718,75 @@ async function salvarMovimentacao() {
         const resposta = await fetch(`${API_URL}/caixa/movimentacao`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                caixa_id: caixaAtual.id,
-                tipo: tipoMovimentacaoAtual,
-                valor: valor,
-                motivo: motivo
-            })
+            body: JSON.stringify({ caixa_id: caixaAtual.id, tipo: tipoMovimentacaoAtual, valor: valor, motivo: motivo })
         });
-
         if (resposta.ok) {
             alert(`✅ ${tipoMovimentacaoAtual} de R$ ${valor.toFixed(2)} registrada!`);
             document.getElementById('modal-movimentacao').style.display = 'none';
-        } else {
-            alert("Erro ao registrar no banco de dados.");
-        }
-    } catch (e) {
-        alert("Erro de conexão com o servidor.");
-    }
+        } else alert("Erro ao registrar no banco de dados.");
+    } catch (e) { alert("Erro de conexão com o servidor."); }
 }
 
 // ==========================================
-// 🏪 CONTROLE DE STATUS DA LOJA (COM TENTATIVAS AUTOMÁTICAS)
+// 🏪 CONTROLE DE STATUS DA LOJA 
 // ==========================================
-
 async function verificarStatusLoja() {
     try {
         const res = await fetch(`${API_URL}/loja/status`);
         if (res.ok) {
             const dados = await res.json();
             const checkbox = document.getElementById('toggle-delivery');
-            if (checkbox) {
-                // Deixa a chavinha vermelha (desligada) ou verde (ligada) conforme o banco de dados
-                checkbox.checked = (dados.status === 'aberto');
-            }
+            if (checkbox) checkbox.checked = (dados.status === 'aberto');
         }
-    } catch (e) {
-        console.log("Aguardando servidor carregar o status da loja...");
+    } catch (e) { console.log("Aguardando servidor carregar status..."); }
+}
+
+async function carregarStatusLoja() { await verificarStatusLoja(); }
+
+async function alterarStatusLoja() {
+    const checkbox = document.getElementById('toggle-delivery');
+    const novoStatus = checkbox.checked ? 'aberto' : 'fechado';
+    try {
+        if (checkbox.parentElement) checkbox.parentElement.style.opacity = '0.5';
+        await fetch(`${API_URL}/loja/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: novoStatus })
+        });
+        if (checkbox.parentElement) setTimeout(() => checkbox.parentElement.style.opacity = '1', 500);
+    } catch(e) {
+        alert("🔌 Erro ao ligar/desligar a loja. Verifique a internet.");
+        checkbox.checked = !checkbox.checked; 
     }
 }
 
-// Essa função existe apenas para ser chamada quando a página carrega pela primeira vez
-async function carregarStatusLoja() {
-    await verificarStatusLoja();
-}
-
-async function alterarStatusLoja(statusDesejado) {
-    let tentativas = 8; // ⏱️ Aumentamos para 8 tentativas!
-    
-    // Aviso mais claro para você saber que pode demorar um pouquinho
-    mostrarAvisoFlutuante("🔄 Acordando o servidor... (Pode levar até 30s)", "#FF9800");
-
-    while (tentativas > 0) {
-        try {
-            const res = await fetch('https://icesoft-api.onrender.com/api/loja/status', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: statusDesejado }) 
-            });
-            
-            if (!res.ok) throw new Error("Servidor acordando");
-
-            // Se chegou aqui, o servidor respondeu certo!
-            mostrarAvisoFlutuante(`✅ Loja agora está: ${statusDesejado.toUpperCase()}`, "#4CAF50");
-            return; 
-
-        } catch (e) {
-            tentativas--;
-            console.log("Aguardando servidor acordar... Tentativas restantes:", tentativas);
-            
-            if (tentativas === 0) {
-                mostrarAvisoFlutuante("⚠️ O servidor dormiu pesado. Clique na chave novamente.", "#f44336");
-            } else {
-                // ⏱️ Espera 4 segundos antes de tentar bater na porta de novo
-                await new Promise(r => setTimeout(r, 4000));
-            }
-        }
-    }
-}
-
-// ==========================================
-// 🎨 AVISOS ELEGANTES (Estilo iFood)
-// ==========================================
 function mostrarAvisoFlutuante(mensagem, cor) {
-    // Remove avisos antigos para não acumular na tela
     const avisoAntigo = document.getElementById('aviso-toast');
     if (avisoAntigo) avisoAntigo.remove();
-
     const div = document.createElement('div');
     div.id = 'aviso-toast';
     div.innerText = mensagem;
-    div.style.cssText = `
-        position: fixed; 
-        top: 20px; 
-        right: 20px; 
-        background: ${cor}; 
-        color: white; 
-        padding: 15px 25px; 
-        border-radius: 8px; 
-        font-weight: bold; 
-        z-index: 9999; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-        transition: opacity 0.5s ease-out; 
-        font-family: 'Inter', sans-serif;
-    `;
-    
+    div.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${cor}; color: white; padding: 15px 25px; border-radius: 8px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: opacity 0.5s ease-out;`;
     document.body.appendChild(div);
-    
-    // Faz o aviso sumir suavemente depois de 3 segundos
     setTimeout(() => { div.style.opacity = '0'; }, 3000);
     setTimeout(() => { div.remove(); }, 3500);
 }
 
-// Isso garante que ele só vai tentar baixar a cortina DEPOIS que o site carregar inteiro!
 window.addEventListener('DOMContentLoaded', () => {
     verificarStatusLoja();
-    // Continua vigiando a cada 30 segundos
     setInterval(verificarStatusLoja, 30000);
 });
 
 // ==========================================
-// 💾 TRANSFERÊNCIA PARA MESAS (QoL)
+// 💾 TRANSFERÊNCIA PARA MESAS 
 // ==========================================
-
 async function abrirModalTransferirMesa() {
     if (carrinho.length === 0) return alert("⚠️ O carrinho está vazio! Adicione itens antes de transferir.");
-
     document.getElementById('modal-transferir-mesa').style.display = 'flex';
     const grid = document.getElementById('grid-mesas-livres');
     grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #666;">Buscando mesas livres...</p>';
 
     try {
-        // 1. Busca no servidor quais mesas estão ocupadas agora
         const resposta = await fetch(`${API_URL}/mesas`);
         const mesasOcupadas = await resposta.json();
         const numerosOcupados = mesasOcupadas.map(m => m.numero);
@@ -934,95 +794,182 @@ async function abrirModalTransferirMesa() {
         grid.innerHTML = '';
         let temMesaLivre = false;
 
-        // 2. O sistema verifica as 15 mesas. Se não estiver ocupada, cria o botão.
         for (let i = 1; i <= 15; i++) {
             const numeroFormatado = String(i).padStart(2, '0');
-            
             if (!numerosOcupados.includes(numeroFormatado)) {
                 temMesaLivre = true;
                 grid.innerHTML += `
                     <button onclick="transferirParaMesa('${numeroFormatado}')" style="background: #e0f7fa; border: 1px solid #00bcd4; color: #00838f; padding: 15px 10px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;">
                         Mesa ${numeroFormatado}
-                    </button>
-                `;
+                    </button>`;
             }
         }
-
-        if (!temMesaLivre) {
-            grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #f44336; font-weight: bold;">Todas as 15 mesas estão ocupadas no momento!</p>';
-        }
-    } catch (e) {
-        grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: red;">Erro ao buscar mesas.</p>';
-    }
+        if (!temMesaLivre) grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #f44336; font-weight: bold;">Todas as 15 mesas estão ocupadas no momento!</p>';
+    } catch (e) { grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: red;">Erro ao buscar mesas.</p>'; }
 }
 
-function fecharModalTransferirMesa() {
-    document.getElementById('modal-transferir-mesa').style.display = 'none';
-}
+function fecharModalTransferirMesa() { document.getElementById('modal-transferir-mesa').style.display = 'none'; }
 
 async function transferirParaMesa(numeroMesa) {
-    // 3. Traduz os itens do formato do PDV para o formato que a Mesa entende
     const itensParaMesa = carrinho.map(item => {
         const listaAdicionais = item.adicionais || [];
-        const nomeCompleto = listaAdicionais.length > 0 
-            ? `${item.nomeBase} (${listaAdicionais.join(', ')})` 
-            : item.nomeBase;
-
-        return {
-            nomeBase: item.nomeBase,
-            adicionais: listaAdicionais,
-            nome: nomeCompleto,
-            preco: item.preco
-        };
+        const nomeCompleto = listaAdicionais.length > 0 ? `${item.nomeBase} (${listaAdicionais.join(', ')})` : item.nomeBase;
+        return { nomeBase: item.nomeBase, adicionais: listaAdicionais, nome: nomeCompleto, preco: item.preco };
     });
 
     try {
         const resposta = await fetch(`${API_URL}/mesas`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numero: numeroMesa, itens: itensParaMesa })
+        });
+        if (resposta.ok) {
+            mostrarAvisoFlutuante(`✅ Pedido transferido para a Mesa ${numeroMesa}!`, "#4CAF50");
+            carrinho = []; descontoGlobal = 0; acrescimoGlobal = 0; renderizarCarrinho(); fecharModalTransferirMesa();
+        } else alert("Erro ao transferir pedido para a mesa.");
+    } catch (e) { alert("Erro de conexão. Verifique a internet."); }
+}
+
+// ==========================================
+// 🛵 SISTEMA DE LANÇAMENTO DELIVERY NO PDV
+// ==========================================
+function abrirModalDeliveryPDV() {
+    if (carrinho.length === 0) return alert("⚠️ Adicione produtos ao carrinho antes de lançar o Delivery!");
+    document.getElementById('pdv-cliente-telefone').value = '';
+    document.getElementById('pdv-cliente-nome').value = '';
+    document.getElementById('pdv-cliente-bairro').value = '';
+    document.getElementById('pdv-cliente-rua').value = '';
+    document.getElementById('pdv-cliente-numero').value = '';
+    document.getElementById('pdv-cliente-complemento').value = '';
+    document.getElementById('pdv-cliente-troco').value = '';
+    document.getElementById('badge-crm-pdv').style.display = 'none';
+    document.getElementById('modal-delivery-pdv').style.display = 'flex';
+}
+
+function fecharModalDeliveryPDV() { document.getElementById('modal-delivery-pdv').style.display = 'none'; }
+
+document.getElementById('pdv-cliente-telefone').addEventListener('input', function (e) {
+    let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+    e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+
+    if (e.target.value.length === 15) {
+        buscarDadosClientePDV(e.target.value);
+    } else {
+        document.getElementById('badge-crm-pdv').style.display = 'none';
+    }
+});
+
+async function buscarDadosClientePDV(telefoneFormatado) {
+    const badge = document.getElementById('badge-crm-pdv');
+    badge.innerText = '⏳ Buscando...';
+    badge.style.background = '#FF9800';
+    badge.style.display = 'inline-block';
+
+    try {
+        const res = await fetch(`${API_URL}/vendas`);
+        const vendas = await res.json();
+        const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
+
+        if(compras.length > 0) {
+            const ultimo = compras.reduce((max, p) => p.id > max.id ? p : max, compras[0]);
+            document.getElementById('pdv-cliente-nome').value = ultimo.cliente_nome || '';
+
+            const endereco = ultimo.cliente_endereco || '';
+            if(endereco && !endereco.includes('Retirada')) {
+                let partes = endereco.split(' - ');
+                let bairroSalvo = partes.pop().trim();
+                document.getElementById('pdv-cliente-bairro').value = bairroSalvo;
+
+                if (partes.length > 0) {
+                    let ruaNum = partes[0].split(',');
+                    document.getElementById('pdv-cliente-rua').value = ruaNum[0] ? ruaNum[0].trim() : '';
+                    document.getElementById('pdv-cliente-numero').value = ruaNum[1] ? ruaNum[1].trim() : '';
+                    let comp = partes.length > 1 ? partes.slice(1).join(' - ').trim() : '';
+                    document.getElementById('pdv-cliente-complemento').value = comp;
+                }
+            }
+            badge.innerText = '✅ Cliente Encontrado';
+            badge.style.background = '#25D366';
+        } else {
+            badge.style.display = 'none';
+        }
+    } catch(e) { badge.style.display = 'none'; }
+}
+
+function padronizarTelefonePDV(numeroBruto) {
+    let limpo = numeroBruto.replace(/\D/g, ''); 
+    if (limpo.startsWith('55') && limpo.length > 11) limpo = limpo.substring(2); 
+    if (limpo.length === 11) return `(${limpo.substring(0,2)}) ${limpo.substring(2,7)}-${limpo.substring(7,11)}`;
+    if (limpo.length === 10) return `(${limpo.substring(0,2)}) ${limpo.substring(2,6)}-${limpo.substring(6,10)}`;
+    return numeroBruto; 
+}
+
+async function finalizarDeliveryPDV() {
+    const btnSalvar = document.querySelector('#modal-delivery-pdv button[onclick="finalizarDeliveryPDV()"]');
+    const telefoneBruto = document.getElementById('pdv-cliente-telefone').value.trim();
+    if (!telefoneBruto) return alert("O número de WhatsApp é obrigatório!");
+    
+    const telefone = padronizarTelefonePDV(telefoneBruto);
+    const nome = document.getElementById('pdv-cliente-nome').value.trim() || "Cliente Balcão/Telefone";
+    const bairro = document.getElementById('pdv-cliente-bairro').value.trim();
+    const rua = document.getElementById('pdv-cliente-rua').value.trim();
+    const numero = document.getElementById('pdv-cliente-numero').value.trim();
+    const complemento = document.getElementById('pdv-cliente-complemento').value.trim();
+    
+    let enderecoCompleto = "Retirada na Loja";
+    if (rua && numero && bairro) enderecoCompleto = `${rua}, ${numero} ${complemento ? '- ' + complemento : ''} - ${bairro}`;
+
+    let pagamento = document.getElementById('pdv-forma-pagamento').value;
+    const troco = document.getElementById('pdv-cliente-troco').value.trim();
+    if (pagamento === 'Dinheiro' && troco) pagamento += ` (Troco para ${troco})`;
+
+    let totalCobranca = totalFinalGlobal; // Usando os cálculos reais com desconto
+    
+    // Converte os produtos do PDV para o Kanban entender perfeitamente
+    const itensFormatados = carrinho.map(item => {
+        let nomeCompleto = "Delivery: " + item.nomeBase;
+        if (item.adicionais && item.adicionais.length > 0) {
+            nomeCompleto += " (" + item.adicionais.join(', ') + ")";
+        }
+        return { nome: nomeCompleto, preco: item.preco };
+    });
+
+    btnSalvar.innerText = 'Enviando...';
+    btnSalvar.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/vendas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                numero: numeroMesa,
-                itens: itensParaMesa
+                itens: JSON.stringify(itensFormatados),
+                produto_nome: "Pedido Lançado via PDV",
+                valor_total: totalCobranca,
+                total: totalCobranca,
+                forma_pagamento: pagamento,
+                status: "Pendente Delivery", 
+                cliente_nome: nome,
+                cliente_telefone: telefone,
+                cliente_endereco: enderecoCompleto,
+                origem: "WhatsApp / Telefone",
+                observacoes: "Lançado internamente pelo PDV"
             })
         });
 
-        if (resposta.ok) {
-            mostrarAvisoFlutuante(`✅ Pedido transferido para a Mesa ${numeroMesa}!`, "#4CAF50");
-            
-            // 4. Limpa o carrinho do PDV instantaneamente para atender o próximo da fila
+        if (res.ok) {
+            fecharModalDeliveryPDV();
+            alert("✅ Pedido de Delivery enviado para a cozinha com sucesso!");
             carrinho = [];
             descontoGlobal = 0;
             acrescimoGlobal = 0;
-            renderizarCarrinho();
-            fecharModalTransferirMesa();
+            renderizarCarrinho(); 
         } else {
-            alert("Erro ao transferir pedido para a mesa.");
+            alert("❌ Erro ao enviar pedido. Verifique a conexão.");
         }
     } catch (e) {
-        alert("Erro de conexão. Verifique a internet.");
-    }
-}
-
-// === BOTÃO DO CARDÁPIO ONLINE (PDV) ===
-async function alterarStatusLoja() {
-    const checkbox = document.getElementById('toggle-delivery');
-    const novoStatus = checkbox.checked ? 'aberto' : 'fechado';
-    
-    try {
-        // Faz o botão dar uma "piscada" para mostrar que está salvando
-        if (checkbox.parentElement) checkbox.parentElement.style.opacity = '0.5';
-
-        await fetch(`${API_URL}/loja/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: novoStatus })
-        });
-        
-        if (checkbox.parentElement) {
-            setTimeout(() => checkbox.parentElement.style.opacity = '1', 500);
-        }
-    } catch(e) {
-        alert("🔌 Erro ao ligar/desligar a loja. Verifique a internet.");
-        checkbox.checked = !checkbox.checked; // Volta a chavinha se der erro
+        alert("❌ Erro de rede ao conectar com o servidor.");
+    } finally {
+        btnSalvar.innerText = '🚀 Enviar p/ Cozinha';
+        btnSalvar.disabled = false;
     }
 }
