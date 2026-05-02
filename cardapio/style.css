@@ -472,3 +472,44 @@ main#lista-produtos h2 {
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+/* =========================================
+   MODAL DE CARRINHO (ESTILO BOTTOM SHEET)
+   ========================================= */
+@keyframes subirModalCarrinho {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.item-carrinho-cliente {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px dashed #eee;
+}
+
+.item-carrinho-cliente:last-child {
+    border-bottom: none;
+}
+
+.btn-remover-item {
+    background: #fff0f4; 
+    border: 1px solid #ffb3c6; 
+    color: #e91e63; 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 10px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    cursor: pointer; 
+    font-size: 1.2rem; 
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-remover-item:hover {
+    background: #ffe0e9;
+    transform: scale(1.05);
+}

@@ -168,6 +168,13 @@
 </head>
 <body>
     
+    <!-- ==========================================
+         BANNER DE LOJA FECHADA
+         ========================================== -->
+    <div id="banner-loja-fechada" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: #f44336; color: white; text-align: center; padding: 12px 20px; font-weight: bold; z-index: 10000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); box-sizing: border-box; font-size: 0.95rem;">
+        ⚠️ <span id="texto-loja-fechada">A loja está fechada no momento.</span>
+    </div>
+
     <div id="tela-carregamento" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-claro, #f4f6f8); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.4s ease;">
         <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🍦</div>
         <h3 style="color: var(--cor-primaria, #e91e63); margin-top: 15px; font-family: 'Inter', sans-serif;">Carregando cardápio...</h3>
@@ -203,7 +210,9 @@
                 <span id="loja-endereco-texto">Endereço não informado</span> • 
                 <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
             </p>
-            <p id="loja-status-exibicao" style="color: #25D366; font-weight: bold; font-size: 0.8rem;">● Recebendo pedidos</p>
+            <span id="indicador-status-loja" style="color: #25D366; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                🟢 Recebendo pedidos
+            </span>
         </div>
         </div>
     </div>
@@ -233,7 +242,7 @@
             <span id="carrinho-qtd">0 itens</span>
             <span id="carrinho-total">R$ 0,00</span>
         </div>
-        <button onclick="finalizarPedidoWhatsApp()" class="btn-whatsapp">Fazer Pedido 📱</button>
+        <button onclick="abrirModalCarrinho()" class="btn-whatsapp">Fazer Pedido 📱</button>
     </div>
 
     <div id="modal-opcoes" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:3000;">
@@ -541,6 +550,34 @@
     </div>
 
     <script src="/cardapio/app.js?v=106"></script>
+
+        <!-- ==========================================
+         MODAL: CARRINHO (PASSO ANTES DO CHECKOUT)
+         ========================================== -->
+    <div id="modal-carrinho-cliente" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:flex-end; z-index:9998;">
+        <div style="background:white; width:100%; max-width:600px; border-radius: 20px 20px 0 0; padding:25px 20px; max-height:85vh; display:flex; flex-direction:column; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); animation: subirModalCarrinho 0.3s ease-out;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px; margin-bottom: 15px;">
+                <h2 style="margin:0; color:#333; font-size: 1.4rem; display: flex; align-items: center; gap: 8px;">🛒 Seu Carrinho</h2>
+                <button onclick="fecharModalCarrinho()" style="background:#f0f2f5; border:none; width: 35px; height: 35px; border-radius: 50%; font-size:1.5rem; cursor:pointer; color:#555; display: flex; align-items: center; justify-content: center; transition: 0.2s;">&times;</button>
+            </div>
+            
+            <div id="lista-itens-carrinho-cliente" style="flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;">
+                <!-- Itens injetados via JS -->
+            </div>
+            
+            <div style="background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed #ddd;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 1.1rem; color: #555; font-weight: 600;">Subtotal:</span>
+                    <strong id="subtotal-carrinho-cliente" style="font-size: 1.5rem; color: var(--cor-primaria, #e91e63);">R$ 0,00</strong>
+                </div>
+            </div>
+            
+            <button onclick="irParaCheckout()" style="width: 100%; background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px;">
+                Confirmar Pedido <span style="font-size: 1.3rem;">➔</span>
+            </button>
+        </div>
+    </div>
 
 </body>
 </html>

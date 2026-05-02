@@ -1285,3 +1285,197 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
         if(badge) badge.style.display = 'none';
     }
 }
+
+// ==========================================
+// 🛒 VISUALIZAÇÃO DO CARRINHO (PRÉ-CHECKOUT)
+// ==========================================
+function abrirModalCarrinho() {
+    // 🔒 TRAVA DE SEGURANÇA
+    if (!isLojaAbertaGlobal) {
+        alert(`⚠️ ${mensagemFechadaGlobal}`);
+        return;
+    }
+    
+    if (carrinho.length === 0) {
+        alert("Seu carrinho está vazio! Adicione algumas delícias primeiro.");
+        return;
+    }
+    
+    renderizarListaCarrinhoCliente();
+    document.getElementById('modal-carrinho-cliente').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; 
+}
+
+function fecharModalCarrinho() {
+    document.getElementById('modal-carrinho-cliente').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function renderizarListaCarrinhoCliente() {
+    const container = document.getElementById('lista-itens-carrinho-cliente');
+    container.innerHTML = '';
+    
+    let subtotal = 0;
+    
+    carrinho.forEach((item, index) => {
+        subtotal += Number(item.preco);
+        
+        let desc = '';
+        // Tratamento inteligente para separar o nome base dos adicionais na tela
+        if (item.nome.includes('(')) {
+            const partes = item.nome.split('(');
+            const nomePrincipal = partes[0].trim();
+            const adicionais = '(' + partes.slice(1).join('(');
+            desc = `
+                <div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${nomePrincipal.replace('Delivery: ', '')}</div>
+                <div style="color: #777; font-size: 0.85rem; margin-top: 4px; line-height: 1.3;">${adicionais}</div>
+            `;
+        } else {
+            desc = `<div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${item.nome.replace('Delivery: ', '')}</div>`;
+        }
+
+        container.innerHTML += `
+            <div class="item-carrinho-cliente">
+                <div style="flex: 1; padding-right: 15px;">
+                    ${desc}
+                    <div style="color: var(--cor-primaria, #e91e63); font-weight: 800; margin-top: 6px; font-size: 1.1rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button onclick="removerItemCarrinhoCliente(${index})" class="btn-remover-item" title="Remover item">🗑️</button>
+            </div>
+        `;
+    });
+    
+    document.getElementById('subtotal-carrinho-cliente').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    
+    if (carrinho.length === 0) {
+        fecharModalCarrinho();
+        if (typeof atualizarBarraCarrinho === "function") atualizarBarraCarrinho();
+    }
+}
+
+function removerItemCarrinhoCliente(index) {
+    carrinho.splice(index, 1);
+    renderizarListaCarrinhoCliente();
+    if (typeof atualizarBarraCarrinho === "function") atualizarBarraCarrinho();
+}
+
+function irParaCheckout() {
+    fecharModalCarrinho();
+    finalizarPedidoWhatsApp(); // Avança para a tela do formulário e pagamento
+}
+
+// ==========================================
+// 🕒 INTELIGÊNCIA DE HORÁRIOS E TRAVAS
+// ==========================================
+let isLojaAbertaGlobal = true;
+let mensagemFechadaGlobal = "Estamos fechados no momento.";
+
+// Inicia a vigilância assim que o cardápio carrega
+setTimeout(iniciarVerificacaoHorario, 500);
+
+async function iniciarVerificacaoHorario() {
+    await verificarSeLojaEstaAberta();
+    // O sistema fica checando silenciosamente a cada 1 minuto (60000 ms)
+    setInterval(verificarSeLojaEstaAberta, 60000); 
+}
+
+async function verificarSeLojaEstaAberta() {
+    try {
+        const [resStatus, resConfig] = await Promise.all([
+            fetch(`${API_URL}/loja/status`),
+            fetch(`${API_URL}/configuracoes`)
+        ]);
+        
+        const statusData = await resStatus.json();
+        const configData = await resConfig.json();
+        
+        // 1. CHECA A TRAVA MANUAL DE EMERGÊNCIA (Botão do PDV)
+        if (statusData.status === 'fechado') {
+            bloquearLoja("Pausamos os pedidos momentaneamente. Voltamos em breve!");
+            return;
+        }
+
+        // 2. CHECA A ESCALA AUTOMÁTICA
+        if (!configData.horarios_funcionamento_auto) {
+            liberarLoja(); 
+            return;
+        }
+
+        const horarios = JSON.parse(configData.horarios_funcionamento_auto);
+        const agora = new Date();
+        const diaHoje = agora.getDay(); // Retorna 0 (Dom) a 6 (Sáb)
+        const configHoje = horarios[diaHoje];
+
+        // Se o checkbox do dia estiver desmarcado
+        if (!configHoje || !configHoje.ativo) {
+            bloquearLoja("Estamos fechados hoje! Voltamos no nosso próximo dia de funcionamento.");
+            return;
+        }
+
+        // Converte as horas para "minutos desde a meia-noite" para a matemática funcionar
+        const horaAtual = agora.getHours() * 60 + agora.getMinutes();
+        const [hAbre, mAbre] = configHoje.abre.split(':').map(Number);
+        const [hFecha, mFecha] = configHoje.fecha.split(':').map(Number);
+        
+        const minutosAbre = hAbre * 60 + mAbre;
+        const minutosFecha = hFecha * 60 + mFecha;
+
+        let abertoAgora = false;
+
+        if (minutosFecha < minutosAbre) {
+            // Lógica para lojas que viram a madrugada (Ex: 18:00 às 02:00)
+            if (horaAtual >= minutosAbre || horaAtual <= minutosFecha) {
+                abertoAgora = true;
+            }
+        } else {
+            // Horário normal (Ex: 14:00 às 22:00)
+            if (horaAtual >= minutosAbre && horaAtual <= minutosFecha) {
+                abertoAgora = true;
+            }
+        }
+
+        if (abertoAgora) {
+            liberarLoja();
+        } else {
+            bloquearLoja(`Estamos fechados! Nosso horário hoje é das ${configHoje.abre} às ${configHoje.fecha}.`);
+        }
+
+    } catch(e) {
+        console.log("Falha ao verificar horário, mantendo aberto por segurança:", e);
+    }
+}
+
+function bloquearLoja(mensagem) {
+    isLojaAbertaGlobal = false;
+    mensagemFechadaGlobal = mensagem;
+    
+    // Mostra o Banner Vermelho
+    const banner = document.getElementById('banner-loja-fechada');
+    const texto = document.getElementById('texto-loja-fechada');
+    if(banner && texto) {
+        texto.innerText = mensagem;
+        banner.style.display = 'block';
+    }
+
+    // Muda o textinho debaixo do nome da loja para Fechado
+    const indicador = document.getElementById('indicador-status-loja');
+    if (indicador) {
+        indicador.innerHTML = '🔴 Fechado no momento';
+        indicador.style.color = '#f44336';
+    }
+}
+
+function liberarLoja() {
+    isLojaAbertaGlobal = true;
+    
+    // Esconde o Banner Vermelho
+    const banner = document.getElementById('banner-loja-fechada');
+    if(banner) banner.style.display = 'none';
+
+    // Volta o textinho para Recebendo Pedidos
+    const indicador = document.getElementById('indicador-status-loja');
+    if (indicador) {
+        indicador.innerHTML = '🟢 Recebendo pedidos';
+        indicador.style.color = '#25D366';
+    }
+}

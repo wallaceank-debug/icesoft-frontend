@@ -167,42 +167,140 @@ async function salvarDestaques() {
     enviarParaNuvem({ carrossel_destaques: JSON.stringify(idsSelecionados) }, btn, textoOriginal, "#FF9800");
 }
 
-// === FUNÇÕES DO CARD 3 ===
+// === FUNÇÕES DO CARD 3 (CUPONS AVANÇADOS) ===
+function abrirModalCupom(index = null) {
+    if (index !== null) {
+        const c = cuponsSalvos[index];
+        document.getElementById('titulo-modal-cupom').innerText = `Editar Cupom: ${c.codigo}`;
+        document.getElementById('cupom-index').value = index;
+        document.getElementById('cupom-codigo').value = c.codigo;
+        document.getElementById('cupom-tipo').value = c.tipo;
+        document.getElementById('cupom-valor').value = c.valor;
+        document.getElementById('cupom-minimo').value = c.minimo || 0; // Puxando o mínimo
+        document.getElementById('cupom-validade').value = c.validade || '';
+        document.getElementById('cupom-limite').value = c.limite || 0;
+        document.getElementById('cupom-publico').value = c.publico || 'todos';
+    } else {
+        document.getElementById('titulo-modal-cupom').innerText = `Criar Novo Cupom`;
+        document.getElementById('cupom-index').value = '';
+        document.getElementById('cupom-codigo').value = '';
+        document.getElementById('cupom-tipo').value = 'porcentagem';
+        document.getElementById('cupom-valor').value = '';
+        document.getElementById('cupom-minimo').value = 0; // Zerando o mínimo
+        document.getElementById('cupom-validade').value = '';
+        document.getElementById('cupom-limite').value = 0;
+        document.getElementById('cupom-publico').value = 'todos';
+    }
+    document.getElementById('modal-cupom').style.display = 'flex';
+}
+
+function fecharModalCupom() {
+    document.getElementById('modal-cupom').style.display = 'none';
+}
+
+function salvarCupomModal() {
+    const index = document.getElementById('cupom-index').value;
+    const codigo = document.getElementById('cupom-codigo').value.trim().toUpperCase();
+    const tipo = document.getElementById('cupom-tipo').value;
+    const valor = parseFloat(document.getElementById('cupom-valor').value);
+    const minimo = parseFloat(document.getElementById('cupom-minimo').value) || 0; // Salvando o mínimo
+    const validade = document.getElementById('cupom-validade').value;
+    const limite = parseInt(document.getElementById('cupom-limite').value) || 0;
+    const publico = document.getElementById('cupom-publico').value;
+
+    if (!codigo || isNaN(valor) || valor <= 0) return alert("⚠️ Preencha o código e um valor de desconto válido!");
+    
+    const indexExistente = cuponsSalvos.findIndex(c => c.codigo === codigo);
+    if (indexExistente !== -1 && indexExistente !== Number(index) && index === "") {
+        return alert("⚠️ Este código já está em uso!");
+    }
+
+    const cupomData = {
+        codigo, tipo, valor, minimo, validade, limite, publico, // Mínimo injetado aqui
+        usos_atuais: 0, 
+        receita_gerada: 0
+    };
+
+    if (index !== "") {
+        cupomData.usos_atuais = cuponsSalvos[index].usos_atuais || 0;
+        cupomData.receita_gerada = cuponsSalvos[index].receita_gerada || 0;
+        cuponsSalvos[index] = cupomData;
+    } else {
+        cuponsSalvos.push(cupomData);
+    }
+
+    fecharModalCupom();
+    salvarCuponsNuvem();
+}
+
 function renderizarListaCupons() {
     const container = document.getElementById('lista-cupons');
     container.innerHTML = '';
-    if (cuponsSalvos.length === 0) return container.innerHTML = '<p style="color:#888; text-align:center; font-size: 0.9rem;">Nenhum cupom ativo.</p>';
+    if (cuponsSalvos.length === 0) return container.innerHTML = '<p style="color:#888; text-align:center; font-size: 0.9rem;">Nenhum cupom ativo no momento.</p>';
 
     cuponsSalvos.forEach((cupom, index) => {
         const valorExibicao = cupom.tipo === 'porcentagem' ? `${cupom.valor}%` : `R$ ${Number(cupom.valor).toFixed(2).replace('.', ',')}`;
+        
+        let infoExtra = '';
+        // 🛒 Mostra a nova regra na tela
+        if (cupom.minimo > 0) infoExtra += `🛒 Compras a partir de: R$ ${Number(cupom.minimo).toFixed(2).replace('.', ',')} <br>`;
+        
+        if (cupom.validade) {
+            const dataParts = cupom.validade.split('-');
+            infoExtra += `⏳ Até: ${dataParts[2]}/${dataParts[1]}/${dataParts[0]} &nbsp;|&nbsp; `;
+        } else {
+            infoExtra += `⏳ Sem validade &nbsp;|&nbsp; `;
+        }
+
+        if (cupom.limite > 0) infoExtra += `🎯 Usos: ${cupom.usos_atuais || 0} de ${cupom.limite} &nbsp;|&nbsp; `;
+        else infoExtra += `🎯 Usos: ${cupom.usos_atuais || 0} (Ilimitado) &nbsp;|&nbsp; `;
+
+        let descPublico = cupom.publico === 'novos' ? 'Só Clientes Novos' : cupom.publico === 'recorrentes' ? 'Só Recorrentes' : 'Todos os Clientes';
+        infoExtra += `👤 ${descPublico}`;
+
         container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; background:#f3e5f5; border:1px dashed #ab47bc; border-radius:8px;">
-                <div><strong style="color:#8e24aa;">${cupom.codigo}</strong> <span style="background: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; color: #9C27B0;">- ${valorExibicao}</span></div>
-                <button onclick="removerCupom(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size: 1.2rem;">🗑️</button>
+            <div style="background:#fdfdfd; border:1px solid #e1bee7; border-radius:10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; background: white; border-bottom: 1px dashed #e1bee7;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <strong style="color:#8e24aa; font-size: 1.2rem; letter-spacing: 1px;">${cupom.codigo}</strong> 
+                        <span style="background: #9c27b0; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: white;">- ${valorExibicao}</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="abrirModalCupom(${index})" style="background:#e3f2fd; border:none; color:#1976d2; border-radius: 6px; padding: 8px; cursor:pointer; font-size: 1rem; transition: 0.2s;" title="Editar Regras">✏️</button>
+                        <button onclick="removerCupom(${index})" style="background:#ffebee; border:none; color:#d32f2f; border-radius: 6px; padding: 8px; cursor:pointer; font-size: 1rem; transition: 0.2s;" title="Apagar Definitivamente">🗑️</button>
+                    </div>
+                </div>
+
+                <div style="padding: 10px 15px; font-size: 0.8rem; color: #555; font-weight: 500; line-height: 1.4;">
+                    ${infoExtra}
+                </div>
+
+                <div style="padding: 10px 15px; background: #e8f5e9; font-size: 0.9rem; color: #2e7d32; font-weight: bold; border-top: 1px solid #c8e6c9;">
+                    💰 Ganhos com este cupom: R$ ${Number(cupom.receita_gerada || 0).toFixed(2).replace('.', ',')}
+                </div>
             </div>
         `;
     });
 }
-function adicionarCupom() {
-    const codigoInput = document.getElementById('novo-cupom-codigo');
-    const tipo = document.getElementById('novo-cupom-tipo').value;
-    const valorInput = document.getElementById('novo-cupom-valor');
-    const codigo = codigoInput.value.trim().toUpperCase();
-    const valor = parseFloat(valorInput.value);
 
-    if (!codigo || isNaN(valor) || valor <= 0) return alert("⚠️ Preencha válido!");
-    if (cuponsSalvos.find(c => c.codigo === codigo)) return alert("⚠️ Este código já existe!");
-
-    cuponsSalvos.push({ codigo, tipo, valor });
-    codigoInput.value = ''; valorInput.value = '';
-    salvarCuponsNuvem();
-}
 function removerCupom(index) {
-    if(confirm("Excluir este cupom?")) { cuponsSalvos.splice(index, 1); salvarCuponsNuvem(); }
+    if(confirm(`Tem certeza que deseja apagar o cupom ${cuponsSalvos[index].codigo}? Os clientes não conseguirão mais usá-lo.`)) { 
+        cuponsSalvos.splice(index, 1); 
+        salvarCuponsNuvem(); 
+    }
 }
+
 async function salvarCuponsNuvem() {
     renderizarListaCupons();
-    fetch(`${API_URL}/configuracoes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cupons_delivery: JSON.stringify(cuponsSalvos) }) });
+    try {
+        await fetch(`${API_URL}/configuracoes`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ cupons_delivery: JSON.stringify(cuponsSalvos) }) 
+        });
+    } catch (e) {
+        console.error("Falha silenciosa ao salvar cupom na nuvem", e);
+    }
 }
 
 // === FUNÇÕES DO CARD 4 (UPSELL) ===

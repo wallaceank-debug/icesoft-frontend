@@ -338,26 +338,16 @@
                 </div>
 
                 <div class="card-config">
-                    <h3>🎟️ Cupons de Desconto</h3>
-                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Crie códigos promocionais para seus clientes usarem no checkout do delivery.</p>
-
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="text" id="novo-cupom-codigo" placeholder="Código (Ex: VERAO10)" style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #ccc; text-transform: uppercase; font-family: 'Poppins';">
-                        
-                        <select id="novo-cupom-tipo" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins'; cursor: pointer;">
-                            <option value="porcentagem">% Porcento</option>
-                            <option value="fixo">R$ Fixo</option>
-                        </select>
-                        
-                        <input type="number" id="novo-cupom-valor" placeholder="Valor" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins';">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">🎟️ Cupons Avançados</h3>
+                        <button onclick="abrirModalCupom()" style="background: #9C27B0; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(156, 39, 176, 0.3); transition: 0.2s;">
+                            + Novo Cupom
+                        </button>
                     </div>
-                    
-                    <button onclick="adicionarCupom()" style="width: 100%; padding: 12px; background: #9C27B0; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        + Adicionar Cupom
-                    </button>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Crie regras restritas, defina prazos e acompanhe o quanto cada cupom gerou em vendas.</p>
 
-                    <h4 style="margin: 0 0 10px 0; color: #555; font-size: 0.95rem;">Cupons Ativos:</h4>
-                    <div id="lista-cupons" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
+                    <div id="lista-cupons" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 5px;">
+                        <!-- A lista mágica injetada pelo JS -->
                     </div>
                 </div>
 
@@ -399,5 +389,71 @@
         }
     </script>
     <script src="app.js"></script>
+
+<!-- ==========================================
+         MODAL DE CRIAÇÃO E EDIÇÃO DE CUPONS
+         ========================================== -->
+    <div id="modal-cupom" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:3000;">
+        <div style="background:white; padding:25px; border-radius:15px; width:90%; max-width: 550px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="titulo-modal-cupom" style="margin:0; color:#8e24aa;">Criar Cupom</h2>
+                <button onclick="fecharModalCupom()" style="background:none; border:none; font-size:1.8rem; cursor:pointer; color: #777;">&times;</button>
+            </div>
+            
+            <input type="hidden" id="cupom-index">
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 2;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Código *</label>
+                    <input type="text" id="cupom-codigo" placeholder="Ex: PRIMEIRA10" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; text-transform:uppercase; box-sizing: border-box; font-weight: bold; color: #8e24aa;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Tipo *</label>
+                    <select id="cupom-tipo" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
+                        <option value="porcentagem">%</option>
+                        <option value="fixo">R$</option>
+                    </select>
+                </div>
+                <div style="flex: 1.5;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Valor/Tx *</label>
+                    <input type="number" id="cupom-valor" placeholder="Ex: 10" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Valor Mínimo (R$)</label>
+                    <input type="number" id="cupom-minimo" placeholder="0" value="0" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
+                    <span style="font-size: 0.7rem; color: #888;">Digite 0 para não ter exigência.</span>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Qtd. Limite de Usos</label>
+                    <input type="number" id="cupom-limite" placeholder="0" value="0" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box;">
+                    <span style="font-size: 0.7rem; color: #888;">Digite 0 para ilimitado.</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="flex: 1;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Regra de Público</label>
+                    <select id="cupom-publico" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box; font-weight: 600; color: #333;">
+                        <option value="todos">🌍 Todos (Livres)</option>
+                        <option value="novos">🎉 Só Clientes Novos</option>
+                        <option value="recorrentes">💎 Só Recorrentes</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight:bold; font-size: 0.85rem; color:#555;">Data de Validade</label>
+                    <input type="date" id="cupom-validade" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing: border-box; color: #555;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="fecharModalCupom()" style="flex: 1; padding: 14px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Cancelar</button>
+                <button onclick="salvarCupomModal()" style="flex: 2; padding: 14px; background: #9C27B0; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(156, 39, 176, 0.3);">💾 Salvar Regras</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
