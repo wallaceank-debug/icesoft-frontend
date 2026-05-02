@@ -55,7 +55,7 @@ async function carregarPedidos() {
 }
 
 let somAtivado = false;
-const audioCampainha = new Audio('https://www.myinstants.com/media/sounds/bell.mp3');
+const audioCampainha = new Audio('campainha.mp3');
 
 function ativarSom() {
     const btn = document.getElementById('btn-som');
