@@ -38,7 +38,10 @@ async function carregarTudo() {
 
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
         bairrosGlobais = await resBairros.json(); 
-        categoriasGlobaisDelivery = await resCat.json(); // Salva a ordem oficial!
+        
+        // 🛡️ O FILTRO MÁGICO DAS CATEGORIAS (Apenas as visíveis no App)
+        const todasCategorias = await resCat.json();
+        categoriasGlobaisDelivery = todasCategorias.filter(c => c.ativo !== false && c.mostrar_cardapio !== false);
 
         renderizarCardapio(produtosDaNuvem);
         renderizarMenuCategorias(produtosDaNuvem);
@@ -74,11 +77,19 @@ function renderizarBairros() {
 // 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS E FOTOS)
 // ==========================================
 function obterOrdemDasCategorias(listaProdutosAtual) {
-    const categoriasOficiais = categoriasGlobaisDelivery.map(c => c.nome);
-    const categoriasExtras = [...new Set(listaProdutosAtual.map(p => p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos'))]
-        .filter(c => !categoriasOficiais.includes(c));
+    // 1. Pega apenas o nome das categorias que têm permissão de aparecer no App
+    const categoriasPermitidas = categoriasGlobaisDelivery.map(c => c.nome);
 
-    return [...categoriasOficiais, ...categoriasExtras];
+    // 2. Filtra os produtos para mostrar apenas os que pertencem a categorias permitidas
+    const produtosPermitidos = listaProdutosAtual.filter(p => 
+        categoriasPermitidas.includes(p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos')
+    );
+
+    // 3. Monta a ordem oficial baseada APENAS nas categorias permitidas
+    const categoriasExtras = [...new Set(produtosPermitidos.map(p => p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos'))]
+        .filter(c => !categoriasPermitidas.includes(c));
+
+    return [...categoriasPermitidas, ...categoriasExtras];
 }
 
 function renderizarCardapio(lista) {

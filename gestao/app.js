@@ -652,21 +652,52 @@ function renderizarListaCategoriasAdmin() {
     }
 
     listaCategorias.forEach((cat, index) => {
-        // Agora cada linha tem a função "draggable" (arrastável) e um ícone de menu hambúrguer ☰
+        // Se a regra não existir, assumimos que aparece no app (true)
+        const isVisivel = cat.mostrar_cardapio !== false; 
+        
+        // As etiquetas visuais para você saber de bater o olho
+        const seloHtml = isVisivel 
+            ? `<span style="background: #e0f7fa; color: #00bcd4; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold;">📱 App + PDV</span>`
+            : `<span style="background: #ffebee; color: #f44336; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold;">🖥️ Só PDV</span>`;
+
         container.innerHTML += `
             <div draggable="true"
                  ondragstart="dragStartCategoria(${index})"
                  ondragover="dragOverCategoria(event)"
                  ondrop="dropCategoria(${index})"
                  style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px 15px; border-radius:8px; margin-bottom:8px; cursor:grab; border: 1px solid #eee; transition: 0.2s;">
+                
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <span style="color: #ccc; cursor: grab; font-size: 1.2rem;">☰</span>
-                    <strong style="color: #333;">${cat.nome}</strong> 
+                    <div style="display: flex; flex-direction: column; text-align: left;">
+                        <strong style="color: #333;">${cat.nome}</strong> 
+                        <div style="margin-top: 4px;">${seloHtml}</div>
+                    </div>
                 </div>
-                <button onclick="excluirCategoria(${cat.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;">🗑️</button>
+                
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <label class="switch" title="Mostrar no App?">
+                        <input type="checkbox" onchange="toggleCategoriaApp(${cat.id}, this.checked)" ${isVisivel ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                    <button onclick="excluirCategoria(${cat.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;" title="Excluir">🗑️</button>
+                </div>
             </div>
         `;
     });
+}
+
+// 🎚️ NOVA FUNÇÃO: Liga/Desliga a categoria do aplicativo instantaneamente
+async function toggleCategoriaApp(id, statusVisivel) {
+    try {
+        await fetch(`${API_URL}/categorias/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mostrar_cardapio: statusVisivel })
+        });
+        await carregarTudo();
+        renderizarListaCategoriasAdmin();
+    } catch(e) { alert("Erro ao mudar visibilidade da categoria."); }
 }
 
 // === LÓGICA DE ARRASTAR E SOLTAR ===
@@ -710,7 +741,8 @@ async function dropCategoria(indexDestino) {
 // === CRIAÇÃO DE NOVA CATEGORIA (Automática) ===
 async function salvarNovaCategoria() {
     const nome = document.getElementById('nova-cat-nome').value.trim();
-    // A nova categoria sempre vai para o final da fila automaticamente
+    // Puxa a informação do checkbox (se não achar o checkbox, o padrão é true)
+    const mostrarNoApp = document.getElementById('nova-cat-mostrar-app') ? document.getElementById('nova-cat-mostrar-app').checked : true;
     const ordem = listaCategorias.length + 1; 
 
     if (!nome) return alert("Preencha o nome da categoria!");
@@ -719,10 +751,12 @@ async function salvarNovaCategoria() {
         await fetch(`${API_URL}/categorias`, { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ nome, ordem: ordem }) 
+            body: JSON.stringify({ nome, ordem: ordem, mostrar_cardapio: mostrarNoApp }) 
         });
         
         document.getElementById('nova-cat-nome').value = '';
+        if(document.getElementById('nova-cat-mostrar-app')) document.getElementById('nova-cat-mostrar-app').checked = true;
+        
         await carregarTudo();
         renderizarListaCategoriasAdmin(); 
     } catch (e) {

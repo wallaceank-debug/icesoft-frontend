@@ -192,6 +192,15 @@
                     <button onclick="salvarNovaCategoria()" class="btn-salvar" style="padding: 10px 20px;">Adicionar</button>
                 </div>
 
+                <!-- NOVO CAMPO: VISIBILIDADE NO APP -->
+                <div style="margin-top: 15px; margin-bottom: 15px; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px dashed #ccc;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="categoria-mostrar-cardapio" checked style="width: 20px; height: 20px; accent-color: #9C27B0;">
+                    <span style="font-weight: 600; color: #333; font-size: 0.95rem;">📱 Mostrar no Cardápio Digital (App)</span>
+                </label>
+                <p style="font-size: 0.8rem; color: #777; margin-top: 5px; margin-left: 30px; margin-bottom: 0;">Se desmarcado, esta categoria aparecerá apenas no PDV e nas Mesas.</p>
+                </div>
+
                 <div id="lista-categorias-gerenciador" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
                 </div>
 
