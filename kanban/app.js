@@ -62,16 +62,32 @@ function ativarSom() {
     somAtivado = !somAtivado; 
 
     if (somAtivado) {
+        localStorage.setItem('statusSomKanban', 'ligado'); // 💾 Salva no "Memory Card"
         btn.innerHTML = '🔔 Alerta Sonoro: ATIVADO';
         btn.style.background = '#4CAF50'; 
         
         audioCampainha.volume = 0.1;
         audioCampainha.play().then(() => {
             setTimeout(() => { audioCampainha.volume = 1.0; }, 500);
-        }).catch(e => console.log("Navegador ainda bloqueando."));
+        }).catch(e => console.log("Navegador aguardando interação."));
     } else {
+        localStorage.setItem('statusSomKanban', 'desligado'); // 💾 Salva no "Memory Card"
         btn.innerHTML = '🔇 Alerta Sonoro: Desativado';
         btn.style.background = '#f44336'; 
+    }
+}
+
+// 🧠 FUNÇÃO NOVA: Puxa a memória quando a página atualiza
+function restaurarMemoriaDoSom() {
+    const memoria = localStorage.getItem('statusSomKanban');
+    const btn = document.getElementById('btn-som');
+    
+    if (memoria === 'ligado') {
+        somAtivado = true;
+        if(btn) {
+            btn.innerHTML = '🔔 Alerta Sonoro: ATIVADO';
+            btn.style.background = '#4CAF50';
+        }
     }
 }
 
@@ -344,5 +360,8 @@ function imprimirComandaKanban(venda) {
     areaImpressao.style.display = 'none';
 }
 
-window.onload = carregarPedidos;
+window.onload = () => {
+    restaurarMemoriaDoSom(); // 🧠 Lembra se o som estava ligado
+    carregarPedidos();       // 📦 Carrega os pedidos normalmente
+};
 setInterval(carregarPedidos, 15000);
