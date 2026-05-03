@@ -1278,9 +1278,12 @@ if(inputTelefone) {
         if (e.target.value.length === 15) {
             buscarDadosClienteCRM(e.target.value);
         } else {
-            // Se ele apagar um número, esconde o selo
-            document.getElementById('badge-crm').style.display = 'none';
-        }
+                // Se ele apagar um número, esconde o selo CRM e a Barrinha Fidelidade
+                if (document.getElementById('badge-crm')) document.getElementById('badge-crm').style.display = 'none';
+                
+                const areaFid = document.getElementById('area-fidelidade-checkout');
+                if (areaFid) areaFid.style.display = 'none';
+            }
     });
 }
 
@@ -1315,6 +1318,9 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
         const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
         
         if (compras.length > 0) {
+            // Filtra pedidos cancelados para não dar pontos indevidos
+            const comprasValidas = compras.filter(c => c.status !== 'Cancelado');
+            
             // Pega o pedido mais recente dele
             const ultimoPedido = compras.reduce((max, p) => p.id > max.id ? p : max, compras[0]);
             
@@ -1326,29 +1332,23 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
             // 🎯 Preenche o ENDEREÇO
             const endereco = ultimoPedido.cliente_endereco;
             if (endereco && !endereco.includes("Retirada")) {
-                
-                // Força a opção para Delivery e mostra os campos
                 document.querySelector('input[name="tipo_entrega"][value="delivery"]').checked = true;
                 mudarTipoEntrega();
 
-                // Engenharia Reversa: Quebra o endereço que estava salvo para preencher os inputs
                 let partes = endereco.split(' - ');
-                let bairroSalvo = partes.pop().trim(); // O último bloco sempre é o bairro
+                let bairroSalvo = partes.pop().trim(); 
                 
-                // Tenta achar o bairro na listinha
                 const selectBairro = document.getElementById('cliente-bairro');
                 let optionBairro = Array.from(selectBairro.options).find(opt => opt.value === bairroSalvo);
                 if(optionBairro) {
                     selectBairro.value = bairroSalvo;
-                    atualizarTotalCheckout(); // Atualiza a taxa de entrega!
+                    atualizarTotalCheckout(); 
                 }
 
                 if (partes.length > 0) {
                     let ruaNum = partes[0].split(',');
                     document.getElementById('cliente-rua').value = ruaNum[0] ? ruaNum[0].trim() : '';
                     document.getElementById('cliente-numero').value = ruaNum[1] ? ruaNum[1].trim() : '';
-                    
-                    // Se tiver complemento no meio
                     let complemento = partes.length > 1 ? partes.slice(1).join(' - ').trim() : '';
                     document.getElementById('cliente-complemento').value = complemento;
                 }
@@ -1359,10 +1359,18 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
                 badge.style.background = '#25D366';
                 badge.style.boxShadow = '0 2px 5px rgba(37, 211, 102, 0.3)';
             }
+            
+            // 🚀 CHAMA A BARRINHA DE FIDELIDADE COM OS PONTOS ATUAIS
+            ativarBarrinhaFidelidade(comprasValidas.length);
+
         } else {
             // Cliente novo, nunca comprou
             if(badge) badge.style.display = 'none'; 
+            
+            // 🚀 CHAMA A BARRINHA ZERADA PARA INCENTIVAR A PRIMEIRA COMPRA
+            ativarBarrinhaFidelidade(0);
         }
+
     } catch (e) {
         console.log("Falha ao buscar CRM invisível:", e);
         if(badge) badge.style.display = 'none';
@@ -1593,4 +1601,59 @@ async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
     } catch (e) {
         console.error("Falha silenciosa ao registrar uso do cupom:", e);
     }
+}
+
+// ==========================================
+// ⭐ BARRINHA DE FIDELIDADE DINÂMICA
+// ==========================================
+function ativarBarrinhaFidelidade(pontosAtuais) {
+    let areaFidelidade = document.getElementById('area-fidelidade-checkout');
+    
+    // Se a caixinha ainda não existir, o próprio JavaScript constrói ela!
+    if (!areaFidelidade) {
+        areaFidelidade = document.createElement('div');
+        areaFidelidade.id = 'area-fidelidade-checkout';
+        areaFidelidade.style.cssText = "background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);";
+        
+        // Procura a área de Upsell para colar a barrinha logo acima dela
+        const areaUpsell = document.getElementById('area-upsell-checkout');
+        if (areaUpsell && areaUpsell.parentNode) {
+            areaUpsell.parentNode.insertBefore(areaFidelidade, areaUpsell);
+        }
+
+        // Cria o efeito visual de piscar a barra futura (laranja)
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes piscarBarraFutura { 0% { opacity: 0.4; } 100% { opacity: 1; } }`;
+        document.head.appendChild(style);
+    }
+
+    areaFidelidade.style.display = 'block';
+
+    // 🧮 Lógica de Pontos (Ex: Cartela com 10 espaços)
+    const metaPontos = 10; 
+    const pontosNaCartela = pontosAtuais % metaPontos;
+    const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
+    const porcentagemFutura = (1 / metaPontos) * 100;
+
+    let mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> após finalizar este pedido!`;
+    
+    if (pontosNaCartela === metaPontos - 1) {
+        mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
+    } else if (pontosAtuais === 0) {
+        mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
+    }
+
+    areaFidelidade.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: #333; font-size: 1rem;">⭐ Cartão Fidelidade</strong>
+            <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosAtuais} Pontos</span>
+        </div>
+        <div style="background: #f0f0f0; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; display: flex; position: relative;">
+            <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
+            <div style="background: #FF9800; height: 100%; width: ${porcentagemFutura}%; transition: 1s ease-in-out; animation: piscarBarraFutura 1s infinite alternate;" title="Ponto que será ganho hoje"></div>
+        </div>
+        <p style="font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 0; text-align: center;">
+            ${mensagem}
+        </p>
+    `;
 }
