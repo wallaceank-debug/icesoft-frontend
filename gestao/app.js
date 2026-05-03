@@ -314,6 +314,9 @@ function abrirModalProduto(id = null) {
         const campoDescricao = document.getElementById('prod-descricao');
         if(campoDescricao) campoDescricao.value = (p.descricao && p.descricao !== 'null') ? p.descricao : '';
         
+        // 👇 Carrega a caixinha de venda por peso
+        if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = p.venda_por_peso === true;
+        
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
     } else { 
         titulo.innerText = "Novo Produto";
@@ -328,6 +331,9 @@ function abrirModalProduto(id = null) {
         
         const campoDescricao = document.getElementById('prod-descricao');
         if(campoDescricao) campoDescricao.value = '';
+
+        // 👇 Zera a caixinha de venda por peso no produto novo
+        if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = false;
     }
 
     // 🧹 Limpa o campo de upload do PC toda vez que abrir a janela
