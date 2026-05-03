@@ -1606,9 +1606,6 @@ async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
 // ==========================================
 // ⭐ BARRINHA DE FIDELIDADE DINÂMICA
 // ==========================================
-// ==========================================
-// ⭐ BARRINHA DE FIDELIDADE DINÂMICA
-// ==========================================
 function ativarBarrinhaFidelidade(pontosAtuais) {
     let areaFidelidade = document.getElementById('area-fidelidade-checkout');
     
@@ -1636,8 +1633,12 @@ function ativarBarrinhaFidelidade(pontosAtuais) {
     const metaPontos = 10; 
     const pontosNaCartela = pontosAtuais % metaPontos;
     
-    // 🎯 O GATILHO: Se for múltiplo de 10 (ex: 10, 20, 30 compras) e maior que zero, liberamos o resgate!
+    // 🎯 O GATILHO: Se for múltiplo de 10 e maior que zero
     const temPremioLiberado = (pontosAtuais > 0 && pontosNaCartela === 0);
+
+    // 🧠 A MÁGICA DO LOOP: Define o número que vai aparecer na tela.
+    // Se completou a meta, mostra 10. Se já passou de 10 (ex: 11, 23), mostra só o "resto" (1, 3).
+    const pontosExibicao = temPremioLiberado ? metaPontos : pontosNaCartela;
 
     if (temPremioLiberado) {
         // 🏆 MODO RESGATE (Visual Dourado de Celebração)
@@ -1647,7 +1648,7 @@ function ativarBarrinhaFidelidade(pontosAtuais) {
         areaFidelidade.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <strong style="color: #f57f17; font-size: 1.1rem;">🏆 Cartela Completa!</strong>
-                <span style="background: #f57f17; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosAtuais} Pontos</span>
+                <span style="background: #f57f17; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosExibicao} Pontos</span>
             </div>
             <p style="font-size: 0.9rem; color: #555; margin-top: 10px; margin-bottom: 15px; text-align: center;">
                 Parabéns! Você completou sua cartela de fidelidade e ganhou um <strong>super desconto</strong> neste pedido!
@@ -1661,21 +1662,22 @@ function ativarBarrinhaFidelidade(pontosAtuais) {
         areaFidelidade.style.background = '#fff';
         areaFidelidade.style.borderColor = '#e0e0e0';
 
-        const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
+        // Usa os pontos de exibição (que nunca passam de 9) para preencher o verde na tela
+        const porcentagemAtual = (pontosExibicao / metaPontos) * 100;
         const porcentagemFutura = (1 / metaPontos) * 100;
 
-        let mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> após finalizar este pedido!`;
+        let mensagem = `Você tem <strong>${pontosExibicao}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> após finalizar este pedido!`;
         
-        if (pontosNaCartela === metaPontos - 1) {
-            mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
-        } else if (pontosAtuais === 0) {
+        if (pontosExibicao === metaPontos - 1) {
+            mensagem = `Você tem <strong>${pontosExibicao}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
+        } else if (pontosExibicao === 0) {
             mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
         }
 
         areaFidelidade.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <strong style="color: #333; font-size: 1rem;">⭐ Cartão Fidelidade</strong>
-                <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosAtuais} Pontos</span>
+                <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosExibicao} Pontos</span>
             </div>
             <div style="background: #f0f0f0; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; display: flex; position: relative;">
                 <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
