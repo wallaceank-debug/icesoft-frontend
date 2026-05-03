@@ -1606,54 +1606,128 @@ async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
 // ==========================================
 // ⭐ BARRINHA DE FIDELIDADE DINÂMICA
 // ==========================================
+// ==========================================
+// ⭐ BARRINHA DE FIDELIDADE DINÂMICA
+// ==========================================
 function ativarBarrinhaFidelidade(pontosAtuais) {
     let areaFidelidade = document.getElementById('area-fidelidade-checkout');
     
-    // Se a caixinha ainda não existir, o próprio JavaScript constrói ela!
     if (!areaFidelidade) {
         areaFidelidade = document.createElement('div');
         areaFidelidade.id = 'area-fidelidade-checkout';
-        areaFidelidade.style.cssText = "background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.02);";
+        areaFidelidade.style.cssText = "background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: 0.3s;";
         
-        // Procura a área de Upsell para colar a barrinha logo acima dela
         const areaUpsell = document.getElementById('area-upsell-checkout');
         if (areaUpsell && areaUpsell.parentNode) {
             areaUpsell.parentNode.insertBefore(areaFidelidade, areaUpsell);
         }
 
-        // Cria o efeito visual de piscar a barra futura (laranja)
-        const style = document.createElement('style');
-        style.innerHTML = `@keyframes piscarBarraFutura { 0% { opacity: 0.4; } 100% { opacity: 1; } }`;
-        document.head.appendChild(style);
+        if(!document.getElementById('animacao-fidelidade')) {
+            const style = document.createElement('style');
+            style.id = 'animacao-fidelidade';
+            style.innerHTML = `@keyframes piscarBarraFutura { 0% { opacity: 0.4; } 100% { opacity: 1; } }`;
+            document.head.appendChild(style);
+        }
     }
 
     areaFidelidade.style.display = 'block';
 
-    // 🧮 Lógica de Pontos (Ex: Cartela com 10 espaços)
+    // 🧮 Lógica de Pontos (Cartela de 10 espaços)
     const metaPontos = 10; 
     const pontosNaCartela = pontosAtuais % metaPontos;
-    const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
-    const porcentagemFutura = (1 / metaPontos) * 100;
-
-    let mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> após finalizar este pedido!`;
     
-    if (pontosNaCartela === metaPontos - 1) {
-        mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
-    } else if (pontosAtuais === 0) {
-        mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
+    // 🎯 O GATILHO: Se for múltiplo de 10 (ex: 10, 20, 30 compras) e maior que zero, liberamos o resgate!
+    const temPremioLiberado = (pontosAtuais > 0 && pontosNaCartela === 0);
+
+    if (temPremioLiberado) {
+        // 🏆 MODO RESGATE (Visual Dourado de Celebração)
+        areaFidelidade.style.background = 'linear-gradient(135deg, #fffbeb, #fff8e1)';
+        areaFidelidade.style.borderColor = '#ffe082';
+        
+        areaFidelidade.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <strong style="color: #f57f17; font-size: 1.1rem;">🏆 Cartela Completa!</strong>
+                <span style="background: #f57f17; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosAtuais} Pontos</span>
+            </div>
+            <p style="font-size: 0.9rem; color: #555; margin-top: 10px; margin-bottom: 15px; text-align: center;">
+                Parabéns! Você completou sua cartela de fidelidade e ganhou um <strong>super desconto</strong> neste pedido!
+            </p>
+            <button id="btn-resgatar-fidelidade" onclick="resgatarFidelidade()" style="width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 6px rgba(255, 152, 0, 0.3); animation: piscarBarraFutura 1s infinite alternate;">
+                🎁 Resgatar Prêmio Agora
+            </button>
+        `;
+    } else {
+        // 📊 MODO NORMAL (Barra de Progresso)
+        areaFidelidade.style.background = '#fff';
+        areaFidelidade.style.borderColor = '#e0e0e0';
+
+        const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
+        const porcentagemFutura = (1 / metaPontos) * 100;
+
+        let mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> após finalizar este pedido!`;
+        
+        if (pontosNaCartela === metaPontos - 1) {
+            mensagem = `Você tem <strong>${pontosAtuais}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
+        } else if (pontosAtuais === 0) {
+            mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
+        }
+
+        areaFidelidade.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <strong style="color: #333; font-size: 1rem;">⭐ Cartão Fidelidade</strong>
+                <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosAtuais} Pontos</span>
+            </div>
+            <div style="background: #f0f0f0; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; display: flex; position: relative;">
+                <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
+                <div style="background: #FF9800; height: 100%; width: ${porcentagemFutura}%; transition: 1s ease-in-out; animation: piscarBarraFutura 1s infinite alternate;" title="Ponto que será ganho hoje"></div>
+            </div>
+            <p style="font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 0; text-align: center;">
+                ${mensagem}
+            </p>
+        `;
+    }
+}
+
+function resgatarFidelidade() {
+    // ⚠️ ATENÇÃO, WALLACE: Mude este valor para o desconto que você quer dar ao cliente (ex: 15.00)
+    const VALOR_DO_PREMIO = 15.00; 
+
+    // Se o cliente já tiver digitado outro cupom, a gente pergunta se ele quer trocar
+    if (cupomAtivo && cupomAtivo.codigo !== 'FIDELIDADE_VIP') {
+        if(!confirm("Você já tem um cupom aplicado. Deseja substituí-lo pelo prêmio de fidelidade?")) {
+            return; 
+        }
     }
 
-    areaFidelidade.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <strong style="color: #333; font-size: 1rem;">⭐ Cartão Fidelidade</strong>
-            <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosAtuais} Pontos</span>
-        </div>
-        <div style="background: #f0f0f0; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; display: flex; position: relative;">
-            <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
-            <div style="background: #FF9800; height: 100%; width: ${porcentagemFutura}%; transition: 1s ease-in-out; animation: piscarBarraFutura 1s infinite alternate;" title="Ponto que será ganho hoje"></div>
-        </div>
-        <p style="font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 0; text-align: center;">
-            ${mensagem}
-        </p>
-    `;
+    // Criamos um "Cupom Fantasma" no sistema exclusivo para a Fidelidade
+    cupomAtivo = { 
+        codigo: 'FIDELIDADE_VIP', 
+        tipo: 'fixo', 
+        valor: VALOR_DO_PREMIO 
+    };
+
+    // Refaz as contas do carrinho para abater o valor
+    atualizarTotalCheckout();
+
+    // Muda o botão visualmente para dar aquele efeito de satisfação
+    const btn = document.getElementById('btn-resgatar-fidelidade');
+    if (btn) {
+        btn.innerHTML = '✅ Desconto Aplicado com Sucesso!';
+        btn.style.background = '#4CAF50';
+        btn.style.boxShadow = 'none';
+        btn.style.animation = 'none';
+        btn.disabled = true; // Impede que o cliente clique duas vezes
+    }
+
+    // Mostra o textinho verde logo acima do botão Finalizar Pedido
+    const msg = document.getElementById('msg-cupom');
+    if (msg) {
+        msg.innerText = `✅ Prêmio Fidelidade (R$ ${VALOR_DO_PREMIO.toFixed(2).replace('.', ',')}) aplicado!`;
+        msg.style.color = "#25D366";
+        msg.style.display = 'block';
+    }
+
+    // Limpa a caixinha de texto de cupons normais para não confundir
+    const inputCupom = document.getElementById('input-cupom');
+    if (inputCupom) inputCupom.value = '';
 }
