@@ -1070,3 +1070,21 @@ function mostrarAlertaVisualDelivery() {
 setTimeout(checarNovosPedidosGlobal, 3000);
 // Fica vasculhando a API em busca de pedidos a cada 15 segundos
 setInterval(checarNovosPedidosGlobal, 15000);
+
+// ==========================================
+// 🖱️ ROLAGEM INTELIGENTE DAS CATEGORIAS
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const barraCategorias = document.getElementById('barra-categorias');
+    
+    if (barraCategorias) {
+        barraCategorias.addEventListener('wheel', (evento) => {
+            if (evento.deltaY !== 0) {
+                // Impede que a tela inteira desça
+                evento.preventDefault();
+                // Transforma o movimento vertical da rodinha em movimento horizontal
+                barraCategorias.scrollLeft += evento.deltaY * 2; // O "* 2" deixa mais rápido!
+            }
+        });
+    }
+});
