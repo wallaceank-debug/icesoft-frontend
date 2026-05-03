@@ -304,19 +304,44 @@ function imprimirComandaKanban(venda) {
 
     let htmlItens = '';
     arrayItens.forEach(item => {
-        let nomeBase = item.nome;
-        if (nomeBase.includes('(')) nomeBase = nomeBase.replace('(', '<br>&nbsp;&nbsp;+ ').replace(')', '');
+        let nomeLimpo = item.nome ? item.nome.replace('Delivery: ', '').replace('🔥 Oferta: ', '🔥 ') : 'Produto';
+        const qtd = item.quantidade || 1;
+        const precoItem = Number(item.preco * qtd).toFixed(2).replace('.',',');
+
+        // 🧠 O NOVO QUEBRADOR DE LINHAS INTELIGENTE
+        let nomeBaseItem = nomeLimpo;
+        let adicionaisHtml = '';
+
+        // Procura se tem adicionais entre parênteses
+        const temAdicionais = nomeLimpo.match(/\(([^)]+)\)/); 
         
+        if (temAdicionais) {
+            // Separa o nome base (ex: Açaí - 400ml) dos adicionais
+            nomeBaseItem = nomeLimpo.substring(0, temAdicionais.index).trim();
+            
+            // Pega o recheio dos parênteses e divide onde tiver vírgula
+            const listaAdicionais = temAdicionais[1].split(',');
+            
+            // Cria uma nova linha para cada adicional encontrado
+            listaAdicionais.forEach(adicional => {
+                adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
+            });
+        }
+        
+        // Monta o visual de cada item no cupom
         htmlItens += `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold;">
-            <span style="flex: 1;">${item.quantidade || 1}x ${nomeBase}</span>
-            <span style="margin-left: 10px;">R$ ${Number(item.preco * (item.quantidade || 1)).toFixed(2).replace('.',',')}</span>
+        <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;">
+                <span style="flex: 1;">-> ${qtd}x ${nomeBaseItem}</span>
+                <span style="margin-left: 10px;">R$ ${precoItem}</span>
+            </div>
+            ${adicionaisHtml}
         </div>`;
     });
 
     const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
     
-    // 🧮 E, CLARO, NA IMPRESSORA TAMBÉM!
+    // 🧮 USA O TRADUTOR DE TROCO
     const pagamentoDisplay = formatarPagamentoComTroco(venda.forma_pagamento, venda.valor_total);
     
     areaImpressao.innerHTML = `
@@ -337,6 +362,10 @@ function imprimirComandaKanban(venda) {
             <strong>Endereço:</strong> ${venda.cliente_endereco || 'Retirada no Local'}
         </div>
         
+        <div style="margin-bottom: 10px; font-size: 15px;">
+            <strong>📦 Itens do Pedido:</strong>
+        </div>
+
         <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px;">
             ${htmlItens}
         </div>
