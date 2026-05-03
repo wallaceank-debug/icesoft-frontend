@@ -108,25 +108,34 @@ function renderizarGradeProdutos(lista) {
 function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
 
-    // ⚖️ CÉREBRO DA BALANÇA: Verifica se é produto vendido por peso
-    if (produto.venda_por_peso === true) {
-        let pesoGramas = prompt(`⚖️ BALANÇA\n\nDigite o peso exato de ${produto.nome} em GRAMAS (Ex: 290):`);
+    // ⚖️ CÉREBRO DA BALANÇA BLINDADO: Aceita 'true' mesmo se o banco devolver como texto
+    if (produto.venda_por_peso === true || produto.venda_por_peso === 'true') {
+        let pesoDigitado = prompt(`⚖️ BALANÇA\n\nDigite o peso de ${produto.nome} na balança.\n(Pode digitar em gramas ex: 290 ou em quilos ex: 0,290):`);
         
         // Se o usuário clicou em cancelar ou não digitou nada, cancela a operação
-        if (pesoGramas === null || pesoGramas.trim() === '') return;
+        if (pesoDigitado === null || pesoDigitado.trim() === '') return;
 
-        // Limpa possíveis letras ou vírgulas e converte para número
-        pesoGramas = parseFloat(pesoGramas.replace(',', '.').replace(/[^\d.]/g, ''));
+        // Limpa possíveis letras, troca vírgula por ponto e converte para número
+        let pesoReal = parseFloat(pesoDigitado.replace(',', '.').replace(/[^\d.]/g, ''));
 
-        if (isNaN(pesoGramas) || pesoGramas <= 0) {
+        if (isNaN(pesoReal) || pesoReal <= 0) {
             alert("⚠️ Por favor, digite um peso válido maior que zero.");
             return;
         }
 
+        // 🧠 SUPER INTELIGÊNCIA: Se o número for menor que 20, é impossível ser 20 gramas de sorvete.
+        // O sistema entende que você digitou em Quilos (ex: 0.290 ou 1.5) e converte para gramas sozinho!
+        if (pesoReal < 20) {
+            pesoReal = pesoReal * 1000;
+        }
+
         // Faz a regra de 3 para descobrir o preço (Preço do KG / 1000 * gramas)
         const precoPorGrama = Number(produto.preco) / 1000;
-        const precoCalculado = precoPorGrama * pesoGramas;
-        const nomeComPeso = `${produto.nome} (${pesoGramas}g)`;
+        const precoCalculado = precoPorGrama * pesoReal;
+        
+        // Remove os decimais quebrados do peso para ficar bonito na nota (ex: 290g em vez de 290.000g)
+        const pesoFormatado = Math.round(pesoReal);
+        const nomeComPeso = `${produto.nome} (${pesoFormatado}g)`;
 
         // Adiciona direto ao carrinho com o nome e preço já calculados!
         adicionarAoCarrinho(nomeComPeso, [], precoCalculado);
