@@ -426,22 +426,61 @@ function aplicarCupom() {
     const codigo = input.value.trim().toUpperCase();
     const msg = document.getElementById('msg-cupom');
 
+    let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+
     if (!codigo) { cupomAtivo = null; msg.style.display = 'none'; atualizarTotalCheckout(); return; }
 
-    const cupomEncontrado = cuponsGlobais.find(c => c.codigo === codigo);
+    const cupom = cuponsGlobais.find(c => c.codigo === codigo);
 
-    if (!cupomEncontrado) {
-        msg.innerText = "❌ Cupom inválido ou expirado.";
+    if (!cupom) {
+        msg.innerText = "❌ Cupom inválido ou não existe.";
         msg.style.color = "#f44336";
         msg.style.display = 'block';
         cupomAtivo = null;
-    } else {
-        cupomAtivo = cupomEncontrado;
-        const textoDesconto = cupomAtivo.tipo === 'porcentagem' ? `${cupomAtivo.valor}%` : `R$ ${Number(cupomAtivo.valor).toFixed(2).replace('.', ',')}`;
-        msg.innerText = `✅ Cupom de ${textoDesconto} aplicado!`;
-        msg.style.color = "#4CAF50";
-        msg.style.display = 'block';
+        atualizarTotalCheckout();
+        return;
     }
+
+    // 🛑 TRAVA 1: Limite de Usos
+    if (cupom.limite > 0 && (cupom.usos_atuais || 0) >= cupom.limite) {
+        msg.innerText = "❌ Este cupom esgotou o limite de usos.";
+        msg.style.color = "#f44336";
+        msg.style.display = 'block';
+        cupomAtivo = null;
+        atualizarTotalCheckout();
+        return;
+    }
+
+    // 🛑 TRAVA 2: Valor Mínimo
+    if (cupom.minimo > 0 && subtotal < cupom.minimo) {
+        msg.innerText = `❌ Exige compras acima de R$ ${Number(cupom.minimo).toFixed(2).replace('.', ',')}.`;
+        msg.style.color = "#f44336";
+        msg.style.display = 'block';
+        cupomAtivo = null;
+        atualizarTotalCheckout();
+        return;
+    }
+
+    // 🛑 TRAVA 3: Validade (Data)
+    if (cupom.validade) {
+        const hoje = new Date().toISOString().split('T')[0];
+        if (hoje > cupom.validade) {
+            msg.innerText = "❌ Este cupom está expirado.";
+            msg.style.color = "#f44336";
+            msg.style.display = 'block';
+            cupomAtivo = null;
+            atualizarTotalCheckout();
+            return;
+        }
+    }
+
+    // ✅ Passou na auditoria!
+    cupomAtivo = cupom;
+    const textoDesconto = cupomAtivo.tipo === 'porcentagem' ? `${cupomAtivo.valor}%` : `R$ ${Number(cupomAtivo.valor).toFixed(2).replace('.', ',')}`;
+    msg.innerText = `✅ Cupom de ${textoDesconto} aplicado!`;
+    msg.style.color = "#25D366";
+    msg.style.display = 'block';
+    
     atualizarTotalCheckout();
 }
 
@@ -649,13 +688,12 @@ function atualizarTotalCheckout() {
     const valorDesconto = document.getElementById('desconto-display-valor');
 
     if (cupomAtivo) {
-        if (cupomAtivo.tipo === 'porcentagem') desconto = subtotal * (cupomAtivo.valor / 100);
-        else desconto = cupomAtivo.valor;
+        let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
+        textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
+        totalFinal = totalFinal - desconto;
         
-        if (linhaDesconto) linhaDesconto.style.display = 'flex';
-        if (valorDesconto) valorDesconto.innerText = `- R$ ${desconto.toFixed(2).replace('.', ',')}`;
-    } else {
-        if (linhaDesconto) linhaDesconto.style.display = 'none';
+        // 🚀 FASE 2: Avisa a Gestão que o cupom gerou lucro!
+        registrarUsoCupomNaNuvem(cupomAtivo.codigo, totalFinal);
     }
 
     let totalFinal = (subtotal - desconto) + taxaEntrega;
@@ -1496,5 +1534,37 @@ function liberarLoja() {
     if (indicador) {
         indicador.innerHTML = '🟢 Recebendo pedidos';
         indicador.style.color = '#25D366';
+    }
+}
+
+// ==========================================
+// 🎟️ MÁQUINA DE CUPONS (GRAVAR USO E RENDA)
+// ==========================================
+async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
+    try {
+        // 1. Puxa os cupons fresquinhos da nuvem para não apagar o uso de outro cliente
+        const res = await fetch(`${API_URL}/configuracoes`);
+        const configs = await res.json();
+        
+        if (configs.cupons_delivery) {
+            let cupons = JSON.parse(configs.cupons_delivery);
+            
+            // 2. Acha o cupom que o cliente usou
+            const index = cupons.findIndex(c => c.codigo === codigoCupom);
+            if (index !== -1) {
+                // 3. Atualiza a contagem e a renda
+                cupons[index].usos_atuais = (cupons[index].usos_atuais || 0) + 1;
+                cupons[index].receita_gerada = (cupons[index].receita_gerada || 0) + valorFinalPedido;
+                
+                // 4. Manda de volta para o cofre da Gestão
+                await fetch(`${API_URL}/configuracoes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cupons_delivery: JSON.stringify(cupons) })
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Falha silenciosa ao registrar uso do cupom:", e);
     }
 }
