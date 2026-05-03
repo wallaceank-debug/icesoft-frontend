@@ -662,25 +662,31 @@ function irParaPasso(passo) {
 
 function atualizarTotalCheckout() {
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
-    document.getElementById('subtotal-display').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    const subtotalDisplay = document.getElementById('subtotal-display');
+    if (subtotalDisplay) subtotalDisplay.innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
     
     const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
     const tipoEntrega = tipoEntregaChecked ? tipoEntregaChecked.value : 'delivery';
     let taxaEntrega = 0;
     
+    const taxaDisplay = document.getElementById('taxa-entrega-display');
     if (tipoEntrega === 'delivery') {
         const selectBairro = document.getElementById('cliente-bairro');
-        if (selectBairro && selectBairro.value) {
+        if (selectBairro && selectBairro.value && selectBairro.value !== "Retirada no Local") {
             const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
             taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
-            document.getElementById('taxa-entrega-display').innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
-            document.getElementById('taxa-entrega-display').style.color = "#666";
+            if (taxaDisplay) {
+                taxaDisplay.innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+                taxaDisplay.style.color = "#666";
+            }
         } else {
-            document.getElementById('taxa-entrega-display').innerText = `Selecione o bairro`;
+            if (taxaDisplay) taxaDisplay.innerText = `Selecione o bairro`;
         }
     } else {
-        document.getElementById('taxa-entrega-display').innerText = `Grátis`;
-        document.getElementById('taxa-entrega-display').style.color = "#25D366";
+        if (taxaDisplay) {
+            taxaDisplay.innerText = `Grátis`;
+            taxaDisplay.style.color = "#25D366";
+        }
     }
 
     let desconto = 0;
@@ -688,24 +694,36 @@ function atualizarTotalCheckout() {
     const valorDesconto = document.getElementById('desconto-display-valor');
 
     if (cupomAtivo) {
-        let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
-        textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
-        totalFinal = totalFinal - desconto;
+        // 🛡️ TRAVA DE MATEMÁTICA: Força a ser número
+        let valorCupomNum = Number(cupomAtivo.valor) || 0;
         
-        // 🚀 FASE 2: Avisa a Gestão que o cupom gerou lucro!
-        registrarUsoCupomNaNuvem(cupomAtivo.codigo, totalFinal);
+        if (cupomAtivo.tipo === 'porcentagem') {
+            desconto = subtotal * (valorCupomNum / 100);
+        } else {
+            desconto = valorCupomNum;
+        }
+        
+        if (linhaDesconto) linhaDesconto.style.display = 'flex';
+        if (valorDesconto) valorDesconto.innerText = `- R$ ${desconto.toFixed(2).replace('.', ',')}`;
+    } else {
+        if (linhaDesconto) linhaDesconto.style.display = 'none';
     }
 
     let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0; 
-    document.getElementById('total-checkout-display').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
+    
+    const totalDisplay = document.getElementById('total-checkout-display');
+    if (totalDisplay) totalDisplay.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
 }
 
 async function salvarVendaDelivery() {
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
     let desconto = 0;
+    
     if (cupomAtivo) {
-        desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
+        // 🛡️ TRAVA DE MATEMÁTICA AQUI TAMBÉM
+        let valorCupomNum = Number(cupomAtivo.valor) || 0;
+        desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
     }
     
     const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
@@ -824,13 +842,18 @@ async function processarEnvioWhatsApp() {
     let totalFinal = subtotal + taxaEntrega;
 
     if (cupomAtivo) {
-        let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
+        // 🛡️ TRAVA DE MATEMÁTICA FINAL
+        let valorCupomNum = Number(cupomAtivo.valor) || 0;
+        let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
+        
         textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
         totalFinal = totalFinal - desconto;
+        if (totalFinal < 0) totalFinal = 0; // Se o cupom for maior que a compra, não fica negativo!
         
-        // 🚀 AQUI ESTAVA O SEGREDO: O 'await' faz ele esperar a nuvem salvar antes de ir pro WhatsApp
+        // Agora sim o gatilho vai disparar!
         await registrarUsoCupomNaNuvem(cupomAtivo.codigo, totalFinal);
     }
+    
     
     textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
 
@@ -1545,21 +1568,21 @@ function liberarLoja() {
 // ==========================================
 async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
     try {
-        // 🛑 CACHE KILLER: Força o sistema a ler a nuvem real, ignorando a memória do navegador
         const res = await fetch(`${API_URL}/configuracoes`, { cache: 'no-store' });
         const configs = await res.json();
         
         if (configs.cupons_delivery) {
             let cupons = JSON.parse(configs.cupons_delivery);
             
-            // Acha o cupom que o cliente usou
-            const index = cupons.findIndex(c => c.codigo === codigoCupom);
+            // Procura o cupom forçando tudo para maiúsculo e tirando espaços falsos
+            const codigoFormatado = codigoCupom.trim().toUpperCase();
+            const index = cupons.findIndex(c => c.codigo.trim().toUpperCase() === codigoFormatado);
+            
             if (index !== -1) {
-                // Atualiza a contagem e a renda
-                cupons[index].usos_atuais = (cupons[index].usos_atuais || 0) + 1;
-                cupons[index].receita_gerada = (cupons[index].receita_gerada || 0) + valorFinalPedido;
+                // Soma como número para evitar falhas
+                cupons[index].usos_atuais = Number(cupons[index].usos_atuais || 0) + 1;
+                cupons[index].receita_gerada = Number(cupons[index].receita_gerada || 0) + Number(valorFinalPedido);
                 
-                // Manda de volta para o cofre da Gestão
                 await fetch(`${API_URL}/configuracoes`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
