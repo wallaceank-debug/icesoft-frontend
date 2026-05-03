@@ -169,7 +169,14 @@ async function salvarDestaques() {
     const checkboxes = document.querySelectorAll('.chk-destaque:checked');
     const idsSelecionados = Array.from(checkboxes).map(chk => Number(chk.value));
 
-    enviarParaNuvem({ carrossel_destaques: JSON.stringify(idsSelecionados) }, btn, textoOriginal, "#FF9800");
+    // 1. Pega o texto que você digitou (se deixar em branco, ele salva o padrão)
+    const novoTitulo = document.getElementById('input-titulo-destaques') ? document.getElementById('input-titulo-destaques').value.trim() || 'Destaques da Casa' : 'Destaques da Casa';
+
+    // 2. Envia os dois juntos na mesma viagem para a nuvem
+    enviarParaNuvem({ 
+        carrossel_destaques: JSON.stringify(idsSelecionados),
+        titulo_carrossel_destaques: novoTitulo
+    }, btn, textoOriginal, "#FF9800");
 }
 
 // === FUNÇÕES DO CARD 3 (CUPONS AVANÇADOS) ===
