@@ -103,10 +103,37 @@ function renderizarGradeProdutos(lista) {
 }
 
 // ==========================================
-// LÓGICA DE ADIÇÃO E MODAL (ADICIONAIS)
+// LÓGICA DE ADIÇÃO E MODAL (ADICIONAIS E PESO)
 // ==========================================
 function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
+
+    // ⚖️ CÉREBRO DA BALANÇA: Verifica se é produto vendido por peso
+    if (produto.venda_por_peso === true) {
+        let pesoGramas = prompt(`⚖️ BALANÇA\n\nDigite o peso exato de ${produto.nome} em GRAMAS (Ex: 290):`);
+        
+        // Se o usuário clicou em cancelar ou não digitou nada, cancela a operação
+        if (pesoGramas === null || pesoGramas.trim() === '') return;
+
+        // Limpa possíveis letras ou vírgulas e converte para número
+        pesoGramas = parseFloat(pesoGramas.replace(',', '.').replace(/[^\d.]/g, ''));
+
+        if (isNaN(pesoGramas) || pesoGramas <= 0) {
+            alert("⚠️ Por favor, digite um peso válido maior que zero.");
+            return;
+        }
+
+        // Faz a regra de 3 para descobrir o preço (Preço do KG / 1000 * gramas)
+        const precoPorGrama = Number(produto.preco) / 1000;
+        const precoCalculado = precoPorGrama * pesoGramas;
+        const nomeComPeso = `${produto.nome} (${pesoGramas}g)`;
+
+        // Adiciona direto ao carrinho com o nome e preço já calculados!
+        adicionarAoCarrinho(nomeComPeso, [], precoCalculado);
+        return;
+    }
+
+    // Se NÃO for produto de peso, segue o fluxo normal de adicionais
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
         adicionarAoCarrinho(produto.nome, [], Number(produto.preco));
         return;
