@@ -18,12 +18,13 @@ let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 async function carregarTudo() {
     try {
-        // 🌐 O "motor" agora busca as categorias também!
-        const [resProd, resGrupos, resBairros, resCat] = await Promise.all([
+        // 🌐 O "motor" agora busca as configurações no mesmo pacote!
+        const [resProd, resGrupos, resBairros, resCat, resConfig] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
             fetch(`${API_URL}/bairros`),
-            fetch(`${API_URL}/categorias`)
+            fetch(`${API_URL}/categorias`),
+            fetch(`${API_URL}/configuracoes`) // 👈 AQUI! Pedimos a gaveta de configs
         ]);
 
         let produtosBrutos = await resProd.json();
@@ -51,6 +52,19 @@ async function carregarTudo() {
         
         // 🗺️ Pede para desenhar a caixinha de bairros na sacola!
         renderizarBairros();
+
+        // ==========================================
+        // 🚀 MÁGICA DO TÍTULO DINÂMICO
+        // ==========================================
+        const configs = await resConfig.json();
+        const tituloDestaque = configs.titulo_carrossel_destaques || 'Destaques da Casa';
+        const elementoTitulo = document.getElementById('titulo-ui-destaques');
+        
+        if (elementoTitulo) {
+            // Mantém a estrelinha charmosa e injeta o texto que você digitou lá no painel!
+            elementoTitulo.innerHTML = `⭐ ${tituloDestaque}`;
+        }
+
     } catch (e) { 
         console.error("Erro ao carregar do servidor novo:", e); 
     }
