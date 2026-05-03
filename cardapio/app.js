@@ -1703,19 +1703,15 @@ async function resgatarFidelidade() {
         const res = await fetch(`${API_URL}/configuracoes`);
         const configs = await res.json();
         
-        // 3. Extrai as regras do Fidelidade (usa valores de segurança caso haja falha)
-        let regrasFidelidade = { tipo: 'Valor Fixo', valor: 15 }; 
-        if (configs.fidelidade) {
-            regrasFidelidade = JSON.parse(configs.fidelidade);
-        }
+        // 3. Lê DIRETAMENTE as gavetas que o seu F12 encontrou!
+        const tipoGravado = configs.fidelidade_tipo || 'Valor Fixo';
+        const VALOR_DO_PREMIO = Number(configs.fidelidade_valor) || 0;
 
         // 4. Traduz a linguagem do Painel CRM para a linguagem do Carrinho
         let tipoDoCupom = 'fixo';
-        if (regrasFidelidade.tipo === 'Desconto em %' || regrasFidelidade.tipo === 'porcentagem' || regrasFidelidade.tipo === '%') {
+        if (tipoGravado === 'Desconto em %' || tipoGravado === 'porcentagem' || tipoGravado === '%') {
             tipoDoCupom = 'porcentagem';
         }
-
-        const VALOR_DO_PREMIO = Number(regrasFidelidade.valor) || 0;
 
         // 5. Se o cliente já tiver digitado outro cupom, a gente pergunta se ele quer trocar
         if (cupomAtivo && cupomAtivo.codigo !== 'FIDELIDADE_VIP') {
@@ -1728,7 +1724,7 @@ async function resgatarFidelidade() {
             }
         }
 
-        // 6. Criamos o "Cupom Fantasma" com os dados dinâmicos do CRM
+        // 6. Criamos o "Cupom Fantasma" com os dados exatos do seu CRM
         cupomAtivo = { 
             codigo: 'FIDELIDADE_VIP', 
             tipo: tipoDoCupom, 
