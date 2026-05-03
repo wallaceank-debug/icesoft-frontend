@@ -36,6 +36,10 @@ async function carregarConfiguracoes() {
         if (configs.logo_loja) document.getElementById('preview-img-logo').src = configs.logo_loja;
 
         // Card 2
+        if (document.getElementById('input-titulo-destaques')) {
+            document.getElementById('input-titulo-destaques').value = configs.titulo_carrossel_destaques || 'Destaques da Casa';
+        }
+        
         let destaquesSalvos = [];
         if (configs.carrossel_destaques) {
             try { destaquesSalvos = JSON.parse(configs.carrossel_destaques); } catch(e) {}
