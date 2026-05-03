@@ -827,6 +827,9 @@ async function processarEnvioWhatsApp() {
         let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (cupomAtivo.valor / 100) : cupomAtivo.valor;
         textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
         totalFinal = totalFinal - desconto;
+        
+        // 🚀 AQUI ESTAVA O SEGREDO: O 'await' faz ele esperar a nuvem salvar antes de ir pro WhatsApp
+        await registrarUsoCupomNaNuvem(cupomAtivo.codigo, totalFinal);
     }
     
     textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
@@ -1542,21 +1545,21 @@ function liberarLoja() {
 // ==========================================
 async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
     try {
-        // 1. Puxa os cupons fresquinhos da nuvem para não apagar o uso de outro cliente
-        const res = await fetch(`${API_URL}/configuracoes`);
+        // 🛑 CACHE KILLER: Força o sistema a ler a nuvem real, ignorando a memória do navegador
+        const res = await fetch(`${API_URL}/configuracoes`, { cache: 'no-store' });
         const configs = await res.json();
         
         if (configs.cupons_delivery) {
             let cupons = JSON.parse(configs.cupons_delivery);
             
-            // 2. Acha o cupom que o cliente usou
+            // Acha o cupom que o cliente usou
             const index = cupons.findIndex(c => c.codigo === codigoCupom);
             if (index !== -1) {
-                // 3. Atualiza a contagem e a renda
+                // Atualiza a contagem e a renda
                 cupons[index].usos_atuais = (cupons[index].usos_atuais || 0) + 1;
                 cupons[index].receita_gerada = (cupons[index].receita_gerada || 0) + valorFinalPedido;
                 
-                // 4. Manda de volta para o cofre da Gestão
+                // Manda de volta para o cofre da Gestão
                 await fetch(`${API_URL}/configuracoes`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
