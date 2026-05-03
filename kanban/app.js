@@ -308,23 +308,32 @@ function imprimirComandaKanban(venda) {
         const qtd = item.quantidade || 1;
         const precoItem = Number(item.preco * qtd).toFixed(2).replace('.',',');
 
-        // 🧠 O NOVO QUEBRADOR DE LINHAS INTELIGENTE
+        // 🧠 O NOVO QUEBRADOR DE LINHAS SUPER INTELIGENTE
         let nomeBaseItem = nomeLimpo;
         let adicionaisHtml = '';
 
-        // Procura se tem adicionais entre parênteses
-        const temAdicionais = nomeLimpo.match(/\(([^)]+)\)/); 
+        // Acha a posição do primeiro '(' e do ÚLTIMO ')' na frase inteira
+        const primeiroParentese = nomeLimpo.indexOf('(');
+        const ultimoParentese = nomeLimpo.lastIndexOf(')');
         
-        if (temAdicionais) {
-            // Separa o nome base (ex: Açaí - 400ml) dos adicionais
-            nomeBaseItem = nomeLimpo.substring(0, temAdicionais.index).trim();
+        // Só tenta separar se realmente existirem parênteses na frase
+        if (primeiroParentese !== -1 && ultimoParentese !== -1 && ultimoParentese > primeiroParentese) {
             
-            // Pega o recheio dos parênteses e divide onde tiver vírgula
-            const listaAdicionais = temAdicionais[1].split(',');
+            // Separa o nome base (ex: Açaí - 300ml) cortando no primeiro parêntese
+            nomeBaseItem = nomeLimpo.substring(0, primeiroParentese).trim();
+            
+            // Pega TODO o recheio de adicionais, ignorando os parênteses que estão no meio do caminho
+            const recheioAdicionais = nomeLimpo.substring(primeiroParentese + 1, ultimoParentese);
+            
+            // Divide os adicionais por vírgula
+            const listaAdicionais = recheioAdicionais.split(',');
             
             // Cria uma nova linha para cada adicional encontrado
             listaAdicionais.forEach(adicional => {
-                adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
+                // Esse if garante que não crie uma linha em branco sem querer
+                if(adicional.trim() !== '') {
+                    adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
+                }
             });
         }
         
@@ -340,8 +349,6 @@ function imprimirComandaKanban(venda) {
     });
 
     const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
-    
-    // 🧮 USA O TRADUTOR DE TROCO
     const pagamentoDisplay = formatarPagamentoComTroco(venda.forma_pagamento, venda.valor_total);
     
     areaImpressao.innerHTML = `
