@@ -62,7 +62,7 @@ async function carregarTudo() {
         
         if (elementoTitulo) {
             // Mantém a estrelinha charmosa e injeta o texto que você digitou lá no painel!
-            elementoTitulo.innerHTML = `⭐ ${tituloDestaque}`;
+            elementoTitulo.innerHTML = `${tituloDestaque}`;
         }
 
     } catch (e) { 
