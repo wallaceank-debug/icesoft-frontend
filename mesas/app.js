@@ -761,3 +761,64 @@ async function removerItemDaMesa(index) {
         alert("🔌 Erro de conexão ao tentar cancelar o item. Verifique a internet.");
     }
 }
+
+// ==========================================
+// 📡 RADAR GLOBAL DE DELIVERY (Invisível)
+// ==========================================
+let qtdPendentesGlobalAnterior = -1;
+// Link direto para a campainha, garantindo que o áudio funcione em qualquer pasta
+const audioAlertaGlobal = new Audio('https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3');
+
+async function checarNovosPedidosGlobal() {
+    try {
+        // Faz uma busca super rápida e leve na API
+        const API_URL_RADAR = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        const res = await fetch(`${API_URL_RADAR}/vendas`);
+        const vendas = await res.json();
+        
+        // Conta quantos pedidos estão exatamente com o status de recém-chegados
+        const pendentesAgora = vendas.filter(v => v.status && v.status.trim() === 'Pendente Delivery').length;
+
+        // Se o número de pendentes for MAIOR que o da checagem anterior, chegou pedido novo!
+        if (qtdPendentesGlobalAnterior !== -1 && pendentesAgora > qtdPendentesGlobalAnterior) {
+            
+            // 1. Toca a campainha
+            audioAlertaGlobal.volume = 1.0;
+            audioAlertaGlobal.play().catch(e => console.log("O navegador bloqueou o áudio. Clique em qualquer lugar da tela."));
+            
+            // 2. Mostra a bolha visual piscante
+            mostrarAlertaVisualDelivery();
+        }
+        
+        // Atualiza a memória para a próxima checagem
+        qtdPendentesGlobalAnterior = pendentesAgora;
+    } catch (e) {
+        // Falha silenciosa para não poluir ou travar sua tela de PDV
+    }
+}
+
+function mostrarAlertaVisualDelivery() {
+    let bolha = document.getElementById('alerta-bolha-delivery');
+    if (!bolha) {
+        // Cria a animação de piscar (Efeito Sirene)
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes piscarAlerta { 0% { background: #e91e63; transform: scale(1); } 100% { background: #ff4081; transform: scale(1.05); } }`;
+        document.head.appendChild(style);
+
+        // Cria o botão flutuante na tela
+        bolha = document.createElement('div');
+        bolha.id = 'alerta-bolha-delivery';
+        bolha.innerHTML = `🚨 <strong>NOVO DELIVERY!</strong><br><span style="font-size:0.85rem">Clique aqui para abrir o Kanban</span>`;
+        bolha.style.cssText = "position:fixed; bottom:30px; right:30px; background:#e91e63; color:white; padding:15px 20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.4); z-index:99999; cursor:pointer; font-family:sans-serif; text-align:center; animation: piscarAlerta 0.6s infinite alternate;";
+        
+        // Quando você clica na bolha, ele te joga direto para a tela do Kanban!
+        bolha.onclick = () => window.location.href = '../kanban/';
+        
+        document.body.appendChild(bolha);
+    }
+}
+
+// Inicializa o radar 3 segundos após você abrir o PDV/Mesas
+setTimeout(checarNovosPedidosGlobal, 3000);
+// Fica vasculhando a API em busca de pedidos a cada 15 segundos
+setInterval(checarNovosPedidosGlobal, 15000);
