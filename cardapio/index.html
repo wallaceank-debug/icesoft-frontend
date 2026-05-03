@@ -93,6 +93,43 @@
             color: #666;
         }
 
+        /* ==========================================
+           🏷️ ETIQUETAS DE DESTAQUE (NOVIDADE / OFERTA)
+           ========================================== */
+        .etiqueta-destaque {
+            position: absolute;
+            top: 10px;
+            left: -5px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 5px 12px;
+            border-radius: 0 10px 10px 0;
+            text-transform: uppercase;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+            letter-spacing: 0.5px;
+        }
+
+        /* O truque da sombrinha de "dobra da fita" 3D */
+        .etiqueta-destaque::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            border-left: 5px solid transparent;
+        }
+
+        /* Cores Dinâmicas dependendo da palavra */
+        .tag-novidade { background: #25D366; /* Verde chamativo */ }
+        .tag-novidade::after { border-top: 5px solid #1da851; }
+        
+        .tag-oferta { background: #ff3b30; /* Vermelho Urgente */ }
+        .tag-oferta::after { border-top: 5px solid #cc2e26; }
+        
+        .tag-promocao { background: #FF9800; /* Laranja atrativo */ }
+        .tag-promocao::after { border-top: 5px solid #e68a00; }
+        
         /* Ajustes para a tela do celular */
         @media (max-width: 600px) {
             .banner-loja { height: 130px; }
