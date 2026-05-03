@@ -1690,46 +1690,82 @@ function ativarBarrinhaFidelidade(pontosAtuais) {
     }
 }
 
-function resgatarFidelidade() {
-    // ⚠️ ATENÇÃO, WALLACE: Mude este valor para o desconto que você quer dar ao cliente (ex: 15.00)
-    const VALOR_DO_PREMIO = 15.00; 
-
-    // Se o cliente já tiver digitado outro cupom, a gente pergunta se ele quer trocar
-    if (cupomAtivo && cupomAtivo.codigo !== 'FIDELIDADE_VIP') {
-        if(!confirm("Você já tem um cupom aplicado. Deseja substituí-lo pelo prêmio de fidelidade?")) {
-            return; 
-        }
-    }
-
-    // Criamos um "Cupom Fantasma" no sistema exclusivo para a Fidelidade
-    cupomAtivo = { 
-        codigo: 'FIDELIDADE_VIP', 
-        tipo: 'fixo', 
-        valor: VALOR_DO_PREMIO 
-    };
-
-    // Refaz as contas do carrinho para abater o valor
-    atualizarTotalCheckout();
-
-    // Muda o botão visualmente para dar aquele efeito de satisfação
+async function resgatarFidelidade() {
+    // 1. Muda o botão para "carregando" enquanto busca as regras na nuvem
     const btn = document.getElementById('btn-resgatar-fidelidade');
     if (btn) {
-        btn.innerHTML = '✅ Desconto Aplicado com Sucesso!';
-        btn.style.background = '#4CAF50';
-        btn.style.boxShadow = 'none';
-        btn.style.animation = 'none';
-        btn.disabled = true; // Impede que o cliente clique duas vezes
+        btn.innerHTML = '⏳ Resgatando...';
+        btn.disabled = true;
     }
 
-    // Mostra o textinho verde logo acima do botão Finalizar Pedido
-    const msg = document.getElementById('msg-cupom');
-    if (msg) {
-        msg.innerText = `✅ Prêmio Fidelidade (R$ ${VALOR_DO_PREMIO.toFixed(2).replace('.', ',')}) aplicado!`;
-        msg.style.color = "#25D366";
-        msg.style.display = 'block';
-    }
+    try {
+        // 2. Busca as configurações fresquinhas lá do seu Painel de Gestão
+        const res = await fetch(`${API_URL}/configuracoes`);
+        const configs = await res.json();
+        
+        // 3. Extrai as regras do Fidelidade (usa valores de segurança caso haja falha)
+        let regrasFidelidade = { tipo: 'Valor Fixo', valor: 15 }; 
+        if (configs.fidelidade) {
+            regrasFidelidade = JSON.parse(configs.fidelidade);
+        }
 
-    // Limpa a caixinha de texto de cupons normais para não confundir
-    const inputCupom = document.getElementById('input-cupom');
-    if (inputCupom) inputCupom.value = '';
+        // 4. Traduz a linguagem do Painel CRM para a linguagem do Carrinho
+        let tipoDoCupom = 'fixo';
+        if (regrasFidelidade.tipo === 'Desconto em %' || regrasFidelidade.tipo === 'porcentagem' || regrasFidelidade.tipo === '%') {
+            tipoDoCupom = 'porcentagem';
+        }
+
+        const VALOR_DO_PREMIO = Number(regrasFidelidade.valor) || 0;
+
+        // 5. Se o cliente já tiver digitado outro cupom, a gente pergunta se ele quer trocar
+        if (cupomAtivo && cupomAtivo.codigo !== 'FIDELIDADE_VIP') {
+            if(!confirm("Você já tem um cupom aplicado. Deseja substituí-lo pelo prêmio de fidelidade?")) {
+                if (btn) {
+                    btn.innerHTML = '🎁 Resgatar Prêmio Agora';
+                    btn.disabled = false;
+                }
+                return; 
+            }
+        }
+
+        // 6. Criamos o "Cupom Fantasma" com os dados dinâmicos do CRM
+        cupomAtivo = { 
+            codigo: 'FIDELIDADE_VIP', 
+            tipo: tipoDoCupom, 
+            valor: VALOR_DO_PREMIO 
+        };
+
+        // 7. Refaz as contas do carrinho para abater o valor
+        atualizarTotalCheckout();
+
+        // 8. Muda o botão visualmente para dar aquele efeito de satisfação
+        if (btn) {
+            btn.innerHTML = '✅ Desconto Aplicado com Sucesso!';
+            btn.style.background = '#4CAF50';
+            btn.style.boxShadow = 'none';
+            btn.style.animation = 'none';
+            btn.disabled = true; 
+        }
+
+        // 9. Mostra o textinho verde dinâmico (R$ ou %) logo acima do botão Finalizar
+        const msg = document.getElementById('msg-cupom');
+        if (msg) {
+            const textoPremio = tipoDoCupom === 'porcentagem' ? `${VALOR_DO_PREMIO}%` : `R$ ${VALOR_DO_PREMIO.toFixed(2).replace('.', ',')}`;
+            msg.innerText = `✅ Prêmio Fidelidade de ${textoPremio} aplicado!`;
+            msg.style.color = "#25D366";
+            msg.style.display = 'block';
+        }
+
+        // 10. Limpa a caixinha de texto de cupons normais para não confundir
+        const inputCupom = document.getElementById('input-cupom');
+        if (inputCupom) inputCupom.value = '';
+
+    } catch (erro) {
+        console.error("Falha ao ler o CRM:", erro);
+        alert("⚠️ Houve um pequeno erro ao se conectar com o sistema de fidelidade. Tente novamente.");
+        if (btn) {
+            btn.innerHTML = '🎁 Resgatar Prêmio Agora';
+            btn.disabled = false;
+        }
+    }
 }
