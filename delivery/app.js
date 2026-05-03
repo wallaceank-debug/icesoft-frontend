@@ -29,6 +29,7 @@ async function carregarConfiguracoes() {
         if (configs.endereco_loja) document.getElementById('config-endereco').value = configs.endereco_loja;
         if (configs.horarios_loja) document.getElementById('config-horarios').value = configs.horarios_loja;
         if (configs.pagamentos_loja) document.getElementById('config-pagamentos').value = configs.pagamentos_loja;
+        if (configs.pedido_minimo_delivery) document.getElementById('config-pedido-minimo').value = configs.pedido_minimo_delivery;
         
         // 🖼️ Puxa as Imagens Salvas para mostrar no Preview
         if (configs.banner_loja) document.getElementById('preview-img-banner').src = configs.banner_loja;
@@ -352,7 +353,8 @@ async function salvarInformacoesLoja() {
     const payload = {
         endereco_loja: document.getElementById('config-endereco').value,
         horarios_loja: document.getElementById('config-horarios').value,
-        pagamentos_loja: document.getElementById('config-pagamentos').value
+        pagamentos_loja: document.getElementById('config-pagamentos').value,
+        pedido_minimo_delivery: parseFloat(document.getElementById('config-pedido-minimo').value) || 0
     };
 
     enviarParaNuvem(payload, btn, textoOriginal, "#2196F3");

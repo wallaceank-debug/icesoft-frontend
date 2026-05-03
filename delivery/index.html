@@ -231,6 +231,11 @@
 
                     <label style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">Formas de Pagamento Aceitas</label>
                     <textarea id="config-pagamentos" rows="2" placeholder="Ex: Pix, Cartão de Crédito, Débito e Dinheiro Vivo" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins'; resize:none;"></textarea>
+                    
+                    <!-- NOVO CAMPO: PEDIDO MÍNIMO PARA DELIVERY -->
+                    <label style="display:block; margin-top:20px; margin-bottom:5px; font-weight:bold; color:#555;">Valor Mínimo para Delivery (R$)</label>
+                    <input type="number" id="config-pedido-minimo" placeholder="Ex: 20.00" style="width:100%; padding:12px; margin-bottom:5px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-family:'Poppins';">
+                    <span style="font-size: 0.8rem; color: #777; display: block; margin-bottom: 15px;">Pedidos abaixo desse valor só poderão ser Retirados na Loja. Deixe 0 para não exigir mínimo.</span>
 
                     <button id="btn-salvar-infos" onclick="salvarInformacoesLoja()" style="width:100%; padding:15px; margin-top:10px; background:#2196F3; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         💾 Salvar Informações

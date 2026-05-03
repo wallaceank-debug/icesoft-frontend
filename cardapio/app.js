@@ -10,6 +10,7 @@ let lojaAberta = true; // Impede adicionar se estiver fechada
 let idsUpsellGlobais = [];
 let descontoUpsellGlobal = 0;
 let categoriasGlobaisDelivery = [];
+let pedidoMinimoDeliveryGlobal = 0;
 
 let cuponsGlobais = [];
 let cupomAtivo = null;
@@ -517,6 +518,12 @@ function validarPasso1() {
     if (!nome || !tel) return "Preencha seu Nome e WhatsApp.";
     
     if (tipo === 'delivery') {
+        // 🛑 A NOVA TRAVA DE PEDIDO MÍNIMO ACONTECE AQUI!
+        let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+        if (pedidoMinimoDeliveryGlobal > 0 && subtotal < pedidoMinimoDeliveryGlobal) {
+            return `O valor mínimo para Delivery é R$ ${pedidoMinimoDeliveryGlobal.toFixed(2).replace('.', ',')}.\nSeu subtotal é R$ ${subtotal.toFixed(2).replace('.', ',')}.\n\nAdicione mais itens ou altere para "Retirada na Loja".`;
+        }
+
         const bairro = document.getElementById('cliente-bairro').value;
         const rua = document.getElementById('cliente-rua').value.trim();
         const numero = document.getElementById('cliente-numero').value.trim();
@@ -897,6 +904,7 @@ async function carregarConfiguracoesLoja() {
         if (configs.cupons_delivery) { try { cuponsGlobais = JSON.parse(configs.cupons_delivery); } catch(e) {} }
         if (configs.banner_loja && document.getElementById('img-banner-loja')) document.getElementById('img-banner-loja').src = configs.banner_loja;
         if (configs.logo_loja && document.getElementById('img-logo-loja')) document.getElementById('img-logo-loja').src = configs.logo_loja;
+        if (configs.pedido_minimo_delivery) pedidoMinimoDeliveryGlobal = parseFloat(configs.pedido_minimo_delivery) || 0;
 
         if (configs.endereco_loja) {
             document.getElementById('loja-endereco-texto').innerText = configs.endereco_loja;
