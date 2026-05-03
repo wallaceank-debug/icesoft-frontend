@@ -98,10 +98,33 @@
             <section class="painel-esquerdo">
                 
                 <style>
-                    .barra-categorias { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; flex-shrink: 0; }
+                    /* Barra de categorias superior */
+                    .barra-categorias { 
+                        display: flex; 
+                        overflow-x: auto; 
+                        gap: 10px; 
+                        padding-bottom: 10px; 
+                        flex-shrink: 0; 
+                        scroll-behavior: smooth; /* Deslize suave */
+                        scrollbar-width: none; /* Esconde a barra feia no Firefox */
+                    }
+                    .barra-categorias::-webkit-scrollbar { display: none; } /* Esconde a barra feia no Chrome/Edge */
                     .categoria-btn { flex-shrink: 0 !important; white-space: nowrap !important; }
-                    .barra-categorias::-webkit-scrollbar { height: 6px; }
-                    .barra-categorias::-webkit-scrollbar-thumb { background: #00bcd4; border-radius: 10px; }
+
+                    /* Grade de produtos que ROLA */
+                    #grade-produtos {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                        gap: 15px;
+                        overflow-y: auto; /* A MÁGICA 1: Libera rolagem para baixo */
+                        max-height: calc(100vh - 160px); /* A MÁGICA 2: Trava o tamanho dela na tela */
+                        padding-bottom: 80px; /* Para o último item não grudar no chão */
+                        align-content: start;
+                    }
+                    
+                    /* Tira a barra de rolagem feia também dos produtos */
+                    #grade-produtos::-webkit-scrollbar { width: 6px; }
+                    #grade-produtos::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
                 </style>
 
                 <nav class="barra-categorias" id="barra-categorias">
