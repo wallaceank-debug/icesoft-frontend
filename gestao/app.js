@@ -474,7 +474,11 @@ async function salvarProduto() {
         }
     }
 
-    const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url };
+    // 👇 Pega o valor da caixinha de venda por peso
+    const venda_por_peso = document.getElementById('prod-venda-peso') ? document.getElementById('prod-venda-peso').checked : false;
+
+    // 👇 Adiciona a variável venda_por_peso no pacote de dados que vai pro servidor
+    const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url, venda_por_peso };
 
     try {
         if (id) {
