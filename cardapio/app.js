@@ -1058,9 +1058,22 @@ function renderizarCarrossel(produtos) {
     carrossel.innerHTML = '';
     
     produtosDestaque.forEach(p => {
+        // 🚀 O CÉREBRO DAS TAGS TAMBÉM NO CARROSSEL
+        let tagHtml = '';
+        if (p.tag && p.tag !== '') {
+            const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade' };
+            tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
+        }
+
         const visualProduto = p.imagem_url 
-            ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
-            : `<div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
+            ? `<div style="position: relative;">
+                   ${tagHtml}
+                   <img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+               </div>`
+            : `<div style="position: relative;">
+                   ${tagHtml}
+                   <div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 10px;">${p.emoji || '🍦'}</div>
+               </div>`;
 
         carrossel.innerHTML += `
             <div class="card-destaque" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between;">
