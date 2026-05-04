@@ -168,6 +168,28 @@
                         </div>
                         
                         <textarea id="prod-descricao" class="input-padrao" placeholder="Descrição apetitosa do produto... (Ex: Delicioso Milk Shake batido na hora com sorvete artesanal e muita calda!)" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; resize: vertical;"></textarea>
+                        
+                        <!-- 🚀 NOVA ÁREA: PROMOÇÃO -->
+                        <div style="margin-top: 15px; padding: 15px; background: #fff0f5; border: 1px dashed #ff4081; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: #ff4081; font-size: 1rem; display: flex; align-items: center; gap: 8px;">🔥 Promoção do Produto</h4>
+                            
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <label style="flex: 1; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="radio" name="tipo_promocao" value="nenhuma" checked onchange="toggleAreaPromocao()" style="accent-color: #ff4081;"> Nenhuma
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="radio" name="tipo_promocao" value="porcentagem" onchange="toggleAreaPromocao()" style="accent-color: #ff4081;"> % Desconto
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="radio" name="tipo_promocao" value="fixo" onchange="toggleAreaPromocao()" style="accent-color: #ff4081;"> R$ Desconto
+                                </label>
+                            </div>
+                            
+                            <div id="area-valor-promocao" style="display: none; display: flex; gap: 10px; align-items: center;">
+                                <input type="number" id="prod-valor-promocao" class="input-padrao" placeholder="Ex: 10" step="0.01" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                                <span id="label-tipo-promocao" style="font-weight: bold; color: #333; width: 30px; text-align: center;">%</span>
+                            </div>
+                        </div>
 
                     </div>
 

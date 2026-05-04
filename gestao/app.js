@@ -292,6 +292,23 @@ function fecharModalGrupo() { document.getElementById('modal-grupo').style.displ
 
 let gruposSelecionadosTemporarios = []; // Array para controlar a ordem no modal
 
+// Função para exibir/ocultar a caixa de valor da promoção
+function toggleAreaPromocao() {
+    const tipoSelecionado = document.querySelector('input[name="tipo_promocao"]:checked').value;
+    const areaValor = document.getElementById('area-valor-promocao');
+    const labelTipo = document.getElementById('label-tipo-promocao');
+    const inputValor = document.getElementById('prod-valor-promocao');
+    
+    if (tipoSelecionado === 'nenhuma') {
+        areaValor.style.display = 'none';
+        inputValor.value = ''; // Limpa o valor
+    } else {
+        areaValor.style.display = 'flex';
+        labelTipo.innerText = tipoSelecionado === 'porcentagem' ? '%' : 'R$';
+        inputValor.placeholder = tipoSelecionado === 'porcentagem' ? 'Ex: 10 (10% off)' : 'Ex: 5.00 (5 reais off)';
+    }
+}
+
 function abrirModalProduto(id = null) {
     const modal = document.getElementById('modal-produto');
     const idInput = document.getElementById('prod-id');
@@ -323,6 +340,13 @@ function abrirModalProduto(id = null) {
         if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = p.venda_por_peso === true;
         
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
+
+        // NOVO: Carrega os dados da promoção (assumindo que o banco traga esses campos)
+        const tipoPromo = p.tipo_promocao || 'nenhuma';
+        document.querySelector(`input[name="tipo_promocao"][value="${tipoPromo}"]`).checked = true;
+        document.getElementById('prod-valor-promocao').value = p.valor_promocao || '';
+        toggleAreaPromocao(); // Atualiza a visualização
+
     } else { 
         titulo.innerText = "Novo Produto";
         idInput.value = '';
@@ -344,6 +368,11 @@ function abrirModalProduto(id = null) {
 
         // 👇 Zera a caixinha de venda por peso no produto novo
         if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = false;
+
+        // NOVO: Zera os dados da promoção
+        document.querySelector('input[name="tipo_promocao"][value="nenhuma"]').checked = true;
+        document.getElementById('prod-valor-promocao').value = '';
+        toggleAreaPromocao(); // Atualiza a visualização
     }
 
     // 🧹 Limpa o campo de upload do PC toda vez que abrir a janela
@@ -448,6 +477,7 @@ async function salvarProduto() {
     const nome = document.getElementById('prod-nome').value;
     const preco = document.getElementById('prod-preco').value;
     const emoji = document.getElementById('prod-emoji').value;
+    
     // ✅ CORRIGIDO: Declarando a variável tag corretamente
     const tag = document.getElementById('produto-tag') ? document.getElementById('produto-tag').value : '';
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
@@ -489,8 +519,34 @@ async function salvarProduto() {
     // 👇 Pega o valor da caixinha de venda por peso
     const venda_por_peso = document.getElementById('prod-venda-peso') ? document.getElementById('prod-venda-peso').checked : false;
 
-    // ✅ CORRIGIDO: Injetando a 'tag' no pacote de dados que vai pro servidor
-    const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url, venda_por_peso, tag };
+    // 🚀 NOVO: Captura os dados da Promoção
+    const tipo_promocao_elemento = document.querySelector('input[name="tipo_promocao"]:checked');
+    const tipo_promocao = tipo_promocao_elemento ? tipo_promocao_elemento.value : 'nenhuma';
+    
+    let valor_promocao = document.getElementById('prod-valor-promocao') ? document.getElementById('prod-valor-promocao').value : '';
+    
+    // Tratamento de segurança: se escolheu 'nenhuma', garante que o valor é 0/nulo
+    if (tipo_promocao === 'nenhuma' || !valor_promocao) {
+        valor_promocao = 0;
+    } else {
+        valor_promocao = parseFloat(valor_promocao);
+    }
+
+    // ✅ CORRIGIDO: Injetando a 'tag' e a 'promocao' no pacote de dados que vai pro servidor
+    const dados = { 
+        nome, 
+        descricao, 
+        preco: parseFloat(preco), 
+        emoji, 
+        categoria, 
+        grupos_ids, 
+        ativo: true, 
+        imagem_url, 
+        venda_por_peso, 
+        tag,
+        tipo_promocao,     // 👈 NOVA VARIÁVEL DA PROMOÇÃO
+        valor_promocao     // 👈 NOVA VARIÁVEL DA PROMOÇÃO
+    };
 
     try {
         if (id) {
