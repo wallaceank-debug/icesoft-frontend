@@ -307,6 +307,8 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-preco').value = p.preco;
         document.getElementById('prod-emoji').value = p.emoji;
         document.getElementById('prod-categoria').value = p.categoria || '';
+        // Preenche a tag se o produto já tiver uma, senão deixa em branco
+        document.getElementById('produto-tag').value = produto.tag || '';
         
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = p.imagem_url || '';
