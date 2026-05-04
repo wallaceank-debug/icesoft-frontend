@@ -1120,6 +1120,27 @@ function renderizarCarrossel(produtos) {
             tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
         }
 
+        // 💰 MATEMÁTICA DA PROMOÇÃO (Sincronizada com o Carrossel)
+        let precoHtml = `<div class="preco" style="color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
+        
+        if (p.tipo_promocao && p.tipo_promocao !== 'nenhuma' && p.valor_promocao > 0) {
+            let precoComDesconto = Number(p.preco);
+            if (p.tipo_promocao === 'porcentagem') {
+                precoComDesconto -= precoComDesconto * (Number(p.valor_promocao) / 100);
+            } else if (p.tipo_promocao === 'fixo') {
+                precoComDesconto -= Number(p.valor_promocao);
+            }
+            if (precoComDesconto < 0) precoComDesconto = 0;
+            
+            // Layout com preço riscado empilhado para caber bonitinho no card do carrossel
+            precoHtml = `
+                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px;">
+                    <span style="text-decoration: line-through; color: #999; font-size: 0.8rem; margin-bottom: -2px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                    <strong class="preco" style="color: #25D366; font-size: 1.1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
+                </div>
+            `;
+        }
+
         const visualProduto = p.imagem_url 
             ? `<div style="position: relative;">
                    ${tagHtml}
@@ -1134,8 +1155,8 @@ function renderizarCarrossel(produtos) {
             <div class="card-destaque" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between;">
                 ${visualProduto}
                 <div>
-                    <h4 style="margin: 0 0 5px 0;">${p.nome}</h4>
-                    <div class="preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                    <h4 style="margin: 0 0 5px 0; font-size: 0.95rem;">${p.nome}</h4>
+                    ${precoHtml}
                 </div>
                 <button class="btn-add-destaque">+ Adicionar</button>
             </div>
