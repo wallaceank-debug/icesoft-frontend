@@ -130,6 +130,26 @@ function renderizarCardapio(lista) {
                 tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
             }
 
+            // 💰 MATEMÁTICA DA PROMOÇÃO (Preço Riscado)
+            let precoHtml = `<div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
+            
+            if (p.tipo_promocao && p.tipo_promocao !== 'nenhuma' && p.valor_promocao > 0) {
+                let precoComDesconto = Number(p.preco);
+                if (p.tipo_promocao === 'porcentagem') {
+                    precoComDesconto -= precoComDesconto * (Number(p.valor_promocao) / 100);
+                } else if (p.tipo_promocao === 'fixo') {
+                    precoComDesconto -= Number(p.valor_promocao);
+                }
+                if (precoComDesconto < 0) precoComDesconto = 0;
+                
+                precoHtml = `
+                    <div style="margin-top: 5px; display: flex; align-items: center; gap: 8px;">
+                        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                        <strong style="color: #25D366; font-size: 1.1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
+                    </div>
+                `;
+            }
+
             // Visual do Produto com a tag flutuando por cima
             const visualProduto = p.imagem_url 
                 ? `<div style="position: relative; flex-shrink: 0;">
@@ -146,7 +166,7 @@ function renderizarCardapio(lista) {
                     <div style="flex: 1; padding-right: 15px;">
                         <h3 style="margin: 0; color: #333; font-size: 1.05rem; font-weight: 600;">${p.nome}</h3>
                         ${htmlDescricao}
-                        <div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                        ${precoHtml}
                     </div>
                     ${visualProduto}
                 </div>
@@ -354,14 +374,26 @@ function alterarQuantidadeModal(delta) {
 }
 
 function atualizarPrecoDinamico() {
+    // 💰 Descobre o preço base verificando se tem promoção ativa
+    let precoBase = Number(produtoEmSelecao.preco);
+    if (produtoEmSelecao.tipo_promocao && produtoEmSelecao.tipo_promocao !== 'nenhuma' && produtoEmSelecao.valor_promocao > 0) {
+        if (produtoEmSelecao.tipo_promocao === 'porcentagem') {
+            precoBase -= precoBase * (Number(produtoEmSelecao.valor_promocao) / 100);
+        } else if (produtoEmSelecao.tipo_promocao === 'fixo') {
+            precoBase -= Number(produtoEmSelecao.valor_promocao);
+        }
+        if (precoBase < 0) precoBase = 0;
+    }
+
     const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
-    const valorUnidade = Number(produtoEmSelecao.preco) + valorComplementos;
+    const valorUnidade = precoBase + valorComplementos;
     const totalGeral = valorUnidade * quantidadeModal;
     
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
 }
 
 function confirmarEscolhasEAdicionar() {
+    // 1. Validação de Grupos Obrigatórios
     if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
         const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
 
@@ -377,6 +409,7 @@ function confirmarEscolhasEAdicionar() {
         }
     }
 
+    // 2. Montagem do Nome Final com Adicionais
     let nomeFinal = produtoEmSelecao.nome;
     if (escolhasAtuais.length > 0) {
         let stringComplementos = escolhasAtuais.map(e => {
@@ -386,9 +419,22 @@ function confirmarEscolhasEAdicionar() {
         nomeFinal += ` (${stringComplementos})`;
     }
 
+    // 3. 💰 MATEMÁTICA DO PREÇO BASE (Aplicando a Promoção se existir)
+    let precoBase = Number(produtoEmSelecao.preco);
+    if (produtoEmSelecao.tipo_promocao && produtoEmSelecao.tipo_promocao !== 'nenhuma' && produtoEmSelecao.valor_promocao > 0) {
+        if (produtoEmSelecao.tipo_promocao === 'porcentagem') {
+            precoBase -= precoBase * (Number(produtoEmSelecao.valor_promocao) / 100);
+        } else if (produtoEmSelecao.tipo_promocao === 'fixo') {
+            precoBase -= Number(produtoEmSelecao.valor_promocao);
+        }
+        if (precoBase < 0) precoBase = 0; // Evita que o produto fique com valor negativo
+    }
+
+    // 4. Soma Final (Preço Base com Desconto + Valor dos Complementos)
     const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
-    const precoFinal = Number(produtoEmSelecao.preco) + valorComplementos;
+    const precoFinal = precoBase + valorComplementos;
     
+    // 5. Dispara para o Carrinho
     for (let i = 0; i < quantidadeModal; i++) {
         adicionarAoCarrinho(nomeFinal, precoFinal);
     }
