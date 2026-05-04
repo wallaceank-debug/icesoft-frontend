@@ -307,8 +307,11 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-preco').value = p.preco;
         document.getElementById('prod-emoji').value = p.emoji;
         document.getElementById('prod-categoria').value = p.categoria || '';
-        // Preenche a tag se o produto já tiver uma, senão deixa em branco
-        document.getElementById('produto-tag').value = produto.tag || '';
+        
+        // ✅ CORRIGIDO: O produto se chama 'p' nesta função
+        if (document.getElementById('produto-tag')) {
+            document.getElementById('produto-tag').value = p.tag || '';
+        }
         
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = p.imagem_url || '';
@@ -327,6 +330,11 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-preco').value = '';
         document.getElementById('prod-emoji').value = '🍨';
         document.getElementById('prod-categoria').value = '';
+        
+        // ✅ Zera a tag se for um produto novo
+        if (document.getElementById('produto-tag')) {
+            document.getElementById('produto-tag').value = '';
+        }
         
         const campoImagem = document.getElementById('produto-imagem');
         if(campoImagem) campoImagem.value = '';
