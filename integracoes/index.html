@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrações - Icesoft</title>
+    <link rel="stylesheet" href="../gestao/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .grid-integracoes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .card-integracao {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid #eee;
+        }
+        .header-card-int {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f9f9f9;
+            padding-bottom: 15px;
+        }
+        .header-card-int img {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            background: #999;
+        }
+        .status-on { background: #25D366; }
+        .input-padrao {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .variavel-dica {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .variavel-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MENU LATERAL REAPROVEITADO -->
+    <aside class="menu-lateral">
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">DirectMenu</span></h2>
+        
+        <a href="../pdv/" class="menu-item">
+            <span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span>
+        </a>
+        <a href="../mesas/" class="menu-item">
+            <span class="menu-icone">🪑</span><span class="menu-texto">Mesas/Comandas</span>
+        </a>
+        <a href="../gestao/" class="menu-item">
+            <span class="menu-icone">🍔</span><span class="menu-texto">Cardápio</span>
+        </a>
+        <a href="../delivery/" class="menu-item">
+            <span class="menu-icone">🛵</span><span class="menu-texto">Gestão Delivery</span>
+        </a>
+        <a href="../kanban/" class="menu-item">
+            <span class="menu-icone">📱</span><span class="menu-texto">Painel Kanban</span>
+        </a>
+        <a href="../integracoes/" class="menu-item ativo">
+            <span class="menu-icone">🔌</span><span class="menu-texto">Integrações</span>
+        </a>
+        
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+                <span class="menu-icone">📊</span><span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+            </div>
+            <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
+                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        function toggleRelatorios() {
+            const submenu = document.getElementById('submenu-relatorios');
+            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+        }
+    </script>
+
+    <div class="conteudo-principal">
+        
+        <header class="gestao-header">
+            <div class="titulo-area">
+                <h1>CONECTIVIDADE E ROBÔS</h1>
+            </div>
+        </header>
+
+        <main class="gestao-container" style="max-width: 1200px; margin: 0 auto;">
+            
+            <div class="grid-integracoes">
+                
+                <!-- CARD 1: CONEXÃO WHATSAPP -->
+                <div class="card-integracao">
+                    <div class="header-card-int">
+                        <div style="font-size: 2.5rem;">💬</div>
+                        <div style="flex: 1;">
+                            <h2 style="margin: 0; font-size: 1.2rem; color: #333;">WhatsApp API</h2>
+                            <span class="status-badge" id="status-zap">Aguardando Conexão</span>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Conecte o servidor da Evolution API para que o sistema possa enviar mensagens automáticas.</p>
+                    
+                    <label>URL da Evolution API</label>
+                    <input type="text" id="api-zap-url" class="input-padrao" placeholder="Ex: https://api.icesoft.com">
+                    
+                    <label>Global API Key (Senha)</label>
+                    <input type="password" id="api-zap-key" class="input-padrao" placeholder="Cole sua chave aqui">
+
+                    <label>Nome da Instância (Conexão)</label>
+                    <input type="text" id="api-zap-instancia" class="input-padrao" placeholder="Ex: IcesoftBot">
+
+                    <button id="btn-conectar-zap" onclick="salvarConfigZap()" style="width: 100%; padding: 15px; background: #25D366; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s;">💾 Salvar Conexão</button>
+                    <!-- ÁREA DO QR CODE -->
+                    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
+                        <button id="btn-gerar-qr" onclick="gerarQrCode()" style="padding: 10px 20px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">📱 Gerar QR Code do WhatsApp</button>
+                        
+                        <div id="area-qrcode" style="display: none; margin-top: 15px;">
+                            <img id="img-qrcode" src="" style="max-width: 220px; border-radius: 10px; border: 2px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                            <p style="font-size: 0.85rem; color: #666; font-weight: bold; margin-top: 10px;">Escaneie com o seu WhatsApp da Loja</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: MENSAGENS DO ROBÔ -->
+                <div class="card-integracao">
+                    <div class="header-card-int">
+                        <div style="font-size: 2.5rem;">🤖</div>
+                        <div style="flex: 1;">
+                            <h2 style="margin: 0; font-size: 1.2rem; color: #333;">Textos do Robô</h2>
+                            <p style="margin: 0; font-size: 0.8rem; color: #777;">Configure as mensagens de status</p>
+                        </div>
+                    </div>
+
+                    <span class="variavel-dica">Use variáveis mágicas: <span class="variavel-tag">{nome}</span> para o cliente e <span class="variavel-tag">{pedido}</span> para o número.</span>
+
+                    <label>👋 Boas-Vindas (Quando o cliente manda msg)</label>
+                    <textarea id="msg-boas-vindas" class="input-padrao" rows="3" placeholder="Olá {nome}! Para fazer seu pedido, acesse nosso cardápio: icesoftsorvetes.com"></textarea>
+
+                    <label>⏳ Pedido Aceito (A Preparar)</label>
+                    <textarea id="msg-aceito" class="input-padrao" rows="2" placeholder="Tudo certo, {nome}! Seu pedido #{pedido} já foi impresso na nossa cozinha."></textarea>
+
+                    <label>🛵 Saiu para Entrega</label>
+                    <textarea id="msg-entrega" class="input-padrao" rows="2" placeholder="Opa! Seu pedido #{pedido} acabou de sair com nosso motoboy. Fique de olho!"></textarea>
+
+                    <label>✅ Pedido Finalizado (Entregue)</label>
+                    <textarea id="msg-concluido" class="input-padrao" rows="2" placeholder="Aproveite seu açaí, {nome}! Obrigado por pedir na Icesoft."></textarea>
+
+                    <button id="btn-salvar-mensagens" onclick="salvarMensagens()" style="width: 100%; padding: 15px; background: #00bcd4; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s;">💾 Salvar Mensagens</button>
+                </div>
+
+                <!-- CARD 3: IFOOD (EM BREVE) -->
+                <div class="card-integracao" style="opacity: 0.6;">
+                    <div class="header-card-int">
+                        <div style="font-size: 2.5rem; background: #ea1d2c; width: 45px; height: 45px; border-radius: 10px; display: flex; justify-content: center; align-items: center; color: white;">iF</div>
+                        <div style="flex: 1;">
+                            <h2 style="margin: 0; font-size: 1.2rem; color: #333;">iFood PDV</h2>
+                            <span class="status-badge">Em Breve</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #666;">Receba os pedidos do iFood diretamente no seu Kanban e impressora.</p>
+                    <label>Client ID</label>
+                    <input type="text" class="input-padrao" disabled placeholder="Bloqueado">
+                    <label>Client Secret</label>
+                    <input type="text" class="input-padrao" disabled placeholder="Bloqueado">
+                    <button disabled style="width: 100%; padding: 15px; background: #ccc; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: not-allowed;">Bloqueado</button>
+                </div>
+
+            </div>
+        </main>
+    </div>
+        
+    <script src="app.js"></script>
+</body>
+</html>
