@@ -440,7 +440,8 @@ async function salvarProduto() {
     const nome = document.getElementById('prod-nome').value;
     const preco = document.getElementById('prod-preco').value;
     const emoji = document.getElementById('prod-emoji').value;
-    tag: document.getElementById('produto-tag').value,
+    // ✅ CORRIGIDO: Declarando a variável tag corretamente
+    const tag = document.getElementById('produto-tag') ? document.getElementById('produto-tag').value : '';
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
     
     const campoImagem = document.getElementById('produto-imagem');
@@ -480,8 +481,8 @@ async function salvarProduto() {
     // 👇 Pega o valor da caixinha de venda por peso
     const venda_por_peso = document.getElementById('prod-venda-peso') ? document.getElementById('prod-venda-peso').checked : false;
 
-    // 👇 Adiciona a variável venda_por_peso no pacote de dados que vai pro servidor
-    const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url, venda_por_peso };
+    // ✅ CORRIGIDO: Injetando a 'tag' no pacote de dados que vai pro servidor
+    const dados = { nome, descricao, preco: parseFloat(preco), emoji, categoria, grupos_ids, ativo: true, imagem_url, venda_por_peso, tag };
 
     try {
         if (id) {
