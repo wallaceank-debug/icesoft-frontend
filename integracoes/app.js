@@ -7,21 +7,19 @@ window.onload = async () => {
 // 1. PUXA OS DADOS SALVOS QUANDO VOCÊ ABRE A TELA
 async function carregarConfiguracoes() {
     try {
-        const res = await fetch(`${API_URL}/configuracoes`);
+        // 👇 MUDANÇA AQUI: Endereço exclusivo para integrações
+        const res = await fetch(`${API_URL}/integracoes`);
         const configs = await res.json();
 
-        // Puxa os dados da conexão do Zap
         if (configs.zap_url) document.getElementById('api-zap-url').value = configs.zap_url;
         if (configs.zap_key) document.getElementById('api-zap-key').value = configs.zap_key;
         if (configs.zap_instancia) document.getElementById('api-zap-instancia').value = configs.zap_instancia;
 
-        // Puxa os textos do robô
         if (configs.msg_boas_vindas) document.getElementById('msg-boas-vindas').value = configs.msg_boas_vindas;
         if (configs.msg_aceito) document.getElementById('msg-aceito').value = configs.msg_aceito;
         if (configs.msg_entrega) document.getElementById('msg-entrega').value = configs.msg_entrega;
         if (configs.msg_concluido) document.getElementById('msg-concluido').value = configs.msg_concluido;
 
-        // Muda a etiquetinha visual se já tiver uma URL salva
         if (configs.zap_url && configs.zap_instancia) {
             const badge = document.getElementById('status-zap');
             if (badge) {
@@ -29,7 +27,6 @@ async function carregarConfiguracoes() {
                 badge.className = 'status-badge status-on';
             }
         }
-
     } catch (e) {
         console.error("Erro ao carregar configurações:", e);
     }
@@ -73,7 +70,8 @@ async function salvarMensagens() {
 // 4. FUNÇÃO UNIVERSAL QUE FAZ O ENVIO E MUDA A COR DO BOTÃO
 async function enviarParaNuvem(payload, botao, textoOriginal, corOriginal) {
     try {
-        const res = await fetch(`${API_URL}/configuracoes`, { 
+        // 👇 MUDANÇA AQUI: Enviando para o endereço correto
+        const res = await fetch(`${API_URL}/integracoes`, { 
             method: 'PUT', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify(payload) 
@@ -83,7 +81,6 @@ async function enviarParaNuvem(payload, botao, textoOriginal, corOriginal) {
             botao.style.backgroundColor = "#4CAF50"; 
             botao.innerText = "✅ Salvo com sucesso!";
             
-            // Se foi a conexão do zap, muda a badge de status
             if (payload.zap_url) {
                 document.getElementById('status-zap').innerText = '✅ Configurado';
                 document.getElementById('status-zap').className = 'status-badge status-on';
