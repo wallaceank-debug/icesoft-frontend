@@ -42,8 +42,8 @@ document.getElementById('form-login').addEventListener('submit', async function(
             localStorage.setItem('icesoft_token', resultado.token);
             localStorage.setItem('icesoft_usuario', usernameDigitado);
             
-            // Joga o usuário direto para o Kanban ou Dashboard
-            window.location.href = '../dashboard/index.html'; 
+            // 🚀 MUDA AQUI: Joga o usuário direto para o Frente de Caixa (PDV)
+            window.location.href = '../pdv/index.html'; 
             
         } else {
             // Acesso negado
