@@ -131,15 +131,7 @@
                             <input type="text" id="prod-emoji" class="input-padrao" placeholder="Emoji (🍨)" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-family: 'Poppins', sans-serif;">
                         </div>
 
-                        <!-- NOVO CAMPO: VENDA POR PESO -->
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #fff8e1; border-radius: 8px; border: 1px dashed #ffb300;">
-                            <input type="checkbox" id="prod-venda-peso" style="width: 20px; height: 20px; accent-color: #ff9800; cursor: pointer;">
-                            <label for="prod-venda-peso" style="font-weight: 600; color: #f57f17; cursor: pointer; font-size: 0.9rem;">
-                                ⚖️ Produto vendido por peso (O preço acima é o valor de 1 KG)
-                            </label>
-                        </div>
-
-                        <!-- NOVO CAMPO: VENDA POR PESO -->
+                        <!-- CAMPO: VENDA POR PESO -->
                         <div style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #fff8e1; border-radius: 8px; border: 1px dashed #ffb300;">
                             <input type="checkbox" id="prod-venda-peso" style="width: 20px; height: 20px; accent-color: #ff9800; cursor: pointer;">
                             <label for="prod-venda-peso" style="font-weight: 600; color: #f57f17; cursor: pointer; font-size: 0.9rem;">
@@ -147,10 +139,10 @@
                             </label>
                         </div>
                         
-                        <!-- 🚀 NOVO CAMPO: TAGS DE DESTAQUE -->
-                        <div style="margin-top: 15px; margin-bottom: 5px;">
+                        <!-- 🚀 CAMPO: TAGS DE DESTAQUE -->
+                        <div style="margin-bottom: 5px;">
                             <label style="font-weight: bold; color: #555; font-size: 0.9rem; display: block; margin-bottom: 5px;">🏷️ Tag de Destaque (Opcional):</label>
-                            <select id="produto-tag" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; outline: none; background: #fff; font-family: 'Poppins', sans-serif;">
+                            <select id="produto-tag" class="input-padrao" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; outline: none; background: #fff; font-family: 'Poppins', sans-serif;">
                                 <option value="">Nenhuma tag</option>
                                 <option value="so_hoje">⏳ Só hoje</option>
                                 <option value="mais_pedido">⭐ Mais pedido</option>
@@ -159,10 +151,7 @@
                             </select>
                         </div>
                         
-                        <select id="prod-categoria" class="input-padrao" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; font-family: 'Poppins', sans-serif;">
-                            <option value="Outros">Outros</option>
-                        </select>
-                        
+                        <!-- CAMPO: CATEGORIA -->
                         <select id="prod-categoria" class="input-padrao" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; font-family: 'Poppins', sans-serif;">
                             <option value="Outros">Outros</option>
                         </select>
