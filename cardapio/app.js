@@ -89,18 +89,13 @@ function renderizarBairros() {
 }
 
 // ==========================================
-// 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS E FOTOS)
+// 🎨 O NOVO CARDÁPIO DINÂMICO (COM CATEGORIAS, FOTOS E TAGS!)
 // ==========================================
 function obterOrdemDasCategorias(listaProdutosAtual) {
-    // 1. Pega apenas o nome das categorias que têm permissão de aparecer no App
     const categoriasPermitidas = categoriasGlobaisDelivery.map(c => c.nome);
-
-    // 2. Filtra os produtos para mostrar apenas os que pertencem a categorias permitidas
     const produtosPermitidos = listaProdutosAtual.filter(p => 
         categoriasPermitidas.includes(p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos')
     );
-
-    // 3. Monta a ordem oficial baseada APENAS nas categorias permitidas
     const categoriasExtras = [...new Set(produtosPermitidos.map(p => p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos'))]
         .filter(c => !categoriasPermitidas.includes(c));
 
@@ -128,9 +123,23 @@ function renderizarCardapio(lista) {
                 ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
                 : ``;
             
+            // 🚀 O CÉREBRO DAS TAGS AQUI
+            let tagHtml = '';
+            if (p.tag && p.tag !== '') {
+                const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade' };
+                tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
+            }
+
+            // Visual do Produto com a tag flutuando por cima
             const visualProduto = p.imagem_url 
-                ? `<img src="${p.imagem_url}" loading="lazy" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex-shrink: 0;">`
-                : `<div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
+                ? `<div style="position: relative; flex-shrink: 0;">
+                       ${tagHtml}
+                       <img src="${p.imagem_url}" loading="lazy" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                   </div>`
+                : `<div style="position: relative; flex-shrink: 0;">
+                       ${tagHtml}
+                       <div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center;">${p.emoji || '🍦'}</div>
+                   </div>`;
 
             container.innerHTML += `
                 <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
@@ -153,7 +162,6 @@ function rolarParaCategoria(id) {
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
 }
-
 // ==========================================
 // SISTEMA DE ADIÇÃO E MODAL DE PRODUTO
 // ==========================================
