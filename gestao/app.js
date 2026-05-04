@@ -440,6 +440,7 @@ async function salvarProduto() {
     const nome = document.getElementById('prod-nome').value;
     const preco = document.getElementById('prod-preco').value;
     const emoji = document.getElementById('prod-emoji').value;
+    tag: document.getElementById('produto-tag').value,
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
     
     const campoImagem = document.getElementById('produto-imagem');
