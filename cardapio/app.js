@@ -908,8 +908,17 @@ async function abrirTelaRastreio() {
             const ultimoPedido = comprasDesteCliente.reduce((max, p) => p.id > max.id ? p : max, comprasDesteCliente[0]);
             rastreioPedidoId = ultimoPedido.id;
             
-            // Atualiza a bolha do CRM Fidelidade
-            document.getElementById('rastreio-fidelidade-qtd').innerText = comprasDesteCliente.length;
+            // 🧠 CORREÇÃO DO CRM: Calcula os pontos da cartela atual ignorando cancelados
+            const comprasValidas = comprasDesteCliente.filter(c => c.status !== 'Cancelado');
+            const totalPedidos = comprasValidas.length;
+            const metaPontos = 10; 
+            
+            let pontosNaCartela = totalPedidos % metaPontos;
+            // Se completou a cartela exata (ex: 10, 20), mostra 10 em vez de 0
+            if (totalPedidos > 0 && pontosNaCartela === 0) pontosNaCartela = metaPontos;
+            
+            // Atualiza a bolha do CRM Fidelidade com o loop correto
+            document.getElementById('rastreio-fidelidade-qtd').innerText = pontosNaCartela;
             
             // Atualiza a cor visual na tela
             atualizarStatusVisualRastreio(ultimoPedido.status);
