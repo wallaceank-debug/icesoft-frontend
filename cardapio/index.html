@@ -395,10 +395,19 @@
                     <div class="secao-checkout">
                         <h4>Como você prefere pagar?</h4>
                         
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Pix')">
-                            <input type="radio" name="forma_pag" value="Pix" style="display: none;">
+                        <!-- NOVO: Pix Online Dinâmico -->
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Pagamento via Pix Online')">
+                            <input type="radio" name="forma_pag" value="Pagamento via Pix Online" style="display: none;">
                             <span style="font-size: 1.2rem;">💠</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Pix</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Pix Online (Pagar agora)</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+
+                        <!-- NOVO: Pix na Entrega -->
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Pix na entrega via QR Code')">
+                            <input type="radio" name="forma_pag" value="Pix na entrega via QR Code" style="display: none;">
+                            <span style="font-size: 1.2rem;">📱</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Pix na Entrega (QR Code)</span>
                             <div class="radio-customizado"></div>
                         </label>
                         
