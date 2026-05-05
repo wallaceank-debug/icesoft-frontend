@@ -1761,9 +1761,9 @@ async function registrarUsoCupomNaNuvem(codigoCupom, valorFinalPedido) {
 }
 
 // ==========================================
-// ⭐ BARRINHA DE FIDELIDADE DINÂMICA
+// ⭐ BARRINHA DE FIDELIDADE DINÂMICA (ACUMULATIVA)
 // ==========================================
-function ativarBarrinhaFidelidade(pontosAtuais) {
+function ativarBarrinhaFidelidade(comprasValidas) {
     let areaFidelidade = document.getElementById('area-fidelidade-checkout');
     
     if (!areaFidelidade) {
@@ -1786,65 +1786,64 @@ function ativarBarrinhaFidelidade(pontosAtuais) {
 
     areaFidelidade.style.display = 'block';
 
-    // 🧮 Lógica de Pontos (Cartela de 10 espaços)
+    // 🧮 A MATEMÁTICA DO ACÚMULO DE PRÊMIOS
     const metaPontos = 10; 
-    const pontosNaCartela = pontosAtuais % metaPontos;
+    const totalPedidos = comprasValidas.length;
     
-    // 🎯 O GATILHO: Se for múltiplo de 10 e maior que zero
-    const temPremioLiberado = (pontosAtuais > 0 && pontosNaCartela === 0);
+    // Progresso atual na cartela (Ex: Se tem 12 pedidos, o resto é 2)
+    const pontosNaCartela = totalPedidos % metaPontos;
+    
+    // Quantos prêmios ele já conquistou na vida? (Ex: 12 pedidos = 1 prêmio)
+    const premiosGanhos = Math.floor(totalPedidos / metaPontos);
+    
+    // Quantos ele já usou? (Contamos no histórico de observações)
+    const premiosUsados = comprasValidas.filter(v => v.observacoes && v.observacoes.includes('FIDELIDADE_VIP')).length;
+    
+    // O saldo real de prêmios que ele pode resgatar hoje
+    let premiosDisponiveis = premiosGanhos - premiosUsados;
+    if (premiosDisponiveis < 0) premiosDisponiveis = 0;
 
-    // 🧠 A MÁGICA DO LOOP: Define o número que vai aparecer na tela.
-    // Se completou a meta, mostra 10. Se já passou de 10 (ex: 11, 23), mostra só o "resto" (1, 3).
-    const pontosExibicao = temPremioLiberado ? metaPontos : pontosNaCartela;
-
-    if (temPremioLiberado) {
-        // 🏆 MODO RESGATE (Visual Dourado de Celebração)
-        areaFidelidade.style.background = 'linear-gradient(135deg, #fffbeb, #fff8e1)';
-        areaFidelidade.style.borderColor = '#ffe082';
-        
-        areaFidelidade.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <strong style="color: #f57f17; font-size: 1.1rem;">🏆 Cartela Completa!</strong>
-                <span style="background: #f57f17; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosExibicao} Pontos</span>
+    // 📊 UI DO PRÊMIO DISPONÍVEL (Fica no topo se ele tiver saldo)
+    let htmlPremio = '';
+    if (premiosDisponiveis > 0) {
+        htmlPremio = `
+            <div style="background: linear-gradient(135deg, #fffbeb, #fff8e1); border: 1px solid #ffe082; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                <strong style="color: #f57f17; font-size: 1.05rem;">🎁 Você tem ${premiosDisponiveis} prêmio(s) disponível(is)!</strong>
+                <p style="font-size: 0.85rem; color: #555; margin: 5px 0 10px 0;">Use agora ou guarde para o próximo pedido.</p>
+                <button id="btn-resgatar-fidelidade" onclick="resgatarFidelidade()" style="width: 100%; padding: 10px; background: #FF9800; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; animation: piscarBarraFutura 1s infinite alternate;">
+                    Resgatar Prêmio Agora
+                </button>
             </div>
-            <p style="font-size: 0.9rem; color: #555; margin-top: 10px; margin-bottom: 15px; text-align: center;">
-                Parabéns! Você completou sua cartela de fidelidade e ganhou um <strong>super desconto</strong> neste pedido!
-            </p>
-            <button id="btn-resgatar-fidelidade" onclick="resgatarFidelidade()" style="width: 100%; padding: 12px; background: #FF9800; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 6px rgba(255, 152, 0, 0.3); animation: piscarBarraFutura 1s infinite alternate;">
-                🎁 Resgatar Prêmio Agora
-            </button>
-        `;
-    } else {
-        // 📊 MODO NORMAL (Barra de Progresso)
-        areaFidelidade.style.background = '#fff';
-        areaFidelidade.style.borderColor = '#e0e0e0';
-
-        // Usa os pontos de exibição (que nunca passam de 9) para preencher o verde na tela
-        const porcentagemAtual = (pontosExibicao / metaPontos) * 100;
-        const porcentagemFutura = (1 / metaPontos) * 100;
-
-        let mensagem = `Você tem <strong>${pontosExibicao}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> após finalizar este pedido!`;
-        
-        if (pontosExibicao === metaPontos - 1) {
-            mensagem = `Você tem <strong>${pontosExibicao}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
-        } else if (pontosExibicao === 0) {
-            mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
-        }
-
-        areaFidelidade.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <strong style="color: #333; font-size: 1rem;">⭐ Cartão Fidelidade</strong>
-                <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosExibicao} Pontos</span>
-            </div>
-            <div style="background: #f0f0f0; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; display: flex; position: relative;">
-                <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
-                <div style="background: #FF9800; height: 100%; width: ${porcentagemFutura}%; transition: 1s ease-in-out; animation: piscarBarraFutura 1s infinite alternate;" title="Ponto que será ganho hoje"></div>
-            </div>
-            <p style="font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 0; text-align: center;">
-                ${mensagem}
-            </p>
         `;
     }
+
+    // 📊 UI DA BARRA DE PROGRESSO (Sempre visível mostrando a cartela atual)
+    const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
+    const porcentagemFutura = (1 / metaPontos) * 100;
+
+    let mensagem = `Você tem <strong>${pontosNaCartela}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> neste pedido!`;
+    if (pontosNaCartela === metaPontos - 1) {
+        mensagem = `Você tem <strong>${pontosNaCartela}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
+    } else if (pontosNaCartela === 0 && totalPedidos === 0) {
+        mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
+    } else if (pontosNaCartela === 0 && totalPedidos > 0) {
+        mensagem = `Cartela nova! Ganhe o <strong>1º ponto</strong> desta rodada ao finalizar! 🎉`;
+    }
+
+    areaFidelidade.innerHTML = `
+        ${htmlPremio}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: #333; font-size: 1rem;">⭐ Cartão Fidelidade</strong>
+            <span style="background: var(--cor-primaria, #e91e63); color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">${pontosNaCartela} / ${metaPontos}</span>
+        </div>
+        <div style="background: #f0f0f0; border-radius: 10px; height: 12px; width: 100%; overflow: hidden; display: flex; position: relative;">
+            <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
+            <div style="background: #FF9800; height: 100%; width: ${porcentagemFutura}%; transition: 1s ease-in-out; animation: piscarBarraFutura 1s infinite alternate;" title="Ponto que será ganho hoje"></div>
+        </div>
+        <p style="font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 0; text-align: center;">
+            ${mensagem}
+        </p>
+    `;
 }
 
 async function resgatarFidelidade() {
