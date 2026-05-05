@@ -2006,16 +2006,15 @@ function cancelarPix() {
     btn.disabled = false;
 }
 
-// O Sonar: Verifica de tempo em tempo se o Webhook da Nuvem já converteu a venda
+// O Sonar Ativo: Vai direto no backend consultar o Mercado Pago, driblando o bloqueio de HTTP
 async function checarStatusPagamento(transacaoId) {
     try {
-        const res = await fetch(`${API_URL}/vendas`);
-        const vendas = await res.json();
+        // 🚀 ESTRATÉGIA ATIVA: Pergunta direto ao nosso servidor (que pergunta ao Mercado Pago)
+        const resStatus = await fetch(`${API_URL}/pagamento/pix/${transacaoId}/status`);
+        const dataStatus = await resStatus.json();
 
-        const venda = vendas.find(v => v.transacao_id === transacaoId.toString());
-
-        // Se o robô (Webhook) alterou para Pendente Delivery, o dinheiro já está na sua conta!
-        if (venda && venda.status === 'Pendente Delivery') {
+        // Se o Mercado Pago disser que tá pago, a gente libera a tela do cliente na hora!
+        if (dataStatus.pago) {
             clearInterval(verificadorPix);
 
             document.getElementById('pix-status-texto').innerHTML = "✅ Pagamento Confirmado!";
@@ -2024,10 +2023,13 @@ async function checarStatusPagamento(transacaoId) {
 
             // Aplica descontos no CRM caso haja cupom
             if (cupomAtivo) {
-                await registrarUsoCupomNaNuvem(cupomAtivo.codigo, venda.valor_total);
+                const resVenda = await fetch(`${API_URL}/vendas`);
+                const vendas = await resVenda.json();
+                const venda = vendas.find(v => v.transacao_id === transacaoId.toString());
+                if(venda) await registrarUsoCupomNaNuvem(cupomAtivo.codigo, venda.valor_total);
             }
 
-            // Espera 2 segundos para o cliente ver o "Check" verde e joga pro Rastreio!
+            // Espera 2 segundos para o cliente curtir a vitória e joga pro Rastreio!
             setTimeout(() => {
                 document.getElementById('modal-pix').style.display = 'none';
                 carrinho = [];
