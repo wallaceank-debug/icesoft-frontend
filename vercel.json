@@ -1,0 +1,28 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "convertmenu.com.br" }],
+      "destination": "/login/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.convertmenu.com.br" }],
+      "destination": "/login/index.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "icesoftsorvetes.com.br" }],
+      "destination": "/cardapio/$1"
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.icesoftsorvetes.com.br" }],
+      "destination": "/cardapio/$1"
+    }
+  ]
+}
