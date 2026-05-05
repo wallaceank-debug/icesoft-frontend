@@ -1517,15 +1517,15 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
                 badge.style.boxShadow = '0 2px 5px rgba(37, 211, 102, 0.3)';
             }
             
-            // 🚀 CHAMA A BARRINHA DE FIDELIDADE COM OS PONTOS ATUAIS
-            ativarBarrinhaFidelidade(comprasValidas.length);
+            // 🚀 CHAMA A BARRINHA DE FIDELIDADE PASSANDO O HISTÓRICO COMPLETO
+            ativarBarrinhaFidelidade(comprasValidas);
 
         } else {
             // Cliente novo, nunca comprou
             if(badge) badge.style.display = 'none'; 
             
-            // 🚀 CHAMA A BARRINHA ZERADA PARA INCENTIVAR A PRIMEIRA COMPRA
-            ativarBarrinhaFidelidade(0);
+            // 🚀 CHAMA A BARRINHA ZERADA
+            ativarBarrinhaFidelidade([]);
         }
 
     } catch (e) {
