@@ -861,7 +861,12 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
 
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
-    const observacao = document.getElementById('cliente-observacao').value.trim();
+    
+    // 🚀 CRM: Salva na observação se o cliente gastou o prêmio Fidelidade ou outro cupom
+    let observacao = document.getElementById('cliente-observacao').value.trim();
+    if (cupomAtivo) {
+        observacao = observacao ? `${observacao} | [Cupom: ${cupomAtivo.codigo}]` : `[Cupom: ${cupomAtivo.codigo}]`;
+    }
 
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
     
