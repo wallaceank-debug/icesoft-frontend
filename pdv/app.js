@@ -1011,7 +1011,7 @@ async function finalizarDeliveryPDV() {
 }
 
 // ==========================================
-// 📡 RADAR GLOBAL DE DELIVERY (Invisível)
+// 📡 RADAR GLOBAL DE DELIVERY (Invisível e Multicanal)
 // ==========================================
 let qtdPendentesGlobalAnterior = -1;
 // Link direto para a campainha, garantindo que o áudio funcione em qualquer pasta
@@ -1020,7 +1020,7 @@ const audioAlertaGlobal = new Audio('https://www.myinstants.com/media/sounds/din
 async function checarNovosPedidosGlobal() {
     try {
         // Faz uma busca super rápida e leve na API
-        const API_URL_RADAR = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        const API_URL_RADAR = 'http://108.174.146.77:3000/api'; // Atualizado para o nosso IP dedicado
         const res = await fetch(`${API_URL_RADAR}/vendas`);
         const vendas = await res.json();
         
@@ -1034,8 +1034,22 @@ async function checarNovosPedidosGlobal() {
             audioAlertaGlobal.volume = 1.0;
             audioAlertaGlobal.play().catch(e => console.log("O navegador bloqueou o áudio. Clique em qualquer lugar da tela."));
             
-            // 2. Mostra a bolha visual piscante
+            // 2. Mostra a bolha visual piscante dentro do sistema
             mostrarAlertaVisualDelivery();
+
+            // 🚀 3. A MÁGICA: Notificação Multicanal (Pula no Windows/Mac)
+            if ("Notification" in window && Notification.permission === "granted") {
+                const notificacao = new Notification("🚨 NOVO PEDIDO - ICESOFT", {
+                    body: `Você tem ${pendentesAgora} pedido(s) pendente(s) aguardando aceite na cozinha!`,
+                    icon: "https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" 
+                });
+
+                // Se o caixa clicar na notificação do Windows, o navegador abre a tela do Kanban sozinho!
+                notificacao.onclick = function() {
+                    window.focus();
+                    window.location.href = '../kanban/';
+                };
+            }
         }
         
         // Atualiza a memória para a próxima checagem
@@ -1044,6 +1058,41 @@ async function checarNovosPedidosGlobal() {
         // Falha silenciosa para não poluir ou travar sua tela de PDV
     }
 }
+
+function mostrarAlertaVisualDelivery() {
+    let bolha = document.getElementById('alerta-bolha-delivery');
+    if (!bolha) {
+        // Cria a animação de piscar (Efeito Sirene)
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes piscarAlerta { 0% { background: #e91e63; transform: scale(1); } 100% { background: #ff4081; transform: scale(1.05); } }`;
+        document.head.appendChild(style);
+
+        // Cria o botão flutuante na tela
+        bolha = document.createElement('div');
+        bolha.id = 'alerta-bolha-delivery';
+        bolha.innerHTML = `🚨 <strong>NOVO DELIVERY!</strong><br><span style="font-size:0.85rem">Clique aqui para abrir o Kanban</span>`;
+        bolha.style.cssText = "position:fixed; bottom:30px; right:30px; background:#e91e63; color:white; padding:15px 20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.4); z-index:99999; cursor:pointer; font-family:sans-serif; text-align:center; animation: piscarAlerta 0.6s infinite alternate;";
+        
+        // Quando você clica na bolha, ele te joga direto para a tela do Kanban!
+        bolha.onclick = () => window.location.href = '../kanban/';
+        
+        document.body.appendChild(bolha);
+    }
+}
+
+// 🚀 SETUP INTELIGENTE DO RADAR
+setTimeout(() => {
+    // 1. Pergunta educadamente ao Windows/Mac/Celular se podemos mandar notificações
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+    
+    // 2. Dá a primeira checada
+    checarNovosPedidosGlobal();
+}, 3000);
+
+// Fica vasculhando a API em busca de pedidos a cada 15 segundos
+setInterval(checarNovosPedidosGlobal, 15000);
 
 function mostrarAlertaVisualDelivery() {
     let bolha = document.getElementById('alerta-bolha-delivery');
