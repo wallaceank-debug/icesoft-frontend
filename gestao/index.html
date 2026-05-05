@@ -306,6 +306,25 @@
                 <button onclick="fecharGerenciadorBairros()" style="width: 100%; padding: 15px; background: #eee; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Fechar</button>
             </div>
         </div>
+
+        <!-- MODAL DE CONFIGURAÇÃO DE PAGAMENTO (COFRE) -->
+        <div id="modal-pagamentos" class="modal-fundo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:4000;">
+            <div class="modal-conteudo" style="background:white; padding:30px; border-radius:15px; width:95%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                <h2 style="text-align:center; color:#4CAF50; margin-top:0;">💳 Integração Pix (Mercado Pago)</h2>
+                <p style="font-size:0.85rem; color:#666; text-align:center; margin-bottom:20px;">Cole abaixo o seu <strong>Access Token</strong> de Produção gerado no painel do Mercado Pago. Mantenha essa chave em sigilo.</p>
+                
+                <div style="display:flex; flex-direction:column; gap:15px; margin-bottom: 25px;">
+                    <label style="font-weight: bold; color: #333; font-size: 0.9rem;">Access Token de Produção:</label>
+                    <input type="password" id="mp-token-input" class="input-padrao" placeholder="APP_USR-..." style="padding:12px; border-radius:8px; border:1px solid #ccc; font-family:monospace;">
+                    <span style="font-size:0.75rem; color:#999;">* Oculto por segurança. Apague e cole novamente se precisar alterar.</span>
+                </div>
+
+                <div class="modal-botoes" style="display: flex; gap: 10px;">
+                    <button onclick="fecharConfigPagamentos()" class="btn-cancelar" style="flex:1; padding:12px; border-radius:8px; border:none; font-weight:bold; cursor:pointer;">Cancelar</button>
+                    <button id="btn-salvar-pagamentos" onclick="salvarConfigPagamentos()" class="btn-salvar" style="flex:1; padding:12px; border-radius:8px; border:none; background:#4CAF50; color:white; font-weight:bold; cursor:pointer;">💾 Salvar Chave</button>
+                </div>
+            </div>
+        </div>
         
     </div>
         
