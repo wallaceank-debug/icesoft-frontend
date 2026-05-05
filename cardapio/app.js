@@ -822,12 +822,12 @@ function atualizarTotalCheckout() {
     if (totalDisplay) totalDisplay.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
 }
 
-async function salvarVendaDelivery() {
+// 🚀 Atualizada para receber o Status e o ID da transação do Pix (se houver)
+async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transacaoId = null) {
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
     let desconto = 0;
     
     if (cupomAtivo) {
-        // 🛡️ TRAVA DE MATEMÁTICA AQUI TAMBÉM
         let valorCupomNum = Number(cupomAtivo.valor) || 0;
         desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
     }
@@ -837,16 +837,17 @@ async function salvarVendaDelivery() {
     let endereco = "Retirada na Loja";
     
     if(tipoEntrega === 'delivery') {
+        const selectCidade = document.getElementById('cliente-cidade');
+        const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
         const selectBairro = document.getElementById('cliente-bairro');
         const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
         taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
         
-        const cidade = document.getElementById('cliente-cidade').value || '';
         const bairro = selectBairro.value;
         const rua = document.getElementById('cliente-rua').value.trim();
         const num = document.getElementById('cliente-numero').value.trim();
         const comp = document.getElementById('cliente-complemento').value.trim();
-        endereco = `${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro} (${cidade})`;
+        endereco = `${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro} ${cidade ? '(' + cidade + ')' : ''}`;
     }
 
     let totalFinal = (subtotal - desconto) + taxaEntrega;
@@ -859,7 +860,6 @@ async function salvarVendaDelivery() {
     }
 
     const nome = document.getElementById('cliente-nome').value.trim();
-    // 🚀 Salvando no Banco de Dados perfeitamente padronizado
     const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     const observacao = document.getElementById('cliente-observacao').value.trim();
 
@@ -875,18 +875,19 @@ async function salvarVendaDelivery() {
                 valor_total: totalFinal, 
                 total: totalFinal, 
                 forma_pagamento: pagamento, 
-                status: "Pendente Delivery",
+                status: statusForcado,
                 cliente_nome: nome,
                 cliente_telefone: telefone,
                 cliente_endereco: endereco,
                 origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
-                observacoes: observacao
+                observacoes: observacao,
+                transacao_id: transacaoId
             })
         });
 
-        if (!res.ok) console.log("Aviso: Falha ao registrar na nuvem, mas seguirá pro WhatsApp.");
+        if (!res.ok) console.log("Aviso: Falha ao registrar na nuvem.");
     } catch (e) { 
-        console.log("Aviso: Falha de rede ao registrar, mas seguirá pro WhatsApp.");
+        console.log("Aviso: Falha de rede ao registrar.");
     }
 }
 
