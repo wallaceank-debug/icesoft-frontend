@@ -1077,6 +1077,62 @@ function mostrarAlertaVisualDelivery() {
     }
 }
 
+// ==========================================
+// 💳 CONFIGURAÇÕES DE PAGAMENTO (PIX)
+// ==========================================
+async function abrirConfigPagamentos() {
+    document.getElementById('modal-pagamentos').style.display = 'flex';
+    document.getElementById('mp-token-input').value = '';
+    document.getElementById('mp-token-input').placeholder = 'Buscando chave no cofre...';
+
+    try {
+        // Puxa as configurações gerais do servidor para ver se a chave já existe
+        const res = await fetch(`${API_URL}/configuracoes`);
+        const configs = await res.json();
+        
+        if (configs.mp_access_token) {
+            // Se existir, preenchemos com a chave (como o input é tipo password, fica com bolinhas)
+            document.getElementById('mp-token-input').value = configs.mp_access_token;
+        } else {
+            document.getElementById('mp-token-input').placeholder = 'APP_USR-... (Cole sua chave aqui)';
+        }
+    } catch (e) {
+        console.error("Erro ao carregar token do Mercado Pago", e);
+        document.getElementById('mp-token-input').placeholder = 'APP_USR-...';
+    }
+}
+
+function fecharConfigPagamentos() {
+    document.getElementById('modal-pagamentos').style.display = 'none';
+}
+
+async function salvarConfigPagamentos() {
+    const token = document.getElementById('mp-token-input').value.trim();
+
+    if (!token) return alert("⚠️ O campo do Access Token não pode ficar vazio!");
+
+    const btn = document.getElementById('btn-salvar-pagamentos');
+    btn.innerText = '⏳ Salvando no Cofre...';
+    btn.disabled = true;
+
+    try {
+        // O nosso servidor pega qualquer chave JSON e salva na tabela de configurações automaticamente
+        await fetch(`${API_URL}/configuracoes`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mp_access_token: token })
+        });
+        
+        alert("✅ Chave do Mercado Pago blindada e salva com sucesso! O Motor do Pix já está pronto para operar.");
+        fecharConfigPagamentos();
+    } catch (e) {
+        alert("❌ Erro de conexão ao tentar salvar a chave.");
+    } finally {
+        btn.innerText = '💾 Salvar Chave';
+        btn.disabled = false;
+    }
+}
+
 // Inicializa o radar 3 segundos após você abrir o PDV/Mesas
 setTimeout(checarNovosPedidosGlobal, 3000);
 // Fica vasculhando a API em busca de pedidos a cada 15 segundos
