@@ -48,10 +48,8 @@ async function carregarTudo() {
         renderizarCardapio(produtosDaNuvem);
         renderizarMenuCategorias(produtosDaNuvem);
         renderizarCarrossel(produtosDaNuvem);
-        renderizarBairros();
-        
-        // 🗺️ Pede para desenhar a caixinha de bairros na sacola!
-        renderizarBairros();
+        renderizarCidades(); // Desenha a caixa de cidades
+        renderizarBairros(); // Desenha a caixa de bairros vazia e travada
 
         // ==========================================
         // 🚀 MÁGICA DO TÍTULO DINÂMICO
@@ -71,19 +69,51 @@ async function carregarTudo() {
 }
 
 // ==========================================
-// 🗺️ DESENHAR BAIRROS NO CHECKOUT
+// 🗺️ DESENHAR CIDADES E BAIRROS NO CHECKOUT
 // ==========================================
-function renderizarBairros() {
+function renderizarCidades() {
+    const selectCidade = document.getElementById('cliente-cidade');
+    if (!selectCidade) return;
+
+    selectCidade.innerHTML = '<option value="" disabled selected>🏙️ Selecione sua Cidade</option>';
+
+    // O sistema extrai as cidades automaticamente. 
+    // Se a API ainda não tiver o campo 'cidade', ele usa "Quatis" como porto seguro.
+    const cidadesUnicas = [...new Set(bairrosGlobais.map(b => b.cidade || 'Quatis'))];
+
+    cidadesUnicas.forEach(cidade => {
+        selectCidade.innerHTML += `<option value="${cidade}">${cidade}</option>`;
+    });
+}
+
+function aoMudarCidade() {
+    const selectCidade = document.getElementById('cliente-cidade');
+    const cidadeEscolhida = selectCidade.value;
+    renderizarBairros(cidadeEscolhida);
+    atualizarTotalCheckout(); // Recalcula o total caso a taxa de entrega zere
+}
+
+function renderizarBairros(cidadeFiltro = null) {
     const selectBairro = document.getElementById('cliente-bairro');
     if (!selectBairro) return;
 
     selectBairro.innerHTML = '<option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>';
 
-    bairrosGlobais.forEach(b => {
-        const taxa = Number(b.taxa);
-        const textoTaxa = taxa > 0 ? `Taxa: R$ ${taxa.toFixed(2).replace('.', ',')}` : 'Grátis';
-        selectBairro.innerHTML += `<option value="${b.nome}" data-taxa="${taxa}">${b.nome} - ${textoTaxa}</option>`;
-    });
+    if (cidadeFiltro) {
+        selectBairro.disabled = false; // Destrava a caixinha
+        
+        // Filtra apenas os bairros que pertencem à cidade escolhida
+        const bairrosFiltrados = bairrosGlobais.filter(b => (b.cidade || 'Quatis') === cidadeFiltro);
+
+        bairrosFiltrados.forEach(b => {
+            const taxa = Number(b.taxa);
+            const textoTaxa = taxa > 0 ? `Taxa: R$ ${taxa.toFixed(2).replace('.', ',')}` : 'Grátis';
+            selectBairro.innerHTML += `<option value="${b.nome}" data-taxa="${taxa}">${b.nome} - ${textoTaxa}</option>`;
+        });
+    } else {
+        selectBairro.disabled = true; // Mantém travado
+        selectBairro.innerHTML = '<option value="" data-taxa="0" disabled selected>📍 Selecione primeiro a Cidade</option>';
+    }
 
     selectBairro.innerHTML += '<option value="Retirada no Local" data-taxa="0">🏬 Retirada na Loja - Grátis</option>';
 }
@@ -625,16 +655,19 @@ function validarPasso1() {
     if (!nome || !tel) return "Preencha seu Nome e WhatsApp.";
     
     if (tipo === 'delivery') {
-        // 🛑 A NOVA TRAVA DE PEDIDO MÍNIMO ACONTECE AQUI!
         let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
         if (pedidoMinimoDeliveryGlobal > 0 && subtotal < pedidoMinimoDeliveryGlobal) {
             return `O valor mínimo para Delivery é R$ ${pedidoMinimoDeliveryGlobal.toFixed(2).replace('.', ',')}.\nSeu subtotal é R$ ${subtotal.toFixed(2).replace('.', ',')}.\n\nAdicione mais itens ou altere para "Retirada na Loja".`;
         }
 
+        const selectCidade = document.getElementById('cliente-cidade');
+        const cidade = selectCidade ? selectCidade.value : null;
         const bairro = document.getElementById('cliente-bairro').value;
         const rua = document.getElementById('cliente-rua').value.trim();
         const numero = document.getElementById('cliente-numero').value.trim();
-        if (!bairro || !rua || !numero) return "Preencha Bairro, Rua e Número para a entrega.";
+        
+        // Agora o sistema barra o cliente se ele não escolher a Cidade!
+        if (!cidade || !bairro || !rua || !numero) return "Preencha Cidade, Bairro, Rua e Número para a entrega.";
     }
     return null;
 }
@@ -803,11 +836,12 @@ async function salvarVendaDelivery() {
         const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
         taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
         
+        const cidade = document.getElementById('cliente-cidade').value || '';
         const bairro = selectBairro.value;
         const rua = document.getElementById('cliente-rua').value.trim();
         const num = document.getElementById('cliente-numero').value.trim();
         const comp = document.getElementById('cliente-complemento').value.trim();
-        endereco = `${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro}`;
+        endereco = `${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro} (${cidade})`;
     }
 
     let totalFinal = (subtotal - desconto) + taxaEntrega;
@@ -870,13 +904,14 @@ async function processarEnvioWhatsApp() {
     
     if (tipoEntrega === 'delivery') {
         const selectBairro = document.getElementById('cliente-bairro');
+        const cidade = document.getElementById('cliente-cidade').value || '';
         const bairro = selectBairro.value;
         const rua = document.getElementById('cliente-rua').value.trim();
         const num = document.getElementById('cliente-numero').value.trim();
         const comp = document.getElementById('cliente-complemento').value.trim();
         
         taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
-        enderecoFormatado = `📍 *Endereço:* ${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro}`;
+        enderecoFormatado = `📍 *Endereço:* ${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro} (${cidade})`;
     }
 
     await salvarVendaDelivery(); 

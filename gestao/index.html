@@ -78,6 +78,7 @@
             </div>
             <div class="botoes-area">
                 <button onclick="abrirGerenciadorCategorias()" class="btn-topo" style="background:#FF4081; color: white; border: none;">⚙️ CATEGORIAS</button>
+                <button onclick="abrirGerenciadorCidades()" class="btn-topo" style="background:#9C27B0; color: white; border: none;">🏙️ CIDADES</button>
                 <button onclick="abrirGerenciadorBairros()" class="btn-topo" style="background:#FF9800; color: white; border: none;">🛵 TAXAS DE ENTREGA</button>
                 <button onclick="abrirModalProduto()" class="btn-topo">+ PRODUTO</button>
                 <button onclick="abrirModalGrupo()" class="btn-topo">+ GRUPO</button>
@@ -262,18 +263,42 @@
             </div>
         </div>
 
+        <!-- MODAL DE CIDADES -->
+        <div id="modal-cidades" class="modal-fundo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:3000;">
+            <div class="modal-conteudo" style="background:white; padding:30px; border-radius:15px; width:95%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                <h2 style="text-align:center; color:#9C27B0; margin-top:0;">🏙️ Cidades de Entrega</h2>
+                <p style="font-size:0.8rem; color:#666; text-align:center; margin-bottom:15px;">Cadastre as cidades antes de criar os bairros.</p>
+                
+                <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                    <input type="text" id="nova-cidade-nome" class="input-padrao" placeholder="Nome da Cidade (Ex: Quatis)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
+                    <button onclick="salvarNovaCidade()" style="padding:10px 15px; background:#9C27B0; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">+</button>
+                </div>
+
+                <div id="lista-cidades-gerenciador" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+
+                <button onclick="fecharGerenciadorCidades()" style="width: 100%; padding: 15px; background: #eee; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Fechar</button>
+            </div>
+        </div>
+
+        <!-- MODAL DE BAIRROS (ATUALIZADO) -->
         <div id="modal-bairros" class="modal-fundo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:3000;">
             <div class="modal-conteudo" style="background:white; padding:30px; border-radius:15px; width:95%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
                 <h2 style="text-align:center; color:#00bcd4; margin-top:0;">🗺️ Áreas de Entrega</h2>
                 
-                <div style="display:flex; gap:10px; margin-bottom: 20px;">
-                    <input type="text" id="novo-bairro-nome" class="input-padrao" placeholder="Nome do Bairro" style="flex:2; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
-                    <input type="number" id="novo-bairro-taxa" class="input-padrao" placeholder="Taxa (Ex: 5.00)" step="0.01" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
-                    <button onclick="salvarNovoBairro()" style="padding:10px 15px; background:#00bcd4; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">+</button>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 20px;">
+                    <!-- A MÁGICA: O Seletor de Cidades -->
+                    <select id="novo-bairro-cidade" class="input-padrao" style="padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
+                        <option value="" disabled selected>Selecione a Cidade primeiro...</option>
+                    </select>
+
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="novo-bairro-nome" class="input-padrao" placeholder="Nome do Bairro" style="flex:2; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
+                        <input type="number" id="novo-bairro-taxa" class="input-padrao" placeholder="Taxa (Ex: 5.00)" step="0.01" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; font-family:'Poppins';">
+                        <button onclick="salvarNovoBairro()" style="padding:10px 15px; background:#00bcd4; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">+</button>
+                    </div>
                 </div>
 
-                <div id="lista-bairros-gerenciador" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
-                </div>
+                <div id="lista-bairros-gerenciador" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
 
                 <button onclick="fecharGerenciadorBairros()" style="width: 100%; padding: 15px; background: #eee; color: #333; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Fechar</button>
             </div>

@@ -858,8 +858,24 @@ async function excluirCategoria(id) {
 // ==========================================
 let listaBairros = [];
 
-function abrirGerenciadorBairros() {
+async function abrirGerenciadorBairros() {
     document.getElementById('modal-bairros').style.display = 'flex';
+    
+    // 1. Antes de abrir, ele vai na nuvem e puxa as Cidades para a caixinha (Select)
+    try {
+        const resCid = await fetch(`${API_URL}/cidades`);
+        if (resCid.ok) {
+            const cidades = await resCid.json();
+            const select = document.getElementById('novo-bairro-cidade');
+            if (select) {
+                select.innerHTML = '<option value="" disabled selected>Selecione a Cidade primeiro...</option>';
+                cidades.forEach(c => {
+                    select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
+                });
+            }
+        }
+    } catch(e) {}
+
     carregarBairrosAdmin();
 }
 
@@ -885,10 +901,11 @@ function renderizarListaBairrosAdmin() {
     }
 
     listaBairros.forEach(b => {
+        const nomeCidade = b.cidade || 'Quatis'; // Fallback de segurança
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px; border: 1px solid #eee;">
                 <div>
-                    <strong style="color:#333;">${b.nome}</strong> 
+                    <strong style="color:#333;">${b.nome} <span style="font-size:0.75rem; color:#999; font-weight:normal;">(${nomeCidade})</span></strong> 
                     <span style="display:block; font-size:0.85rem; color:#00bcd4; font-weight:bold;">Taxa: R$ ${Number(b.taxa).toFixed(2).replace('.', ',')}</span>
                 </div>
                 <button onclick="excluirBairro(${b.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;">🗑️</button>
@@ -898,16 +915,20 @@ function renderizarListaBairrosAdmin() {
 }
 
 async function salvarNovoBairro() {
+    const cidadeSelect = document.getElementById('novo-bairro-cidade');
+    const cidade = cidadeSelect && cidadeSelect.value ? cidadeSelect.value : '';
     const nome = document.getElementById('novo-bairro-nome').value.trim();
     const taxa = document.getElementById('novo-bairro-taxa').value.trim();
 
-    if (!nome) return alert("Preencha o nome do bairro!");
+    if (!cidade) return alert("⚠️ Selecione a Cidade antes de salvar o Bairro!");
+    if (!nome) return alert("⚠️ Preencha o nome do bairro!");
 
     try {
         await fetch(`${API_URL}/bairros`, { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ nome, taxa: parseFloat(taxa) || 0 }) 
+            // 🚀 Injetando a "cidade" no pacote do Bairro!
+            body: JSON.stringify({ nome, taxa: parseFloat(taxa) || 0, cidade }) 
         });
         
         document.getElementById('novo-bairro-nome').value = '';
@@ -925,6 +946,78 @@ async function excluirBairro(id) {
         await carregarBairrosAdmin();
     } catch (e) {
         alert("Erro ao excluir bairro.");
+    }
+}
+
+// ==========================================
+// 🏙️ SISTEMA DE CIDADES E INTEGRAÇÃO DE BAIRROS
+// ==========================================
+let listaCidades = [];
+
+function abrirGerenciadorCidades() {
+    document.getElementById('modal-cidades').style.display = 'flex';
+    carregarCidadesAdmin();
+}
+
+function fecharGerenciadorCidades() {
+    document.getElementById('modal-cidades').style.display = 'none';
+}
+
+async function carregarCidadesAdmin() {
+    try {
+        const res = await fetch(`${API_URL}/cidades`);
+        if (!res.ok) throw new Error("Rota ausente");
+        listaCidades = await res.json();
+    } catch (e) { 
+        console.log("Banco de dados se adaptando. Retornando vazio.");
+        listaCidades = []; 
+    }
+    renderizarListaCidadesAdmin();
+}
+
+function renderizarListaCidadesAdmin() {
+    const container = document.getElementById('lista-cidades-gerenciador');
+    container.innerHTML = '';
+
+    if (listaCidades.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma cidade cadastrada.</p>';
+        return;
+    }
+
+    listaCidades.forEach(c => {
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px; border: 1px solid #eee;">
+                <strong style="color:#333; font-size:1.1rem;">${c.nome}</strong> 
+                <button onclick="excluirCidade(${c.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;" title="Excluir">🗑️</button>
+            </div>
+        `;
+    });
+}
+
+async function salvarNovaCidade() {
+    const nome = document.getElementById('nova-cidade-nome').value.trim();
+    if (!nome) return alert("Preencha o nome da cidade!");
+
+    try {
+        await fetch(`${API_URL}/cidades`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ nome }) 
+        });
+        document.getElementById('nova-cidade-nome').value = '';
+        await carregarCidadesAdmin(); 
+    } catch (e) {
+        alert("Erro ao salvar cidade.");
+    }
+}
+
+async function excluirCidade(id) {
+    if(!confirm("⚠️ Tem certeza que deseja excluir esta cidade? Todos os bairros ligados a ela podem ficar sem referência.")) return;
+    try {
+        await fetch(`${API_URL}/cidades/${id}`, { method: 'DELETE' });
+        await carregarCidadesAdmin();
+    } catch (e) {
+        alert("Erro ao excluir cidade.");
     }
 }
 

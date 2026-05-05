@@ -354,16 +354,26 @@
                         </label>
 
                         <div id="area-endereco" style="margin-top: 15px;">
-                            <select id="cliente-bairro" class="input-clean select-clean" onchange="atualizarTotalCheckout()">
-                                <option value="" data-taxa="0" disabled selected>📍 Selecione seu Bairro</option>
+                            
+                            <!-- NOVO: Caixinha de Cidade -->
+                            <select id="cliente-cidade" class="input-clean select-clean" onchange="aoMudarCidade()" style="margin-bottom: 10px;">
+                                <option value="" disabled selected>🏙️ Selecione sua Cidade</option>
+                            </select>
+
+                            <!-- Caixinha de Bairro (Começa bloqueada) -->
+                            <select id="cliente-bairro" class="input-clean select-clean" onchange="atualizarTotalCheckout()" disabled>
+                                <option value="" data-taxa="0" disabled selected>📍 Selecione primeiro a Cidade</option>
                             </select>
                             
+                            <!-- RESTAURADO: Rua e Número lado a lado -->
                             <div style="display: flex; gap: 10px; margin-top: 10px;">
                                 <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua" style="flex: 2;">
                                 <input type="text" id="cliente-numero" class="input-clean" placeholder="Nº" style="flex: 1;">
                             </div>
                             
+                            <!-- RESTAURADO: Complemento / Referência -->
                             <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-top: 10px;">
+                            
                         </div>
 
                         <label class="card-selecao" id="label-retirada" style="margin-top: 10px;">
