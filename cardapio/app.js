@@ -1917,3 +1917,125 @@ async function resgatarFidelidade() {
         }
     }
 }
+
+// ==========================================
+// 💸 MOTOR DE PIX DINÂMICO MERCADO PAGO
+// ==========================================
+let verificadorPix = null;
+
+async function gerarEPagarPix() {
+    const btn = document.getElementById('btn-avancar-checkout');
+    btn.innerText = "⏳ Gerando Pix Seguro...";
+    btn.disabled = true;
+
+    // 1. Calcula o total exato do carrinho
+    let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    let desconto = 0;
+    if (cupomAtivo) {
+        let valorCupomNum = Number(cupomAtivo.valor) || 0;
+        desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
+    }
+
+    const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
+    let taxaEntrega = 0;
+    if(tipoEntrega === 'delivery') {
+        const selectBairro = document.getElementById('cliente-bairro');
+        taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+    }
+
+    let totalFinal = (subtotal - desconto) + taxaEntrega;
+    if (totalFinal < 0) totalFinal = 0;
+
+    const nome = document.getElementById('cliente-nome').value.trim();
+    const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
+
+    try {
+        // 2. Aciona nosso backend para conversar com o Mercado Pago
+        const res = await fetch(`${API_URL}/pagamento/pix`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ valor: totalFinal, cliente_nome: nome, cliente_telefone: telefone })
+        });
+
+        const data = await res.json();
+
+        if (data.sucesso) {
+            // 3. Salva a venda travada como "Aguardando Pagamento"
+            await salvarVendaDelivery("Aguardando Pagamento", data.transacao_id.toString());
+
+            // 4. Prepara a Interface de Cobrança na tela
+            document.getElementById('pix-qr-code').src = `data:image/jpeg;base64,${data.qr_code_base64}`;
+            document.getElementById('pix-copia-cola').value = data.qr_code_copia_cola;
+            document.getElementById('btn-copiar-pix').innerText = "📋 Copiar Código Pix";
+            document.getElementById('pix-status-texto').innerHTML = "⏳ Aguardando pagamento...";
+            document.getElementById('pix-status-texto').style.color = "#FF9800";
+            document.getElementById('pix-qr-code').style.opacity = "1";
+
+            document.getElementById('modal-pix').style.display = 'flex';
+            fecharModalCheckout();
+
+            // 5. Liga o Sonar: Checa a cada 5 segundos se o Webhook deu baixa no pagamento
+            if(verificadorPix) clearInterval(verificadorPix);
+            verificadorPix = setInterval(() => checarStatusPagamento(data.transacao_id), 5000);
+
+        } else {
+            alert("⚠️ Não foi possível gerar o Pix. Selecione outra forma de pagamento.");
+            btn.innerText = "Enviar Pedido 🚀";
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert("❌ Erro de conexão ao tentar gerar o Pix.");
+        btn.innerText = "Enviar Pedido 🚀";
+        btn.disabled = false;
+    }
+}
+
+function copiarPix() {
+    const input = document.getElementById('pix-copia-cola');
+    input.select();
+    document.execCommand('copy');
+    document.getElementById('btn-copiar-pix').innerText = "✅ Código Copiado!";
+}
+
+function cancelarPix() {
+    if(verificadorPix) clearInterval(verificadorPix);
+    document.getElementById('modal-pix').style.display = 'none';
+    document.getElementById('modal-checkout').style.display = 'flex';
+    const btn = document.getElementById('btn-avancar-checkout');
+    btn.innerText = "Enviar Pedido 🚀";
+    btn.disabled = false;
+}
+
+// O Sonar: Verifica de tempo em tempo se o Webhook da Nuvem já converteu a venda
+async function checarStatusPagamento(transacaoId) {
+    try {
+        const res = await fetch(`${API_URL}/vendas`);
+        const vendas = await res.json();
+
+        const venda = vendas.find(v => v.transacao_id === transacaoId.toString());
+
+        // Se o robô (Webhook) alterou para Pendente Delivery, o dinheiro já está na sua conta!
+        if (venda && venda.status === 'Pendente Delivery') {
+            clearInterval(verificadorPix);
+
+            document.getElementById('pix-status-texto').innerHTML = "✅ Pagamento Confirmado!";
+            document.getElementById('pix-status-texto').style.color = "#4CAF50";
+            document.getElementById('pix-qr-code').style.opacity = "0.2";
+
+            // Aplica descontos no CRM caso haja cupom
+            if (cupomAtivo) {
+                await registrarUsoCupomNaNuvem(cupomAtivo.codigo, venda.valor_total);
+            }
+
+            // Espera 2 segundos para o cliente ver o "Check" verde e joga pro Rastreio!
+            setTimeout(() => {
+                document.getElementById('modal-pix').style.display = 'none';
+                carrinho = [];
+                atualizarBarraCarrinho();
+
+                rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
+                abrirTelaRastreio();
+            }, 2000);
+        }
+    } catch (e) { }
+}
