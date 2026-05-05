@@ -722,7 +722,7 @@ function avancarPassoCheckout() {
     else if (passoCheckoutAtual === 3) {
         // 🚀 O DESVIO DE FLUXO: Se for Pix, vai pro sistema dinâmico. Se for outro, vai pro WhatsApp!
         const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
-        if (pagamento === 'Pix') {
+        if (pagamento === 'Pagamento via Pix Online') {
             gerarEPagarPix();
         } else {
             processarEnvioWhatsApp();
