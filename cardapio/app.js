@@ -720,10 +720,15 @@ function avancarPassoCheckout() {
         irParaPasso(3);
     }
     else if (passoCheckoutAtual === 3) {
-        processarEnvioWhatsApp();
+        // 🚀 O DESVIO DE FLUXO: Se for Pix, vai pro sistema dinâmico. Se for outro, vai pro WhatsApp!
+        const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
+        if (pagamento === 'Pix') {
+            gerarEPagarPix();
+        } else {
+            processarEnvioWhatsApp();
+        }
     }
 }
-
 function voltarPassoCheckout() {
     if (passoCheckoutAtual > 1) {
         irParaPasso(passoCheckoutAtual - 1);
