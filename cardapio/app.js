@@ -1078,11 +1078,11 @@ async function carregarConfiguracoesLoja() {
         if (configs.pedido_minimo_delivery) pedidoMinimoDeliveryGlobal = parseFloat(configs.pedido_minimo_delivery) || 0;
 
         if (configs.endereco_loja) {
-            document.getElementById('loja-endereco-texto').innerText = configs.endereco_loja;
-            document.getElementById('modal-endereco-texto').innerText = configs.endereco_loja;
+            if(document.getElementById('loja-endereco-texto')) document.getElementById('loja-endereco-texto').innerText = configs.endereco_loja;
+            if(document.getElementById('modal-endereco-texto')) document.getElementById('modal-endereco-texto').innerText = configs.endereco_loja;
         }
-        if (configs.horarios_loja) document.getElementById('modal-horarios-texto').innerText = configs.horarios_loja;
-        if (configs.pagamentos_loja) document.getElementById('modal-pagamentos-texto').innerText = configs.pagamentos_loja;
+        if (configs.horarios_loja && document.getElementById('modal-horarios-texto')) document.getElementById('modal-horarios-texto').innerText = configs.horarios_loja;
+        if (configs.pagamentos_loja && document.getElementById('modal-pagamentos-texto')) document.getElementById('modal-pagamentos-texto').innerText = configs.pagamentos_loja;
 
         const status = configs.status_delivery || 'aberto';
         const statusText = document.getElementById('loja-status-exibicao');
