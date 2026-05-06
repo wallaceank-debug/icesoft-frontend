@@ -359,7 +359,7 @@ function imprimirComandaKanban(venda) {
         </div>
         
         <div style="font-size: 16px; margin-bottom: 10px; text-align: center;">
-            <strong style="font-size: 20px;">PEDIDO #${venda.id}</strong><br>
+            <strong style="font-size: 20px;">PEDIDO ${venda.numero_diario || venda.id}</strong><br>
             <strong style="background: black; color: white; padding: 2px 5px;">${(venda.origem || 'Balcão').toUpperCase()}</strong>
         </div>
 

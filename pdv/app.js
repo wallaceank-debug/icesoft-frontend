@@ -1129,7 +1129,7 @@ function imprimirComandaDelivery(venda) {
         </head>
         <body>
             <h2>🍦 Icesoft Sorvetes</h2>
-            <div style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px;">PEDIDO #${venda.id}</div>
+            <div style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px;">PEDIDO #${venda.numero_diario || venda.id}</div>
             
             <div class="linha"></div>
             <div class="info-cliente"><strong>Cliente:</strong> ${venda.cliente_nome || 'Não informado'}</div>
