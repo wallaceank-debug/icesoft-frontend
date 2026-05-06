@@ -904,7 +904,7 @@ let rastreioPedidoId = null;
 let rastreioTelefoneCliente = "";
 
 // ==========================================
-// 📲 ENVIO DIRETO PARA A NUVEM (SEM SAIR DO APP)
+// 📲 ENVIO DIRETO PARA A NUVEM E DISPARO DO PIXEL
 // ==========================================
 async function processarEnvioWhatsApp() {
     const btn = document.getElementById('btn-avancar-checkout');
@@ -913,44 +913,49 @@ async function processarEnvioWhatsApp() {
         btn.disabled = true;
     }
 
-    // 1. Salva o pedido direto no Banco de Dados (Nuvem)
+    // 1. Salva o pedido direto no Banco de Dados
     await salvarVendaDelivery("Pendente Delivery"); 
 
-    // 📸 META PIXEL: Avisa o Facebook que uma compra foi finalizada com sucesso!
-    try {
-        let valorDaCompra = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
-        if (typeof fbq === 'function') {
-            fbq('track', 'Purchase', { currency: 'BRL', value: valorDaCompra });
-        }
-    } catch(e) { console.log("Aviso: Pixel bloqueado pelo navegador do cliente."); }
-    
-    // 2. Desconta o cupom usado na nuvem (se houver)
+    // 2. Calcula os valores totais exatos (Subtotal + Taxa - Desconto)
+    let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    let desconto = 0;
+    let taxaEntrega = 0;
+
     if (cupomAtivo) {
-        let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
         let valorCupomNum = Number(cupomAtivo.valor) || 0;
-        let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
-        
-        let taxaEntrega = 0;
-        const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
-        if (tipoEntregaChecked && tipoEntregaChecked.value === 'delivery') {
-            const selectBairro = document.getElementById('cliente-bairro');
-            if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
-                taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
-            }
+        desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
+    }
+
+    const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
+    if (tipoEntregaChecked && tipoEntregaChecked.value === 'delivery') {
+        const selectBairro = document.getElementById('cliente-bairro');
+        if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
+            taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
         }
+    }
 
-        let totalFinal = (subtotal + taxaEntrega) - desconto;
-        if (totalFinal < 0) totalFinal = 0;
+    let totalFinal = (subtotal + taxaEntrega) - desconto;
+    if (totalFinal < 0) totalFinal = 0;
 
+    // Registra o cupom se houver
+    if (cupomAtivo) {
         await registrarUsoCupomNaNuvem(cupomAtivo.codigo, totalFinal);
     }
 
-    // 3. Limpa o carrinho e esconde a tela de checkout
+    // 📸 3. META PIXEL: Avisa o Facebook da Compra (COM O VALOR REAL) ANTES de limpar o carrinho!
+    try {
+        console.log("🎯 Disparando Pixel de Compra (Entrega). Valor BRL:", totalFinal);
+        if (typeof fbq === 'function') {
+            fbq('track', 'Purchase', { currency: 'BRL', value: totalFinal });
+        }
+    } catch(e) { console.log("⚠️ Erro no Pixel:", e); }
+
+    // 4. Limpa o carrinho e esconde a tela de checkout
     carrinho = []; 
     atualizarBarraCarrinho(); 
     fecharModalCheckout();
     
-    // 4. Captura o telefone para o Radar e abre a tela de rastreio instantaneamente
+    // 5. Captura o telefone para o Radar e abre a tela de rastreio instantaneamente
     rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     abrirTelaRastreio();
 
@@ -959,7 +964,6 @@ async function processarEnvioWhatsApp() {
         btn.disabled = false;
     }
 }
-
 // ==========================================
 // 📡 RADAR DE RASTREIO E FIDELIDADE
 // ==========================================
