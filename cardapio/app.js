@@ -903,81 +903,53 @@ let rastreioIntervalo = null;
 let rastreioPedidoId = null;
 let rastreioTelefoneCliente = "";
 
+// ==========================================
+// 📲 ENVIO DIRETO PARA A NUVEM (SEM SAIR DO APP)
+// ==========================================
 async function processarEnvioWhatsApp() {
-    const nome = document.getElementById('cliente-nome').value.trim();
-    // 🚀 Passando para o Rastreio/WhatsApp padronizado
-    rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
-    const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
-    const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
-    
-    let enderecoFormatado = "🏬 *Retirada na Loja*";
-    let taxaEntrega = 0;
-    
-    if (tipoEntrega === 'delivery') {
-        const selectBairro = document.getElementById('cliente-bairro');
-        const cidade = document.getElementById('cliente-cidade').value || '';
-        const bairro = selectBairro.value;
-        const rua = document.getElementById('cliente-rua').value.trim();
-        const num = document.getElementById('cliente-numero').value.trim();
-        const comp = document.getElementById('cliente-complemento').value.trim();
-        
-        taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
-        enderecoFormatado = `📍 *Endereço:* ${rua}, ${num} ${comp ? '- ' + comp : ''} - ${bairro} (${cidade})`;
+    const btn = document.getElementById('btn-avancar-checkout');
+    if(btn) {
+        btn.innerText = "⏳ Enviando Pedido...";
+        btn.disabled = true;
     }
 
-    await salvarVendaDelivery(); 
+    // 1. Salva o pedido direto no Banco de Dados (Nuvem)
+    await salvarVendaDelivery("Pendente Delivery"); 
 
-    let textoPedido = `🍦 *NOVO PEDIDO - ICESOFT* 🍦\n\n`;
-    textoPedido += `👤 *Cliente:* ${nome}\n`;
-    textoPedido += `📱 *WhatsApp:* ${rastreioTelefoneCliente}\n`;
-    textoPedido += `${enderecoFormatado}\n`;
-    
-    let txtPagamento = `💳 *Pagamento:* ${pagamento}`;
-    if (pagamento === 'Dinheiro') {
-        const troco = document.getElementById('cliente-troco').value.trim();
-        txtPagamento += troco ? ` (Troco para ${troco})` : ` (Sem troco)`;
-    }
-    textoPedido += `${txtPagamento}\n\n`;
-
-    const observacao = document.getElementById('cliente-observacao').value.trim();
-    if (observacao) textoPedido += `📝 *Observações:* ${observacao}\n\n`;
-
-    textoPedido += `📦 *Itens do Pedido:*\n`;
-    let subtotal = 0;
-    carrinho.forEach(item => { 
-        textoPedido += `▪️ 1x ${item.nome} - R$ ${Number(item.preco).toFixed(2).replace('.', ',')}\n`; 
-        subtotal += Number(item.preco); 
-    });
-    
-    if (tipoEntrega === 'delivery') {
-        textoPedido += `\n🛵 *Taxa de Entrega:* R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
-    }
-
-    let totalFinal = subtotal + taxaEntrega;
-
+    // 2. Desconta o cupom usado na nuvem (se houver)
     if (cupomAtivo) {
-        // 🛡️ TRAVA DE MATEMÁTICA FINAL
+        let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
         let valorCupomNum = Number(cupomAtivo.valor) || 0;
         let desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
         
-        textoPedido += `\n🏷️ *Cupom (*${cupomAtivo.codigo}*):* - R$ ${desconto.toFixed(2).replace('.', ',')}`;
-        totalFinal = totalFinal - desconto;
-        if (totalFinal < 0) totalFinal = 0; // Se o cupom for maior que a compra, não fica negativo!
-        
-        // Agora sim o gatilho vai disparar!
+        let taxaEntrega = 0;
+        const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
+        if (tipoEntregaChecked && tipoEntregaChecked.value === 'delivery') {
+            const selectBairro = document.getElementById('cliente-bairro');
+            if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
+                taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+            }
+        }
+
+        let totalFinal = (subtotal + taxaEntrega) - desconto;
+        if (totalFinal < 0) totalFinal = 0;
+
         await registrarUsoCupomNaNuvem(cupomAtivo.codigo, totalFinal);
     }
-    
-    
-    textoPedido += `\n💰 *Total Final: R$ ${totalFinal.toFixed(2).replace('.', ',')}*`;
 
-    window.open(`https://api.whatsapp.com/send?phone=5524992308585&text=${encodeURIComponent(textoPedido)}`, '_blank');
-    
+    // 3. Limpa o carrinho e esconde a tela de checkout
     carrinho = []; 
     atualizarBarraCarrinho(); 
     fecharModalCheckout();
     
+    // 4. Captura o telefone para o Radar e abre a tela de rastreio instantaneamente
+    rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     abrirTelaRastreio();
+
+    if(btn) {
+        btn.innerText = "Enviar Pedido 🚀";
+        btn.disabled = false;
+    }
 }
 
 // ==========================================
