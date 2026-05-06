@@ -1994,14 +1994,14 @@ function cancelarPix() {
     btn.disabled = false;
 }
 
-// O Sonar Ativo: Vai direto no backend consultar o Mercado Pago, driblando o bloqueio de HTTP
+// ==========================================
+// 📡 SONAR DO PIX COM DISPARO DE PIXEL META
+// ==========================================
 async function checarStatusPagamento(transacaoId) {
     try {
-        // 🚀 ESTRATÉGIA ATIVA: Pergunta direto ao nosso servidor (que pergunta ao Mercado Pago)
         const resStatus = await fetch(`${API_URL}/pagamento/pix/${transacaoId}/status`);
         const dataStatus = await resStatus.json();
 
-        // Se o Mercado Pago disser que tá pago, a gente libera a tela do cliente na hora!
         if (dataStatus.pago) {
             clearInterval(verificadorPix);
 
@@ -2009,15 +2009,35 @@ async function checarStatusPagamento(transacaoId) {
             document.getElementById('pix-status-texto').style.color = "#4CAF50";
             document.getElementById('pix-qr-code').style.opacity = "0.2";
 
-            // Aplica descontos no CRM caso haja cupom
+            // Calcula o valor para o Pixel
+            let totalPix = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+            const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
+            if (tipoEntregaChecked && tipoEntregaChecked.value === 'delivery') {
+                const selectBairro = document.getElementById('cliente-bairro');
+                if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
+                    totalPix += Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+                }
+            }
+
+            // Aplica descontos no CRM caso haja cupom e ajusta o valor do Pixel
             if (cupomAtivo) {
                 const resVenda = await fetch(`${API_URL}/vendas`);
                 const vendas = await resVenda.json();
                 const venda = vendas.find(v => v.transacao_id === transacaoId.toString());
-                if(venda) await registrarUsoCupomNaNuvem(cupomAtivo.codigo, venda.valor_total);
+                if(venda) {
+                    await registrarUsoCupomNaNuvem(cupomAtivo.codigo, venda.valor_total);
+                    totalPix = Number(venda.valor_total);
+                }
             }
 
-            // Espera 2 segundos para o cliente curtir a vitória e joga pro Rastreio!
+            // 📸 META PIXEL: Avisa o Facebook da Compra via PIX!
+            try {
+                console.log("🎯 Disparando Pixel de Compra (Pix). Valor BRL:", totalPix);
+                if (typeof fbq === 'function') {
+                    fbq('track', 'Purchase', { currency: 'BRL', value: totalPix });
+                }
+            } catch(e) { console.log("⚠️ Erro no Pixel:", e); }
+
             setTimeout(() => {
                 document.getElementById('modal-pix').style.display = 'none';
                 carrinho = [];
