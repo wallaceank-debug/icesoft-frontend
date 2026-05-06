@@ -1021,54 +1021,6 @@ async function excluirCidade(id) {
     }
 }
 
-// ==========================================
-// 📡 RADAR GLOBAL DE DELIVERY (Invisível e Multicanal)
-// ==========================================
-let qtdPendentesGlobalAnterior = -1;
-// Link direto para a campainha, garantindo que o áudio funcione em qualquer pasta
-const audioAlertaGlobal = new Audio('https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3');
-
-async function checarNovosPedidosGlobal() {
-    try {
-        // Faz uma busca super rápida e leve na API
-        const API_URL_RADAR = 'http://108.174.146.77:3000/api'; // Atualizado para o nosso IP dedicado
-        const res = await fetch(`${API_URL_RADAR}/vendas`);
-        const vendas = await res.json();
-        
-        // Conta quantos pedidos estão exatamente com o status de recém-chegados
-        const pendentesAgora = vendas.filter(v => v.status && v.status.trim() === 'Pendente Delivery').length;
-
-        // Se o número de pendentes for MAIOR que o da checagem anterior, chegou pedido novo!
-        if (qtdPendentesGlobalAnterior !== -1 && pendentesAgora > qtdPendentesGlobalAnterior) {
-            
-            // 1. Toca a campainha
-            audioAlertaGlobal.volume = 1.0;
-            audioAlertaGlobal.play().catch(e => console.log("O navegador bloqueou o áudio. Clique em qualquer lugar da tela."));
-            
-            // 2. Mostra a bolha visual piscante dentro do sistema
-            mostrarAlertaVisualDelivery();
-
-            // 🚀 3. A MÁGICA: Notificação Multicanal (Pula no Windows/Mac)
-            if ("Notification" in window && Notification.permission === "granted") {
-                const notificacao = new Notification("🚨 NOVO PEDIDO - ICESOFT", {
-                    body: `Você tem ${pendentesAgora} pedido(s) pendente(s) aguardando aceite na cozinha!`,
-                    icon: "https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" 
-                });
-
-                // Se o caixa clicar na notificação do Windows, o navegador abre a tela do Kanban sozinho!
-                notificacao.onclick = function() {
-                    window.focus();
-                    window.location.href = '../kanban/';
-                };
-            }
-        }
-        
-        // Atualiza a memória para a próxima checagem
-        qtdPendentesGlobalAnterior = pendentesAgora;
-    } catch (e) {
-        // Falha silenciosa para não poluir ou travar sua tela de PDV
-    }
-}
 
 function mostrarAlertaVisualDelivery() {
     let bolha = document.getElementById('alerta-bolha-delivery');
