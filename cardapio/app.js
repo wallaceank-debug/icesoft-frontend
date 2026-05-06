@@ -916,6 +916,14 @@ async function processarEnvioWhatsApp() {
     // 1. Salva o pedido direto no Banco de Dados (Nuvem)
     await salvarVendaDelivery("Pendente Delivery"); 
 
+    // 📸 META PIXEL: Avisa o Facebook que uma compra foi finalizada com sucesso!
+    try {
+        let valorDaCompra = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+        if (typeof fbq === 'function') {
+            fbq('track', 'Purchase', { currency: 'BRL', value: valorDaCompra });
+        }
+    } catch(e) { console.log("Aviso: Pixel bloqueado pelo navegador do cliente."); }
+    
     // 2. Desconta o cupom usado na nuvem (se houver)
     if (cupomAtivo) {
         let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
