@@ -16,6 +16,33 @@ let cuponsGlobais = [];
 let cupomAtivo = null;
 let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
+// ==========================================
+// ⏱️ MOTOR DE PROMOÇÕES AGENDADAS (Relógio Biológico)
+// ==========================================
+function isPromocaoAtivaAgora(p) {
+    // Se não tem promoção configurada, já corta aqui
+    if (!p.tipo_promocao || p.tipo_promocao === 'nenhuma' || !(p.valor_promocao > 0)) return false;
+
+    // Se o produto não tiver os novos campos de agendamento preenchidos, a promoção funciona 24h (modo antigo)
+    if ((!p.promo_dias || p.promo_dias === '') && (!p.promo_inicio || p.promo_inicio === '')) return true;
+
+    const agora = new Date();
+    const diaAtual = agora.getDay().toString(); // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
+    const horaAtualStr = agora.toTimeString().substring(0, 5); // Ex: "19:30"
+
+    // 1. Checa o Dia da Semana (Ex: p.promo_dias = "4" para Quinta, ou "1,3,5" para Seg/Qua/Sex)
+    if (p.promo_dias && p.promo_dias.trim() !== '') {
+        if (!p.promo_dias.includes(diaAtual)) return false; // Se hoje não for o dia marcado, esconde a promo
+    }
+
+    // 2. Checa o Horário (Ex: das "18:00" às "23:59")
+    if (p.promo_inicio && p.promo_fim && p.promo_inicio !== '' && p.promo_fim !== '') {
+        if (horaAtualStr < p.promo_inicio || horaAtualStr > p.promo_fim) return false;
+    }
+
+    return true; // Se passou pelos testes de tempo, a promoção brilha na tela!
+}
+
 async function carregarTudo() {
     try {
         // 🌐 O "motor" agora busca as configurações no mesmo pacote!
@@ -163,7 +190,7 @@ function renderizarCardapio(lista) {
             // 💰 MATEMÁTICA DA PROMOÇÃO (Preço Riscado)
             let precoHtml = `<div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
             
-            if (p.tipo_promocao && p.tipo_promocao !== 'nenhuma' && p.valor_promocao > 0) {
+            if (isPromocaoAtivaAgora(p)) {
                 let precoComDesconto = Number(p.preco);
                 if (p.tipo_promocao === 'porcentagem') {
                     precoComDesconto -= precoComDesconto * (Number(p.valor_promocao) / 100);
@@ -406,7 +433,7 @@ function alterarQuantidadeModal(delta) {
 function atualizarPrecoDinamico() {
     // 💰 Descobre o preço base verificando se tem promoção ativa
     let precoBase = Number(produtoEmSelecao.preco);
-    if (produtoEmSelecao.tipo_promocao && produtoEmSelecao.tipo_promocao !== 'nenhuma' && produtoEmSelecao.valor_promocao > 0) {
+    if (isPromocaoAtivaAgora(produtoEmSelecao)) {
         if (produtoEmSelecao.tipo_promocao === 'porcentagem') {
             precoBase -= precoBase * (Number(produtoEmSelecao.valor_promocao) / 100);
         } else if (produtoEmSelecao.tipo_promocao === 'fixo') {
@@ -451,7 +478,7 @@ function confirmarEscolhasEAdicionar() {
 
     // 3. 💰 MATEMÁTICA DO PREÇO BASE (Aplicando a Promoção se existir)
     let precoBase = Number(produtoEmSelecao.preco);
-    if (produtoEmSelecao.tipo_promocao && produtoEmSelecao.tipo_promocao !== 'nenhuma' && produtoEmSelecao.valor_promocao > 0) {
+    if (isPromocaoAtivaAgora(produtoEmSelecao)) {
         if (produtoEmSelecao.tipo_promocao === 'porcentagem') {
             precoBase -= precoBase * (Number(produtoEmSelecao.valor_promocao) / 100);
         } else if (produtoEmSelecao.tipo_promocao === 'fixo') {
@@ -1153,7 +1180,7 @@ function renderizarCarrossel(produtos) {
         // 💰 MATEMÁTICA DA PROMOÇÃO (Sincronizada com o Carrossel)
         let precoHtml = `<div class="preco" style="color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
         
-        if (p.tipo_promocao && p.tipo_promocao !== 'nenhuma' && p.valor_promocao > 0) {
+        if (isPromocaoAtivaAgora(p)) {
             let precoComDesconto = Number(p.preco);
             if (p.tipo_promocao === 'porcentagem') {
                 precoComDesconto -= precoComDesconto * (Number(p.valor_promocao) / 100);

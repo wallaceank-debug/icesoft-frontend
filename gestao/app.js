@@ -9,9 +9,10 @@ window.onload = async () => {
 
 async function carregarTudo() {
     try {
-        const [resProd, resGrupos] = await Promise.all([
+        const [resProd, resGrupos, resCat] = await Promise.all([
             fetch(`${API_URL}/produtos`),
-            fetch(`${API_URL}/grupos`)
+            fetch(`${API_URL}/grupos`),
+            fetch(`${API_URL}/categorias`) // Puxa do novo servidor!
         ]);
         
         let produtosBrutos = await resProd.json();
@@ -27,12 +28,14 @@ async function carregarTudo() {
                 p.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
             }
             return p;
-        }); // 🛑 Note que paramos por aqui! Sem o .filter!
+        });
 
         listaGrupos = await resGrupos.json();
+        listaCategorias = await resCat.json(); // Salva na memória
         
         renderizarProdutos();
         renderizarGrupos();
+        preencherSelectCategorias(); // Atualiza as opções na hora de criar o produto
         
         // Se um grupo já estava selecionado, recarrega a 3ª coluna
         if (grupoSelecionadoId) selecionarGrupo(grupoSelecionadoId);
@@ -40,9 +43,7 @@ async function carregarTudo() {
         console.error("Erro", e); 
     }
 }
-// ==========================================
-// COLUNA 1: PRODUTOS
-// ==========================================
+
 // ==========================================
 // COLUNA 1: PRODUTOS (COM FILTRO EM TEMPO REAL)
 // ==========================================
@@ -94,7 +95,6 @@ async function duplicarProduto(id) {
     const p = listaProdutos.find(x => x.id === id);
     if (!p) return;
 
-    // Cria um pacote idêntico, mas com " (Cópia)" no nome
     const dadosDuplicados = {
         nome: p.nome + " (Cópia)",
         preco: parseFloat(p.preco),
@@ -110,7 +110,7 @@ async function duplicarProduto(id) {
             headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify(dadosDuplicados) 
         });
-        await carregarTudo(); // Recarrega a tela para a cópia aparecer
+        await carregarTudo();
     } catch (e) {
         alert("❌ Erro ao duplicar produto.");
     }
@@ -123,7 +123,7 @@ async function toggleProduto(id, statusAtivo) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ativo: statusAtivo })
         });
-        await carregarTudo(); // Recarrega para atualizar a interface (linha riscada)
+        await carregarTudo(); 
     } catch(e) { alert("Erro ao mudar status"); }
 }
 
@@ -160,7 +160,6 @@ async function duplicarGrupo(id) {
     const g = listaGrupos.find(x => x.id === id);
     if (!g) return;
 
-    // Cria a cópia exata, preservando todos os itens/adicionais já criados dentro dele!
     const dadosDuplicados = {
         nome: g.nome + " (Cópia)",
         limite: parseInt(g.limite),
@@ -182,8 +181,8 @@ async function duplicarGrupo(id) {
 
 function selecionarGrupo(id) {
     grupoSelecionadoId = id;
-    renderizarGrupos(); // Repinta para marcar de ciano o selecionado
-    renderizarAdicionais(); // Mostra a coluna 3
+    renderizarGrupos(); 
+    renderizarAdicionais(); 
     document.getElementById('btn-novo-adicional').style.display = 'block';
 }
 
@@ -212,7 +211,6 @@ function renderizarAdicionais() {
 
     div.innerHTML = '';
     grupo.itens.forEach((item, index) => {
-        // Para itens em JSON, se não existir 'ativo', é true.
         const isAtivo = item.ativo !== false; 
         const classeInativo = isAtivo ? '' : 'item-inativo';
 
@@ -238,7 +236,6 @@ async function toggleAdicional(indexItem, statusAtivo) {
     const grupo = listaGrupos.find(g => g.id === grupoSelecionadoId);
     grupo.itens[indexItem].ativo = statusAtivo;
     
-    // Atualiza o grupo inteiro na API
     try {
         await fetch(`${API_URL}/grupos/${grupo.id}`, {
             method: 'PUT',
@@ -288,24 +285,28 @@ function abrirModalAdicional() {
 function fecharModalProduto() { document.getElementById('modal-produto').style.display = 'none'; }
 function fecharModalGrupo() { document.getElementById('modal-grupo').style.display = 'none'; }
 
-// --- MOTOR DE PRODUTOS ---
-
-let gruposSelecionadosTemporarios = []; // Array para controlar a ordem no modal
+let gruposSelecionadosTemporarios = []; 
 
 // Função para exibir/ocultar a caixa de valor da promoção
 function toggleAreaPromocao() {
-    const tipoSelecionado = document.querySelector('input[name="tipo_promocao"]:checked').value;
+    const tipoSelecionadoElement = document.querySelector('input[name="tipo_promocao"]:checked');
+    if (!tipoSelecionadoElement) return; // Segurança caso a tela carregue vazia
+
+    const tipoSelecionado = tipoSelecionadoElement.value;
     const areaValor = document.getElementById('area-valor-promocao');
     const labelTipo = document.getElementById('label-tipo-promocao');
     const inputValor = document.getElementById('prod-valor-promocao');
+    const areaAgendamento = document.getElementById('area-agendamento-promo'); // 🚀 NOVO!
     
     if (tipoSelecionado === 'nenhuma') {
-        areaValor.style.display = 'none';
-        inputValor.value = ''; // Limpa o valor
+        if(areaValor) areaValor.style.display = 'none';
+        if(inputValor) inputValor.value = ''; 
+        if(areaAgendamento) areaAgendamento.style.display = 'none'; // 🚀 Esconde o relógio biológico
     } else {
-        areaValor.style.display = 'flex';
-        labelTipo.innerText = tipoSelecionado === 'porcentagem' ? '%' : 'R$';
-        inputValor.placeholder = tipoSelecionado === 'porcentagem' ? 'Ex: 10 (10% off)' : 'Ex: 5.00 (5 reais off)';
+        if(areaValor) areaValor.style.display = 'flex';
+        if(labelTipo) labelTipo.innerText = tipoSelecionado === 'porcentagem' ? '%' : 'R$';
+        if(inputValor) inputValor.placeholder = tipoSelecionado === 'porcentagem' ? 'Ex: 10 (10% off)' : 'Ex: 5.00 (5 reais off)';
+        if(areaAgendamento) areaAgendamento.style.display = 'block'; // 🚀 Mostra o relógio biológico
     }
 }
 
@@ -325,7 +326,6 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-emoji').value = p.emoji;
         document.getElementById('prod-categoria').value = p.categoria || '';
         
-        // ✅ CORRIGIDO: O produto se chama 'p' nesta função
         if (document.getElementById('produto-tag')) {
             document.getElementById('produto-tag').value = p.tag || '';
         }
@@ -336,16 +336,32 @@ function abrirModalProduto(id = null) {
         const campoDescricao = document.getElementById('prod-descricao');
         if(campoDescricao) campoDescricao.value = (p.descricao && p.descricao !== 'null') ? p.descricao : '';
         
-        // 👇 Carrega a caixinha de venda por peso
         if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = p.venda_por_peso === true;
         
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
 
-        // NOVO: Carrega os dados da promoção (assumindo que o banco traga esses campos)
+        // Carrega os dados da promoção
         const tipoPromo = p.tipo_promocao || 'nenhuma';
-        document.querySelector(`input[name="tipo_promocao"][value="${tipoPromo}"]`).checked = true;
-        document.getElementById('prod-valor-promocao').value = p.valor_promocao || '';
-        toggleAreaPromocao(); // Atualiza a visualização
+        const radioTarget = document.querySelector(`input[name="tipo_promocao"][value="${tipoPromo}"]`);
+        if(radioTarget) radioTarget.checked = true;
+        
+        if(document.getElementById('prod-valor-promocao')) document.getElementById('prod-valor-promocao').value = p.valor_promocao || '';
+        
+        // 🚀 NOVO: CARREGA O RELÓGIO BIOLÓGICO
+        if(document.getElementById('produto-promo-inicio')) document.getElementById('produto-promo-inicio').value = p.promo_inicio || '';
+        if(document.getElementById('produto-promo-fim')) document.getElementById('produto-promo-fim').value = p.promo_fim || '';
+        
+        // Desmarca todos primeiro e marca só os do banco
+        document.querySelectorAll('.btn-dia').forEach(b => b.classList.remove('ativo'));
+        if (p.promo_dias) {
+            const diasSalvos = p.promo_dias.split(',');
+            diasSalvos.forEach(diaNum => {
+                const btn = document.querySelector(`.btn-dia[data-dia="${diaNum}"]`);
+                if(btn) btn.classList.add('ativo');
+            });
+        }
+
+        toggleAreaPromocao(); 
 
     } else { 
         titulo.innerText = "Novo Produto";
@@ -355,7 +371,6 @@ function abrirModalProduto(id = null) {
         document.getElementById('prod-emoji').value = '🍨';
         document.getElementById('prod-categoria').value = '';
         
-        // ✅ Zera a tag se for um produto novo
         if (document.getElementById('produto-tag')) {
             document.getElementById('produto-tag').value = '';
         }
@@ -366,16 +381,21 @@ function abrirModalProduto(id = null) {
         const campoDescricao = document.getElementById('prod-descricao');
         if(campoDescricao) campoDescricao.value = '';
 
-        // 👇 Zera a caixinha de venda por peso no produto novo
         if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = false;
 
-        // NOVO: Zera os dados da promoção
-        document.querySelector('input[name="tipo_promocao"][value="nenhuma"]').checked = true;
-        document.getElementById('prod-valor-promocao').value = '';
-        toggleAreaPromocao(); // Atualiza a visualização
+        // Zera os dados da promoção
+        const radioNenhuma = document.querySelector('input[name="tipo_promocao"][value="nenhuma"]');
+        if(radioNenhuma) radioNenhuma.checked = true;
+        if(document.getElementById('prod-valor-promocao')) document.getElementById('prod-valor-promocao').value = '';
+        
+        // 🚀 NOVO: ZERA O RELÓGIO BIOLÓGICO
+        if(document.getElementById('produto-promo-inicio')) document.getElementById('produto-promo-inicio').value = '';
+        if(document.getElementById('produto-promo-fim')) document.getElementById('produto-promo-fim').value = '';
+        document.querySelectorAll('.btn-dia').forEach(b => b.classList.remove('ativo'));
+
+        toggleAreaPromocao(); 
     }
 
-    // 🧹 Limpa o campo de upload do PC toda vez que abrir a janela
     const inputArquivo = document.getElementById('produto-arquivo-foto');
     if(inputArquivo) inputArquivo.value = '';
 
@@ -385,18 +405,13 @@ function abrirModalProduto(id = null) {
 
 let grupoArrastadoIndex = null;
 
-// Nova função Inteligente (Separa marcados e desmarcados)
 function renderizarSelecaoGrupos() {
     const container = document.getElementById('container-checkbox-grupos');
     container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e arraste (☰) para montar o roteiro do cliente:</p>';
 
-    // 1. Filtra os grupos já marcados (respeitando a ordem do array)
     const gruposMarcados = gruposSelecionadosTemporarios.map(id => listaGrupos.find(g => g.id === id)).filter(g => g);
-    
-    // 2. Filtra os grupos que não estão marcados (para ficarem no fim da lista)
     const gruposDesmarcados = listaGrupos.filter(g => !gruposSelecionadosTemporarios.includes(g.id));
 
-    // Desenha os marcados no topo (COM Drag and Drop)
     gruposMarcados.forEach((g, index) => {
         container.innerHTML += `
             <div draggable="true"
@@ -413,12 +428,10 @@ function renderizarSelecaoGrupos() {
         `;
     });
 
-    // Coloca uma linha divisória elegante se houver itens nas duas listas
     if (gruposMarcados.length > 0 && gruposDesmarcados.length > 0) {
         container.innerHTML += '<hr style="border: 0; border-top: 1px dashed #ccc; margin: 10px 0;">';
     }
 
-    // Desenha os desmarcados no fundo (SEM drag and drop)
     gruposDesmarcados.forEach(g => {
         container.innerHTML += `
             <div style="display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:5px; border: 1px solid #eee;">
@@ -434,42 +447,33 @@ function renderizarSelecaoGrupos() {
 function toggleGrupoNoProduto(id) {
     const index = gruposSelecionadosTemporarios.indexOf(id);
     if (index > -1) {
-        // Se desmarcou, tira da fila
         gruposSelecionadosTemporarios.splice(index, 1);
     } else {
-        // Se marcou, joga lá pro final da fila dos selecionados
         gruposSelecionadosTemporarios.push(id); 
     }
     renderizarSelecaoGrupos();
 }
 
-// === MÁGICA DO DRAG AND DROP PARA GRUPOS ===
 function dragStartGrupo(index) {
     grupoArrastadoIndex = index;
 }
 
 function dragOverGrupo(event) {
-    event.preventDefault(); // Permite que a área receba a soltura
+    event.preventDefault(); 
 }
 
 function dropGrupo(indexDestino) {
     if (grupoArrastadoIndex === null || grupoArrastadoIndex === indexDestino) return;
 
-    // 1. Tira o ID do grupo da posição antiga e insere na nova
     const idArrastado = gruposSelecionadosTemporarios.splice(grupoArrastadoIndex, 1)[0];
     gruposSelecionadosTemporarios.splice(indexDestino, 0, idArrastado);
 
-    // 2. Repinta a tela com a nova ordem instantaneamente
     renderizarSelecaoGrupos();
     grupoArrastadoIndex = null;
 }
 
-// Na sua função salvarProduto(), mude a linha que pega os IDs:
-// Substitua a lógica de querySelectorAll por:
-// const grupos_ids = gruposSelecionadosTemporarios;
-
 function abrirEdicaoProduto(id) {
-    abrirModalProduto(id); // Usa a mesma janela, mas passando o ID para editar
+    abrirModalProduto(id); 
 }
 
 async function salvarProduto() {
@@ -478,7 +482,6 @@ async function salvarProduto() {
     const preco = document.getElementById('prod-preco').value;
     const emoji = document.getElementById('prod-emoji').value;
     
-    // ✅ CORRIGIDO: Declarando a variável tag corretamente
     const tag = document.getElementById('produto-tag') ? document.getElementById('produto-tag').value : '';
     const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
     
@@ -492,7 +495,6 @@ async function salvarProduto() {
 
     if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
 
-    // 🚀 O NOVO MOTOR DE UPLOAD DIRETO PARA O SERVIDOR
     const inputArquivo = document.getElementById('produto-arquivo-foto');
     if (inputArquivo && inputArquivo.files.length > 0) {
         const formData = new FormData();
@@ -505,7 +507,6 @@ async function salvarProduto() {
             const dataUpload = await resUpload.json();
             
             if (dataUpload.sucesso) {
-                // Pega o seu IP (ex: http://108...:3000) e junta com a foto
                 const baseUrl = API_URL.replace('/api', '');
                 imagem_url = baseUrl + dataUpload.url; 
             } else {
@@ -516,23 +517,25 @@ async function salvarProduto() {
         }
     }
 
-    // 👇 Pega o valor da caixinha de venda por peso
     const venda_por_peso = document.getElementById('prod-venda-peso') ? document.getElementById('prod-venda-peso').checked : false;
 
-    // 🚀 NOVO: Captura os dados da Promoção
     const tipo_promocao_elemento = document.querySelector('input[name="tipo_promocao"]:checked');
     const tipo_promocao = tipo_promocao_elemento ? tipo_promocao_elemento.value : 'nenhuma';
     
     let valor_promocao = document.getElementById('prod-valor-promocao') ? document.getElementById('prod-valor-promocao').value : '';
     
-    // Tratamento de segurança: se escolheu 'nenhuma', garante que o valor é 0/nulo
     if (tipo_promocao === 'nenhuma' || !valor_promocao) {
         valor_promocao = 0;
     } else {
         valor_promocao = parseFloat(valor_promocao);
     }
 
-    // ✅ CORRIGIDO: Injetando a 'tag' e a 'promocao' no pacote de dados que vai pro servidor
+    // 🚀 NOVO: Captura os dados do Relógio Biológico da tela
+    const botoesAtivos = document.querySelectorAll('.btn-dia.ativo');
+    const promo_dias = Array.from(botoesAtivos).map(btn => btn.getAttribute('data-dia')).join(',');
+    const promo_inicio = document.getElementById('produto-promo-inicio') ? document.getElementById('produto-promo-inicio').value : '';
+    const promo_fim = document.getElementById('produto-promo-fim') ? document.getElementById('produto-promo-fim').value : '';
+
     const dados = { 
         nome, 
         descricao, 
@@ -544,8 +547,11 @@ async function salvarProduto() {
         imagem_url, 
         venda_por_peso, 
         tag,
-        tipo_promocao,     // 👈 NOVA VARIÁVEL DA PROMOÇÃO
-        valor_promocao     // 👈 NOVA VARIÁVEL DA PROMOÇÃO
+        tipo_promocao, 
+        valor_promocao,
+        promo_dias,     // 👈 NOVA
+        promo_inicio,   // 👈 NOVA
+        promo_fim       // 👈 NOVA
     };
 
     try {
@@ -581,9 +587,9 @@ function abrirModalGrupo(id = null) {
     const nomeInput = document.getElementById('grupo-nome');
     const limiteInput = document.getElementById('grupo-limite');
     const obrigatorioInput = document.getElementById('grupo-obrigatorio');
-    const btnExcluir = document.getElementById('btn-excluir-grupo'); // 🛠️ O novo botão!
+    const btnExcluir = document.getElementById('btn-excluir-grupo');
 
-    if (id) { // MODO EDIÇÃO
+    if (id) { 
         const g = listaGrupos.find(x => x.id === id);
         titulo.innerText = "Editar Grupo";
         idInput.value = g.id;
@@ -591,27 +597,23 @@ function abrirModalGrupo(id = null) {
         limiteInput.value = g.limite;
         obrigatorioInput.checked = (g.obrigatorio == 1 || g.obrigatorio == true || g.obrigatorio === 'true');
         
-        // Se estamos editando algo que já existe, mostra a lixeira!
         if(btnExcluir) btnExcluir.style.display = 'block'; 
-    } else { // MODO NOVO
+    } else { 
         titulo.innerText = "Novo Grupo";
         idInput.value = '';
         nomeInput.value = '';
         limiteInput.value = '';
         obrigatorioInput.checked = false;
         
-        // Se estamos criando do zero, esconde a lixeira!
         if(btnExcluir) btnExcluir.style.display = 'none'; 
     }
     modal.style.display = 'flex';
 }
 
-// Função ninja de exclusão segura
 async function excluirGrupoModal() {
     const id = document.getElementById('grupo-id').value;
     if (!id) return;
     
-    // Trava de segurança dupla
     if(!confirm("⚠️ Tem certeza que deseja EXCLUIR este grupo e todos os complementos dentro dele?\nEles sumirão do cardápio digital de todos os produtos vinculados.")) return;
 
     try {
@@ -619,14 +621,13 @@ async function excluirGrupoModal() {
         if (res.ok) {
             fecharModalGrupo();
             
-            // Se o grupo excluído era exatamente o que estava aberto na 3ª coluna, a gente limpa a tela!
             if (grupoSelecionadoId === Number(id)) {
                 grupoSelecionadoId = null;
                 document.getElementById('lista-adicionais').innerHTML = '<p class="carregando" style="opacity: 0.6;">Selecione um Grupo na coluna ao lado para ver os adicionais.</p>';
                 document.getElementById('btn-novo-adicional').style.display = 'none';
             }
             
-            await carregarTudo(); // Sincroniza tudo com o banco de dados
+            await carregarTudo(); 
         } else {
             alert("❌ Erro ao excluir o grupo no servidor.");
         }
@@ -643,7 +644,7 @@ async function salvarGrupo() {
     const id = document.getElementById('grupo-id').value;
     const nome = document.getElementById('grupo-nome').value;
     const limite = document.getElementById('grupo-limite').value;
-    const obrigatorio = document.getElementById('grupo-obrigatorio').checked; // Lemos se está marcado
+    const obrigatorio = document.getElementById('grupo-obrigatorio').checked; 
 
     if (!nome || !limite) return alert("⚠️ Preencha o nome e o limite!");
 
@@ -653,7 +654,6 @@ async function salvarGrupo() {
         if (gExistente && gExistente.itens) itens = gExistente.itens;
     }
 
-    // Agora incluímos o campo "obrigatorio" nos dados que vão para o servidor
     const dados = { 
         nome, 
         limite: parseInt(limite), 
@@ -680,26 +680,6 @@ async function salvarGrupo() {
 // ==========================================
 let listaCategorias = [];
 let categoriaArrastadaIndex = null;
-
-// Substitui a função carregarTudo antiga para puxar as categorias também
-async function carregarTudo() {
-    try {
-        const [resProd, resGrupos, resCat] = await Promise.all([
-            fetch(`${API_URL}/produtos`),
-            fetch(`${API_URL}/grupos`),
-            fetch(`${API_URL}/categorias`) // Puxa do novo servidor!
-        ]);
-        listaProdutos = await resProd.json();
-        listaGrupos = await resGrupos.json();
-        listaCategorias = await resCat.json(); // Salva na memória
-
-        renderizarProdutos();
-        renderizarGrupos();
-        preencherSelectCategorias(); // Atualiza as opções na hora de criar o produto
-
-        if (grupoSelecionadoId) selecionarGrupo(grupoSelecionadoId);
-    } catch (e) { console.error("Erro", e); }
-}
 
 function preencherSelectCategorias() {
     const select = document.getElementById('prod-categoria');
@@ -730,10 +710,8 @@ function renderizarListaCategoriasAdmin() {
     }
 
     listaCategorias.forEach((cat, index) => {
-        // Se a regra não existir, assumimos que aparece no app (true)
         const isVisivel = cat.mostrar_cardapio !== false; 
         
-        // As etiquetas visuais para você saber de bater o olho
         const seloHtml = isVisivel 
             ? `<span style="background: #e0f7fa; color: #00bcd4; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold;">📱 App + PDV</span>`
             : `<span style="background: #ffebee; color: #f44336; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold;">🖥️ Só PDV</span>`;
@@ -765,7 +743,6 @@ function renderizarListaCategoriasAdmin() {
     });
 }
 
-// 🎚️ NOVA FUNÇÃO: Liga/Desliga a categoria do aplicativo instantaneamente
 async function toggleCategoriaApp(id, statusVisivel) {
     try {
         await fetch(`${API_URL}/categorias/${id}`, {
@@ -778,26 +755,22 @@ async function toggleCategoriaApp(id, statusVisivel) {
     } catch(e) { alert("Erro ao mudar visibilidade da categoria."); }
 }
 
-// === LÓGICA DE ARRASTAR E SOLTAR ===
 function dragStartCategoria(index) {
     categoriaArrastadaIndex = index;
 }
 
 function dragOverCategoria(event) {
-    event.preventDefault(); // Necessário para permitir que o item caia aqui
+    event.preventDefault(); 
 }
 
 async function dropCategoria(indexDestino) {
     if (categoriaArrastadaIndex === null || categoriaArrastadaIndex === indexDestino) return;
 
-    // 1. Tira o item da posição antiga e joga na posição nova na memória
     const itemArrastado = listaCategorias.splice(categoriaArrastadaIndex, 1)[0];
     listaCategorias.splice(indexDestino, 0, itemArrastado);
 
-    // 2. Atualiza a tela imediatamente para o operador ver que funcionou
     renderizarListaCategoriasAdmin();
 
-    // 3. Monta o pacote dizendo "Categoria X agora é a número 1, Categoria Y é a número 2..."
     const novaOrdemPayload = listaCategorias.map((cat, idx) => {
         return { id: cat.id, ordem: idx + 1 };
     });
@@ -808,7 +781,7 @@ async function dropCategoria(indexDestino) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(novaOrdemPayload)
         });
-        await carregarTudo(); // Sincroniza com o banco de dados
+        await carregarTudo(); 
     } catch (e) {
         alert("Erro de conexão ao salvar a nova ordem no servidor.");
     } finally {
@@ -816,11 +789,9 @@ async function dropCategoria(indexDestino) {
     }
 }
 
-// === CRIAÇÃO DE NOVA CATEGORIA (Automática) ===
 async function salvarNovaCategoria() {
     const nome = document.getElementById('nova-cat-nome').value.trim();
-    // Puxa a informação do checkbox (se não achar o checkbox, o padrão é true)
-    const mostrarNoApp = document.getElementById('nova-cat-mostrar-app') ? document.getElementById('nova-cat-mostrar-app').checked : true;
+    const mostrarNoApp = document.getElementById('categoria-mostrar-cardapio') ? document.getElementById('categoria-mostrar-cardapio').checked : true;
     const ordem = listaCategorias.length + 1; 
 
     if (!nome) return alert("Preencha o nome da categoria!");
@@ -833,7 +804,7 @@ async function salvarNovaCategoria() {
         });
         
         document.getElementById('nova-cat-nome').value = '';
-        if(document.getElementById('nova-cat-mostrar-app')) document.getElementById('nova-cat-mostrar-app').checked = true;
+        if(document.getElementById('categoria-mostrar-cardapio')) document.getElementById('categoria-mostrar-cardapio').checked = true;
         
         await carregarTudo();
         renderizarListaCategoriasAdmin(); 
@@ -861,7 +832,6 @@ let listaBairros = [];
 async function abrirGerenciadorBairros() {
     document.getElementById('modal-bairros').style.display = 'flex';
     
-    // 1. Antes de abrir, ele vai na nuvem e puxa as Cidades para a caixinha (Select)
     try {
         const resCid = await fetch(`${API_URL}/cidades`);
         if (resCid.ok) {
@@ -901,7 +871,7 @@ function renderizarListaBairrosAdmin() {
     }
 
     listaBairros.forEach(b => {
-        const nomeCidade = b.cidade || 'Quatis'; // Fallback de segurança
+        const nomeCidade = b.cidade || 'Quatis'; 
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px; border: 1px solid #eee;">
                 <div>
@@ -927,7 +897,6 @@ async function salvarNovoBairro() {
         await fetch(`${API_URL}/bairros`, { 
             method: 'POST', 
             headers: {'Content-Type': 'application/json'}, 
-            // 🚀 Injetando a "cidade" no pacote do Bairro!
             body: JSON.stringify({ nome, taxa: parseFloat(taxa) || 0, cidade }) 
         });
         
@@ -950,7 +919,7 @@ async function excluirBairro(id) {
 }
 
 // ==========================================
-// 🏙️ SISTEMA DE CIDADES E INTEGRAÇÃO DE BAIRROS
+// 🏙️ SISTEMA DE CIDADES 
 // ==========================================
 let listaCidades = [];
 
@@ -1021,63 +990,6 @@ async function excluirCidade(id) {
     }
 }
 
-
-function mostrarAlertaVisualDelivery() {
-    let bolha = document.getElementById('alerta-bolha-delivery');
-    if (!bolha) {
-        // Cria a animação de piscar (Efeito Sirene)
-        const style = document.createElement('style');
-        style.innerHTML = `@keyframes piscarAlerta { 0% { background: #e91e63; transform: scale(1); } 100% { background: #ff4081; transform: scale(1.05); } }`;
-        document.head.appendChild(style);
-
-        // Cria o botão flutuante na tela
-        bolha = document.createElement('div');
-        bolha.id = 'alerta-bolha-delivery';
-        bolha.innerHTML = `🚨 <strong>NOVO DELIVERY!</strong><br><span style="font-size:0.85rem">Clique aqui para abrir o Kanban</span>`;
-        bolha.style.cssText = "position:fixed; bottom:30px; right:30px; background:#e91e63; color:white; padding:15px 20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.4); z-index:99999; cursor:pointer; font-family:sans-serif; text-align:center; animation: piscarAlerta 0.6s infinite alternate;";
-        
-        // Quando você clica na bolha, ele te joga direto para a tela do Kanban!
-        bolha.onclick = () => window.location.href = '../kanban/';
-        
-        document.body.appendChild(bolha);
-    }
-}
-
-// 🚀 SETUP INTELIGENTE DO RADAR
-setTimeout(() => {
-    // 1. Pergunta educadamente ao Windows/Mac/Celular se podemos mandar notificações
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-        Notification.requestPermission();
-    }
-    
-    // 2. Dá a primeira checada
-    checarNovosPedidosGlobal();
-}, 3000);
-
-// Fica vasculhando a API em busca de pedidos a cada 15 segundos
-setInterval(checarNovosPedidosGlobal, 15000);
-
-function mostrarAlertaVisualDelivery() {
-    let bolha = document.getElementById('alerta-bolha-delivery');
-    if (!bolha) {
-        // Cria a animação de piscar (Efeito Sirene)
-        const style = document.createElement('style');
-        style.innerHTML = `@keyframes piscarAlerta { 0% { background: #e91e63; transform: scale(1); } 100% { background: #ff4081; transform: scale(1.05); } }`;
-        document.head.appendChild(style);
-
-        // Cria o botão flutuante na tela
-        bolha = document.createElement('div');
-        bolha.id = 'alerta-bolha-delivery';
-        bolha.innerHTML = `🚨 <strong>NOVO DELIVERY!</strong><br><span style="font-size:0.85rem">Clique aqui para abrir o Kanban</span>`;
-        bolha.style.cssText = "position:fixed; bottom:30px; right:30px; background:#e91e63; color:white; padding:15px 20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.4); z-index:99999; cursor:pointer; font-family:sans-serif; text-align:center; animation: piscarAlerta 0.6s infinite alternate;";
-        
-        // Quando você clica na bolha, ele te joga direto para a tela do Kanban!
-        bolha.onclick = () => window.location.href = '../kanban/';
-        
-        document.body.appendChild(bolha);
-    }
-}
-
 // ==========================================
 // 💳 CONFIGURAÇÕES DE PAGAMENTO (PIX)
 // ==========================================
@@ -1087,12 +999,10 @@ async function abrirConfigPagamentos() {
     document.getElementById('mp-token-input').placeholder = 'Buscando chave no cofre...';
 
     try {
-        // Puxa as configurações gerais do servidor para ver se a chave já existe
         const res = await fetch(`${API_URL}/configuracoes`);
         const configs = await res.json();
         
         if (configs.mp_access_token) {
-            // Se existir, preenchemos com a chave (como o input é tipo password, fica com bolinhas)
             document.getElementById('mp-token-input').value = configs.mp_access_token;
         } else {
             document.getElementById('mp-token-input').placeholder = 'APP_USR-... (Cole sua chave aqui)';
@@ -1117,7 +1027,6 @@ async function salvarConfigPagamentos() {
     btn.disabled = true;
 
     try {
-        // O nosso servidor pega qualquer chave JSON e salva na tabela de configurações automaticamente
         await fetch(`${API_URL}/configuracoes`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1134,7 +1043,14 @@ async function salvarConfigPagamentos() {
     }
 }
 
-// Inicializa o radar 3 segundos após você abrir o PDV/Mesas
-setTimeout(checarNovosPedidosGlobal, 3000);
-// Fica vasculhando a API em busca de pedidos a cada 15 segundos
-setInterval(checarNovosPedidosGlobal, 15000);
+// ==========================================
+// 🧠 INTELIGÊNCIA DOS BOTÕES DE AGENDAMENTO (NOVO)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Escutador global para os botões da semana, já que eles carregam com a tela
+    document.querySelectorAll('.btn-dia').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.toggle('ativo');
+        });
+    });
+});
