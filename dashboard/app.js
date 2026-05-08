@@ -168,3 +168,155 @@ function renderizarGrafico(dadosDaSemana) {
         }
     });
 }
+
+// --- FUNCIONALIDADES DO HISTÓRICO DE CAIXAS ---
+
+function abrirHistoricoCaixas() {
+  document.getElementById('modal-historico-caixas').style.display = 'block';
+  // Define o mês atual como padrão no filtro
+  const dataAtual = new Date();
+  const mesFormatado = `${dataAtual.getFullYear()}-${String(dataAtual.getMonth() + 1).padStart(2, '0')}`;
+  document.getElementById('filtro-mes-caixa').value = mesFormatado;
+  
+  carregarDadosCaixa();
+}
+
+function fecharHistoricoCaixas() {
+  document.getElementById('modal-historico-caixas').style.display = 'none';
+}
+
+async function carregarDadosCaixa() {
+  const mesSelecionado = document.getElementById('filtro-mes-caixa').value;
+  const corpoTabela = document.getElementById('corpo-tabela-caixas');
+  
+  corpoTabela.innerHTML = '<tr><td colspan="6">Buscando dados do banco...</td></tr>';
+
+  try {
+    // ATENÇÃO: Aqui conectamos com seu Banco de Dados (ex: Firebase ou sua API)
+    // Estamos simulando a busca na coleção de caixas filtrando pelo mês
+    const dadosDosCaixas = await buscarCaixasDoBancoDeDados(mesSelecionado); 
+
+    corpoTabela.innerHTML = ''; // Limpa o "buscando dados..."
+
+    if (dadosDosCaixas.length === 0) {
+      corpoTabela.innerHTML = '<tr><td colspan="6">Nenhum caixa encontrado neste mês.</td></tr>';
+      return;
+    }
+
+    // Preenche a tabela com os dados
+    dadosDosCaixas.forEach(caixa => {
+      // Garantimos que totalPix não venha quebrado caso alguma caixa antiga não tenha a propriedade
+      const valorPix = caixa.totalPix || 0; 
+      
+      corpoTabela.innerHTML += `
+        <tr>
+          <td>${caixa.dataAbertura}</td>
+          <td>${caixa.dataFechamento}</td>
+          <td>R$ ${caixa.totalCartao.toFixed(2)}</td>
+          <td style="color: #25D366; font-weight: bold;">R$ ${valorPix.toFixed(2)}</td> <td>R$ ${caixa.totalDinheiro.toFixed(2)}</td>
+          <td style="color: red;">R$ ${caixa.totalDespesas.toFixed(2)}</td>
+          <td><button onclick="verDetalhesCaixa('${caixa.id}')">Ver Detalhes</button></td>
+        </tr>
+      `;
+    });
+
+  } catch (erro) {
+    console.error("Erro ao buscar caixas:", erro);
+    corpoTabela.innerHTML = '<tr><td colspan="6">Erro ao carregar dados. Verifique sua conexão.</td></tr>';
+  }
+}
+
+// Função real apontando para a sua API Icesoft
+async function buscarCaixasDoBancoDeDados(mes) {
+  // Conforme o seu arquivo Icesoft_Dev_Atual, esta é a URL oficial da sua API
+  const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+  
+  try {
+    // Faz o pedido para a rota nova que acabamos de criar no backend
+    const resposta = await fetch(`${API_URL}/caixa/historico?mes=${mes}`);
+    
+    if (!resposta.ok) {
+      throw new Error("Falha na comunicação com o servidor Icesoft");
+    }
+    
+    // Recebe a lista já mastigada e formatada pelo servidor
+    const dados = await resposta.json();
+    return dados;
+    
+  } catch (erro) {
+    console.error("Erro de conexão com a API Icesoft:", erro);
+    return []; // Retorna vazio em caso de erro de internet para não quebrar a tabela
+  }
+}
+
+// Função para abrir o Raio-X do Caixa selecionado
+async function verDetalhesCaixa(idCaixa) {
+  // Mostra o modal e coloca o ID no título
+  document.getElementById('detalhes-caixa-id').innerText = idCaixa;
+  document.getElementById('modal-detalhes-caixa').style.display = 'block';
+  
+  const corpoVendas = document.getElementById('corpo-tabela-detalhes-vendas');
+  const corpoMovs = document.getElementById('corpo-tabela-detalhes-movs');
+  
+  // Mensagem de carregamento enquanto busca os dados
+  corpoVendas.innerHTML = '<tr><td colspan="3">Carregando vendas...</td></tr>';
+  corpoMovs.innerHTML = '<tr><td colspan="3">Carregando despesas...</td></tr>';
+
+  try {
+    const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+    const resposta = await fetch(`${API_URL}/caixa/${idCaixa}/detalhes`);
+    
+    if (!resposta.ok) throw new Error("Falha na API");
+    const dados = await resposta.json();
+
+    // ==========================================
+    // 1. RENDERIZAR AS VENDAS
+    // ==========================================
+    corpoVendas.innerHTML = '';
+    if (dados.vendas.length === 0) {
+        corpoVendas.innerHTML = '<tr><td colspan="3">Nenhuma venda registrada neste caixa.</td></tr>';
+    } else {
+        dados.vendas.forEach(v => {
+            // Formata a hora para ficar limpo (Ex: 14:30)
+            const hora = new Date(v.data_hora).toLocaleTimeString('pt-BR', {timeStyle: 'short'});
+            corpoVendas.innerHTML += `
+              <tr>
+                <td>${hora}</td>
+                <td>${v.forma_pagamento}</td>
+                <td style="font-weight: bold;">R$ ${Number(v.valor_total).toFixed(2)}</td>
+              </tr>
+            `;
+        });
+    }
+
+    // ==========================================
+    // 2. RENDERIZAR AS DESPESAS E MOVIMENTAÇÕES
+    // ==========================================
+    corpoMovs.innerHTML = '';
+    if (dados.movimentacoes.length === 0) {
+        corpoMovs.innerHTML = '<tr><td colspan="3">Nenhuma movimentação registrada.</td></tr>';
+    } else {
+        dados.movimentacoes.forEach(m => {
+            // Se for Sangria fica vermelho, se for Suprimento (Entrada de troco) fica verde
+            const corTexto = m.tipo.toLowerCase() === 'sangria' ? '#f44336' : '#25D366';
+            corpoMovs.innerHTML += `
+              <tr>
+                <td style="color: ${corTexto}; font-weight: bold;">${m.tipo}</td>
+                <td>${m.motivo || '-'}</td>
+                <td style="color: ${corTexto}; font-weight: bold;">R$ ${Number(m.valor).toFixed(2)}</td>
+              </tr>
+            `;
+        });
+    }
+
+  } catch (erro) {
+    console.error("Erro ao buscar detalhes:", erro);
+    corpoVendas.innerHTML = '<tr><td colspan="3" style="color:red;">Erro ao buscar dados do servidor.</td></tr>';
+    corpoMovs.innerHTML = '<tr><td colspan="3" style="color:red;">Erro ao buscar dados do servidor.</td></tr>';
+  }
+}
+
+// Função para fechar a nova janela
+function fecharDetalhesCaixa() {
+  document.getElementById('modal-detalhes-caixa').style.display = 'none';
+}

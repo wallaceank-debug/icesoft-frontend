@@ -54,6 +54,8 @@
             <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
             <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
             <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+            <a href="javascript:void(0)" onclick="abrirHistoricoCaixas()" class="submenu-link">Histórico de Caixas</a>
+                
         </div>
     </div>
 
@@ -130,5 +132,81 @@
         </main>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </div> <script src="/dashboard/app.js"></script>
+
+        <!-- NOVA TELA: HISTÓRICO DE CAIXAS -->
+        <div id="modal-historico-caixas" class="modal-oculto">
+        <div class="modal-conteudo">
+            <div class="modal-cabecalho">
+            <h2>Histórico de Fechamento de Caixas</h2>
+            <button onclick="fecharHistoricoCaixas()" class="btn-fechar">X</button>
+            </div>
+            
+            <!-- Filtro de Data -->
+            <div class="filtros-caixa">
+            <label>Mês/Ano:</label>
+            <input type="month" id="filtro-mes-caixa" onchange="carregarDadosCaixa()">
+            </div>
+
+            <!-- Tabela de Resultados -->
+            <table class="tabela-caixas">
+        <thead>
+            <tr>
+            <th>Data/Hora Abertura</th>
+            <th>Data/Hora Fechamento</th>
+            <th>Entrada (Cartão)</th>
+            <th>Entrada (Pix)</th> <th>Entrada (Dinheiro)</th>
+            <th>Saídas/Compras</th>
+            <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="corpo-tabela-caixas">
+            </tbody>
+        </table>
+        </div>
+
+        <div id="modal-detalhes-caixa" class="modal-oculto">
+  <div class="modal-conteudo" style="width: 90%; max-width: 1000px; max-height: 85vh; overflow-y: auto; position: relative;">
+    
+    <div class="modal-cabecalho" style="position: sticky; top: 0; background-color: #fff; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #ddd; margin-top: -10px; padding-top: 10px;">
+      <h2 style="margin: 0;">Raio-X do Caixa (ID: <span id="detalhes-caixa-id"></span>)</h2>
+      <button onclick="fecharDetalhesCaixa()" class="btn-fechar">X</button>
+    </div>
+    
+    <div style="display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px;">
+            <h3 style="color: #25D366; margin-top: 0;">🟢 Vendas do Período</h3>
+            <table class="tabela-caixas">
+              <thead>
+                  <tr>
+                      <th>Hora</th>
+                      <th>Pagamento</th>
+                      <th>Valor</th>
+                  </tr>
+              </thead>
+              <tbody id="corpo-tabela-detalhes-vendas">
+                 </tbody>
+            </table>
+        </div>
+        
+        <div style="flex: 1; min-width: 300px;">
+            <h3 style="color: #f44336; margin-top: 0;">🔴 Despesas (Sangrias)</h3>
+            <table class="tabela-caixas">
+              <thead>
+                  <tr>
+                      <th>Tipo</th>
+                      <th>Motivo</th>
+                      <th>Valor</th>
+                  </tr>
+              </thead>
+              <tbody id="corpo-tabela-detalhes-movs">
+                 </tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+</div>
+
+    </div>
+
 </body>
 </html>
