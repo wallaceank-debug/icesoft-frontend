@@ -4,209 +4,132 @@
     <script src="../auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Icesoft</title>
-    <link rel="stylesheet" href="/dashboard/style.css">
+    <title>Visão Geral - Icesoft</title>
+    <!-- Estilo Global da Icesoft (Arruma o Menu Lateral) -->
+    <link rel="stylesheet" href="../pdv/style.css">
+    
+    <!-- Estilo Específico dos Gráficos desta tela -->
+    <link rel="stylesheet" href="style.css">
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
     <aside class="menu-lateral">
-    <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">DirectMenu</span></h2>
-    
-    <a href="../pdv/" class="menu-item">
-        <span class="menu-icone">📋</span>
-        <span class="menu-texto">Balcão PDV</span>
-    </a>
-    
-    <a href="../mesas/" class="menu-item">
-        <span class="menu-icone">🪑</span>
-        <span class="menu-texto">Mesas/Comandas</span>
-    </a>
-    
-    <a href="../gestao/" class="menu-item">
-        <span class="menu-icone">🍔</span>
-        <span class="menu-texto">Cardápio</span>
-    </a>
-    
-    <a href="../delivery/" class="menu-item">
-        <span class="menu-icone">🛵</span>
-        <span class="menu-texto">Gestão Delivery</span>
-    </a>
-    
-    <a href="../kanban/" class="menu-item">
-        <span class="menu-icone">📱</span>
-        <span class="menu-texto">Painel Kanban</span>
-    </a>
-    
-    <a href="../integracoes/" class="menu-item">
-            <span class="menu-icone">🔌</span>
-            <span class="menu-texto">Integrações</span>
-        </a>
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">DirectMenu</span></h2>
+        
+        <a href="../pdv/" class="menu-item"><span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../mesas/" class="menu-item"><span class="menu-icone">🪑</span><span class="menu-texto">Mesas/Comandas</span></a>
+        <a href="../gestao/" class="menu-item"><span class="menu-icone">🍔</span><span class="menu-texto">Cardápio</span></a>
+        <a href="../delivery/" class="menu-item"><span class="menu-icone">🛵</span><span class="menu-texto">Gestão Delivery</span></a>
+        <a href="../kanban/" class="menu-item"><span class="menu-icone">📱</span><span class="menu-texto">Painel Kanban</span></a>
+        <a href="../integracoes/" class="menu-item"><span class="menu-icone">🔌</span><span class="menu-texto">Integrações</span></a>
 
-    <!-- BLOCO DE RELATÓRIOS COM GAVETA -->
-    <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
-            <span class="menu-icone">📊</span>
-            <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+                <span class="menu-icone">📊</span><span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+            </div>
+            <div id="submenu-relatorios" style="display: flex; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+                <a href="index.html" class="submenu-link" style="color: #00bcd4; font-weight: bold;">Visão Geral</a>
+                <a href="vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+                <a href="historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
+            </div>
         </div>
 
-        <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
-            <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
-            <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
-            <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
-            <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
-                
+        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
+            <span class="menu-icone" style="color: #f44336;">🚪</span><span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
         </div>
-    </div>
+    </aside>
 
-    <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-        <span class="menu-icone" style="color: #f44336;">🚪</span>
-        <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
-    </div>
-</aside>
-
-<script>
-    function toggleRelatorios() {
-        const submenu = document.getElementById('submenu-relatorios');
-        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-    }
-</script>
+    <script>
+        function toggleRelatorios() {
+            const submenu = document.getElementById('submenu-relatorios');
+            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+        }
+    </script>
 
     <div class="conteudo-principal">
         
-        <header class="dash-header">
-            <div class="titulo-area">
-                <h1>DASHBOARD</h1>
+        <div class="card-filtro">
+            <h1 style="margin: 0; color: #333; font-size: 1.8rem;">Dashboard Gerencial</h1>
+            <div class="filtros-data">
+                <div>
+                    <label>Início:</label>
+                    <input type="date" id="filtro-inicio" class="input-data" onchange="carregarDashboard()">
+                </div>
+                <div>
+                    <label>Fim:</label>
+                    <input type="date" id="filtro-fim" class="input-data" onchange="carregarDashboard()">
+                </div>
             </div>
-            <div class="filtros-area">
-                <input type="date" id="filtro-inicio" class="input-filtro" title="Data Início">
-                <input type="date" id="filtro-fim" class="input-filtro" title="Data Final">
-                <button onclick="carregarVendas()" class="btn-filtrar">FILTRAR VENDAS</button>
-                <div class="divisor-bolinha"></div>
-                <div id="periodo-exibicao" class="periodo-badge">TODO O HISTÓRICO</div>
-            </div>
-        </header>
+        </div>
 
-        <main class="dash-container">
+        <div class="grid-kpis">
+            <div class="kpi-card">
+                <div class="kpi-icone" style="background: #e0f2f1; color: #00897b;">💰</div>
+                <div class="kpi-dados">
+                    <p>Faturamento Bruto</p>
+                    <h3 id="kpi-faturamento">R$ 0,00</h3>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icone" style="background: #fff3e0; color: #f57c00;">🏷️</div>
+                <div class="kpi-dados">
+                    <p>Ticket Médio</p>
+                    <h3 id="kpi-ticket">R$ 0,00</h3>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icone" style="background: #e8eaf6; color: #3949ab;">📦</div>
+                <div class="kpi-dados">
+                    <p>Total de Pedidos</p>
+                    <h3 id="kpi-pedidos">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-graficos">
             
-            <section class="grid-linha-1">
-                <div class="dash-card">
-                    <h3>FATURAMENTO DO<br>PERÍODO SELECIONADO</h3>
-                    <p id="dash-faturamento" class="valor-destaque">R$ 0,00</p>
+            <div class="grafico-card largura-total">
+                <h3>📈 Evolução do Faturamento Diário</h3>
+                <div class="grafico-container-alto">
+                    <canvas id="graficoEvolucao"></canvas>
                 </div>
-
-                <div class="dash-card">
-                    <h3>TICKET MÉDIO DO<br>PERÍODO</h3>
-                    <p id="dash-ticket" class="valor-destaque">R$ 0,00</p>
-                </div>
-
-                <div class="dash-card">
-                    <h3>NÚMERO TOTAL DE<br>PEDIDOS DO PERÍODO</h3>
-                    <p id="dash-pedidos" class="valor-destaque">0</p>
-                </div>
-            </section>
-
-            <section class="grid-linha-2">
-                <div class="dash-card card-grande">
-                    <h3>PRODUTOS MAIS<br>VENDIDOS</h3>
-                    <div class="lista-rolagem" id="lista-produtos-top">
-                        <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
-                    </div>
-                </div>
-
-                <div class="dash-card card-grande">
-                    <h3>ADICIONAIS MAIS<br>VENDIDOS</h3>
-                    <div class="lista-rolagem" id="lista-adicionais-top">
-                        <p style="text-align: center; font-weight: normal; margin-top: 20px;">Carregando...</p>
-                    </div>
-                </div>
-
-                <div class="dash-card card-grande">
-                    <h3>FATURAMENTO POR<br>DIA DA SEMANA</h3>
-                    <div style="height: 220px; width: 100%; margin-top: 15px;">
-                        <canvas id="graficoVendas"></canvas>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    </div> <script src="/dashboard/app.js"></script>
-
-        <!-- NOVA TELA: HISTÓRICO DE CAIXAS -->
-        <div id="modal-historico-caixas" class="modal-oculto">
-        <div class="modal-conteudo">
-            <div class="modal-cabecalho">
-            <h2>Histórico de Fechamento de Caixas</h2>
-            <button onclick="fecharHistoricoCaixas()" class="btn-fechar">X</button>
-            </div>
-            
-            <!-- Filtro de Data -->
-            <div class="filtros-caixa">
-            <label>Mês/Ano:</label>
-            <input type="month" id="filtro-mes-caixa" onchange="carregarDadosCaixa()">
             </div>
 
-            <!-- Tabela de Resultados -->
-            <table class="tabela-caixas">
-        <thead>
-            <tr>
-            <th>Data/Hora Abertura</th>
-            <th>Data/Hora Fechamento</th>
-            <th>Entrada (Cartão)</th>
-            <th>Entrada (Pix)</th> <th>Entrada (Dinheiro)</th>
-            <th>Saídas/Compras</th>
-            <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody id="corpo-tabela-caixas">
-            </tbody>
-        </table>
-        </div>
+            <div class="grafico-card">
+                <h3>💳 Formas de Pagamento</h3>
+                <div class="grafico-container-rosca">
+                    <canvas id="graficoPagamentos"></canvas>
+                </div>
+            </div>
 
-        <div id="modal-detalhes-caixa" class="modal-oculto">
-  <div class="modal-conteudo" style="width: 90%; max-width: 1000px; max-height: 85vh; overflow-y: auto; position: relative;">
-    
-    <div class="modal-cabecalho" style="position: sticky; top: 0; background-color: #fff; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #ddd; margin-top: -10px; padding-top: 10px;">
-      <h2 style="margin: 0;">Raio-X do Caixa (ID: <span id="detalhes-caixa-id"></span>)</h2>
-      <button onclick="fecharDetalhesCaixa()" class="btn-fechar">X</button>
-    </div>
-    
-    <div style="display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 300px;">
-            <h3 style="color: #25D366; margin-top: 0;">🟢 Vendas do Período</h3>
-            <table class="tabela-caixas">
-              <thead>
-                  <tr>
-                      <th>Hora</th>
-                      <th>Pagamento</th>
-                      <th>Valor</th>
-                  </tr>
-              </thead>
-              <tbody id="corpo-tabela-detalhes-vendas">
-                 </tbody>
-            </table>
-        </div>
-        
-        <div style="flex: 1; min-width: 300px;">
-            <h3 style="color: #f44336; margin-top: 0;">🔴 Despesas (Sangrias)</h3>
-            <table class="tabela-caixas">
-              <thead>
-                  <tr>
-                      <th>Tipo</th>
-                      <th>Motivo</th>
-                      <th>Valor</th>
-                  </tr>
-              </thead>
-              <tbody id="corpo-tabela-detalhes-movs">
-                 </tbody>
-            </table>
+            <div class="grafico-card">
+                <h3>🛵 Origem dos Pedidos (Canais)</h3>
+                <div class="grafico-container-rosca">
+                    <canvas id="graficoOrigem"></canvas>
+                </div>
+            </div>
+
+            <div class="grafico-card">
+                <h3>🏆 Top 10 Produtos (Curva A)</h3>
+                <div class="grafico-container-barra">
+                    <canvas id="graficoTopProdutos"></canvas>
+                </div>
+            </div>
+
+            <div class="grafico-card">
+                <h3>🔥 Vendas por Dia da Semana</h3>
+                <div class="grafico-container-barra">
+                    <canvas id="graficoDiasSemana"></canvas>
+                </div>
+            </div>
+
         </div>
     </div>
-  </div>
-</div>
 
-    </div>
-
+    <script src="app.js"></script>
 </body>
 </html>

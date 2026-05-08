@@ -5,20 +5,18 @@ body {
     margin: 0; 
     padding: 0; 
     font-family: 'Poppins', sans-serif; 
-    display: flex; 
+    display: flex; /* Mantém o menu e o conteúdo lado a lado */
     height: 100vh; 
     overflow: hidden; 
-    background-color: #f4f7f6; /* Fundo padrão do painel */
+    background-color: #f0f2f5; /* Fundo padrão do painel mais suave */
 }
 
-.conteudo-principal {
-    flex: 1; /* Ocupa todo o espaço que sobrar do menu */
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto; 
-    position: relative;
-    padding: 0; 
-    z-index: 1;
+/* --- LAYOUT PRINCIPAL (Fluído e Dinâmico) --- */
+.conteudo-principal { 
+    flex: 1; /* A MÁGICA: Preenche automaticamente todo o espaço livre da tela */
+    padding: 30px 40px; 
+    box-sizing: border-box; 
+    overflow-y: auto; /* Permite rolagem inteligente dentro do painel */
 }
 
 /* ==========================================
@@ -81,7 +79,6 @@ body {
     color: #00bcd4;
     border: 2px solid white;
     box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-    
 }
 
 .menu-icone {
@@ -127,88 +124,101 @@ body {
 }
 
 /* ==========================================
-   ESTILOS ESPECÍFICOS DO DASHBOARD
+   ESTILOS ESPECÍFICOS DO NOVO DASHBOARD
    ========================================== */
 
-/* CABEÇALHO CIANO (Design 2) */
-.dash-header {
-    background-color: #00bcd4;
-    display: flex;
-    justify-content: space-between; /* Título na esquerda, filtros na direita */
-    align-items: center;
-    padding: 20px 40px;
-    color: white;
-    z-index: 10;
-    position: relative;
-    flex-shrink: 0;
+/* Filtros do Topo */
+.card-filtro { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 25px; 
 }
 
-.titulo-area h1 { margin: 0; font-size: 2.8rem; font-weight: 400; letter-spacing: 2px; }
+.filtros-data { 
+    display: flex; 
+    gap: 20px; 
+    align-items: center; 
+}
 
-/* FILTROS E BOTÕES DO CABEÇALHO */
-.filtros-area { display: flex; gap: 15px; align-items: center; }
-.input-filtro { padding: 10px 15px; border-radius: 25px; border: none; outline: none; font-weight: 600; color: #333; font-size: 0.85rem; }
-.btn-filtrar { background: white; color: #333; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
-.btn-filtrar:hover { background: #f0f0f0; transform: scale(1.05); }
+.filtros-data label { 
+    font-weight: 600; 
+    color: #555; 
+    margin-right: 5px; 
+}
 
-/* A bolinha branca entre os botões e o texto do período */
-.divisor-bolinha { width: 10px; height: 10px; background-color: white; border-radius: 50%; margin: 0 5px; }
+.input-data { 
+    padding: 10px; 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    font-family: 'Poppins', sans-serif; 
+    outline: none; 
+}
 
-/* A "Pílula" branca que mostra a data */
-.periodo-badge { background: white; color: #333; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
+/* Cartões de KPI (Forçando 3 colunas iguais e largas) */
+.grid-kpis { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px; 
+    margin-bottom: 35px; 
+}
 
-/* CONTAINERS E GRIDS */
-.dash-container { padding: 30px; max-width: 1400px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 30px; box-sizing: border-box;}
+.kpi-card { 
+    background: white; 
+    padding: 20px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    transition: transform 0.2s; 
+}
 
-.grid-linha-1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
-.grid-linha-2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+.kpi-card:hover { transform: translateY(-5px); }
+.kpi-icone { width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; }
+.kpi-dados p { margin: 0; color: #888; font-size: 0.9rem; font-weight: 600; }
+.kpi-dados h3 { margin: 5px 0 0 0; color: #333; font-size: 1.8rem; }
 
-/* CARTÕES CIANO */
-.dash-card {
-    background-color: #00bcd4;
-    border-radius: 30px;
-    padding: 25px;
-    color: white;
-    text-align: center;
-    box-shadow: 0 8px 20px rgba(0, 188, 212, 0.3);
+/* Grid de Gráficos */
+.grid-graficos { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 30px; 
+}
+
+/* Faz o gráfico de linha (Evolução) ocupar a tela de ponta a ponta */
+.largura-total { 
+    grid-column: 1 / -1; 
+}
+
+.grafico-card { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
     display: flex;
     flex-direction: column;
 }
 
-.dash-card h3 { font-size: 1.1rem; font-weight: 400; line-height: 1.3; margin-bottom: 15px; }
-.valor-destaque { font-size: 2.5rem; font-weight: 700; margin-top: auto; margin-bottom: auto; }
-
-/* CARTÕES MAIORES (LINHA 2) */
-.card-grande { height: 400px; }
-
-/* LISTAS DE ROLAGEM DENTRO DOS CARTÕES */
-.lista-rolagem {
-    flex: 1;
-    overflow-y: auto;
-    background: rgba(255, 255, 255, 0.1); /* Fundo levemente transparente */
-    border-radius: 15px;
-    padding: 15px;
-    text-align: left;
+.grafico-card h3 { 
+    margin: 0 0 20px 0; 
+    color: #444; 
+    font-size: 1.1rem; 
+    border-bottom: 2px solid #f0f2f5; 
+    padding-bottom: 15px; 
 }
 
-.lista-rolagem::-webkit-scrollbar { width: 6px; }
-.lista-rolagem::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.5); border-radius: 10px; }
-
-.item-lista {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 1rem;
-    font-weight: 600;
-}
-.item-lista:last-child { border-bottom: none; }
-.item-lista .qtd { background: white; color: #00bcd4; padding: 2px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
+/* Contêineres Proporcionais para o Chart.js */
+.grafico-container-alto { position: relative; height: 300px; width: 100%; }
+.grafico-container-rosca { position: relative; height: 250px; width: 100%; }
+.grafico-container-barra { position: relative; height: 280px; width: 100%; }
 
 /* ==========================================
-   ESTILOS ESPECÍFICOS DA TELA "VENDAS POR PERÍODO"
-   (Mantidos aqui para não quebrar a outra tela do relatório)
+   ESTILOS ANTIGOS/RELATÓRIOS (Vendas por período, etc)
    ========================================== */
 .card-relatorio { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 .header-relatorio { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -228,47 +238,3 @@ th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
 th { background-color: #f8f9fa; color: #555; font-weight: 600; font-size: 0.9rem; }
 tr:hover { background-color: #f9f9f9; }
 .tag-origem { font-size: 0.8rem; padding: 4px 8px; border-radius: 10px; font-weight: bold; }
-
-/* --- ESTILOS DO HISTÓRICO DE CAIXAS --- */
-.modal-oculto {
-  display: none; /* Fica escondido até o Wallace clicar no botão */
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  z-index: 1000;
-}
-
-.modal-conteudo {
-  background-color: #fff;
-  margin: 5% auto;
-  padding: 20px;
-  width: 80%;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.tabela-caixas {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-.tabela-caixas th, .tabela-caixas td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: left;
-}
-
-.tabela-caixas th {
-  background-color: #f4f4f4;
-  font-weight: bold;
-}
-
-.btn-fechar {
-  background: red;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}

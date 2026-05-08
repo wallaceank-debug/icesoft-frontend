@@ -1,322 +1,227 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
-let chartInstancia = null;
 
-window.onload = () => { carregarVendas(); };
+// Variáveis para guardar as instâncias dos gráficos
+let chartEvolucao, chartPagamentos, chartOrigem, chartProdutos, chartDias;
 
-function formatarDataBR(dataString) {
-    if (!dataString) return '';
-    const partes = dataString.split('-');
-    if (partes.length !== 3) return dataString;
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
-}
+window.onload = () => { carregarDashboard(); };
 
-async function carregarVendas() {
+async function carregarDashboard() {
     let inicioInput = document.getElementById('filtro-inicio').value;
     let fimInput = document.getElementById('filtro-fim').value;
-    const textoPeriodo = document.getElementById('periodo-exibicao');
 
+    // 1. Preenche as datas automaticamente se for a primeira vez
     if (!inicioInput || !fimInput) {
-        const dataHoje = new Date();
-        const dataTrintaDiasAtras = new Date();
-        dataTrintaDiasAtras.setDate(dataHoje.getDate() - 30);
-        inicioInput = dataTrintaDiasAtras.toISOString().split('T')[0];
-        fimInput = dataHoje.toISOString().split('T')[0];
+        const hoje = new Date();
+        const trintaDias = new Date();
+        trintaDias.setDate(hoje.getDate() - 30);
+        
+        inicioInput = trintaDias.toISOString().split('T')[0];
+        fimInput = hoje.toISOString().split('T')[0];
+        
         document.getElementById('filtro-inicio').value = inicioInput;
         document.getElementById('filtro-fim').value = fimInput;
     }
 
-    textoPeriodo.innerText = `${formatarDataBR(inicioInput)} ATÉ ${formatarDataBR(fimInput)}`;
-
     try {
-        const resposta = await fetch(`${API_URL}/vendas`);
-        let vendasBrutas = await resposta.json();
-        if (!Array.isArray(vendasBrutas)) vendasBrutas = [];
-
-        // Filtro Blindado contra Fuso Horário
-        const vendasFiltradas = vendasBrutas.filter(v => {
-            if (!v.data_hora) return false;
-            let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
-            return dataVendaTexto >= inicioInput && dataVendaTexto <= fimInput;
-        });
+        // 2. Busca as vendas enviando as datas diretamente para o Banco de Dados (Mais seguro e rápido!)
+        const resposta = await fetch(`${API_URL}/vendas?inicio=${inicioInput}&fim=${fimInput}`);
+        let vendas = await resposta.json();
         
-        let faturamento = 0;
-        let contagemProdutos = {};
-        let contagemAdicionais = {};
-        let pedidosValidos = 0;
-        let faturamentoPorDia = [0, 0, 0, 0, 0, 0, 0]; 
+        // 3. Remove os cancelamentos para não mascarar o lucro (Trata tanto 'Cancelada' quanto 'Cancelado')
+        const vendasValidas = vendas.filter(v => v.status !== 'Cancelada' && v.status !== 'Cancelado');
 
-        vendasFiltradas.forEach(v => {
-            if (!v.itens) return;
-            
-            let valorNum = parseFloat(v.valor_total || v.total || 0);
-            let itensLidos = v.itens;
+        processarMetricasEGraficos(vendasValidas);
 
-            // A MÁGICA DA CORREÇÃO AQUI 👇
-            // Se for string e estiver corrompida, ignora. Mas se for um Array perfeito do banco JSONB, deixa passar!
-            if (typeof itensLidos === 'string') {
-                if (itensLidos.includes("[object")) return; 
-                if (itensLidos.trim().startsWith('[')) {
-                    try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
-                }
-            }
-
-            let listaTextosDeVenda = [];
-            
-            // Lê perfeitamente a lista que veio do PDV e das Mesas
-            if (Array.isArray(itensLidos)) {
-                listaTextosDeVenda = itensLidos.map(item => {
-                    if (typeof item === 'string') return item;
-                    return item.nome || item.produto_nome || item.nomeBase || "";
-                });
-                
-                if (valorNum === 0) {
-                    valorNum = itensLidos.reduce((soma, item) => soma + (parseFloat(item.preco) || 0), 0);
-                }
-            } else if (typeof itensLidos === 'string') {
-                let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
-                listaTextosDeVenda = textoLimpo.split('+').map(t => t.trim());
-            }
-
-            if (listaTextosDeVenda.length > 0) {
-                faturamento += valorNum; 
-                pedidosValidos++; 
-
-                let diaSemanaIndex = new Date().getDay();
-                if (v.data_hora) {
-                    let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
-                    if (dataVendaTexto.includes('-')) {
-                        const [anoV, mesV, diaV] = dataVendaTexto.split('-');
-                        diaSemanaIndex = new Date(anoV, mesV - 1, diaV, 12, 0, 0).getDay();
-                    }
-                }
-                faturamentoPorDia[diaSemanaIndex] += valorNum; 
-                
-                listaTextosDeVenda.forEach(textoVenda => {
-                    if (typeof textoVenda !== 'string' || !textoVenda.trim()) return;
-                    
-                    // LIMPAMOS TUDO: Tira "Balcão", "Delivery" e "Mesa XX"
-                    let textoLimpo = textoVenda.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '').trim();
-                    let nomeBase = textoLimpo.split('(')[0].trim();
-                    
-                    if (nomeBase) contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
-
-                    let match = textoLimpo.match(/\(([^)]+)\)/);
-                    if(match) {
-                        match[1].split(',').forEach(item => {
-                            let adcLimpo = item.trim();
-                            if (adcLimpo) contagemAdicionais[adcLimpo] = (contagemAdicionais[adcLimpo] || 0) + 1;
-                        });
-                    }
-                });
-            }
-        });
-
-        document.getElementById('dash-faturamento').innerText = `R$ ${faturamento.toFixed(2).replace('.', ',')}`;
-        document.getElementById('dash-ticket').innerText = `R$ ${pedidosValidos > 0 ? (faturamento / pedidosValidos).toFixed(2).replace('.', ',') : '0,00'}`;
-        document.getElementById('dash-pedidos').innerText = pedidosValidos;
-
-        renderizarLista(contagemProdutos, 'lista-produtos-top', "Nenhum produto vendido.");
-        renderizarLista(contagemAdicionais, 'lista-adicionais-top', "Nenhum adicional vendido.");
-        renderizarGrafico(faturamentoPorDia);
-
-    } catch (e) {
-        console.error("Erro Dashboard:", e);
-        alert("Erro ao carregar dados. Verifique o console.");
+    } catch (erro) {
+        console.error("Erro ao carregar Dashboard:", erro);
+        alert("Falha ao puxar os dados. Verifique sua conexão com o servidor Icesoft.");
     }
 }
 
-function renderizarLista(objetoContagem, idElemento, msgVazio) {
-    const container = document.getElementById(idElemento);
-    const ordenado = Object.entries(objetoContagem).sort((a, b) => b[1] - a[1]);
-    if (ordenado.length === 0) {
-        container.innerHTML = `<p style="text-align:center; opacity:0.8;">${msgVazio}</p>`;
-        return;
-    }
-    container.innerHTML = '';
-    ordenado.forEach(([nome, quantidade]) => {
-        container.innerHTML += `<div class="item-lista"><span>${nome}</span><span class="qtd">${quantidade}x</span></div>`;
+function processarMetricasEGraficos(vendas) {
+    let faturamentoTotal = 0;
+    let pedidosValidos = vendas.length;
+
+    let contagemPagamentos = {};
+    let contagemOrigem = {};
+    let contagemProdutos = {};
+    let faturamentoPorDiaDaSemana = [0, 0, 0, 0, 0, 0, 0]; 
+    let faturamentoPorData = {}; 
+
+    vendas.forEach(v => {
+        let valor = parseFloat(v.valor_total || v.total || 0);
+        faturamentoTotal += valor;
+
+        // --- FORMA DE PAGAMENTO ---
+        let pag = v.forma_pagamento ? String(v.forma_pagamento).split('(')[0].trim() : 'Não Informado';
+        if(pag.toLowerCase().includes('pix')) pag = 'Pix';
+        contagemPagamentos[pag] = (contagemPagamentos[pag] || 0) + valor;
+
+        // --- ORIGEM (CANAIS) ---
+        let origem = v.origem || 'Balcão';
+        contagemOrigem[origem] = (contagemOrigem[origem] || 0) + 1;
+
+        // --- DATAS E DIAS DA SEMANA (Blindado contra fuso horário) ---
+        if (v.data_hora) {
+            let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
+            if (dataVendaTexto.includes('-')) {
+                const [anoV, mesV, diaV] = dataVendaTexto.split('-');
+                // Cria data ao meio-dia para evitar que o fuso jogue a venda para o dia anterior
+                let dataObjeto = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
+                
+                faturamentoPorDiaDaSemana[dataObjeto.getDay()] += valor;
+                faturamentoPorData[dataVendaTexto] = (faturamentoPorData[dataVendaTexto] || 0) + valor;
+            }
+        }
+
+        // --- PRODUTOS (Leitura indestrutível do JSON do Banco) ---
+        let itensLidos = v.itens;
+        if (typeof itensLidos === 'string') {
+            if (itensLidos.includes("[object")) return; // Ignora lixo do banco
+            if (itensLidos.trim().startsWith('[')) {
+                try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
+            }
+        }
+
+        // Se for uma matriz (vendas mais recentes)
+        if (Array.isArray(itensLidos)) {
+            itensLidos.forEach(item => {
+                let nome = typeof item === 'string' ? item : (item.nome || item.produto_nome || item.nomeBase || "");
+                if (nome) {
+                    let nomeLimpo = nome.replace('Delivery: ', '').split('(')[0].trim();
+                    if (nomeLimpo) contagemProdutos[nomeLimpo] = (contagemProdutos[nomeLimpo] || 0) + 1;
+                }
+            });
+        // Se for string corrida (vendas antigas)
+        } else if (typeof itensLidos === 'string') {
+            let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
+            let nomeBase = textoLimpo.split('(')[0].trim();
+            if (nomeBase) contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
+        }
     });
+
+    // --- ATUALIZAR OS KPIs VISUAIS ---
+    document.getElementById('kpi-faturamento').innerText = `R$ ${faturamentoTotal.toFixed(2).replace('.', ',')}`;
+    document.getElementById('kpi-pedidos').innerText = pedidosValidos;
+    document.getElementById('kpi-ticket').innerText = `R$ ${pedidosValidos > 0 ? (faturamentoTotal / pedidosValidos).toFixed(2).replace('.', ',') : '0,00'}`;
+
+    // --- DESENHAR OS GRÁFICOS ---
+    desenharGraficoEvolucao(faturamentoPorData);
+    desenharGraficoDonut('graficoPagamentos', contagemPagamentos, chartPagamentos, (c) => chartPagamentos = c);
+    desenharGraficoDonut('graficoOrigem', contagemOrigem, chartOrigem, (c) => chartOrigem = c, ['#00bcd4', '#e91e63', '#ff9800', '#4CAF50', '#9C27B0']);
+    desenharGraficoTopProdutos(contagemProdutos);
+    desenharGraficoDiasSemana(faturamentoPorDiaDaSemana);
 }
 
-function renderizarGrafico(dadosDaSemana) {
-    const ctx = document.getElementById('graficoVendas');
-    if (!ctx) return;
-    if (chartInstancia) chartInstancia.destroy();
-    chartInstancia = new Chart(ctx, {
-        type: 'bar',
+// ==========================================
+// FUNÇÕES DE DESENHO (CHART.JS)
+// ==========================================
+
+function desenharGraficoEvolucao(dadosPorData) {
+    const ctx = document.getElementById('graficoEvolucao').getContext('2d');
+    if (chartEvolucao) chartEvolucao.destroy();
+
+    // Ordena as datas cronologicamente (YYYY-MM-DD)
+    const datasOrdenadas = Object.keys(dadosPorData).sort();
+    const valores = datasOrdenadas.map(data => dadosPorData[data]);
+    
+    // Formata a data para Dia/Mês apenas para a exibição na tela
+    const labelsFormatadas = datasOrdenadas.map(d => d.split('-').reverse().slice(0, 2).join('/'));
+
+    chartEvolucao = new Chart(ctx, {
+        type: 'line',
         data: {
-            labels: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            labels: labelsFormatadas,
             datasets: [{
                 label: 'Faturamento (R$)',
-                data: dadosDaSemana,
-                backgroundColor: '#ffffff', 
-                borderRadius: 6 
+                data: valores,
+                borderColor: '#00bcd4',
+                backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                borderWidth: 3,
+                pointBackgroundColor: '#e91e63',
+                fill: true,
+                tension: 0.4
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => 'R$ ' + context.raw.toFixed(2).replace('.', ',')
-                    }
-                }
-            },
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
         }
     });
 }
 
-// --- FUNCIONALIDADES DO HISTÓRICO DE CAIXAS ---
+function desenharGraficoDonut(idCanvas, dadosObjeto, chartAtual, setChartRef, coresCustomizadas) {
+    const ctx = document.getElementById(idCanvas).getContext('2d');
+    if (chartAtual) chartAtual.destroy();
 
-function abrirHistoricoCaixas() {
-  document.getElementById('modal-historico-caixas').style.display = 'block';
-  // Define o mês atual como padrão no filtro
-  const dataAtual = new Date();
-  const mesFormatado = `${dataAtual.getFullYear()}-${String(dataAtual.getMonth() + 1).padStart(2, '0')}`;
-  document.getElementById('filtro-mes-caixa').value = mesFormatado;
-  
-  carregarDadosCaixa();
-}
+    const labels = Object.keys(dadosObjeto);
+    const valores = Object.values(dadosObjeto);
+    const cores = coresCustomizadas || ['#25D366', '#e91e63', '#00bcd4', '#FFC107', '#9C27B0'];
 
-function fecharHistoricoCaixas() {
-  document.getElementById('modal-historico-caixas').style.display = 'none';
-}
-
-async function carregarDadosCaixa() {
-  const mesSelecionado = document.getElementById('filtro-mes-caixa').value;
-  const corpoTabela = document.getElementById('corpo-tabela-caixas');
-  
-  corpoTabela.innerHTML = '<tr><td colspan="6">Buscando dados do banco...</td></tr>';
-
-  try {
-    // ATENÇÃO: Aqui conectamos com seu Banco de Dados (ex: Firebase ou sua API)
-    // Estamos simulando a busca na coleção de caixas filtrando pelo mês
-    const dadosDosCaixas = await buscarCaixasDoBancoDeDados(mesSelecionado); 
-
-    corpoTabela.innerHTML = ''; // Limpa o "buscando dados..."
-
-    if (dadosDosCaixas.length === 0) {
-      corpoTabela.innerHTML = '<tr><td colspan="6">Nenhum caixa encontrado neste mês.</td></tr>';
-      return;
-    }
-
-    // Preenche a tabela com os dados
-    dadosDosCaixas.forEach(caixa => {
-      // Garantimos que totalPix não venha quebrado caso alguma caixa antiga não tenha a propriedade
-      const valorPix = caixa.totalPix || 0; 
-      
-      corpoTabela.innerHTML += `
-        <tr>
-          <td>${caixa.dataAbertura}</td>
-          <td>${caixa.dataFechamento}</td>
-          <td>R$ ${caixa.totalCartao.toFixed(2)}</td>
-          <td style="color: #25D366; font-weight: bold;">R$ ${valorPix.toFixed(2)}</td> <td>R$ ${caixa.totalDinheiro.toFixed(2)}</td>
-          <td style="color: red;">R$ ${caixa.totalDespesas.toFixed(2)}</td>
-          <td><button onclick="verDetalhesCaixa('${caixa.id}')">Ver Detalhes</button></td>
-        </tr>
-      `;
+    const novoChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{ data: valores, backgroundColor: cores, borderWidth: 2, borderColor: '#fff' }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Poppins' } } }
+            }
+        }
     });
-
-  } catch (erro) {
-    console.error("Erro ao buscar caixas:", erro);
-    corpoTabela.innerHTML = '<tr><td colspan="6">Erro ao carregar dados. Verifique sua conexão.</td></tr>';
-  }
+    setChartRef(novoChart);
 }
 
-// Função real apontando para a sua API Icesoft
-async function buscarCaixasDoBancoDeDados(mes) {
-  // Conforme o seu arquivo Icesoft_Dev_Atual, esta é a URL oficial da sua API
-  const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
-  
-  try {
-    // Faz o pedido para a rota nova que acabamos de criar no backend
-    const resposta = await fetch(`${API_URL}/caixa/historico?mes=${mes}`);
+function desenharGraficoTopProdutos(contagemProdutos) {
+    const ctx = document.getElementById('graficoTopProdutos').getContext('2d');
+    if (chartProdutos) chartProdutos.destroy();
+
+    // Pega o top 10 que mais vendeu
+    const ordenado = Object.entries(contagemProdutos).sort((a, b) => b[1] - a[1]).slice(0, 10);
     
-    if (!resposta.ok) {
-      throw new Error("Falha na comunicação com o servidor Icesoft");
-    }
-    
-    // Recebe a lista já mastigada e formatada pelo servidor
-    const dados = await resposta.json();
-    return dados;
-    
-  } catch (erro) {
-    console.error("Erro de conexão com a API Icesoft:", erro);
-    return []; // Retorna vazio em caso de erro de internet para não quebrar a tabela
-  }
+    chartProdutos = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ordenado.map(i => i[0]),
+            datasets: [{
+                label: 'Unidades Vendidas',
+                data: ordenado.map(i => i[1]),
+                backgroundColor: '#e91e63',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Barra horizontal
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true } }
+        }
+    });
 }
 
-// Função para abrir o Raio-X do Caixa selecionado
-async function verDetalhesCaixa(idCaixa) {
-  // Mostra o modal e coloca o ID no título
-  document.getElementById('detalhes-caixa-id').innerText = idCaixa;
-  document.getElementById('modal-detalhes-caixa').style.display = 'block';
-  
-  const corpoVendas = document.getElementById('corpo-tabela-detalhes-vendas');
-  const corpoMovs = document.getElementById('corpo-tabela-detalhes-movs');
-  
-  // Mensagem de carregamento enquanto busca os dados
-  corpoVendas.innerHTML = '<tr><td colspan="3">Carregando vendas...</td></tr>';
-  corpoMovs.innerHTML = '<tr><td colspan="3">Carregando despesas...</td></tr>';
+function desenharGraficoDiasSemana(dadosDaSemana) {
+    const ctx = document.getElementById('graficoDiasSemana').getContext('2d');
+    if (chartDias) chartDias.destroy();
 
-  try {
-    const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
-    const resposta = await fetch(`${API_URL}/caixa/${idCaixa}/detalhes`);
-    
-    if (!resposta.ok) throw new Error("Falha na API");
-    const dados = await resposta.json();
-
-    // ==========================================
-    // 1. RENDERIZAR AS VENDAS
-    // ==========================================
-    corpoVendas.innerHTML = '';
-    if (dados.vendas.length === 0) {
-        corpoVendas.innerHTML = '<tr><td colspan="3">Nenhuma venda registrada neste caixa.</td></tr>';
-    } else {
-        dados.vendas.forEach(v => {
-            // Formata a hora para ficar limpo (Ex: 14:30)
-            const hora = new Date(v.data_hora).toLocaleTimeString('pt-BR', {timeStyle: 'short'});
-            corpoVendas.innerHTML += `
-              <tr>
-                <td>${hora}</td>
-                <td>${v.forma_pagamento}</td>
-                <td style="font-weight: bold;">R$ ${Number(v.valor_total).toFixed(2)}</td>
-              </tr>
-            `;
-        });
-    }
-
-    // ==========================================
-    // 2. RENDERIZAR AS DESPESAS E MOVIMENTAÇÕES
-    // ==========================================
-    corpoMovs.innerHTML = '';
-    if (dados.movimentacoes.length === 0) {
-        corpoMovs.innerHTML = '<tr><td colspan="3">Nenhuma movimentação registrada.</td></tr>';
-    } else {
-        dados.movimentacoes.forEach(m => {
-            // Se for Sangria fica vermelho, se for Suprimento (Entrada de troco) fica verde
-            const corTexto = m.tipo.toLowerCase() === 'sangria' ? '#f44336' : '#25D366';
-            corpoMovs.innerHTML += `
-              <tr>
-                <td style="color: ${corTexto}; font-weight: bold;">${m.tipo}</td>
-                <td>${m.motivo || '-'}</td>
-                <td style="color: ${corTexto}; font-weight: bold;">R$ ${Number(m.valor).toFixed(2)}</td>
-              </tr>
-            `;
-        });
-    }
-
-  } catch (erro) {
-    console.error("Erro ao buscar detalhes:", erro);
-    corpoVendas.innerHTML = '<tr><td colspan="3" style="color:red;">Erro ao buscar dados do servidor.</td></tr>';
-    corpoMovs.innerHTML = '<tr><td colspan="3" style="color:red;">Erro ao buscar dados do servidor.</td></tr>';
-  }
-}
-
-// Função para fechar a nova janela
-function fecharDetalhesCaixa() {
-  document.getElementById('modal-detalhes-caixa').style.display = 'none';
+    chartDias = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
+            datasets: [{
+                label: 'Faturamento Total (R$)',
+                data: dadosDaSemana,
+                backgroundColor: '#FF9800',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
 }
