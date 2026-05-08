@@ -1,88 +1,122 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
+    <script src="../auth.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Icesoft - Histórico de Caixas</title>
-    <link rel="stylesheet" href="dashboard_style.css"> <style>
-        /* Estilos específicos para esta página */
-        .conteudo-principal { margin-left: 260px; padding: 20px; font-family: sans-serif; }
-        .filtro-container { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .tabela-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input[type="month"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-left: 10px; }
-        /* Estilos do Modal que usamos antes */
-        .modal-oculto { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-        .modal-conteudo { background: #fff; margin: 5% auto; padding: 20px; width: 90%; max-width: 1000px; border-radius: 8px; max-height: 85vh; overflow-y: auto; position: relative; }
-        .modal-cabecalho { position: sticky; top: 0; background: #fff; z-index: 10; padding-bottom: 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-        .btn-fechar { background: #f44336; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    <title>Histórico de Caixas - Icesoft</title>
+    <link rel="stylesheet" href="../pdv/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Ajustes finos só para as tabelas e filtros, mantendo o fundo padrão do PDV */
+        body { background-color: #f0f2f5; }
+        .conteudo-principal { padding: 30px; margin-left: 260px; }
+        
+        .card-historico { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .titulo-pagina { color: #333; margin-top: 0; margin-bottom: 20px; font-size: 1.8rem; }
+        
+        .input-mes { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; outline: none; margin-left: 10px; }
+        
+        .tabela-moderna { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .tabela-moderna th { background: #f8f9fa; padding: 15px; text-align: left; color: #555; border-bottom: 2px solid #eee; }
+        .tabela-moderna td { padding: 15px; border-bottom: 1px solid #f0f0f0; color: #444; }
+        .tabela-moderna tbody tr:hover { background: #fdfdfd; }
+        
+        .btn-detalhes { background: #00bcd4; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; transition: 0.2s; }
+        .btn-detalhes:hover { background: #0097a7; transform: translateY(-2px); }
+
+        /* MODAL */
+        .modal-detalhes { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 3000; }
+        .modal-box { background: white; width: 90%; max-width: 1000px; border-radius: 20px; padding: 0; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .modal-header { position: sticky; top: 0; background: white; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; z-index: 10; }
+        .modal-header h2 { margin: 0; color: #333; }
+        .modal-body { padding: 25px; display: flex; gap: 20px; flex-wrap: wrap; }
     </style>
 </head>
 <body>
 
-    <aside class="menu-lateral" style="position: fixed; height: 100%; width: 250px; background: #00bcd4; display: flex; flex-direction: column;">
-        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px;">DirectMenu</h2>
+    <aside class="menu-lateral">
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">DirectMenu</span></h2>
         
-        <a href="../pdv/" class="menu-item"><span>📋</span> Balcão PDV</a>
-        <a href="../mesas/" class="menu-item"><span>🪑</span> Mesas/Comandas</a>
-        <a href="../gestao/" class="menu-item"><span>🍔</span> Cardápio</a>
-        <a href="../delivery/" class="menu-item"><span>🛵</span> Gestão Delivery</a>
-        <a href="../kanban/" class="menu-item"><span>📱</span> Painel Kanban</a>
-        
-        <div style="width: 100%; display: flex; flex-direction: column;">
-            <div class="menu-item" onclick="toggleRelatorios()" style="cursor: pointer;"><span>📊</span> Relatórios ▾</div>
-            <div id="submenu-relatorios" style="display: flex; flex-direction: column; gap: 8px; padding-left: 20px; margin-top: 10px;">
-                <a href="index.html" class="submenu-link">Visão Geral</a>
-                <a href="vendas_periodo.html" class="submenu-link">Vendas por Período</a>
-                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
-                <a href="historico_caixas.html" class="submenu-link" style="font-weight: bold; text-decoration: underline;">Histórico de Caixas</a>
+        <a href="../pdv/" class="menu-item"><span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../mesas/" class="menu-item"><span class="menu-icone">🪑</span><span class="menu-texto">Mesas/Comandas</span></a>
+        <a href="../gestao/" class="menu-item"><span class="menu-icone">🍔</span><span class="menu-texto">Cardápio</span></a>
+        <a href="../delivery/" class="menu-item"><span class="menu-icone">🛵</span><span class="menu-texto">Gestão Delivery</span></a>
+        <a href="../kanban/" class="menu-item"><span class="menu-icone">📱</span><span class="menu-texto">Painel Kanban</span></a>
+        <a href="../integracoes/" class="menu-item"><span class="menu-icone">🔌</span><span class="menu-texto">Integrações</span></a>
+
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+                <span class="menu-icone">📊</span><span class="menu-texto" style="flex:1;">Relatórios ▾</span>
             </div>
+            <div id="submenu-relatorios" style="display: flex; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
+                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+                <a href="historico_caixas.html" class="submenu-link" style="color: #00bcd4; font-weight: bold;">Histórico de Caixas</a>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
+            <span class="menu-icone" style="color: #f44336;">🚪</span><span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
         </div>
     </aside>
 
-    <main class="conteudo-principal">
-        <h1>Histórico de Fechamento de Caixas</h1>
+    <script>
+        function toggleRelatorios() {
+            const submenu = document.getElementById('submenu-relatorios');
+            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+        }
+    </script>
+
+    <div class="conteudo-principal">
         
-        <div class="filtro-container">
-            <label>Selecione o Mês para conferência:</label>
-            <input type="month" id="filtro-mes-caixa" onchange="carregarDadosCaixa()">
+        <div class="card-historico" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 class="titulo-pagina" style="margin: 0;">Auditoria de Caixas</h1>
+            <div>
+                <label style="font-weight: 600; color: #555;">Período:</label>
+                <input type="month" id="filtro-mes-caixa" class="input-mes" onchange="carregarDadosCaixa()">
+            </div>
         </div>
 
-        <div class="tabela-container">
-            <table class="tabela-caixas" style="width: 100%; border-collapse: collapse;">
+        <div class="card-historico">
+            <table class="tabela-moderna">
                 <thead>
-                    <tr style="background: #f4f4f4; text-align: left;">
+                    <tr>
                         <th>Abertura</th>
                         <th>Fechamento</th>
                         <th>Cartão</th>
                         <th>Pix</th>
                         <th>Dinheiro</th>
-                        <th>Saídas</th>
-                        <th>Ações</th>
+                        <th>Despesas</th>
+                        <th>Ação</th>
                     </tr>
                 </thead>
                 <tbody id="corpo-tabela-caixas">
                     </tbody>
             </table>
         </div>
-    </main>
+    </div>
 
-    <div id="modal-detalhes-caixa" class="modal-oculto">
-        <div class="modal-conteudo">
-            <div class="modal-cabecalho">
-                <h2>Raio-X do Caixa (ID: <span id="detalhes-caixa-id"></span>)</h2>
-                <button onclick="fecharDetalhesCaixa()" class="btn-fechar">X</button>
+    <div id="modal-detalhes-caixa" class="modal-detalhes">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Raio-X (Caixa #<span id="detalhes-caixa-id"></span>)</h2>
+                <button onclick="fecharDetalhesCaixa()" style="background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #999;">&times;</button>
             </div>
-            <div style="display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap;">
+            
+            <div class="modal-body">
                 <div style="flex: 1; min-width: 300px;">
-                    <h3 style="color: #25D366;">🟢 Vendas</h3>
-                    <table class="tabela-caixas" style="width: 100%;">
-                        <thead><tr><th>Hora</th><th>Tipo</th><th>Valor</th></tr></thead>
+                    <h3 style="color: #25D366; border-bottom: 2px solid #eee; padding-bottom: 10px;">🟢 Vendas</h3>
+                    <table class="tabela-moderna">
+                        <thead><tr><th>Hora</th><th>Forma</th><th>Valor</th></tr></thead>
                         <tbody id="corpo-tabela-detalhes-vendas"></tbody>
                     </table>
                 </div>
+                
                 <div style="flex: 1; min-width: 300px;">
-                    <h3 style="color: #f44336;">🔴 Despesas</h3>
-                    <table class="tabela-caixas" style="width: 100%;">
+                    <h3 style="color: #f44336; border-bottom: 2px solid #eee; padding-bottom: 10px;">🔴 Despesas</h3>
+                    <table class="tabela-moderna">
                         <thead><tr><th>Tipo</th><th>Motivo</th><th>Valor</th></tr></thead>
                         <tbody id="corpo-tabela-detalhes-movs"></tbody>
                     </table>
@@ -94,12 +128,6 @@
     <script>
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 
-        function toggleRelatorios() {
-            const submenu = document.getElementById('submenu-relatorios');
-            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-        }
-
-        // Inicialização
         window.onload = () => {
             const dataAtual = new Date();
             const mesFormatado = `${dataAtual.getFullYear()}-${String(dataAtual.getMonth() + 1).padStart(2, '0')}`;
@@ -110,40 +138,48 @@
         async function carregarDadosCaixa() {
             const mes = document.getElementById('filtro-mes-caixa').value;
             const corpo = document.getElementById('corpo-tabela-caixas');
-            corpo.innerHTML = '<tr><td colspan="7">Buscando caixas...</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="7" style="text-align:center;">Buscando registros...</td></tr>';
 
             try {
                 const res = await fetch(`${API_URL}/caixa/historico?mes=${mes}`);
                 const dados = await res.json();
                 corpo.innerHTML = '';
                 
+                if(dados.length === 0){
+                    corpo.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum caixa fechado neste mês.</td></tr>';
+                    return;
+                }
+
                 dados.forEach(c => {
                     corpo.innerHTML += `
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td>${c.dataAbertura}</td>
-                            <td>${c.dataFechamento}</td>
+                        <tr>
+                            <td style="font-size: 0.9rem;">${c.dataAbertura}</td>
+                            <td style="font-size: 0.9rem;">${c.dataFechamento}</td>
                             <td>R$ ${c.totalCartao.toFixed(2)}</td>
-                            <td style="color: #25D366; font-weight: bold;">R$ ${c.totalPix.toFixed(2)}</td>
+                            <td style="color: #25D366; font-weight: 600;">R$ ${c.totalPix.toFixed(2)}</td>
                             <td>R$ ${c.totalDinheiro.toFixed(2)}</td>
-                            <td style="color: red;">R$ ${c.totalDespesas.toFixed(2)}</td>
-                            <td><button onclick="verDetalhesCaixa(${c.id})" style="cursor:pointer;">Ver Detalhes</button></td>
+                            <td style="color: #f44336;">R$ ${c.totalDespesas.toFixed(2)}</td>
+                            <td><button onclick="verDetalhesCaixa(${c.id})" class="btn-detalhes">Ver Detalhes</button></td>
                         </tr>`;
                 });
-            } catch (e) { corpo.innerHTML = '<tr><td colspan="7">Erro ao carregar dados.</td></tr>'; }
+            } catch (e) { corpo.innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Erro na conexão com o banco de dados.</td></tr>'; }
         }
 
         async function verDetalhesCaixa(id) {
             document.getElementById('detalhes-caixa-id').innerText = id;
-            document.getElementById('modal-detalhes-caixa').style.display = 'block';
+            document.getElementById('modal-detalhes-caixa').style.display = 'flex';
             const vTable = document.getElementById('corpo-tabela-detalhes-vendas');
             const mTable = document.getElementById('corpo-tabela-detalhes-movs');
             
+            vTable.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+            mTable.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
+
             try {
                 const res = await fetch(`${API_URL}/caixa/${id}/detalhes`);
                 const dados = await res.json();
                 
-                vTable.innerHTML = dados.vendas.map(v => `<tr><td>${new Date(v.data_hora).toLocaleTimeString('pt-BR', {timeStyle: 'short'})}</td><td>${v.forma_pagamento}</td><td>R$ ${Number(v.valor_total).toFixed(2)}</td></tr>`).join('');
-                mTable.innerHTML = dados.movimentacoes.map(m => `<tr style="color:${m.tipo === 'Sangria' ? 'red' : 'green'}"><td>${m.tipo}</td><td>${m.motivo || '-'}</td><td>R$ ${Number(m.valor).toFixed(2)}</td></tr>`).join('');
+                vTable.innerHTML = dados.vendas.length ? dados.vendas.map(v => `<tr><td>${new Date(v.data_hora).toLocaleTimeString('pt-BR', {timeStyle: 'short'})}</td><td>${v.forma_pagamento}</td><td style="font-weight:600;">R$ ${Number(v.valor_total).toFixed(2)}</td></tr>`).join('') : '<tr><td colspan="3">Sem vendas</td></tr>';
+                mTable.innerHTML = dados.movimentacoes.length ? dados.movimentacoes.map(m => `<tr><td style="color:${m.tipo.toLowerCase() === 'sangria' ? '#f44336' : '#25D366'}">${m.tipo}</td><td>${m.motivo || '-'}</td><td style="font-weight:600;">R$ ${Number(m.valor).toFixed(2)}</td></tr>`).join('') : '<tr><td colspan="3">Sem despesas</td></tr>';
             } catch (e) { console.error(e); }
         }
 
