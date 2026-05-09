@@ -1054,3 +1054,85 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// ==========================================
+// MÓDULO: CONTROLE RÁPIDO DE ESTOQUE
+// ==========================================
+function abrirModalEstoque() {
+  document.getElementById('modalEstoque').style.display = 'block';
+  carregarListaEstoque();
+}
+
+function fecharModalEstoque() {
+  document.getElementById('modalEstoque').style.display = 'none';
+}
+
+async function carregarListaEstoque() {
+  const divLista = document.getElementById('listaEstoqueProdutos');
+  divLista.innerHTML = '<h3>Buscando itens na geladeira... 🥶</h3>';
+  
+  try {
+    const res = await fetch(`${API_URL}/produtos`);
+    const produtos = await res.json();
+    divLista.innerHTML = '';
+    
+    produtos.forEach(p => {
+      // CORREÇÃO DO UNDEFINED: Força a ser Número. Se for vazio, vira 0.
+      let estoqueAtual = Number(p.estoque) || 0; 
+      let corEstoque = estoqueAtual > 0 ? '#2ed573' : '#ff4757';
+      
+      // Adicionamos a classe 'item-estoque' e um 'data-nome' para a barra de pesquisa funcionar
+      divLista.innerHTML += `
+        <div class="item-estoque" data-nome="${p.nome.toLowerCase()}" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #f1f2f6; padding: 15px; border-radius: 8px; border-left: 5px solid ${corEstoque};">
+          <div style="flex: 1; min-width: 150px;">
+            <strong style="font-size: 1.1em; color: #2f3542;">${p.nome}</strong>
+            <p style="margin: 0; font-size: 0.8em; color: #747d8c;">Status Atual: ${p.ativo ? '🟢 Visível' : '🔴 Bloqueado'}</p>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
+            <button onclick="alterarEstoque(${p.id}, ${estoqueAtual - 1})" style="background: #dfe4ea; border: none; padding: 10px 20px; font-size: 1.5em; border-radius: 5px; cursor: pointer; color: #333;">-</button>
+            
+            <!-- CAIXA DE DIGITAÇÃO PARA AJUSTE RÁPIDO (NOVO) -->
+            <input type="number" value="${estoqueAtual}" onchange="alterarEstoque(${p.id}, Number(this.value))" style="font-size: 1.5em; font-weight: bold; width: 70px; text-align: center; color: #2f3542; border: 2px solid #dfe4ea; border-radius: 5px; padding: 5px; background: #ffffff;" />
+            
+            <button onclick="alterarEstoque(${p.id}, ${estoqueAtual + 1})" style="background: #dfe4ea; border: none; padding: 10px 20px; font-size: 1.5em; border-radius: 5px; cursor: pointer; color: #333;">+</button>
+          </div>
+        </div>
+      `;
+    });
+  } catch (erro) {
+    divLista.innerHTML = '<p>Erro técnico ao carregar os produtos. Chame o suporte.</p>';
+  }
+}
+
+// NOVA FUNÇÃO: Oculta os itens que não batem com o texto da pesquisa
+function filtrarEstoqueVisual() {
+  let termo = document.getElementById('filtroEstoque').value.toLowerCase();
+  let itens = document.querySelectorAll('.item-estoque');
+  
+  itens.forEach(item => {
+    let nomeProduto = item.getAttribute('data-nome');
+    if (nomeProduto.includes(termo)) {
+      item.style.display = 'flex'; // Mostra se bater o nome
+    } else {
+      item.style.display = 'none'; // Esconde o resto (Shakes, Dois Amores, etc)
+    }
+  });
+}
+
+async function alterarEstoque(idProduto, novoValor) {
+  if (novoValor < 0) novoValor = 0; // Proteção: Ninguém tem menos que zero de um picolé
+  
+  try {
+    await fetch(`${API_URL}/produtos/${idProduto}/estoque`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estoque: novoValor })
+    });
+    
+    // Atualiza a tela discretamente em tempo real
+    carregarListaEstoque();
+  } catch (erro) {
+    alert("Falha de comunicação com o sistema! Verifique a internet.");
+  }
+}

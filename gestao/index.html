@@ -112,6 +112,26 @@
             </div>
         </header>
 
+        <!-- Botão no topo da Gestão de Cardápio -->
+        <button onclick="abrirModalEstoque()" style="background: #25D366; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; font-size: 1.1em; width: 100%; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+        📦 Abrir Controle Rápido de Estoque
+        </button>
+
+        <!-- Tela Suspensa (Modal) Corrigida -->
+<div id="modalEstoque" style="display: none; position: fixed; top: 0; left: 80px; width: calc(100% - 80px); height: 100%; background: #ffffff; z-index: 99999; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #eee;">
+    <h2 style="margin: 0; font-size: 1.5em; color: #333;">📦 Estoque Rápido</h2>
+    <button onclick="fecharModalEstoque()" style="background: #ff4757; color: white; padding: 10px 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">❌ Fechar</button>
+  </div>
+
+  <!-- Nova Barra de Pesquisa Inteligente -->
+  <input type="text" id="filtroEstoque" onkeyup="filtrarEstoqueVisual()" placeholder="🔍 Digite 'Picolé' ou 'Geladinho' para filtrar..." style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc; font-size: 1.1em; box-sizing: border-box;">
+  
+  <div id="listaEstoqueProdutos" style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 50px;">
+    <!-- Os produtos vão aparecer aqui -->
+  </div>
+</div>
+
         <main class="gestao-container">
             
             <section class="coluna-card">
