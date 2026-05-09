@@ -367,16 +367,31 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
 
     if (index > -1) { 
+        // Se já estava marcado, o cliente quer desmarcar
         escolhasAtuais.splice(index, 1); 
         chk.checked = false; 
     } else {
+        // O cliente quer marcar uma nova opção
         const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
-        if (escolhasNoGrupo.length > 0) {
-            const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
-            escolhasAtuais.splice(idxAnterior, 1);
-            document.querySelectorAll(`input[id^="chk-${grupoId}-"]`).forEach(c => c.checked = false);
+        
+        if (grupo.limite === 1) {
+            // Comportamento de "Radio Button": Se o limite é 1, remove a escolha anterior
+            if (escolhasNoGrupo.length > 0) {
+                const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
+                escolhasAtuais.splice(idxAnterior, 1);
+                
+                // 🐛 CORREÇÃO AQUI: Procurar o prefixo 'opc-' e desmarcar a caixinha antiga
+                document.querySelectorAll(`input[id^="opc-${grupoId}-"]`).forEach(c => c.checked = false);
+            }
+        } else {
+            // Trava de segurança extra (para limites maiores que 1)
+            if (escolhasNoGrupo.length >= grupo.limite) {
+                alert(`⚠️ Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}.`);
+                return; // Corta a função aqui, não deixa marcar
+            }
         }
         
+        // Adiciona a nova escolha no carrinho virtual e marca a caixinha
         escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco), quantidade: 1 });
         chk.checked = true;
     }
