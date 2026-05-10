@@ -17,6 +17,32 @@ let cupomAtivo = null;
 let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
 
 // ==========================================
+// 📊 SENSORES DO FUNIL DE VENDAS
+// ==========================================
+// Cria um "crachá" único para saber que os cliques são da mesma pessoa
+const sessao_id = "sessao_" + Math.random().toString(36).substr(2, 9);
+
+async function registrarEventoFunil(nomeEvento, nomeProduto = null) {
+    try {
+        await fetch(`${API_URL}/funil`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                evento: nomeEvento,
+                produto_nome: nomeProduto,
+                sessao_id: sessao_id
+            })
+        });
+    } catch (e) {
+        console.log("Sensor do funil falhou silenciosamente (não afeta o cliente):", e);
+    }
+}
+
+// SENSOR 1: O cliente abriu a página!
+registrarEventoFunil('Visitou o Cardápio');
+// ==========================================
+
+// ==========================================
 // ⏱️ MOTOR DE PROMOÇÕES AGENDADAS (Relógio Biológico)
 // ==========================================
 function isPromocaoAtivaAgora(p) {
@@ -259,6 +285,9 @@ function abrirModalEscolha(produto) {
     escolhasAtuais = [];
     quantidadeModal = 1; 
     
+    // SENSOR 2: Cliente se interessou por um produto!
+    registrarEventoFunil('Visualizou Produto', produto.nome);
+
     if(document.getElementById('quantidade-modal-display')) {
         document.getElementById('quantidade-modal-display').innerText = quantidadeModal;
     }
@@ -465,6 +494,10 @@ function atualizarPrecoDinamico() {
 }
 
 function confirmarEscolhasEAdicionar() {
+
+    // SENSOR 3: Cliente tem intenção de compra!
+    registrarEventoFunil('Adicionou ao Carrinho', produtoEmSelecao.nome);
+
     // 1. Validação de Grupos Obrigatórios
     if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
         const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
@@ -1634,6 +1667,10 @@ function removerItemCarrinhoCliente(index) {
 }
 
 function irParaCheckout() {
+    
+    // SENSOR 4: Cliente foi para a tela de pagamento/endereço!
+    registrarEventoFunil('Iniciou Checkout');
+
     fecharModalCarrinho();
     finalizarPedidoWhatsApp(); // Avança para a tela do formulário e pagamento
 }
