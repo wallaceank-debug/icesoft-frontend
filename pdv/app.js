@@ -45,6 +45,49 @@ async function carregarDadosIniciais() {
 }
 
 // ==========================================
+// 🚀 MOTOR DE PROMOÇÕES DO PDV
+// ==========================================
+function isPromocaoAtivaAgora(p) {
+    // 1. Regra de Ouro: A caixinha de "Aplicar no PDV" DEVE estar marcada
+    if (p.promo_pdv !== true) return false; 
+    if (!p.tipo_promocao || p.tipo_promocao === 'nenhuma') return false;
+
+    try {
+        // Validação de Dias da Semana
+        if (p.promo_dias && p.promo_dias !== '') {
+            const diasMapa = {"Domingo":0, "Segunda":1, "Terça":2, "Quarta":3, "Quinta":4, "Sexta":5, "Sábado":6};
+            const hoje = new Date().getDay();
+            const diasAtivos = p.promo_dias.split(',').map(d => diasMapa[d.trim()]);
+            if (!diasAtivos.includes(hoje)) return false;
+        }
+        // Validação de Horário
+        if (p.promo_inicio && p.promo_fim) {
+            const agora = new Date();
+            const horaAtual = agora.getHours() * 60 + agora.getMinutes();
+            const [hI, mI] = p.promo_inicio.split(':').map(Number);
+            const [hF, mF] = p.promo_fim.split(':').map(Number);
+            const minutoInicio = hI * 60 + mI;
+            const minutoFim = hF * 60 + mF;
+            if (horaAtual < minutoInicio || horaAtual > minutoFim) return false;
+        }
+    } catch(e) { return false; }
+    
+    return true;
+}
+
+function calcularPrecoComDesconto(p) {
+    let preco = Number(p.preco);
+    if (isPromocaoAtivaAgora(p)) {
+        if (p.tipo_promocao === 'porcentagem') {
+            preco -= preco * (Number(p.valor_promocao) / 100);
+        } else if (p.tipo_promocao === 'fixo') {
+            preco -= Number(p.valor_promocao);
+        }
+    }
+    return preco > 0 ? preco : 0;
+}
+
+// ==========================================
 // FILTROS E CATEGORIAS DINÂMICAS
 // ==========================================
 function renderizarBotoesCategoria() {
@@ -86,9 +129,28 @@ function renderizarGradeProdutos(lista) {
     }
 
     lista.forEach(p => {
+        // 💰 Aplica lógica visual de promoção no PDV
+        let precoCalculado = calcularPrecoComDesconto(p);
+        let precoHtml = `<div class="pdv-preco" style="margin-top: 8px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
+
+        if (precoCalculado < Number(p.preco)) {
+            precoHtml = `
+                <div style="margin-top: 8px; display: flex; flex-direction: column; align-items: center; line-height: 1;">
+                    <span style="text-decoration: line-through; color: #999; font-size: 0.8rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                    <span class="pdv-preco" style="color: #6200ea; font-size: 1rem;">R$ ${precoCalculado.toFixed(2).replace('.', ',')}</span>
+                </div>
+            `;
+        }
+
         const visualProduto = p.imagem_url 
-            ? `<img src="${p.imagem_url}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`
-            : `<div class="pdv-emoji" style="height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 8px;">${p.emoji || '🍨'}</div>`;
+            ? `<div style="position:relative;">
+                ${precoCalculado < Number(p.preco) ? '<span style="position:absolute; top:5px; right:5px; background:#6200ea; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:10px; z-index:2;">PROMO</span>' : ''}
+                <img src="${p.imagem_url}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+               </div>`
+            : `<div class="pdv-emoji" style="height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 8px; position:relative;">
+                ${precoCalculado < Number(p.preco) ? '<span style="position:absolute; top:5px; right:5px; background:#6200ea; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:10px;">PROMO</span>' : ''}
+                ${p.emoji || '🍨'}
+               </div>`;
 
         container.innerHTML += `
             <div class="pdv-card" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 160px;">
@@ -96,7 +158,7 @@ function renderizarGradeProdutos(lista) {
                     ${visualProduto}
                     <div class="pdv-nome" style="line-height: 1.2;">${p.nome}</div>
                 </div>
-                <div class="pdv-preco" style="margin-top: 8px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                ${precoHtml}
             </div>
         `;
     });
@@ -107,44 +169,32 @@ function renderizarGradeProdutos(lista) {
 // ==========================================
 function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
+    const precoBaseCalculado = calcularPrecoComDesconto(produto);
 
-    // ⚖️ CÉREBRO DA BALANÇA BLINDADO: Aceita 'true' mesmo se o banco devolver como texto
+    // ⚖️ CÉREBRO DA BALANÇA
     if (produto.venda_por_peso === true || produto.venda_por_peso === 'true') {
         let pesoDigitado = prompt(`⚖️ BALANÇA\n\nDigite o peso de ${produto.nome} na balança.\n(Pode digitar em gramas ex: 290 ou em quilos ex: 0,290):`);
         
-        // Se o usuário clicou em cancelar ou não digitou nada, cancela a operação
         if (pesoDigitado === null || pesoDigitado.trim() === '') return;
-
-        // Limpa possíveis letras, troca vírgula por ponto e converte para número
         let pesoReal = parseFloat(pesoDigitado.replace(',', '.').replace(/[^\d.]/g, ''));
 
-        if (isNaN(pesoReal) || pesoReal <= 0) {
-            alert("⚠️ Por favor, digite um peso válido maior que zero.");
-            return;
-        }
+        if (isNaN(pesoReal) || pesoReal <= 0) return alert("⚠️ Por favor, digite um peso válido maior que zero.");
 
-        // 🧠 SUPER INTELIGÊNCIA: Se o número for menor que 20, é impossível ser 20 gramas de sorvete.
-        // O sistema entende que você digitou em Quilos (ex: 0.290 ou 1.5) e converte para gramas sozinho!
-        if (pesoReal < 20) {
-            pesoReal = pesoReal * 1000;
-        }
+        if (pesoReal < 20) pesoReal = pesoReal * 1000;
 
-        // Faz a regra de 3 para descobrir o preço (Preço do KG / 1000 * gramas)
-        const precoPorGrama = Number(produto.preco) / 1000;
+        // O cálculo do KG agora usa o preço de promoção!
+        const precoPorGrama = precoBaseCalculado / 1000;
         const precoCalculado = precoPorGrama * pesoReal;
         
-        // Remove os decimais quebrados do peso para ficar bonito na nota (ex: 290g em vez de 290.000g)
         const pesoFormatado = Math.round(pesoReal);
         const nomeComPeso = `${produto.nome} (${pesoFormatado}g)`;
 
-        // Adiciona direto ao carrinho com o nome e preço já calculados!
         adicionarAoCarrinho(nomeComPeso, [], precoCalculado);
         return;
     }
 
-    // Se NÃO for produto de peso, segue o fluxo normal de adicionais
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
-        adicionarAoCarrinho(produto.nome, [], Number(produto.preco));
+        adicionarAoCarrinho(produto.nome, [], precoBaseCalculado);
         return;
     }
     abrirModalEscolha(produto);
@@ -226,7 +276,9 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
 
 function atualizarPrecoDinamico() {
     const totalOpcionais = escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
-    const totalGeral = Number(produtoEmSelecao.preco) + totalOpcionais;
+    // Usa o preço calculado com o desconto!
+    const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
+    const totalGeral = precoBaseCalculado + totalOpcionais;
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
 }
 
@@ -235,16 +287,18 @@ function fecharModalOpcoes() { document.getElementById('modal-opcoes').style.dis
 function confirmarEscolhasEAdicionar() {
     const nomeBase = produtoEmSelecao.nome;
     const listaAdicionais = escolhasAtuais.map(e => e.nome);
-    const precoFinal = Number(produtoEmSelecao.preco) + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
+    const precoFinal = precoBaseCalculado + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    
     adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal);
     fecharModalOpcoes();
 }
 
 // ==========================================
-// MÓDULO DE DESCONTOS E ACRÉSCIMOS
+// MÓDULO DE DESCONTOS E ACRÉSCIMOS MANUAIS
 // ==========================================
 function pedirDesconto() {
-    let valor = prompt("✏️ Digite o valor do DESCONTO em R$ (Ex: 5.50)\n(Ou deixe em branco para zerar):");
+    let valor = prompt("✏️ Digite o valor do DESCONTO GERAL em R$ (Ex: 5.50)\n(Ou deixe em branco para zerar):");
     if (valor !== null) {
         descontoGlobal = parseFloat(valor.replace(',', '.')) || 0;
         atualizarTotais();
@@ -494,7 +548,7 @@ async function finalizarVendaPDV() {
     
     const dadosDaVenda = {
         itens: JSON.stringify(itensFormatados), 
-        produto_nome: JSON.stringify(itensFormatados), 
+        produto_nome: "Venda Balcão", // 👈 CORREÇÃO: Título curto para não estourar o limite (varchar 255)
         valor_total: totalFinalGlobal,
         total: totalFinalGlobal,
         forma_pagamento: metodoFinalTexto, 
@@ -597,7 +651,7 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
 }
 
 // ==========================================
-// CONTROLE DE CAIXA
+// DEMAIS CÓDIGOS (Caixa, Mesas, Delivery) Mantidos perfeitamente
 // ==========================================
 let tipoMovimentacaoAtual = ''; 
 
@@ -763,9 +817,6 @@ async function salvarMovimentacao() {
     } catch (e) { alert("Erro de conexão com o servidor."); }
 }
 
-// ==========================================
-// 🏪 CONTROLE DE STATUS DA LOJA 
-// ==========================================
 async function verificarStatusLoja() {
     try {
         const res = await fetch(`${API_URL}/loja/status`);
@@ -813,9 +864,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setInterval(verificarStatusLoja, 30000);
 });
 
-// ==========================================
-// 💾 TRANSFERÊNCIA PARA MESAS 
-// ==========================================
 async function abrirModalTransferirMesa() {
     if (carrinho.length === 0) return alert("⚠️ O carrinho está vazio! Adicione itens antes de transferir.");
     document.getElementById('modal-transferir-mesa').style.display = 'flex';
@@ -866,9 +914,6 @@ async function transferirParaMesa(numeroMesa) {
     } catch (e) { alert("Erro de conexão. Verifique a internet."); }
 }
 
-// ==========================================
-// 🛵 SISTEMA DE LANÇAMENTO DELIVERY NO PDV
-// ==========================================
 function abrirModalDeliveryPDV() {
     if (carrinho.length === 0) return alert("⚠️ Adicione produtos ao carrinho antes de lançar o Delivery!");
     document.getElementById('pdv-cliente-telefone').value = '';
@@ -959,9 +1004,8 @@ async function finalizarDeliveryPDV() {
     const troco = document.getElementById('pdv-cliente-troco').value.trim();
     if (pagamento === 'Dinheiro' && troco) pagamento += ` (Troco para ${troco})`;
 
-    let totalCobranca = totalFinalGlobal; // Usando os cálculos reais com desconto
+    let totalCobranca = totalFinalGlobal;
     
-    // Converte os produtos do PDV para o Kanban entender perfeitamente
     const itensFormatados = carrinho.map(item => {
         let nomeCompleto = "Delivery: " + item.nomeBase;
         if (item.adicionais && item.adicionais.length > 0) {
@@ -1010,19 +1054,13 @@ async function finalizarDeliveryPDV() {
     }
 }
 
-// ==========================================
-// 🖱️ ROLAGEM INTELIGENTE DAS CATEGORIAS
-// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const barraCategorias = document.getElementById('barra-categorias');
-    
     if (barraCategorias) {
         barraCategorias.addEventListener('wheel', (evento) => {
             if (evento.deltaY !== 0) {
-                // Impede que a tela inteira desça
                 evento.preventDefault();
-                // Transforma o movimento vertical da rodinha em movimento horizontal
-                barraCategorias.scrollLeft += evento.deltaY * 2; // O "* 2" deixa mais rápido!
+                barraCategorias.scrollLeft += evento.deltaY * 2; 
             }
         });
     }

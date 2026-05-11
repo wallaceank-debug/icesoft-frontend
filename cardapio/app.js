@@ -1160,7 +1160,8 @@ async function carregarConfiguracoesLoja() {
         if (configs.pagamentos_loja && document.getElementById('modal-pagamentos-texto')) document.getElementById('modal-pagamentos-texto').innerText = configs.pagamentos_loja;
 
         const status = configs.status_delivery || 'aberto';
-        const statusText = document.getElementById('loja-status-exibicao');
+        // 🐛 CORREÇÃO: ID correto que está no HTML
+        const statusText = document.getElementById('indicador-status-loja'); 
         
         if (status === 'fechado') {
             lojaAberta = false;
@@ -1190,34 +1191,53 @@ async function carregarConfiguracoesLoja() {
                 }
             } catch(e) {}
 
-            statusText.innerText = `● Estamos fechados no momento, abre ${textoAbertura}`;
-            statusText.style.color = "#f44336"; 
+            // 🛡️ TRAVA DE SEGURANÇA: Só atualiza se o textinho existir na tela
+            if (statusText) {
+                statusText.innerText = `🔴 Estamos fechados, abre ${textoAbertura}`;
+                statusText.style.color = "#f44336"; 
+            }
             
             const telaPreta = document.getElementById('overlay-loja-fechada');
             if (telaPreta) telaPreta.style.display = 'none';
 
         } else {
             lojaAberta = true;
-            statusText.innerText = "● Recebendo pedidos";
-            statusText.style.color = "#25D366"; 
+            if (statusText) {
+                statusText.innerText = "🟢 Recebendo pedidos";
+                statusText.style.color = "#25D366"; 
+            }
         }
 
     } catch (e) { console.error("Erro configurações:", e); }
 }
 
+// ==========================================
+// RENDERIZAR O CARROSSEL SEGUINDO A ORDEM DO PAINEL
+// ==========================================
 function renderizarCarrossel(produtos) {
     const secao = document.getElementById('secao-destaques');
     const carrossel = document.getElementById('carrossel-produtos');
     if (!secao || !carrossel) return;
 
-    const produtosDestaque = produtos.filter(p => idsDestaquesGlobais.includes(Number(p.id)) && p.ativo !== false);
+    // 1. Array vazio para guardar os produtos na ordem EXATA do painel
+    const produtosDestaqueOrdenados = [];
 
-    if (produtosDestaque.length === 0) return secao.style.display = 'none';
+    // 2. Lê a lista de IDs que foi salva no Gestão Delivery e adiciona na ordem
+    idsDestaquesGlobais.forEach(idSalvo => {
+        const prod = produtos.find(p => Number(p.id) === Number(idSalvo) && p.ativo !== false);
+        if (prod) {
+            produtosDestaqueOrdenados.push(prod);
+        }
+    });
+
+    // Se não tiver nenhum destaque ativo, esconde a seção
+    if (produtosDestaqueOrdenados.length === 0) return secao.style.display = 'none';
 
     secao.style.display = 'block'; 
     carrossel.innerHTML = '';
     
-    produtosDestaque.forEach(p => {
+    // 3. Renderiza os produtos ordenados perfeitamente
+    produtosDestaqueOrdenados.forEach(p => {
         // 🚀 O CÉREBRO DAS TAGS TAMBÉM NO CARROSSEL
         let tagHtml = '';
         if (p.tag && p.tag !== '') {

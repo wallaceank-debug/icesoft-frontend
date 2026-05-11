@@ -2,6 +2,7 @@ const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/ap
 let listaProdutos = [];
 let listaGrupos = [];
 let grupoSelecionadoId = null;
+let produtoEditandoId = null; // Memória para saber se está editando ou criando
 
 window.onload = async () => {
     await carregarTudo();
@@ -12,32 +13,27 @@ async function carregarTudo() {
         const [resProd, resGrupos, resCat] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
-            fetch(`${API_URL}/categorias`) // Puxa do novo servidor!
+            fetch(`${API_URL}/categorias`) 
         ]);
         
         let produtosBrutos = await resProd.json();
         
-        // 📸 O NOVO FILTRO BLINDADO (Feito sob medida para o Painel de Gestão)
+        // 📸 O NOVO FILTRO BLINDADO 
         listaProdutos = produtosBrutos.map(p => {
-            // Verifica se o produto tem foto e NÃO é uma foto antiga do ImgBB
             if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
-                // Pega APENAS o nome do arquivo no final e ignora a sujeira do banco
                 const nomeArquivo = p.imagem_url.split('/').pop(); 
-                
-                // Constrói a URL absoluta, perfeita e limpa direto pro seu servidor
                 p.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
             }
             return p;
         });
 
         listaGrupos = await resGrupos.json();
-        listaCategorias = await resCat.json(); // Salva na memória
+        listaCategorias = await resCat.json(); 
         
         renderizarProdutos();
         renderizarGrupos();
-        preencherSelectCategorias(); // Atualiza as opções na hora de criar o produto
+        preencherSelectCategorias(); 
         
-        // Se um grupo já estava selecionado, recarrega a 3ª coluna
         if (grupoSelecionadoId) selecionarGrupo(grupoSelecionadoId);
     } catch (e) { 
         console.error("Erro", e); 
@@ -45,13 +41,12 @@ async function carregarTudo() {
 }
 
 // ==========================================
-// COLUNA 1: PRODUTOS (COM FILTRO EM TEMPO REAL)
+// COLUNA 1: PRODUTOS (COM FILTRO E AGRUPADOS)
 // ==========================================
 function renderizarProdutos(filtro = '') {
     const div = document.getElementById('lista-produtos');
     div.innerHTML = '';
     
-    // Tratamento para a busca ignorar letras maiúsculas e acentos
     const termo = filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     
     const produtosFiltrados = listaProdutos.filter(p => {
@@ -64,26 +59,75 @@ function renderizarProdutos(filtro = '') {
         return;
     }
 
-    produtosFiltrados.forEach(p => {
-        const isAtivo = p.ativo !== false;
-        const classeInativo = isAtivo ? '' : 'item-inativo';
-        div.innerHTML += `
-            <div class="item-linha">
-                <div class="item-info ${classeInativo}" onclick="abrirEdicaoProduto(${p.id})">
-                    <span class="item-nome">${p.emoji} ${p.nome}</span>
-                    <span class="item-detalhe">R$ ${Number(p.preco).toFixed(2)}</span>
-                </div>
-                <div class="item-acoes">
-                    <label class="switch">
-                        <input type="checkbox" onchange="toggleProduto(${p.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
-                    <button class="btn-icone" title="Duplicar Produto" onclick="duplicarProduto(${p.id})">📄</button>
-                    <button class="btn-icone" title="Excluir Produto" onclick="excluirProduto(${p.id})">🗑️</button>
-                </div>
-            </div>
-        `;
+    let categoriasParaExibir = listaCategorias;
+    
+    if (typeof categoriaSelecionadaId !== 'undefined' && categoriaSelecionadaId) {
+        categoriasParaExibir = listaCategorias.filter(c => c.id === categoriaSelecionadaId);
+    }
+
+    categoriasParaExibir.forEach(cat => {
+        const produtosDaCategoria = produtosFiltrados.filter(p => p.categoria === cat.nome);
+
+        if (produtosDaCategoria.length > 0) {
+            div.innerHTML += `<div class="categoria-separador">${cat.nome}</div>`;
+
+            produtosDaCategoria.forEach(p => {
+                const isAtivo = p.ativo !== false;
+                const classeInativo = isAtivo ? '' : 'item-inativo';
+                
+                div.innerHTML += `
+                    <div class="item-linha" draggable="true" ondragstart="dragStartProduto(${p.id})" ondragover="dragOverProduto(event)" ondrop="dropProduto(${p.id})" style="display: flex; align-items: center;">
+                        <span style="color: #ccc; font-size: 1.2rem; margin-right: 15px; cursor: grab; padding: 5px;" title="Arraste para reordenar">☰</span>
+                        
+                        <div class="item-info ${classeInativo}" onclick="abrirModalProduto(${p.id})" style="cursor: pointer; flex: 1; padding: 5px 0;">
+                            <span class="item-nome">${p.emoji || ''} ${p.nome}</span>
+                            <span class="item-detalhe">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        
+                        <div class="item-acoes">
+                            <label class="switch">
+                                <input type="checkbox" onchange="toggleProduto(${p.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                            <button class="btn-icone" title="Duplicar Produto" onclick="duplicarProduto(${p.id})">📄</button>
+                            <button class="btn-icone" title="Excluir Produto" onclick="excluirProduto(${p.id})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
     });
+
+    const nomesDasCategoriasAtuais = categoriasParaExibir.map(c => c.nome);
+    const produtosSemCategoria = produtosFiltrados.filter(p => !p.categoria || !nomesDasCategoriasAtuais.includes(p.categoria));
+    
+    if (produtosSemCategoria.length > 0) {
+        div.innerHTML += `<div class="categoria-separador" style="background-color: #f5f5f5; color: #666; border-color: #ddd;">Outros</div>`;
+        produtosSemCategoria.forEach(p => {
+            const isAtivo = p.ativo !== false;
+            const classeInativo = isAtivo ? '' : 'item-inativo';
+            
+            div.innerHTML += `
+                <div class="item-linha" draggable="true" ondragstart="dragStartProduto(${p.id})" ondragover="dragOverProduto(event)" ondrop="dropProduto(${p.id})" style="display: flex; align-items: center;">
+                    <span style="color: #ccc; font-size: 1.2rem; margin-right: 15px; cursor: grab; padding: 5px;" title="Arraste para reordenar">☰</span>
+                    
+                    <div class="item-info ${classeInativo}" onclick="abrirModalProduto(${p.id})" style="cursor: pointer; flex: 1; padding: 5px 0;">
+                        <span class="item-nome">${p.emoji || ''} ${p.nome}</span>
+                        <span class="item-detalhe">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                    </div>
+                    
+                    <div class="item-acoes">
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleProduto(${p.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                        <button class="btn-icone" title="Duplicar Produto" onclick="duplicarProduto(${p.id})">📄</button>
+                        <button class="btn-icone" title="Excluir Produto" onclick="excluirProduto(${p.id})">🗑️</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
 }
 
 function filtrarProdutosGestao() {
@@ -127,6 +171,14 @@ async function toggleProduto(id, statusAtivo) {
     } catch(e) { alert("Erro ao mudar status"); }
 }
 
+async function excluirProduto(id) {
+    if(!confirm("Tem certeza que deseja excluir o produto?")) return;
+    try {
+        await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
+        await carregarTudo();
+    } catch(e) { alert("Erro ao excluir."); }
+}
+
 // ==========================================
 // COLUNA 2: GRUPOS DE ADICIONAIS
 // ==========================================
@@ -144,7 +196,7 @@ function renderizarGrupos() {
                     <span class="item-detalhe">Limite: ${g.limite} | ${(g.itens||[]).length} itens</span>
                 </div>
                 <div class="item-acoes">
-                    <button class="btn-icone" title="Editar Grupo" onclick="abrirEdicaoGrupo(${g.id})">✏️</button>
+                    <button class="btn-icone" title="Editar Grupo" onclick="abrirModalGrupo(${g.id})">✏️</button>
                     <button class="btn-icone" title="Duplicar Grupo" onclick="duplicarGrupo(${g.id})">📄</button>
                     <label class="switch">
                         <input type="checkbox" onchange="toggleGrupo(${g.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
@@ -279,79 +331,81 @@ function abrirModalAdicional() {
 }
 
 // ==========================================
-// FUNÇÕES DE MODAL E CADASTRO (PRODUTOS E GRUPOS)
+// FUNÇÕES DE MODAL E CADASTRO
 // ==========================================
-
 function fecharModalProduto() { document.getElementById('modal-produto').style.display = 'none'; }
 function fecharModalGrupo() { document.getElementById('modal-grupo').style.display = 'none'; }
 
 let gruposSelecionadosTemporarios = []; 
 
-// Função para exibir/ocultar a caixa de valor da promoção
 function toggleAreaPromocao() {
     const tipoSelecionadoElement = document.querySelector('input[name="tipo_promocao"]:checked');
-    if (!tipoSelecionadoElement) return; // Segurança caso a tela carregue vazia
+    if (!tipoSelecionadoElement) return;
 
     const tipoSelecionado = tipoSelecionadoElement.value;
     const areaValor = document.getElementById('area-valor-promocao');
     const labelTipo = document.getElementById('label-tipo-promocao');
     const inputValor = document.getElementById('prod-valor-promocao');
-    const areaAgendamento = document.getElementById('area-agendamento-promo'); // 🚀 NOVO!
+    const areaAgendamento = document.getElementById('area-agendamento-promo'); 
     
     if (tipoSelecionado === 'nenhuma') {
         if(areaValor) areaValor.style.display = 'none';
         if(inputValor) inputValor.value = ''; 
-        if(areaAgendamento) areaAgendamento.style.display = 'none'; // 🚀 Esconde o relógio biológico
+        if(areaAgendamento) areaAgendamento.style.display = 'none'; 
     } else {
         if(areaValor) areaValor.style.display = 'flex';
         if(labelTipo) labelTipo.innerText = tipoSelecionado === 'porcentagem' ? '%' : 'R$';
         if(inputValor) inputValor.placeholder = tipoSelecionado === 'porcentagem' ? 'Ex: 10 (10% off)' : 'Ex: 5.00 (5 reais off)';
-        if(areaAgendamento) areaAgendamento.style.display = 'block'; // 🚀 Mostra o relógio biológico
+        if(areaAgendamento) areaAgendamento.style.display = 'block'; 
     }
 }
 
+// 🚀 FUNÇÃO BLINDADA COM OS IDs CORRETOS
 function abrirModalProduto(id = null) {
     const modal = document.getElementById('modal-produto');
-    const idInput = document.getElementById('prod-id');
-    const titulo = document.getElementById('titulo-modal-produto');
+    const titulo = document.getElementById('titulo-modal-produto') || document.getElementById('modal-titulo');
+
+    const preencherSeguro = (idCampo, valor) => {
+        const campo = document.getElementById(idCampo);
+        if (campo) campo.value = valor;
+    };
+    const checarSeguro = (idCampo, isChecked) => {
+        const campo = document.getElementById(idCampo);
+        if (campo) campo.checked = isChecked;
+    };
 
     gruposSelecionadosTemporarios = []; 
 
     if (id) { 
         const p = listaProdutos.find(x => x.id === id);
-        titulo.innerText = "Editar Produto";
-        idInput.value = p.id;
-        document.getElementById('prod-nome').value = p.nome;
-        document.getElementById('prod-preco').value = p.preco;
-        document.getElementById('prod-emoji').value = p.emoji;
-        document.getElementById('prod-categoria').value = p.categoria || '';
+        if(!p) return;
+        produtoEditandoId = id;
+
+        if(titulo) titulo.innerText = "Editar Produto";
         
-        if (document.getElementById('produto-tag')) {
-            document.getElementById('produto-tag').value = p.tag || '';
-        }
+        preencherSeguro('prod-id', p.id);
+        preencherSeguro('prod-nome', p.nome || '');
+        preencherSeguro('prod-preco', p.preco || '');
+        preencherSeguro('prod-emoji', p.emoji || '');
+        preencherSeguro('prod-categoria', p.categoria || 'Outros');
+        preencherSeguro('produto-tag', p.tag || '');
+        preencherSeguro('produto-imagem', p.imagem_url || '');
+        preencherSeguro('prod-descricao', (p.descricao && p.descricao !== 'null') ? p.descricao : '');
         
-        const campoImagem = document.getElementById('produto-imagem');
-        if(campoImagem) campoImagem.value = p.imagem_url || '';
-        
-        const campoDescricao = document.getElementById('prod-descricao');
-        if(campoDescricao) campoDescricao.value = (p.descricao && p.descricao !== 'null') ? p.descricao : '';
-        
-        if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = p.venda_por_peso === true;
+        checarSeguro('prod-venda-peso', p.venda_por_peso === true);
+        checarSeguro('produto-promo-pdv', p.promo_pdv === true);
         
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
 
-        // Carrega os dados da promoção
+        // Promoções
         const tipoPromo = p.tipo_promocao || 'nenhuma';
         const radioTarget = document.querySelector(`input[name="tipo_promocao"][value="${tipoPromo}"]`);
         if(radioTarget) radioTarget.checked = true;
         
-        if(document.getElementById('prod-valor-promocao')) document.getElementById('prod-valor-promocao').value = p.valor_promocao || '';
+        preencherSeguro('prod-valor-promocao', p.valor_promocao || '');
+        preencherSeguro('produto-promo-inicio', p.promo_inicio || '');
+        preencherSeguro('produto-promo-fim', p.promo_fim || '');
         
-        // 🚀 NOVO: CARREGA O RELÓGIO BIOLÓGICO
-        if(document.getElementById('produto-promo-inicio')) document.getElementById('produto-promo-inicio').value = p.promo_inicio || '';
-        if(document.getElementById('produto-promo-fim')) document.getElementById('produto-promo-fim').value = p.promo_fim || '';
-        
-        // Desmarca todos primeiro e marca só os do banco
         document.querySelectorAll('.btn-dia').forEach(b => b.classList.remove('ativo'));
         if (p.promo_dias) {
             const diasSalvos = p.promo_dias.split(',');
@@ -362,35 +416,29 @@ function abrirModalProduto(id = null) {
         }
 
         toggleAreaPromocao(); 
-
     } else { 
-        titulo.innerText = "Novo Produto";
-        idInput.value = '';
-        document.getElementById('prod-nome').value = '';
-        document.getElementById('prod-preco').value = '';
-        document.getElementById('prod-emoji').value = '🍨';
-        document.getElementById('prod-categoria').value = '';
+        produtoEditandoId = null;
+        if(titulo) titulo.innerText = "Novo Produto";
         
-        if (document.getElementById('produto-tag')) {
-            document.getElementById('produto-tag').value = '';
-        }
+        preencherSeguro('prod-id', '');
+        preencherSeguro('prod-nome', '');
+        preencherSeguro('prod-preco', '');
+        preencherSeguro('prod-emoji', '🍨');
+        preencherSeguro('prod-categoria', 'Outros'); 
+        preencherSeguro('produto-tag', '');
+        preencherSeguro('produto-imagem', '');
+        preencherSeguro('prod-descricao', '');
         
-        const campoImagem = document.getElementById('produto-imagem');
-        if(campoImagem) campoImagem.value = '';
-        
-        const campoDescricao = document.getElementById('prod-descricao');
-        if(campoDescricao) campoDescricao.value = '';
+        checarSeguro('prod-venda-peso', false);
+        checarSeguro('produto-promo-pdv', false);
 
-        if (document.getElementById('prod-venda-peso')) document.getElementById('prod-venda-peso').checked = false;
-
-        // Zera os dados da promoção
         const radioNenhuma = document.querySelector('input[name="tipo_promocao"][value="nenhuma"]');
         if(radioNenhuma) radioNenhuma.checked = true;
-        if(document.getElementById('prod-valor-promocao')) document.getElementById('prod-valor-promocao').value = '';
         
-        // 🚀 NOVO: ZERA O RELÓGIO BIOLÓGICO
-        if(document.getElementById('produto-promo-inicio')) document.getElementById('produto-promo-inicio').value = '';
-        if(document.getElementById('produto-promo-fim')) document.getElementById('produto-promo-fim').value = '';
+        preencherSeguro('prod-valor-promocao', '');
+        preencherSeguro('produto-promo-inicio', '');
+        preencherSeguro('produto-promo-fim', '');
+        
         document.querySelectorAll('.btn-dia').forEach(b => b.classList.remove('ativo'));
 
         toggleAreaPromocao(); 
@@ -400,13 +448,15 @@ function abrirModalProduto(id = null) {
     if(inputArquivo) inputArquivo.value = '';
 
     renderizarSelecaoGrupos();
-    modal.style.display = 'flex';
+    if(modal) modal.style.display = 'flex';
 }
 
 let grupoArrastadoIndex = null;
 
 function renderizarSelecaoGrupos() {
     const container = document.getElementById('container-checkbox-grupos');
+    if(!container) return;
+
     container.innerHTML = '<p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Marque os grupos e arraste (☰) para montar o roteiro do cliente:</p>';
 
     const gruposMarcados = gruposSelecionadosTemporarios.map(id => listaGrupos.find(g => g.id === id)).filter(g => g);
@@ -472,141 +522,105 @@ function dropGrupo(indexDestino) {
     grupoArrastadoIndex = null;
 }
 
-function abrirEdicaoProduto(id) {
-    abrirModalProduto(id); 
-}
-
+// 🚀 FUNÇÃO BLINDADA COM OS IDs CORRETOS
 async function salvarProduto() {
-    const id = document.getElementById('prod-id').value;
-    const nome = document.getElementById('prod-nome').value;
-    const preco = document.getElementById('prod-preco').value;
-    const emoji = document.getElementById('prod-emoji').value;
+    const lerSeguro = (idCampo, valorPadrao = '') => {
+        const campo = document.getElementById(idCampo);
+        return campo ? campo.value : valorPadrao;
+    };
+    const lerCheckSeguro = (idCampo, valorPadrao = false) => {
+        const campo = document.getElementById(idCampo);
+        return campo ? campo.checked : valorPadrao;
+    };
+
+    const nome = lerSeguro('prod-nome').trim();
+    const precoBruto = lerSeguro('prod-preco').replace(',', '.');
+    const preco = parseFloat(precoBruto);
     
-    const tag = document.getElementById('produto-tag') ? document.getElementById('produto-tag').value : '';
-    const categoria = document.getElementById('prod-categoria').value.trim() || 'Outros';
-    
-    const campoImagem = document.getElementById('produto-imagem');
-    let imagem_url = campoImagem ? campoImagem.value.trim() : '';
+    if (!nome || isNaN(preco)) return alert("⚠️ O nome e o preço são obrigatórios!");
 
-    const campoDescricao = document.getElementById('prod-descricao');
-    const descricao = campoDescricao ? campoDescricao.value.trim() : '';
-
-    const grupos_ids = gruposSelecionadosTemporarios;
-
-    if (!nome || !preco) return alert("⚠️ Preencha o nome e o preço!");
-
-    const inputArquivo = document.getElementById('produto-arquivo-foto');
-    if (inputArquivo && inputArquivo.files.length > 0) {
-        const formData = new FormData();
-        formData.append('imagem', inputArquivo.files[0]);
-        
-        try {
-            if(typeof mostrarAvisoFlutuante === 'function') mostrarAvisoFlutuante("⏳ Salvando foto no servidor...", "#FF9800");
-            
-            const resUpload = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
-            const dataUpload = await resUpload.json();
-            
-            if (dataUpload.sucesso) {
-                const baseUrl = API_URL.replace('/api', '');
-                imagem_url = baseUrl + dataUpload.url; 
-            } else {
-                return alert("❌ Erro ao salvar a imagem: " + dataUpload.erro);
-            }
-        } catch (e) {
-            return alert("🔌 Erro de conexão na hora de enviar a foto.");
-        }
+    const btn = document.getElementById('btn-salvar-produto') || document.querySelector('#modal-produto button.btn-salvar') || document.querySelector('.btn-salvar');
+    let textoOriginal = "Salvar";
+    if (btn) {
+        textoOriginal = btn.innerText;
+        btn.innerText = 'Salvando...';
+        btn.disabled = true;
     }
 
-    const venda_por_peso = document.getElementById('prod-venda-peso') ? document.getElementById('prod-venda-peso').checked : false;
+    const diasSelecionados = Array.from(document.querySelectorAll('.btn-dia.ativo')).map(b => b.getAttribute('data-dia')).join(',');
 
-    const tipo_promocao_elemento = document.querySelector('input[name="tipo_promocao"]:checked');
-    const tipo_promocao = tipo_promocao_elemento ? tipo_promocao_elemento.value : 'nenhuma';
-    
-    let valor_promocao = document.getElementById('prod-valor-promocao') ? document.getElementById('prod-valor-promocao').value : '';
-    
-    if (tipo_promocao === 'nenhuma' || !valor_promocao) {
-        valor_promocao = 0;
-    } else {
-        valor_promocao = parseFloat(valor_promocao);
-    }
+    let tipoPromocao = 'nenhuma';
+    const radioAtivo = document.querySelector('input[name="tipo_promocao"]:checked');
+    if (radioAtivo) tipoPromocao = radioAtivo.value;
 
-    // 🚀 NOVO: Captura os dados do Relógio Biológico da tela
-    const botoesAtivos = document.querySelectorAll('.btn-dia.ativo');
-    const promo_dias = Array.from(botoesAtivos).map(btn => btn.getAttribute('data-dia')).join(',');
-    const promo_inicio = document.getElementById('produto-promo-inicio') ? document.getElementById('produto-promo-inicio').value : '';
-    const promo_fim = document.getElementById('produto-promo-fim') ? document.getElementById('produto-promo-fim').value : '';
+    const gruposSelecionados = gruposSelecionadosTemporarios;
 
-    const dados = { 
-        nome, 
-        descricao, 
-        preco: parseFloat(preco), 
-        emoji, 
-        categoria, 
-        grupos_ids, 
-        ativo: true, 
-        imagem_url, 
-        venda_por_peso, 
-        tag,
-        tipo_promocao, 
-        valor_promocao,
-        promo_dias,     // 👈 NOVA
-        promo_inicio,   // 👈 NOVA
-        promo_fim       // 👈 NOVA
+    const dados = {
+        nome: nome,
+        descricao: lerSeguro('prod-descricao').trim(),
+        preco: preco,
+        emoji: lerSeguro('prod-emoji').trim(),
+        categoria: lerSeguro('prod-categoria', 'Outros'),
+        imagem_url: lerSeguro('produto-imagem').trim(),
+        venda_por_peso: lerCheckSeguro('prod-venda-peso'),
+        tag: lerSeguro('produto-tag'),
+        tipo_promocao: tipoPromocao,
+        valor_promocao: parseFloat(lerSeguro('prod-valor-promocao')) || 0,
+        promo_dias: diasSelecionados,
+        promo_inicio: lerSeguro('produto-promo-inicio'),
+        promo_fim: lerSeguro('produto-promo-fim'),
+        promo_pdv: lerCheckSeguro('produto-promo-pdv'),
+        grupos_ids: gruposSelecionados
     };
 
     try {
-        if (id) {
-            await fetch(`${API_URL}/produtos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+        const url = produtoEditandoId ? `${API_URL}/produtos/${produtoEditandoId}` : `${API_URL}/produtos`;
+        const method = produtoEditandoId ? 'PUT' : 'POST';
+
+        const resposta = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+
+        if (resposta.ok) {
+            fecharModalProduto();
+            await carregarTudo(); 
         } else {
-            await fetch(`${API_URL}/produtos`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dados) });
+            alert("❌ Erro ao salvar produto no banco de dados.");
         }
-        fecharModalProduto();
-        await carregarTudo(); 
-        if(typeof mostrarAvisoFlutuante === 'function') mostrarAvisoFlutuante("✅ Produto salvo com sucesso!", "#4CAF50");
     } catch (e) {
-        alert("❌ Erro ao salvar produto no banco de dados.");
+        alert("🔌 Erro de conexão. Verifique sua internet.");
+    } finally {
+        if (btn) {
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+        }
     }
 }
 
-async function excluirProduto(id) {
-    if(!confirm("⚠️ Tem certeza que deseja excluir este produto definitivamente?")) return;
-    try {
-        await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
-        await carregarTudo();
-    } catch (e) {
-        alert("❌ Erro ao excluir.");
-    }
-}
-
-// --- MOTOR DE GRUPOS ---
-
+// Restante das rotinas mantidas com segurança
 function abrirModalGrupo(id = null) {
     const modal = document.getElementById('modal-grupo');
-    const titulo = document.getElementById('titulo-modal-grupo');
-    const idInput = document.getElementById('grupo-id');
-    const nomeInput = document.getElementById('grupo-nome');
-    const limiteInput = document.getElementById('grupo-limite');
-    const obrigatorioInput = document.getElementById('grupo-obrigatorio');
-    const btnExcluir = document.getElementById('btn-excluir-grupo');
+    const titulo = document.getElementById('titulo-modal-grupo') || document.getElementById('modal-titulo-grupo');
 
-    if (id) { 
+    if (id) {
         const g = listaGrupos.find(x => x.id === id);
-        titulo.innerText = "Editar Grupo";
-        idInput.value = g.id;
-        nomeInput.value = g.nome;
-        limiteInput.value = g.limite;
-        obrigatorioInput.checked = (g.obrigatorio == 1 || g.obrigatorio == true || g.obrigatorio === 'true');
-        
-        if(btnExcluir) btnExcluir.style.display = 'block'; 
-    } else { 
-        titulo.innerText = "Novo Grupo";
-        idInput.value = '';
-        nomeInput.value = '';
-        limiteInput.value = '';
-        obrigatorioInput.checked = false;
-        
-        if(btnExcluir) btnExcluir.style.display = 'none'; 
+        if(titulo) titulo.innerText = "Editar Grupo";
+        document.getElementById('grupo-id').value = g.id;
+        document.getElementById('grupo-nome').value = g.nome;
+        document.getElementById('grupo-limite').value = g.limite;
+        document.getElementById('grupo-obrigatorio').checked = g.obrigatorio === true; 
+        document.getElementById('btn-excluir-grupo').style.display = 'block';
+    } else {
+        if(titulo) titulo.innerText = "Novo Grupo";
+        document.getElementById('grupo-id').value = '';
+        document.getElementById('grupo-nome').value = '';
+        document.getElementById('grupo-limite').value = '';
+        document.getElementById('grupo-obrigatorio').checked = false;
+        document.getElementById('btn-excluir-grupo').style.display = 'none';
     }
+    
     modal.style.display = 'flex';
 }
 
@@ -634,10 +648,6 @@ async function excluirGrupoModal() {
     } catch (e) {
         alert("🔌 Erro de conexão ao tentar excluir o grupo.");
     }
-}
-
-function abrirEdicaoGrupo(id) {
-    abrirModalGrupo(id);
 }
 
 async function salvarGrupo() {
@@ -702,6 +712,7 @@ function fecharGerenciadorCategorias() {
 
 function renderizarListaCategoriasAdmin() {
     const container = document.getElementById('lista-categorias-gerenciador');
+    if(!container) return;
     container.innerHTML = '';
 
     if (listaCategorias.length === 0) {
@@ -863,6 +874,7 @@ async function carregarBairrosAdmin() {
 
 function renderizarListaBairrosAdmin() {
     const container = document.getElementById('lista-bairros-gerenciador');
+    if(!container) return;
     container.innerHTML = '';
 
     if (listaBairros.length === 0) {
@@ -938,7 +950,6 @@ async function carregarCidadesAdmin() {
         if (!res.ok) throw new Error("Rota ausente");
         listaCidades = await res.json();
     } catch (e) { 
-        console.log("Banco de dados se adaptando. Retornando vazio.");
         listaCidades = []; 
     }
     renderizarListaCidadesAdmin();
@@ -946,6 +957,7 @@ async function carregarCidadesAdmin() {
 
 function renderizarListaCidadesAdmin() {
     const container = document.getElementById('lista-cidades-gerenciador');
+    if(!container) return;
     container.innerHTML = '';
 
     if (listaCidades.length === 0) {
@@ -1008,7 +1020,7 @@ async function abrirConfigPagamentos() {
             document.getElementById('mp-token-input').placeholder = 'APP_USR-... (Cole sua chave aqui)';
         }
     } catch (e) {
-        console.error("Erro ao carregar token do Mercado Pago", e);
+        console.error("Erro ao carregar token", e);
         document.getElementById('mp-token-input').placeholder = 'APP_USR-...';
     }
 }
@@ -1019,7 +1031,6 @@ function fecharConfigPagamentos() {
 
 async function salvarConfigPagamentos() {
     const token = document.getElementById('mp-token-input').value.trim();
-
     if (!token) return alert("⚠️ O campo do Access Token não pode ficar vazio!");
 
     const btn = document.getElementById('btn-salvar-pagamentos');
@@ -1033,7 +1044,7 @@ async function salvarConfigPagamentos() {
             body: JSON.stringify({ mp_access_token: token })
         });
         
-        alert("✅ Chave do Mercado Pago blindada e salva com sucesso! O Motor do Pix já está pronto para operar.");
+        alert("✅ Chave do Mercado Pago blindada e salva com sucesso!");
         fecharConfigPagamentos();
     } catch (e) {
         alert("❌ Erro de conexão ao tentar salvar a chave.");
@@ -1044,10 +1055,9 @@ async function salvarConfigPagamentos() {
 }
 
 // ==========================================
-// 🧠 INTELIGÊNCIA DOS BOTÕES DE AGENDAMENTO (NOVO)
+// 🧠 INTELIGÊNCIA DOS BOTÕES DE AGENDAMENTO E ESTOQUE
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Escutador global para os botões da semana, já que eles carregam com a tela
     document.querySelectorAll('.btn-dia').forEach(btn => {
         btn.addEventListener('click', function() {
             this.classList.toggle('ativo');
@@ -1055,9 +1065,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ==========================================
-// MÓDULO: CONTROLE RÁPIDO DE ESTOQUE
-// ==========================================
 function abrirModalEstoque() {
   document.getElementById('modalEstoque').style.display = 'block';
   carregarListaEstoque();
@@ -1077,11 +1084,9 @@ async function carregarListaEstoque() {
     divLista.innerHTML = '';
     
     produtos.forEach(p => {
-      // CORREÇÃO DO UNDEFINED: Força a ser Número. Se for vazio, vira 0.
       let estoqueAtual = Number(p.estoque) || 0; 
       let corEstoque = estoqueAtual > 0 ? '#2ed573' : '#ff4757';
       
-      // Adicionamos a classe 'item-estoque' e um 'data-nome' para a barra de pesquisa funcionar
       divLista.innerHTML += `
         <div class="item-estoque" data-nome="${p.nome.toLowerCase()}" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #f1f2f6; padding: 15px; border-radius: 8px; border-left: 5px solid ${corEstoque};">
           <div style="flex: 1; min-width: 150px;">
@@ -1091,21 +1096,17 @@ async function carregarListaEstoque() {
           
           <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
             <button onclick="alterarEstoque(${p.id}, ${estoqueAtual - 1})" style="background: #dfe4ea; border: none; padding: 10px 20px; font-size: 1.5em; border-radius: 5px; cursor: pointer; color: #333;">-</button>
-            
-            <!-- CAIXA DE DIGITAÇÃO PARA AJUSTE RÁPIDO (NOVO) -->
             <input type="number" value="${estoqueAtual}" onchange="alterarEstoque(${p.id}, Number(this.value))" style="font-size: 1.5em; font-weight: bold; width: 70px; text-align: center; color: #2f3542; border: 2px solid #dfe4ea; border-radius: 5px; padding: 5px; background: #ffffff;" />
-            
             <button onclick="alterarEstoque(${p.id}, ${estoqueAtual + 1})" style="background: #dfe4ea; border: none; padding: 10px 20px; font-size: 1.5em; border-radius: 5px; cursor: pointer; color: #333;">+</button>
           </div>
         </div>
       `;
     });
   } catch (erro) {
-    divLista.innerHTML = '<p>Erro técnico ao carregar os produtos. Chame o suporte.</p>';
+    divLista.innerHTML = '<p>Erro técnico ao carregar os produtos.</p>';
   }
 }
 
-// NOVA FUNÇÃO: Oculta os itens que não batem com o texto da pesquisa
 function filtrarEstoqueVisual() {
   let termo = document.getElementById('filtroEstoque').value.toLowerCase();
   let itens = document.querySelectorAll('.item-estoque');
@@ -1113,15 +1114,15 @@ function filtrarEstoqueVisual() {
   itens.forEach(item => {
     let nomeProduto = item.getAttribute('data-nome');
     if (nomeProduto.includes(termo)) {
-      item.style.display = 'flex'; // Mostra se bater o nome
+      item.style.display = 'flex'; 
     } else {
-      item.style.display = 'none'; // Esconde o resto (Shakes, Dois Amores, etc)
+      item.style.display = 'none'; 
     }
   });
 }
 
 async function alterarEstoque(idProduto, novoValor) {
-  if (novoValor < 0) novoValor = 0; // Proteção: Ninguém tem menos que zero de um picolé
+  if (novoValor < 0) novoValor = 0; 
   
   try {
     await fetch(`${API_URL}/produtos/${idProduto}/estoque`, {
@@ -1129,10 +1130,48 @@ async function alterarEstoque(idProduto, novoValor) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estoque: novoValor })
     });
-    
-    // Atualiza a tela discretamente em tempo real
     carregarListaEstoque();
   } catch (erro) {
     alert("Falha de comunicação com o sistema! Verifique a internet.");
   }
+}
+
+// ==========================================
+// INTELIGÊNCIA DE REORDENAÇÃO DE PRODUTOS
+// ==========================================
+let produtoArrastadoId = null;
+
+function dragStartProduto(id) {
+    produtoArrastadoId = id;
+}
+
+function dragOverProduto(event) {
+    event.preventDefault(); 
+}
+
+async function dropProduto(idDestino) {
+    if (produtoArrastadoId === null || produtoArrastadoId === idDestino) return;
+
+    const indexOrigem = listaProdutos.findIndex(p => p.id === produtoArrastadoId);
+    const indexDestino = listaProdutos.findIndex(p => p.id === idDestino);
+
+    const itemArrastado = listaProdutos.splice(indexOrigem, 1)[0];
+    listaProdutos.splice(indexDestino, 0, itemArrastado);
+
+    const termoFiltro = document.getElementById('filtro-produtos-gestao') ? document.getElementById('filtro-produtos-gestao').value : '';
+    renderizarProdutos(termoFiltro);
+
+    const novaOrdem = listaProdutos.map((p, index) => ({ id: p.id, ordem: index + 1 }));
+
+    try {
+        await fetch(`${API_URL}/produtos/ordem`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(novaOrdem)
+        });
+    } catch (e) {
+        console.error("Erro ao salvar ordem no servidor:", e);
+    } finally {
+        produtoArrastadoId = null;
+    }
 }

@@ -142,22 +142,108 @@ async function salvarPersonalizacao() {
     }
 }
 
-// === FUNÇÕES DO CARD 2 ===
-function renderizarListaDestaques(destaquesSalvos) {
+// === FUNÇÕES DO CARD 2 (CARROSSEL COM ORDENAÇÃO) ===
+
+// 1. Variável global para guardar a ordem exata na memória
+let carrosselAtual = []; 
+
+function renderizarListaDestaques(destaquesSalvos = null) {
     const container = document.getElementById('lista-produtos-destaque');
     container.innerHTML = '';
-    if (produtosGlobais.length === 0) return container.innerHTML = '<p style="color:#888; text-align:center;">Nenhum produto cadastrado.</p>';
+    
+    if (produtosGlobais.length === 0) {
+        return container.innerHTML = '<p style="color:#888; text-align:center;">Nenhum produto cadastrado.</p>';
+    }
 
-    produtosGlobais.forEach(p => {
-        const isChecked = destaquesSalvos.includes(Number(p.id)) ? 'checked' : '';
+    // Se estivermos carregando do banco de dados na primeira vez
+    if (destaquesSalvos !== null) {
+        carrosselAtual = destaquesSalvos;
+    }
+
+    // 2. Separa os produtos: Os que estão no carrossel (na ordem salva) e os que não estão
+    let selecionados = [];
+    carrosselAtual.forEach(idSalvo => {
+        const p = produtosGlobais.find(prod => Number(prod.id) === Number(idSalvo));
+        if (p) selecionados.push(p);
+    });
+
+    let naoSelecionados = produtosGlobais.filter(p => !carrosselAtual.includes(Number(p.id)));
+
+    // 3. Renderiza os SELECIONADOS no topo (Com fundo azul e botão de arrastar ☰)
+    selecionados.forEach((p, index) => {
         container.innerHTML += `
-            <label style="display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:5px; border:1px solid #ddd; cursor:pointer;">
-                <input type="checkbox" class="chk-destaque" value="${p.id}" ${isChecked} style="width:20px; height:20px; accent-color:#FF9800; cursor: pointer;">
+            <label class="item-linha" draggable="true" ondragstart="dragStartDestaque(${index})" ondragover="dragOverDestaque(event)" ondrop="dropDestaque(${index})" style="display:flex; align-items:center; gap:10px; padding:10px; background:#e0f7fa; border-radius:5px; border:1px solid #00bcd4; cursor:grab; margin-bottom: 5px; transition: 0.2s;">
+                <span style="color: #00bcd4; font-size: 1.2rem; cursor: grab; padding-right: 5px;" title="Arraste para reordenar">☰</span>
+                <input type="checkbox" class="chk-destaque" value="${p.id}" checked onchange="toggleDestaque(${p.id}, this.checked)" style="width:20px; height:20px; accent-color:#FF9800; cursor: pointer;">
+                <span style="font-weight:600; color:#00838f;">${p.nome}</span>
+                <span style="margin-left:auto; color:#25D366; font-weight:bold;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+            </label>
+        `;
+    });
+
+    // 4. Renderiza os NÃO SELECIONADOS em baixo (Brancos e normais)
+    naoSelecionados.forEach(p => {
+        container.innerHTML += `
+            <label style="display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:5px; border:1px solid #ddd; cursor:pointer; margin-bottom: 5px; transition: 0.2s;">
+                <span style="color: transparent; font-size: 1.2rem; width: 1.2rem; display:inline-block; padding-right: 5px;"></span>
+                <input type="checkbox" class="chk-destaque" value="${p.id}" onchange="toggleDestaque(${p.id}, this.checked)" style="width:20px; height:20px; accent-color:#FF9800; cursor: pointer;">
                 <span style="font-weight:600; color:#333;">${p.nome}</span>
                 <span style="margin-left:auto; color:#25D366; font-weight:bold;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
             </label>
         `;
     });
+}
+
+// 5. Função que joga o produto pra cima (selecionado) ou pra baixo (desmarcado) na hora do clique
+function toggleDestaque(idProduto, isChecked) {
+    const idNum = Number(idProduto);
+    if (isChecked) {
+        if (!carrosselAtual.includes(idNum)) carrosselAtual.push(idNum);
+    } else {
+        carrosselAtual = carrosselAtual.filter(id => id !== idNum);
+    }
+    renderizarListaDestaques(); // Atualiza a tela instantaneamente
+}
+
+// ==========================================
+// INTELIGÊNCIA DE ARRASTAR E SOLTAR (☰)
+// ==========================================
+let arrastadoDestaqueIndex = null;
+
+function dragStartDestaque(index) {
+    arrastadoDestaqueIndex = index;
+}
+
+function dragOverDestaque(event) {
+    event.preventDefault(); // Permite que o item "caia" aqui
+}
+
+function dropDestaque(indexDestino) {
+    if (arrastadoDestaqueIndex === null || arrastadoDestaqueIndex === indexDestino) return;
+
+    // Remove o item da posição antiga e encaixa na nova
+    const itemArrastadoId = carrosselAtual.splice(arrastadoDestaqueIndex, 1)[0];
+    carrosselAtual.splice(indexDestino, 0, itemArrastadoId);
+
+    // Atualiza a tela com a nova ordem
+    renderizarListaDestaques();
+}
+
+// 6. Função de salvar super otimizada
+async function salvarDestaques() {
+    const btn = document.getElementById('btn-salvar-destaques');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Salvando...";
+    btn.style.backgroundColor = "#888";
+
+    // Pega o título personalizado
+    const novoTitulo = document.getElementById('input-titulo-destaques') ? document.getElementById('input-titulo-destaques').value.trim() || 'Destaques da Casa' : 'Destaques da Casa';
+
+    // Salva a lista na exata ordem que o cliente montou (que está gravada no carrosselAtual)
+    enviarParaNuvem({ 
+        carrossel_destaques: JSON.stringify(carrosselAtual),
+        titulo_carrossel_destaques: novoTitulo
+    }, btn, textoOriginal, "#FF9800");
 }
 
 async function salvarDestaques() {

@@ -17,8 +17,13 @@ async function checarNovosPedidosGlobal() {
             if (v.id > maxIdAtual) maxIdAtual = v.id;
         });
 
-        // Se encontrou um ID maior, é venda nova!
-        if (!radarGlobal_primeiraCarga && maxIdAtual > radarGlobal_ultimoId) {
+        // Filtra para ver se as vendas novas são realmente de Delivery (Ignora as "Concluídas" do balcão)
+        const vendasNovas = vendas.filter(v => v.id > radarGlobal_ultimoId);
+        const ehPedidoDelivery = vendasNovas.some(v => v.status === 'Pendente' || v.status === 'Pendente Delivery');
+
+        // Só apita se encontrou ID maior E se o pedido novo for para a cozinha!
+        if (!radarGlobal_primeiraCarga && maxIdAtual > radarGlobal_ultimoId && ehPedidoDelivery) {
+            
             
             // 1. Toca a campainha (O '/kanban/' garante que ache não importa a pasta da tela atual)
             try {

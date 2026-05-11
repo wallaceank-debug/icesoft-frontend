@@ -761,30 +761,3 @@ async function removerItemDaMesa(index) {
         alert("🔌 Erro de conexão ao tentar cancelar o item. Verifique a internet.");
     }
 }
-
-
-function mostrarAlertaVisualDelivery() {
-    let bolha = document.getElementById('alerta-bolha-delivery');
-    if (!bolha) {
-        // Cria a animação de piscar (Efeito Sirene)
-        const style = document.createElement('style');
-        style.innerHTML = `@keyframes piscarAlerta { 0% { background: #e91e63; transform: scale(1); } 100% { background: #ff4081; transform: scale(1.05); } }`;
-        document.head.appendChild(style);
-
-        // Cria o botão flutuante na tela
-        bolha = document.createElement('div');
-        bolha.id = 'alerta-bolha-delivery';
-        bolha.innerHTML = `🚨 <strong>NOVO DELIVERY!</strong><br><span style="font-size:0.85rem">Clique aqui para abrir o Kanban</span>`;
-        bolha.style.cssText = "position:fixed; bottom:30px; right:30px; background:#e91e63; color:white; padding:15px 20px; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.4); z-index:99999; cursor:pointer; font-family:sans-serif; text-align:center; animation: piscarAlerta 0.6s infinite alternate;";
-        
-        // Quando você clica na bolha, ele te joga direto para a tela do Kanban!
-        bolha.onclick = () => window.location.href = '../kanban/';
-        
-        document.body.appendChild(bolha);
-    }
-}
-
-// Inicializa o radar 3 segundos após você abrir o PDV/Mesas
-setTimeout(checarNovosPedidosGlobal, 3000);
-// Fica vasculhando a API em busca de pedidos a cada 15 segundos
-setInterval(checarNovosPedidosGlobal, 15000);
