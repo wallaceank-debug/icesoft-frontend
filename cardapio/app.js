@@ -1554,8 +1554,8 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
         const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
         
         if (compras.length > 0) {
-            // Filtra pedidos cancelados para não dar pontos indevidos
-            const comprasValidas = compras.filter(c => c.status !== 'Cancelado');
+            // Filtra pedidos cancelados para não dar pontos indevidos (Cobre os dois gêneros de palavras)
+            const comprasValidas = compras.filter(c => c.status !== 'Cancelado' && c.status !== 'Cancelada');
             
             // Pega o pedido mais recente dele
             const ultimoPedido = compras.reduce((max, p) => p.id > max.id ? p : max, compras[0]);
