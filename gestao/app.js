@@ -547,6 +547,35 @@ async function salvarProduto() {
         btn.disabled = true;
     }
 
+    // ==========================================
+    // 📸 MÁGICA DO UPLOAD DE IMAGEM ANTES DE SALVAR
+    // ==========================================
+    let imagemFinalUrl = lerSeguro('produto-imagem').trim();
+    const inputArquivo = document.getElementById('produto-arquivo-foto');
+    
+    // Se o usuário escolheu um arquivo do PC/Celular, envia pro servidor primeiro!
+    if (inputArquivo && inputArquivo.files.length > 0) {
+        const formData = new FormData();
+        formData.append('imagem', inputArquivo.files[0]);
+        
+        try {
+            const resUpload = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+            const dadosUpload = await resUpload.json();
+            
+            if (dadosUpload.sucesso) {
+                imagemFinalUrl = dadosUpload.url; // Pega o link blindado que o servidor gerou
+            } else {
+                alert("⚠️ Erro no upload da foto: " + dadosUpload.erro);
+                if (btn) { btn.innerText = textoOriginal; btn.disabled = false; }
+                return; // Interrompe o salvamento se a foto falhar
+            }
+        } catch (e) {
+            alert("🔌 Erro de conexão ao enviar a foto para a nuvem.");
+            if (btn) { btn.innerText = textoOriginal; btn.disabled = false; }
+            return;
+        }
+    }
+
     const diasSelecionados = Array.from(document.querySelectorAll('.btn-dia.ativo')).map(b => b.getAttribute('data-dia')).join(',');
 
     let tipoPromocao = 'nenhuma';
@@ -561,7 +590,7 @@ async function salvarProduto() {
         preco: preco,
         emoji: lerSeguro('prod-emoji').trim(),
         categoria: lerSeguro('prod-categoria', 'Outros'),
-        imagem_url: lerSeguro('produto-imagem').trim(),
+        imagem_url: imagemFinalUrl, // <-- AGORA ELE USA O LINK CERTO (Nuvem ou Antigo)
         venda_por_peso: lerCheckSeguro('prod-venda-peso'),
         tag: lerSeguro('produto-tag'),
         tipo_promocao: tipoPromocao,
