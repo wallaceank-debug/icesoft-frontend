@@ -7,8 +7,15 @@
     <style>
         body { font-family: 'Poppins', sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
         .container-funil { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        h1 { text-align: center; color: #e91e63; margin-bottom: 40px; }
+        h1 { text-align: center; color: #e91e63; margin-bottom: 20px; }
         
+        /* Barra de Filtros */
+        .filtros { display: flex; gap: 15px; align-items: center; justify-content: center; background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 30px; flex-wrap: wrap; }
+        .filtros label { font-weight: bold; font-size: 0.9rem; color: #555; margin-right: 5px; }
+        .filtros input[type="date"] { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; outline: none; }
+        .btn-filtrar { padding: 9px 25px; background-color: #e91e63; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s; box-shadow: 0 4px 10px rgba(233, 30, 99, 0.2); }
+        .btn-filtrar:hover { background-color: #c2185b; transform: translateY(-2px); }
+
         .etapa-funil { display: flex; align-items: center; margin-bottom: 15px; position: relative; }
         .barra-funil { height: 50px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border-radius: 8px; transition: width 1s ease-in-out; min-width: 100px; }
         .info-etapa { margin-left: 20px; flex: 1; }
@@ -22,15 +29,27 @@
         #barra-vendas { background: #27ae60; width: 20%; }
 
         .metricas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; border-top: 2px solid #eee; padding-top: 30px; }
-        .card-metrica { background: #f9f9f9; padding: 15px; border-radius: 12px; text-align: center; }
+        .card-metrica { background: #f9f9f9; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #eee; }
         .card-metrica strong { display: block; font-size: 1.5rem; color: #e91e63; }
-        .card-metrica span { font-size: 0.8rem; color: #666; }
+        .card-metrica span { font-size: 0.8rem; color: #666; font-weight: 600; }
     </style>
 </head>
 <body>
     <div class="container-funil">
         <h1>📊 Funil de Vendas Online</h1>
         
+        <div class="filtros">
+            <div>
+                <label>Início:</label>
+                <input type="date" id="dataInicio">
+            </div>
+            <div>
+                <label>Fim:</label>
+                <input type="date" id="dataFim">
+            </div>
+            <button class="btn-filtrar" onclick="carregarFunil()">🔍 Filtrar</button>
+        </div>
+
         <div id="corpo-funil">
             <div class="etapa-funil">
                 <div id="barra-visitantes" class="barra-funil">Visitantes</div>
@@ -69,15 +88,35 @@
             </div>
         </div>
         
-        <button onclick="window.history.back()" style="margin-top: 30px; width: 100%; padding: 12px; border: none; background: #eee; border-radius: 10px; cursor: pointer; font-weight: bold;">Voltar</button>
+        <button onclick="window.history.back()" style="margin-top: 30px; width: 100%; padding: 15px; border: 1px solid #ddd; background: #fafafa; border-radius: 10px; cursor: pointer; font-weight: bold; color: #555; transition: 0.2s;">⬅️ Voltar para o Painel</button>
     </div>
 
     <script>
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 
+        function configurarDatasPadrao() {
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+
+            document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
+            document.getElementById('dataInicio').value = trintaDiasAtras.toISOString().split('T')[0];
+        }
+
         async function carregarFunil() {
             try {
-                const res = await fetch(`${API_URL}/relatorios/funil`);
+                // Efeito de carregamento nos números
+                document.querySelectorAll('.info-etapa strong').forEach(el => el.innerText = "...");
+                
+                const inicio = document.getElementById('dataInicio').value;
+                const fim = document.getElementById('dataFim').value;
+                
+                // Mágica da URL: Se tiver data, ele envia, senão puxa tudo
+                const urlFetch = (inicio && fim) 
+                    ? `${API_URL}/relatorios/funil?inicio=${inicio}&fim=${fim}` 
+                    : `${API_URL}/relatorios/funil`;
+
+                const res = await fetch(urlFetch);
                 const d = await res.json();
 
                 // Atualiza Números
@@ -113,7 +152,10 @@
             } catch (e) { alert("Erro ao carregar o funil."); }
         }
 
-        window.onload = carregarFunil;
+        window.onload = () => {
+            configurarDatasPadrao();
+            carregarFunil();
+        };
     </script>
 </body>
 </html>
