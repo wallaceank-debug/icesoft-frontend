@@ -128,6 +128,9 @@ function renderizarGradeProdutos(lista) {
         return;
     }
 
+    // 🌐 MÁGICA DA URL: Pega o link da API e tira o "/api" do final
+    const BASE_URL = API_URL.replace('/api', '');
+
     lista.forEach(p => {
         // 💰 Aplica lógica visual de promoção no PDV
         let precoCalculado = calcularPrecoComDesconto(p);
@@ -142,10 +145,16 @@ function renderizarGradeProdutos(lista) {
             `;
         }
 
-        const visualProduto = p.imagem_url 
+        // 📸 CORREÇÃO DA IMAGEM: Se começar com "/uploads", bota o Easypanel na frente!
+        let urlFoto = p.imagem_url;
+        if (urlFoto && urlFoto.startsWith('/uploads/')) {
+            urlFoto = BASE_URL + urlFoto;
+        }
+
+        const visualProduto = urlFoto 
             ? `<div style="position:relative;">
                 ${precoCalculado < Number(p.preco) ? '<span style="position:absolute; top:5px; right:5px; background:#6200ea; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:10px; z-index:2;">PROMO</span>' : ''}
-                <img src="${p.imagem_url}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <img src="${urlFoto}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                </div>`
             : `<div class="pdv-emoji" style="height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 8px; position:relative;">
                 ${precoCalculado < Number(p.preco) ? '<span style="position:absolute; top:5px; right:5px; background:#6200ea; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:10px;">PROMO</span>' : ''}
