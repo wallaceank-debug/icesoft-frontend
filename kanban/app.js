@@ -397,7 +397,16 @@ function imprimirComandaKanban(venda) {
 }
 
 window.onload = () => {
-    restaurarMemoriaDoSom(); // 🧠 Lembra se o som estava ligado
-    carregarPedidos();       // 📦 Carrega os pedidos normalmente
+    restaurarMemoriaDoSom();
+    carregarPedidos();
+
+    // Conecta no rádio do servidor
+    const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+
+    // Fica ouvindo. Se o servidor gritar 'novo_pedido_kanban', executa isso:
+    socket.on('novo_pedido_kanban', (dados) => {
+        console.log("Chegou um pedido em tempo real!", dados);
+        carregarPedidos(); // Recarrega a tela e toca o som se ativado
+    });
 };
-setInterval(carregarPedidos, 15000);
+// setInterval(carregarPedidos, 15000); // <-- Pode apagar ou comentar isso
