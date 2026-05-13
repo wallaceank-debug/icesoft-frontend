@@ -336,16 +336,30 @@
 
     function renderizarTela() {
         let faturamentoTotal = 0;
+        let qtdPedidosValidos = 0; // 🚀 Nova variável para contar apenas pedidos que deram lucro
+        
         const tbody = document.getElementById('tabela-vendas');
         tbody.innerHTML = '';
 
         if (listaVendas.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhuma venda encontrada neste período.</td></tr>';
+            document.getElementById('resumo-total').innerText = "R$ 0,00";
+            document.getElementById('resumo-qtd').innerText = "0";
+            document.getElementById('resumo-ticket').innerText = "R$ 0,00";
+            return;
         }
 
         listaVendas.forEach((venda, index) => {
             const valorVenda = parseFloat(venda.valor_total) || 0;
-            faturamentoTotal += valorVenda;
+            
+            // 🛑 CÉREBRO: Verifica se o pedido está cancelado
+            const isCancelado = venda.status && venda.status.toLowerCase().includes('cancelad');
+
+            // 💰 MATEMÁTICA: Só soma no caixa e no ticket médio se NÃO estiver cancelado
+            if (!isCancelado) {
+                faturamentoTotal += valorVenda;
+                qtdPedidosValidos++;
+            }
 
             let corOrigem = 'bg-balcao';
             if(venda.origem === 'Delivery') corOrigem = 'bg-delivery';
@@ -374,22 +388,32 @@
                 ? `<div style="font-weight: bold; color: #333; margin-bottom: 2px;">👤 ${venda.cliente_nome}</div><div style="color: #666; font-size: 0.85rem;">${resumoAmigavel}</div>` 
                 : `<div style="color: #333; font-weight: 500;">${resumoAmigavel}</div>`;
 
+            // 🎨 MÁGICA VISUAL DOS CANCELADOS
+            let statusHtml = isCancelado 
+                ? `<small style="color:white; background:#f44336; padding: 2px 8px; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 4px rgba(244,67,54,0.3);">🚨 CANCELADO</small>` 
+                : `<small style="color:#888; background:#f0f2f5; padding: 2px 6px; border-radius: 4px;">${venda.status}</small>`;
+                
+            let estiloLinha = isCancelado ? 'opacity: 0.55; background-color: #fffafb;' : '';
+            let corPreco = isCancelado ? '#999' : '#e91e63';
+            let decoracaoPreco = isCancelado ? 'text-decoration: line-through;' : '';
+
             const tr = document.createElement('tr');
             tr.onclick = () => abrirModalDetalhes(index);
+            tr.style.cssText = estiloLinha; // Aplica a opacidade na linha toda
             tr.innerHTML = `
                 <td>${formatarData(venda.data_hora)}</td>
                 <td><span class="badge-origem ${corOrigem}">${venda.origem || 'Balcão'}</span></td>
-                <td>${textoColunaPrincipal}<div style="margin-top: 4px;"><small style="color:#888; background:#f0f2f5; padding: 2px 6px; border-radius: 4px;">${venda.status}</small></div></td>
-                <td style="font-weight: 900; color: #e91e63; font-size: 1.1rem;">${formatarMoeda(valorVenda)}</td>
+                <td>${textoColunaPrincipal}<div style="margin-top: 6px;">${statusHtml}</div></td>
+                <td style="font-weight: 900; color: ${corPreco}; font-size: 1.1rem; ${decoracaoPreco}">${formatarMoeda(valorVenda)}</td>
             `;
             tbody.appendChild(tr);
         });
 
-        const qtdPedidos = listaVendas.length;
-        const ticketMedio = qtdPedidos > 0 ? (faturamentoTotal / qtdPedidos) : 0;
+        // Atualiza os cartões lá em cima usando apenas os válidos!
+        const ticketMedio = qtdPedidosValidos > 0 ? (faturamentoTotal / qtdPedidosValidos) : 0;
 
         document.getElementById('resumo-total').innerText = formatarMoeda(faturamentoTotal);
-        document.getElementById('resumo-qtd').innerText = qtdPedidos;
+        document.getElementById('resumo-qtd').innerText = qtdPedidosValidos;
         document.getElementById('resumo-ticket').innerText = formatarMoeda(ticketMedio);
     }
 
