@@ -16,6 +16,7 @@ async function carregarConfiguracoes() {
         if (configs.zap_instancia) document.getElementById('api-zap-instancia').value = configs.zap_instancia;
 
         if (configs.msg_boas_vindas) document.getElementById('msg-boas-vindas').value = configs.msg_boas_vindas;
+        if (configs.msg_recebido) document.getElementById('msg-recebido').value = configs.msg_recebido;
         if (configs.msg_aceito) document.getElementById('msg-aceito').value = configs.msg_aceito;
         if (configs.msg_entrega) document.getElementById('msg-entrega').value = configs.msg_entrega;
         if (configs.msg_concluido) document.getElementById('msg-concluido').value = configs.msg_concluido;
@@ -59,6 +60,7 @@ async function salvarMensagens() {
 
     const payload = {
         msg_boas_vindas: document.getElementById('msg-boas-vindas').value,
+        msg_recebido: document.getElementById('msg-recebido').value,
         msg_aceito: document.getElementById('msg-aceito').value,
         msg_entrega: document.getElementById('msg-entrega').value,
         msg_concluido: document.getElementById('msg-concluido').value
