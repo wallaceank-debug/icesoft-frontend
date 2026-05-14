@@ -2,7 +2,7 @@ const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/ap
 let listaProdutos = [];
 let listaGrupos = [];
 let grupoSelecionadoId = null;
-let produtoEditandoId = null; // Memória para saber se está editando ou criando
+let produtoEditandoId = null; 
 
 window.onload = async () => {
     await carregarTudo();
@@ -30,7 +30,10 @@ async function carregarTudo() {
         listaGrupos = await resGrupos.json();
         listaCategorias = await resCat.json(); 
         
-        renderizarProdutos();
+        // 🚀 CORREÇÃO: Mantém o texto da pesquisa ativo ao recarregar a tela após salvar!
+        const termoAtual = document.getElementById('filtro-produtos-gestao') ? document.getElementById('filtro-produtos-gestao').value : '';
+        
+        renderizarProdutos(termoAtual);
         renderizarGrupos();
         preencherSelectCategorias(); 
         
