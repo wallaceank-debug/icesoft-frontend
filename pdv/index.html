@@ -329,7 +329,7 @@
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
+                <div style="flex: 1.2;">
                     <label style="font-weight: bold; color: #555; font-size: 0.9rem;">💳 Pagamento</label>
                     <select id="pdv-forma-pagamento" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; margin-top: 5px;">
                         <option value="Dinheiro">💵 Dinheiro</option>
@@ -339,8 +339,12 @@
                     </select>
                 </div>
                 <div style="flex: 1;">
-                    <label style="font-weight: bold; color: #555; font-size: 0.9rem;">💵 Troco p/ (Opcional)</label>
+                    <label style="font-weight: bold; color: #555; font-size: 0.9rem;">💵 Troco p/</label>
                     <input type="text" id="pdv-cliente-troco" placeholder="Ex: 50" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; margin-top: 5px; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight: bold; color: #00bcd4; font-size: 0.9rem;">🛵 Taxa (R$)</label>
+                    <input type="number" step="0.01" id="pdv-taxa-entrega" placeholder="Ex: 5.00" style="width:100%; padding:10px; border:1px solid #00bcd4; border-radius:8px; font-size: 0.95rem; margin-top: 5px; box-sizing: border-box; background: #e0f7fa; color: #00838f; font-weight: bold;">
                 </div>
             </div>
 

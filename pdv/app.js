@@ -923,6 +923,9 @@ async function transferirParaMesa(numeroMesa) {
     } catch (e) { alert("Erro de conexão. Verifique a internet."); }
 }
 
+// ==========================================
+// ABRIR O MODAL E LIMPAR OS CAMPOS (INCLUINDO A TAXA)
+// ==========================================
 function abrirModalDeliveryPDV() {
     if (carrinho.length === 0) return alert("⚠️ Adicione produtos ao carrinho antes de lançar o Delivery!");
     document.getElementById('pdv-cliente-telefone').value = '';
@@ -932,6 +935,7 @@ function abrirModalDeliveryPDV() {
     document.getElementById('pdv-cliente-numero').value = '';
     document.getElementById('pdv-cliente-complemento').value = '';
     document.getElementById('pdv-cliente-troco').value = '';
+    document.getElementById('pdv-taxa-entrega').value = ''; // 👈 NOVO: Limpando a taxa
     document.getElementById('badge-crm-pdv').style.display = 'none';
     document.getElementById('modal-delivery-pdv').style.display = 'flex';
 }
@@ -994,6 +998,9 @@ function padronizarTelefonePDV(numeroBruto) {
     return numeroBruto; 
 }
 
+// ==========================================
+// FINALIZAR O PEDIDO SOMANDO A TAXA
+// ==========================================
 async function finalizarDeliveryPDV() {
     const btnSalvar = document.querySelector('#modal-delivery-pdv button[onclick="finalizarDeliveryPDV()"]');
     const telefoneBruto = document.getElementById('pdv-cliente-telefone').value.trim();
@@ -1013,7 +1020,12 @@ async function finalizarDeliveryPDV() {
     const troco = document.getElementById('pdv-cliente-troco').value.trim();
     if (pagamento === 'Dinheiro' && troco) pagamento += ` (Troco para ${troco})`;
 
-    let totalCobranca = totalFinalGlobal;
+    // 👇 NOVO: Lendo a taxa de entrega digitada
+    const taxaInput = document.getElementById('pdv-taxa-entrega').value.replace(',', '.');
+    const taxaEntrega = parseFloat(taxaInput) || 0;
+
+    // 👇 NOVO: Somando a taxa ao total do pedido
+    let totalCobranca = totalFinalGlobal + taxaEntrega;
     
     const itensFormatados = carrinho.map(item => {
         let nomeCompleto = "Delivery: " + item.nomeBase;
@@ -1022,6 +1034,11 @@ async function finalizarDeliveryPDV() {
         }
         return { nome: nomeCompleto, preco: item.preco };
     });
+
+    // 👇 NOVO: Inserindo a taxa de entrega como um item para aparecer na cozinha e no Kanban
+    if (taxaEntrega > 0) {
+        itensFormatados.push({ nome: "🛵 Taxa de Entrega", preco: taxaEntrega });
+    }
 
     btnSalvar.innerText = 'Enviando...';
     btnSalvar.disabled = true;
