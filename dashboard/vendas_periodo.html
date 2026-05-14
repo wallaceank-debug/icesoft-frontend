@@ -413,10 +413,16 @@
                         <span style="font-size: 1.1rem;">📅</span> 
                         <div><span style="color: #888; font-size: 0.8rem; display: block;">Data e Hora</span> <strong>${dataFormatada}</strong></div>
                     </div>
+                    
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 1.1rem;">💳</span> 
-                        <div><span style="color: #888; font-size: 0.8rem; display: block;">Pagamento</span> <strong style="color: #e91e63;">${venda.forma_pagamento || 'Não Informado'}</strong></div>
+                        <div id="box-pagamento-${venda.id}">
+                            <span style="color: #888; font-size: 0.8rem; display: block;">Pagamento</span> 
+                            <strong style="color: #e91e63;">${venda.forma_pagamento || 'Não Informado'}</strong>
+                            ${!isCancelado ? `<button onclick="event.stopPropagation(); renderizarEdicaoPagamento(${venda.id}, '${venda.forma_pagamento || ''}', ${index})" style="background:none; border:none; cursor:pointer; padding:0; margin-left: 5px; font-size: 0.9rem; transition: 0.2s;" title="Editar Pagamento">✏️</button>` : ''}
+                        </div>
                     </div>
+
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 1.1rem;">📍</span> 
                         <div><span style="color: #888; font-size: 0.8rem; display: block;">Origem</span> <strong>${venda.origem || 'Balcão'}</strong></div>
@@ -497,7 +503,7 @@
             `;
         }
 
-        // 🚀 BOTAO DE CANCELAMENTO AQUI
+        // 🚀 BOTAO DE CANCELAMENTO
         let botoesAcao = '';
         if (!isCancelado) {
             botoesAcao = `
@@ -512,6 +518,61 @@
         document.getElementById('modal-corpo').innerHTML = htmlInteligencia + htmlItens + botoesAcao;
         document.getElementById('modalDetalhes').style.display = 'flex';
     }
+
+    // ==========================================
+    // MÁGICA DA EDIÇÃO DE PAGAMENTO
+    // ==========================================
+    function renderizarEdicaoPagamento(idPedido, pagamentoAtual, indexNaLista) {
+        const box = document.getElementById(`box-pagamento-${idPedido}`);
+        
+        // Impede que o clique feche ou mexa no HTML sem querer
+        event.stopPropagation(); 
+        
+        const valorEmAlta = pagamentoAtual.toUpperCase();
+
+        box.innerHTML = `
+            <span style="color: #888; font-size: 0.8rem; display: block;">Alterar para:</span> 
+            <select id="novo-pagamento-${idPedido}" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-family: inherit; margin-bottom: 5px; width: 100%; outline: none;">
+                <option value="PIX" ${valorEmAlta.includes('PIX') ? 'selected' : ''}>PIX</option>
+                <option value="Dinheiro" ${valorEmAlta.includes('DINHEIRO') ? 'selected' : ''}>Dinheiro</option>
+                <option value="Cartão de Crédito" ${valorEmAlta.includes('CRÉDITO') ? 'selected' : ''}>Cartão de Crédito</option>
+                <option value="Cartão de Débito" ${valorEmAlta.includes('DÉBITO') ? 'selected' : ''}>Cartão de Débito</option>
+            </select>
+            <div style="display: flex; gap: 5px;">
+                <button onclick="salvarNovoPagamento(event, ${idPedido})" style="background: #00bcd4; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex: 1; transition: 0.2s;">Salvar</button>
+                <button onclick="abrirModalDetalhes(${indexNaLista})" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: 0.2s;">X</button>
+            </div>
+        `;
+    }
+
+    async function salvarNovoPagamento(eventoBotao, idPedido) {
+        eventoBotao.stopPropagation();
+        
+        const novaForma = document.getElementById(`novo-pagamento-${idPedido}`).value;
+        const btn = eventoBotao.target;
+        btn.innerText = '⏳';
+        
+        try {
+            const resposta = await fetch(`${API_URL}/vendas/${idPedido}/pagamento`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ forma_pagamento: novaForma })
+            });
+
+            if (resposta.ok) {
+                fecharModal();
+                buscarVendas(); // Isso recarrega a tabela e mostra o método novo instantaneamente
+            } else {
+                alert("⚠️ Erro ao atualizar o pagamento no banco de dados.");
+                btn.innerText = 'Salvar';
+            }
+        } catch (erro) {
+            console.error(erro);
+            alert("⚠️ Erro de conexão com o servidor.");
+            btn.innerText = 'Salvar';
+        }
+    }
+
 
     // 🚀 FUNÇÃO QUE FAZ O CANCELAMENTO NO SERVIDOR
     async function cancelarPedido(idPedido) {
