@@ -49,18 +49,17 @@ async function carregarDadosIniciais() {
 // ==========================================
 function isPromocaoAtivaAgora(p) {
     // 1. Regra de Ouro: A caixinha de "Aplicar no PDV" DEVE estar marcada
-    if (p.promo_pdv !== true) return false; 
+    if (p.promo_pdv !== true && p.promo_pdv !== 'true') return false; 
     if (!p.tipo_promocao || p.tipo_promocao === 'nenhuma') return false;
 
     try {
-        // Validação de Dias da Semana
+        // 2. Validação de Dias da Semana (Corrigido para ler números)
         if (p.promo_dias && p.promo_dias !== '') {
-            const diasMapa = {"Domingo":0, "Segunda":1, "Terça":2, "Quarta":3, "Quinta":4, "Sexta":5, "Sábado":6};
-            const hoje = new Date().getDay();
-            const diasAtivos = p.promo_dias.split(',').map(d => diasMapa[d.trim()]);
+            const hoje = new Date().getDay().toString(); // Pega o dia de hoje (0 a 6)
+            const diasAtivos = p.promo_dias.split(',').map(d => d.trim());
             if (!diasAtivos.includes(hoje)) return false;
         }
-        // Validação de Horário
+        // 3. Validação de Horário
         if (p.promo_inicio && p.promo_fim) {
             const agora = new Date();
             const horaAtual = agora.getHours() * 60 + agora.getMinutes();
@@ -73,6 +72,18 @@ function isPromocaoAtivaAgora(p) {
     } catch(e) { return false; }
     
     return true;
+}
+
+function calcularPrecoComDesconto(p) {
+    let preco = Number(p.preco);
+    if (isPromocaoAtivaAgora(p)) {
+        if (p.tipo_promocao === 'porcentagem') {
+            preco -= preco * (Number(p.valor_promocao) / 100);
+        } else if (p.tipo_promocao === 'fixo') {
+            preco -= Number(p.valor_promocao);
+        }
+    }
+    return preco > 0 ? preco : 0;
 }
 
 function calcularPrecoComDesconto(p) {
