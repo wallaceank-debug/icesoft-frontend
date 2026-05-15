@@ -1,5 +1,6 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 
+// 🧠 O MAPEAMENTO DAS COLUNAS QUE HAVIA SUMIDO
 const COLUNAS_ID = {
     'Pendente Delivery': 'corpo-analise',
     'A Preparar': 'corpo-preparar',
@@ -12,6 +13,9 @@ let pedidosGlobais = [];
 let qtdPendentesAnterior = -1; 
 let pedidosJaImpressos = []; 
 
+// ==========================================
+// BUSCAR PEDIDOS NO SERVIDOR
+// ==========================================
 async function carregarPedidos() {
     try {
         const res = await fetch(`${API_URL}/vendas`);
@@ -54,6 +58,9 @@ async function carregarPedidos() {
     }
 }
 
+// ==========================================
+// SISTEMA DE ÁUDIO E CAMPAINHA
+// ==========================================
 let somAtivado = false;
 const audioCampainha = new Audio('campainha.mp3');
 
@@ -62,7 +69,7 @@ function ativarSom() {
     somAtivado = !somAtivado; 
 
     if (somAtivado) {
-        localStorage.setItem('statusSomKanban', 'ligado'); // 💾 Salva no "Memory Card"
+        localStorage.setItem('statusSomKanban', 'ligado'); 
         btn.innerHTML = '🔔 Alerta Sonoro: ATIVADO';
         btn.style.background = '#4CAF50'; 
         
@@ -71,13 +78,12 @@ function ativarSom() {
             setTimeout(() => { audioCampainha.volume = 1.0; }, 500);
         }).catch(e => console.log("Navegador aguardando interação."));
     } else {
-        localStorage.setItem('statusSomKanban', 'desligado'); // 💾 Salva no "Memory Card"
+        localStorage.setItem('statusSomKanban', 'desligado'); 
         btn.innerHTML = '🔇 Alerta Sonoro: Desativado';
         btn.style.background = '#f44336'; 
     }
 }
 
-// 🧠 FUNÇÃO NOVA: Puxa a memória quando a página atualiza
 function restaurarMemoriaDoSom() {
     const memoria = localStorage.getItem('statusSomKanban');
     const btn = document.getElementById('btn-som');
@@ -93,58 +99,58 @@ function restaurarMemoriaDoSom() {
 
 function tocarCampainha() {
     if (!somAtivado) return; 
-
     try {
         audioCampainha.currentTime = 0; 
         audioCampainha.volume = 1.0; 
         audioCampainha.play();
-    } catch(e) {
-        console.log("Erro ao tocar a campainha:", e);
-    }
+    } catch(e) { console.log("Erro ao tocar a campainha:", e); }
 }
 
-// 🧮 FUNÇÃO NOVA: CALCULADORA DE TROCO INTELIGENTE
+// ==========================================
+// CALCULADORA DE TROCO
+// ==========================================
 function formatarPagamentoComTroco(pagamentoOriginal, valorTotal) {
     if (!pagamentoOriginal) return 'N/A';
-    
     const textoPagamento = pagamentoOriginal.toString();
     
     if (textoPagamento.includes('Troco para')) {
         try {
-            const regex = /Troco para ([\d.,]+)/i;
-            const match = textoPagamento.match(regex);
-            
+            const match = textoPagamento.match(/Troco para ([\d.,]+)/i);
             if (match && match[1]) {
                 const valorParaTroco = parseFloat(match[1].replace(',', '.'));
                 const totalPedido = parseFloat(valorTotal);
                 
                 if (!isNaN(valorParaTroco) && !isNaN(totalPedido)) {
                     const valorTrocoCalculado = valorParaTroco - totalPedido;
-                    
-                    if (valorTrocoCalculado > 0) {
-                        return `Dinheiro (Levar R$ ${valorTrocoCalculado.toFixed(2).replace('.', ',')} de troco)`;
-                    } else if (valorTrocoCalculado === 0) {
-                        return `Dinheiro (Sem troco)`;
-                    } else {
-                        return `Dinheiro (⚠️ Troco solicitado é MENOR que o pedido)`;
-                    }
+                    if (valorTrocoCalculado > 0) return `Dinheiro (Levar R$ ${valorTrocoCalculado.toFixed(2).replace('.', ',')} de troco)`;
+                    else if (valorTrocoCalculado === 0) return `Dinheiro (Sem troco)`;
+                    else return `Dinheiro (⚠️ Troco solicitado é MENOR que o pedido)`;
                 }
             }
-        } catch (e) {
-            console.error("Erro ao calcular o troco:", e);
-        }
+        } catch (e) {}
     }
-    
     return textoPagamento;
 }
 
+// ==========================================
+// 🎨 RENDERIZAR KANBAN (DESIGN LIMPO DO MOCKUP)
+// ==========================================
 function renderizarKanban(pedidos) {
+    // 1. Limpa todas as colunas
     Object.values(COLUNAS_ID).forEach(id => {
-        document.getElementById(id).innerHTML = '';
-        document.getElementById(id.replace('corpo-', 'qtd-')).innerText = '0';
+        const coluna = document.getElementById(id);
+        if(coluna) coluna.innerHTML = '';
+        const badge = document.getElementById(id.replace('corpo-', 'qtd-'));
+        if(badge) badge.innerText = '0';
     });
 
     const contadores = { 'Pendente Delivery': 0, 'A Preparar': 0, 'Saiu p/ Entrega': 0, 'Entregue': 0, 'Cancelado': 0 };
+
+    if (pedidos.length === 0) {
+        const corpoAnalise = document.getElementById('corpo-analise');
+        if(corpoAnalise) corpoAnalise.innerHTML = '<p style="text-align: center; color: #999; font-size: 0.9rem; margin-top: 20px;">Nenhum pedido novo.</p>';
+        return;
+    }
 
     pedidos.forEach(pedido => {
         const colunaId = COLUNAS_ID[pedido.status];
@@ -152,70 +158,67 @@ function renderizarKanban(pedidos) {
 
         contadores[pedido.status]++;
 
-        let itensHtml = "";
-        try {
-            const itensParse = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
-            if (Array.isArray(itensParse) && itensParse.length > 0) {
-                itensParse.forEach(item => {
-                    const nomeLimpo = item.nome ? item.nome.replace('Delivery: ', '').replace('🔥 Oferta: ', '🔥 ') : 'Produto';
-                    itensHtml += `<div style="font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dashed #ddd; color: #444;">🛒 1x ${nomeLimpo}</div>`;
-                });
-            } else {
-                itensHtml = `<div style="font-size: 0.85rem; color: #888;">Itens não encontrados.</div>`;
-            }
-        } catch(e) { 
-            itensHtml = `<div style="color: #999; font-size: 0.8rem;">Erro ao ler itens.</div>`; 
-        }
+        // Formatações
+        const horaVenda = pedido.data_hora ? new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Hoje';
+        const totalFormatado = Number(pedido.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const pagamentoDisplay = formatarPagamentoComTroco(pedido.forma_pagamento, pedido.valor_total);
 
+        // Botões Dinâmicos (Exatamente com as cores e formatos do seu desenho)
         let botoesHtml = '';
+        const estiloBtnAcao = "background: #2196F3; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;";
+        const estiloBtnX = "background: #f44336; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: 0.2s;";
+
         if (pedido.status === 'Pendente Delivery') {
             botoesHtml = `
-                <button onclick="mudarStatus(${pedido.id}, 'A Preparar')" style="background: #2196F3; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold; font-size: 0.85rem; transition: 0.2s;">👨‍🍳 Preparar</button>
-                <button onclick="mudarStatus(${pedido.id}, 'Cancelado')" style="background: #f44336; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;" title="Cancelar Pedido">❌</button>
+                <button onclick="mudarStatus(${pedido.id}, 'A Preparar')" style="${estiloBtnAcao}">Avançar Pedido</button>
+                <button onclick="mudarStatus(${pedido.id}, 'Cancelado')" style="${estiloBtnX}" title="Cancelar Pedido">X</button>
             `;
         } else if (pedido.status === 'A Preparar') {
             botoesHtml = `
-                <button onclick="mudarStatus(${pedido.id}, 'Saiu p/ Entrega')" style="background: #FF9800; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold; font-size: 0.85rem; transition: 0.2s;">🛵 Enviar</button>
-                <button onclick="mudarStatus(${pedido.id}, 'Cancelado')" style="background: #f44336; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;" title="Cancelar Pedido">❌</button>
+                <button onclick="mudarStatus(${pedido.id}, 'Saiu p/ Entrega')" style="background: #FF9800; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;">Enviar Pedido</button>
+                <button onclick="mudarStatus(${pedido.id}, 'Cancelado')" style="${estiloBtnX}" title="Cancelar Pedido">X</button>
             `;
         } else if (pedido.status === 'Saiu p/ Entrega') {
             botoesHtml = `
-                <button onclick="mudarStatus(${pedido.id}, 'Entregue')" style="background: #4CAF50; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold; font-size: 0.85rem; transition: 0.2s;">✅ Concluir</button>
+                <button onclick="mudarStatus(${pedido.id}, 'Entregue')" style="background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;">Concluir Pedido</button>
             `;
         }
 
-        const horaVenda = pedido.data_hora ? new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Hoje';
-        const obsHtml = pedido.observacoes ? `<div style="background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 8px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px;"><strong>📝 Obs:</strong> ${pedido.observacoes}</div>` : '';
+        // Identifica se é Delivery ou Retirada
+        let isRetirada = false;
+        if (!pedido.cliente_endereco || pedido.cliente_endereco.toLowerCase().includes('retirada')) isRetirada = true;
+        const tagEntregaTexto = isRetirada ? 'Retirada na Loja' : 'Delivery';
+        
+        // Pega apenas os dois primeiros nomes para não quebrar a tela
+        const nomeCliente = (pedido.cliente_nome || "Anônimo").split(' ').slice(0, 2).join(' '); 
 
-        // 🧮 USA O TRADUTOR DE TROCO AQUI!
-        const pagamentoDisplay = formatarPagamentoComTroco(pedido.forma_pagamento, pedido.valor_total);
-
+        // O NOVO CARD - CÓPIA EXATA DO SEU DESENHO!
         const cardHtml = `
-            <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--cor-borda, #ccc); display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; align-items: center;">
-                    <strong style="color: #333; font-size: 1.1rem;">#${pedido.id}</strong>
-                    <div style="display: flex; gap: 5px;">
-                        <span style="color: #888; font-size: 0.8rem; background: #f0f2f5; padding: 4px 8px; border-radius: 10px;">⏱️ ${horaVenda}</span>
-                        
-                        <button onclick="imprimirComandaKanban(pedidosGlobais.find(v => v.id === ${pedido.id}))" style="background: #e0e0e0; color: #333; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;" title="Reimprimir Comanda">🖨️</button>
-                        
-                        <button onclick="abrirDetalhes(${pedido.id})" style="background: #333; color: white; border: none; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">🔍</button>
+            <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 6px solid var(--cor-borda, #ffb74d); display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: #333; font-size: 1.7rem; line-height: 1;">#${pedido.id}</strong>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="color: #555; font-size: 1rem; font-weight: 600;">⏱️ ${horaVenda}</span>
+                        <button onclick="imprimirComandaKanban(pedidosGlobais.find(v => v.id === ${pedido.id}))" style="background: none; color: #555; border: none; padding: 0; cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Reimprimir Comanda">🖨️</button>
+                        <button onclick="abrirDetalhes(${pedido.id})" style="background: none; border: none; padding: 0; cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Ver Detalhes do Pedido">🔍</button>
                     </div>
-                </div>
-                
-                <div style="min-height: 40px;">
-                    ${itensHtml}
-                    ${obsHtml} 
-                </div>
-                
-                <div style="display: flex; flex-direction: column; background: #fafafa; padding: 8px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <strong style="color: #e91e63; font-size: 1.1rem;">R$ ${Number(pedido.valor_total).toFixed(2).replace('.', ',')}</strong>
-                    </div>
-                    <span style="font-size: 0.8rem; color: #333; font-weight: bold; margin-top: 4px; border-top: 1px dashed #ccc; padding-top: 4px;">💳 ${pagamentoDisplay}</span>
                 </div>
 
-                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; align-items: center; margin-top: 5px;">
+                    <div style="display: flex; flex-direction: column; overflow: hidden; gap: 4px;">
+                        <strong style="color: #333; font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${pedido.cliente_nome}">${nomeCliente}</strong>
+                        <span style="color: #666; font-size: 1rem;">${tagEntregaTexto}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 4px;">
+                        <strong style="color: #e91e63; font-size: 1.7rem; font-weight: 800; line-height: 1;">${totalFormatado}</strong>
+                        <span style="color: #333; font-size: 0.8rem; font-weight: bold; line-height: 1.1; max-width: 130px;">${pagamentoDisplay}</span>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed #ccc; margin: 8px 0;"></div>
+
+                <div style="display: flex; gap: 10px; align-items: stretch;">
                     ${botoesHtml}
                 </div>
             </div>
@@ -226,9 +229,11 @@ function renderizarKanban(pedidos) {
 
     Object.entries(contadores).forEach(([status, qtd]) => {
         const spanId = COLUNAS_ID[status].replace('corpo-', 'qtd-');
-        document.getElementById(spanId).innerText = qtd;
+        const badge = document.getElementById(spanId);
+        if (badge) badge.innerText = qtd;
     });
 
+    // Colore a faixa lateral de cada card dependendo da coluna em que ele está
     document.querySelectorAll('#corpo-analise > div').forEach(c => c.style.setProperty('--cor-borda', '#ffb74d'));
     document.querySelectorAll('#corpo-preparar > div').forEach(c => c.style.setProperty('--cor-borda', '#64b5f6'));
     document.querySelectorAll('#corpo-entrega > div').forEach(c => c.style.setProperty('--cor-borda', '#ff8a65'));
@@ -236,6 +241,9 @@ function renderizarKanban(pedidos) {
     document.querySelectorAll('#corpo-cancelado > div').forEach(c => c.style.setProperty('--cor-borda', '#e57373'));
 }
 
+// ==========================================
+// AÇÕES DO KANBAN
+// ==========================================
 async function mudarStatus(id, novoStatus) {
     try {
         await fetch(`${API_URL}/vendas/${id}/status`, {
@@ -244,16 +252,13 @@ async function mudarStatus(id, novoStatus) {
             body: JSON.stringify({ status: novoStatus })
         });
         carregarPedidos();
-    } catch (e) {
-        alert("Erro ao tentar mover o pedido.");
-    }
+    } catch (e) { alert("Erro ao tentar mover o pedido."); }
 }
 
 function abrirDetalhes(id) {
     const pedido = pedidosGlobais.find(p => p.id === id);
     if (!pedido) return;
 
-    // 🧮 USA O TRADUTOR DE TROCO AQUI TAMBÉM!
     const pagamentoDisplay = formatarPagamentoComTroco(pedido.forma_pagamento, pedido.valor_total);
 
     document.getElementById('detalhe-id').innerText = `#${pedido.id}`;
@@ -270,7 +275,7 @@ function abrirDetalhes(id) {
             itensParse.forEach(item => {
                 const nomeLimpo = item.nome ? item.nome.replace('Delivery: ', '').replace('🔥 Oferta: ', '🔥 ') : 'Produto';
                 itensHtml += `<div style="font-size: 0.95rem; padding: 8px 0; border-bottom: 1px dashed #eee; color: #444; display: flex; justify-content: space-between;">
-                                <span>🛒 1x ${nomeLimpo}</span>
+                                <span>🛒 ${item.quantidade||1}x ${nomeLimpo}</span>
                                 <strong style="color: #e91e63;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</strong>
                               </div>`;
             });
@@ -290,9 +295,7 @@ function abrirDetalhes(id) {
     document.getElementById('modal-detalhes').style.display = 'flex';
 }
 
-function fecharDetalhes() {
-    document.getElementById('modal-detalhes').style.display = 'none';
-}
+function fecharDetalhes() { document.getElementById('modal-detalhes').style.display = 'none'; }
 
 function imprimirComandaKanban(venda) {
     if(!venda) return;
@@ -308,36 +311,20 @@ function imprimirComandaKanban(venda) {
         const qtd = item.quantidade || 1;
         const precoItem = Number(item.preco * qtd).toFixed(2).replace('.',',');
 
-        // 🧠 O NOVO QUEBRADOR DE LINHAS SUPER INTELIGENTE
         let nomeBaseItem = nomeLimpo;
         let adicionaisHtml = '';
-
-        // Acha a posição do primeiro '(' e do ÚLTIMO ')' na frase inteira
         const primeiroParentese = nomeLimpo.indexOf('(');
         const ultimoParentese = nomeLimpo.lastIndexOf(')');
         
-        // Só tenta separar se realmente existirem parênteses na frase
         if (primeiroParentese !== -1 && ultimoParentese !== -1 && ultimoParentese > primeiroParentese) {
-            
-            // Separa o nome base (ex: Açaí - 300ml) cortando no primeiro parêntese
             nomeBaseItem = nomeLimpo.substring(0, primeiroParentese).trim();
-            
-            // Pega TODO o recheio de adicionais, ignorando os parênteses que estão no meio do caminho
             const recheioAdicionais = nomeLimpo.substring(primeiroParentese + 1, ultimoParentese);
-            
-            // Divide os adicionais por vírgula
             const listaAdicionais = recheioAdicionais.split(',');
-            
-            // Cria uma nova linha para cada adicional encontrado
             listaAdicionais.forEach(adicional => {
-                // Esse if garante que não crie uma linha em branco sem querer
-                if(adicional.trim() !== '') {
-                    adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
-                }
+                if(adicional.trim() !== '') adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
             });
         }
         
-        // Monta o visual de cada item no cupom
         htmlItens += `
         <div style="margin-bottom: 8px;">
             <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;">
@@ -396,17 +383,19 @@ function imprimirComandaKanban(venda) {
     areaImpressao.style.display = 'none';
 }
 
+// ==========================================
+// INICIALIZAÇÃO E WEBSOCKETS
+// ==========================================
 window.onload = () => {
     restaurarMemoriaDoSom();
     carregarPedidos();
 
-    // Conecta no rádio do servidor
-    const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
-
-    // Fica ouvindo. Se o servidor gritar 'novo_pedido_kanban', executa isso:
-    socket.on('novo_pedido_kanban', (dados) => {
-        console.log("Chegou um pedido em tempo real!", dados);
-        carregarPedidos(); // Recarrega a tela e toca o som se ativado
-    });
+    // Conecta no rádio do servidor para atualização em tempo real
+    if (typeof io !== 'undefined') {
+        const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+        socket.on('novo_pedido_kanban', (dados) => {
+            console.log("Chegou um pedido em tempo real!", dados);
+            carregarPedidos(); 
+        });
+    }
 };
-// setInterval(carregarPedidos, 15000); // <-- Pode apagar ou comentar isso
