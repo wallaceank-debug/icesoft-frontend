@@ -353,29 +353,6 @@
                             </div>
                         </label>
 
-                        <div id="area-endereco" style="margin-top: 15px;">
-                            
-                            <!-- NOVO: Caixinha de Cidade -->
-                            <select id="cliente-cidade" class="input-clean select-clean" onchange="aoMudarCidade()" style="margin-bottom: 10px;">
-                                <option value="" disabled selected>🏙️ Selecione sua Cidade</option>
-                            </select>
-
-                            <!-- Caixinha de Bairro (Começa bloqueada) -->
-                            <select id="cliente-bairro" class="input-clean select-clean" onchange="atualizarTotalCheckout()" disabled>
-                                <option value="" data-taxa="0" disabled selected>📍 Selecione primeiro a Cidade</option>
-                            </select>
-                            
-                            <!-- RESTAURADO: Rua e Número lado a lado -->
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua" style="flex: 2;">
-                                <input type="text" id="cliente-numero" class="input-clean" placeholder="Nº" style="flex: 1;">
-                            </div>
-                            
-                            <!-- RESTAURADO: Complemento / Referência -->
-                            <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-top: 10px;">
-                            
-                        </div>
-
                         <label class="card-selecao" id="label-retirada" style="margin-top: 10px;">
                             <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
                                 <input type="radio" name="tipo_entrega" value="retirada" onchange="mudarTipoEntrega()" style="display: none;">
@@ -387,6 +364,23 @@
                                 <div class="radio-customizado"></div>
                             </div>
                         </label>
+
+                        <div id="area-endereco" style="margin-top: 15px;">
+                            <select id="cliente-cidade" class="input-clean select-clean" onchange="aoMudarCidade()" style="margin-bottom: 10px;">
+                                <option value="" disabled selected>🏙️ Selecione sua Cidade</option>
+                            </select>
+
+                            <select id="cliente-bairro" class="input-clean select-clean" onchange="atualizarTotalCheckout()" disabled>
+                                <option value="" data-taxa="0" disabled selected>📍 Selecione primeiro a Cidade</option>
+                            </select>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua" style="flex: 2;">
+                                <input type="text" id="cliente-numero" class="input-clean" placeholder="Nº" style="flex: 1;">
+                            </div>
+                            
+                            <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-top: 10px;">
+                        </div>
                     </div>
                 </div>
 
@@ -408,6 +402,13 @@
                             <input type="radio" name="forma_pag" value="Pix na entrega via QR Code" style="display: none;">
                             <span style="font-size: 1.2rem;">📱</span>
                             <span style="flex: 1; font-weight: bold; color: #333;">Pix na Entrega (QR Code)</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Alimentação Pluxee')">
+                            <input type="radio" name="forma_pag" value="Alimentação Pluxee" style="display: none;">
+                            <span style="font-size: 1.2rem;">💠</span>
+                            <span style="flex: 1; font-weight: bold; color: #333;">Alimentação Pluxee</span>
                             <div class="radio-customizado"></div>
                         </label>
                         

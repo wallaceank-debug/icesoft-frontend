@@ -167,8 +167,6 @@ function renderizarBairros(cidadeFiltro = null) {
         selectBairro.disabled = true; // Mantém travado
         selectBairro.innerHTML = '<option value="" data-taxa="0" disabled selected>📍 Selecione primeiro a Cidade</option>';
     }
-
-    selectBairro.innerHTML += '<option value="Retirada no Local" data-taxa="0">🏬 Retirada na Loja - Grátis</option>';
 }
 
 // ==========================================
@@ -829,15 +827,15 @@ function irParaPasso(passo) {
     if (passo === 1) {
         btnVoltar.style.display = 'none';
         btnAvancar.innerText = 'Continuar para Pagamento';
-        btnAvancar.style.background = '#333';
+        btnAvancar.style.background = 'var(--cor-primaria)'; // 🚀 BOTÃO AZUL
     } else if (passo === 2) {
         btnVoltar.style.display = 'block';
         btnAvancar.innerText = 'Revisar Pedido';
-        btnAvancar.style.background = '#333';
+        btnAvancar.style.background = 'var(--cor-primaria)'; // 🚀 BOTÃO AZUL
     } else if (passo === 3) {
         btnVoltar.style.display = 'block';
         btnAvancar.innerText = 'Enviar Pedido 🚀';
-        btnAvancar.style.background = '#25D366'; 
+        btnAvancar.style.background = '#25D366'; // Mantém o verde para o envio final
     }
 }
 
