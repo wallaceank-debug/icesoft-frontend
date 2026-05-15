@@ -465,7 +465,11 @@
                         <h4>Seu Pedido</h4>
                         <div id="lista-resumo-itens" style="margin-bottom: 15px;"></div>
                         
-                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <p id="gatilho-cupom" onclick="document.getElementById('area-inserir-cupom').style.display='flex'; this.style.display='none';" style="cursor: pointer; color: #888; font-style: italic; font-size: 0.9rem; text-decoration: underline; margin: 0 0 15px 0;">
+                            Possui um cupom de desconto?
+                        </p>
+
+                        <div id="area-inserir-cupom" style="display: none; gap: 10px; margin-bottom: 15px;">
                             <input type="text" id="input-cupom" placeholder="Cupom de desconto" class="input-clean" style="flex: 1; text-transform: uppercase;">
                             <button type="button" onclick="aplicarCupom()" style="padding: 0 15px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold;">Aplicar</button>
                         </div>
