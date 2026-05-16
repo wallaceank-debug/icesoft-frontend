@@ -1863,10 +1863,10 @@ function ativarBarrinhaFidelidade(comprasValidas) {
         areaFidelidade.id = 'area-fidelidade-checkout';
         areaFidelidade.style.cssText = "background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: 0.3s;";
         
-        // 🚀 AGORA A BARRINHA FICA ANCORADA ACIMA DO CUPOM!
-        const ancoraCupom = document.getElementById('gatilho-cupom');
-        if (ancoraCupom && ancoraCupom.parentNode) {
-            ancoraCupom.parentNode.insertBefore(areaFidelidade, ancoraCupom);
+        // 🚀 BARRINHA ANCORADA NO TOPO DO RESUMO!
+        const ancoraFidelidade = document.getElementById('ancora-fidelidade');
+        if (ancoraFidelidade && ancoraFidelidade.parentNode) {
+            ancoraFidelidade.parentNode.insertBefore(areaFidelidade, ancoraFidelidade);
         }
 
         if(!document.getElementById('animacao-fidelidade')) {
