@@ -18,6 +18,15 @@ let escolhasAtuaisMesa = [];
 window.onload = async () => {
     await carregarCardapio(); 
     await carregarMesas();    
+
+    // 🖱️ MÁGICA DO SCROLL: Transforma a rolagem vertical do mouse em horizontal
+    const scrollCategorias = document.getElementById('categorias-mesa');
+    if (scrollCategorias) {
+        scrollCategorias.addEventListener('wheel', (evento) => {
+            evento.preventDefault(); // Trava a tela para ela não descer junto
+            scrollCategorias.scrollLeft += evento.deltaY * 1.5; // O 1.5 deixa a rolagem um pouco mais rápida e suave!
+        });
+    }
 };
 
 async function carregarCardapio() {
@@ -153,10 +162,21 @@ function filtrarProdutosMesa() {
     }
 
     lista.forEach(p => {
-        // 📸 LÓGICA DA FOTO: Se tiver imagem, mostra ela. Se não, mostra o emoji.
-        const visualProduto = p.imagem_url 
-            ? `<img src="${p.imagem_url}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">`
-            : `<div style="font-size: 2.5rem; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">${p.emoji || '🍨'}</div>`;
+        // 🍨 PLANO B PADRÃO: Já deixamos o emoji pronto!
+        let visualProduto = `<div style="font-size: 2.5rem; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background:#f8f9fa; border-radius: 8px;">${p.emoji || '🍨'}</div>`;
+
+        if (p.imagem_url) {
+            // 🛡️ CORREÇÃO 1: Garante que a foto puxe do servidor na nuvem, e não do seu PC local
+            let urlImagem = p.imagem_url.startsWith('http') 
+                ? p.imagem_url 
+                : API_URL.replace('/api', '') + (p.imagem_url.startsWith('/') ? '' : '/') + p.imagem_url;
+
+            // 🛡️ CORREÇÃO 2: A Mágica do "onerror". Se a foto falhar, esconde a foto e mostra o emoji!
+            visualProduto = `
+                <img src="${urlImagem}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width: 100%; height: 80px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div style="font-size: 2.5rem; height: 80px; display: none; align-items: center; justify-content: center; margin-bottom: 8px; background:#f8f9fa; border-radius: 8px;">${p.emoji || '🍨'}</div>
+            `;
+        }
 
         container.innerHTML += `
             <div class="produto-item-pdv" onclick="verificarAdicaoMesa(${p.id})" style="background:white; border:1px solid #ddd; border-radius:10px; padding:12px; text-align:center; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px;">
@@ -175,13 +195,45 @@ function filtrarProdutosMesa() {
 // ==========================================
 
 function verificarAdicaoMesa(id) {
-    const produto = produtosNuvem.find(p => p.id === id);
-    if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
-        // Se não tem adicionais, vai direto pro carrinho
-        adicionarAoCarrinhoMesa(produto.nome, [], Number(produto.preco));
+    const produtoOriginal = produtosNuvem.find(p => p.id === id);
+    if (!produtoOriginal) return;
+
+    // 🛡️ Criamos uma cópia segura para podermos mudar o nome e o preço do item sem afetar o cardápio base na memória
+    let produtoAdicionado = JSON.parse(JSON.stringify(produtoOriginal));
+    
+    const nomeMinusculo = produtoAdicionado.nome.toLowerCase();
+
+    // ⚖️ INTELIGÊNCIA DA BALANÇA: Detecta se é venda por peso
+    if (nomeMinusculo.includes('kg') || nomeMinusculo.includes('kilo') || nomeMinusculo.includes('quilo') || nomeMinusculo.includes('peso')) {
+        const pesoDigitado = prompt(`⚖️ BALANÇA: ${produtoAdicionado.nome}\nO valor do Quilo (1kg) é R$ ${Number(produtoAdicionado.preco).toFixed(2).replace('.', ',')}.\n\nDigite a quantidade pesada:\n(Ex: 250 para gramas ou 0.25 para Kg)`);
+        
+        if (!pesoDigitado) return; // Operador cancelou
+
+        let pesoTransformado = parseFloat(pesoDigitado.replace(',', '.'));
+        
+        if (isNaN(pesoTransformado) || pesoTransformado <= 0) {
+            alert("⚠️ Valor inválido. A adição foi cancelada.");
+            return;
+        }
+
+        // Mágica: Se o operador digitar '250', o sistema entende que são gramas e converte pra 0.25kg automaticamente
+        if (pesoTransformado >= 10) {
+            pesoTransformado = pesoTransformado / 1000;
+        }
+
+        // Refaz o preço e o nome do produto com o peso exato e o valor fracionado
+        produtoAdicionado.preco = Number(produtoOriginal.preco) * pesoTransformado;
+        produtoAdicionado.nome = `${produtoOriginal.nome} (${(pesoTransformado * 1000).toFixed(0)}g)`;
+    }
+
+    // O fluxo continua: Se não tem adicionais, vai direto pro carrinho com o novo preço
+    if (!produtoAdicionado.grupos_ids || produtoAdicionado.grupos_ids.length === 0) {
+        adicionarAoCarrinhoMesa(produtoAdicionado.nome, [], Number(produtoAdicionado.preco));
         return;
     }
-    abrirModalEscolhaMesa(produto);
+    
+    // Se tiver adicionais, abre o modal já levando o valor pesado corretamente
+    abrirModalEscolhaMesa(produtoAdicionado);
 }
 
 function abrirModalEscolhaMesa(produto) {
@@ -760,4 +812,26 @@ async function removerItemDaMesa(index) {
         console.error("Erro ao cancelar item:", e);
         alert("🔌 Erro de conexão ao tentar cancelar o item. Verifique a internet.");
     }
+}
+
+// ==========================================
+// 🔍 PESQUISA RÁPIDA DE PRODUTOS
+// ==========================================
+function pesquisarProdutoMesa() {
+    const termo = document.getElementById('input-busca-mesa').value.toLowerCase();
+    
+    // 🎯 MÁGICA: Ele acha os produtos pelo clique da função, sem depender de classes ou IDs!
+    const todosProdutosNaTela = document.querySelectorAll('[onclick^="verificarAdicaoMesa"]');
+    
+    todosProdutosNaTela.forEach(cardProduto => {
+        // Pega todo o texto escrito no card do produto (Nome, Preço, etc)
+        const textoCard = cardProduto.innerText.toLowerCase();
+        
+        // Se o que você digitou estiver no texto do card, ele mostra. Se não, ele esconde!
+        if (textoCard.includes(termo)) {
+            cardProduto.style.display = ''; 
+        } else {
+            cardProduto.style.display = 'none'; 
+        }
+    });
 }

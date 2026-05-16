@@ -126,16 +126,20 @@
         <div style="background:white; width:95%; max-width:1100px; height:85vh; border-radius:15px; display:flex; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
             
             <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; background:#f0f2f5; border-right:1px solid #ddd;">
-                <div style="padding:15px 20px; background:#00bcd4; color:white; display: flex; justify-content: space-between; align-items: center;">
+               <div style="padding:15px 20px; background:#00bcd4; color:white; display: flex; justify-content: space-between; align-items: center;">
                     <h2 style="margin:0;" id="titulo-modal-mesa">Lançando na Mesa --</h2>
                     <button onclick="fecharModalLancamento()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; font-weight:bold;">X</button>
                 </div>
                 
-                <div id="categorias-mesa" style="display:flex; overflow-x:auto; padding:10px; background:white; border-bottom:1px solid #eee; gap:10px;">
+                <div style="padding: 15px 15px 5px 15px; background: white;">
+                    <input type="text" id="input-busca-mesa" placeholder="🔍 Buscar produto pelo nome..." onkeyup="pesquisarProdutoMesa()" style="width: 100%; padding: 12px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border-color 0.2s;">
+                </div>
+
+                <div id="categorias-mesa" style="display:flex; overflow-x:auto; gap:10px; padding:10px 15px; background:white; border-bottom:1px solid #ddd; scrollbar-width: thin;">
                     </div>
                 
                 <div id="produtos-mesa" style="flex:1; overflow-y:auto; padding:15px; display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px; align-content: start;">
-                    </div>
+                </div>
             </div>
 
             <div style="width: 350px; flex-shrink: 0; display:flex; flex-direction:column; background:white;">
