@@ -443,10 +443,7 @@
                 <!-- PASSO 3: RESUMO E CONCLUSÃO -->
                 <div id="checkout-passo-3" class="checkout-passo">
                     
-                    <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-bottom: 15px;">
-                        <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
-                        <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
-                    </div>
+                    
 
                     <div class="secao-checkout">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -591,7 +588,7 @@
         </div>
     </div>
 
-    <script src="/cardapio/app.js?v=106"></script>
+    <script src="/cardapio/app.js?v=108"></script>
 
         <!-- ==========================================
          MODAL: CARRINHO (PASSO ANTES DO CHECKOUT)
@@ -608,6 +605,11 @@
                 <!-- Itens injetados via JS -->
             </div>
             
+            <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-bottom: 15px; flex-shrink: 0;">
+                <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
+                <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
+            </div>
+
             <div style="background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed #ddd;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 1.1rem; color: #555; font-weight: 600;">Subtotal:</span>

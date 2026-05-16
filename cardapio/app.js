@@ -668,7 +668,7 @@ function finalizarPedidoWhatsApp() {
     irParaPasso(1);
     
     renderizarResumoCarrinho();
-    renderizarUpsellCheckout(); 
+    // 🚀 O Carrossel saiu daqui para não distrair no checkout!
     document.getElementById('modal-checkout').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
@@ -1292,9 +1292,17 @@ function renderizarUpsellCheckout() {
     const carrossel = document.getElementById('carrossel-upsell');
     if (!area || !carrossel) return;
 
-    const produtosUpsell = produtosDaNuvem.filter(p => idsUpsellGlobais.includes(Number(p.id)) && p.ativo !== false);
+    // 🛡️ O TRADUTOR: Pega os IDs da nuvem e força todos a virarem números de matemática
+    const idsSeguros = idsUpsellGlobais.map(id => Number(id));
+    
+    // Procura os produtos garantindo que número bata com número!
+    const produtosUpsell = produtosDaNuvem.filter(p => idsSeguros.includes(Number(p.id)) && p.ativo !== false);
 
-    if (produtosUpsell.length === 0 || descontoUpsellGlobal <= 0) return area.style.display = 'none';
+    // Se não achar nada ou não tiver desconto, esconde
+    if (produtosUpsell.length === 0 || descontoUpsellGlobal <= 0) {
+        area.style.display = 'none';
+        return;
+    }
 
     area.style.display = 'block';
     carrossel.innerHTML = '';
@@ -1307,7 +1315,7 @@ function renderizarUpsellCheckout() {
 
         const visualProduto = p.imagem_url 
             ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
-            : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center;">${p.emoji || '🍦'}</div>`;
+            : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center; background:#f8f9fa; border-radius: 6px;">${p.emoji || '🍦'}</div>`;
 
         carrossel.innerHTML += `
             <div style="flex: 0 0 130px; background: white; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; border: 1px solid #ffb3c6;">
@@ -1329,6 +1337,8 @@ function renderizarUpsellCheckout() {
 
 function adicionarOfertaAoCarrinho(nome, precoDesconto) {
     adicionarAoCarrinho("🔥 Oferta: " + nome, precoDesconto);
+    // 🚀 Atualiza a tela do carrinho instantaneamente para o cliente ver!
+    renderizarListaCarrinhoCliente();
 }
 
 // ==========================================
@@ -1627,6 +1637,7 @@ function abrirModalCarrinho() {
     }
     
     renderizarListaCarrinhoCliente();
+    renderizarUpsellCheckout(); // 🚀 AGORA ELE CARREGA O CARROSSEL AQUI
     document.getElementById('modal-carrinho-cliente').style.display = 'flex';
     document.body.style.overflow = 'hidden'; 
 }
