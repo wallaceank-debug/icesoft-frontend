@@ -1102,3 +1102,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// ==========================================
+// 🔍 PESQUISA RÁPIDA DE PRODUTOS (INTELIGENTE) - PDV
+// ==========================================
+function pesquisarProdutoPDV() {
+    const input = document.getElementById('input-busca-pdv');
+    const termo = input.value.toLowerCase();
+    
+    // 🧠 MÁGICA INTELIGENTE: Se começar a digitar, muda pra "Todos" para pesquisar na loja inteira!
+    if (termo.length > 0 && categoriaAtiva !== 'Todos') {
+        categoriaAtiva = 'Todos';
+        renderizarBotoesCategoria();
+        filtrarE_RenderizarProdutos();
+        input.focus(); // Mantém o cursor piscando para o caixa não perder o ritmo
+    }
+    
+    // 🎯 Acha os cards de produtos do PDV
+    const todosProdutosNaTela = document.querySelectorAll('[onclick^="verificarAdicao("]');
+    
+    todosProdutosNaTela.forEach(cardProduto => {
+        const textoCard = cardProduto.innerText.toLowerCase();
+        
+        if (textoCard.includes(termo)) {
+            cardProduto.style.display = ''; 
+        } else {
+            cardProduto.style.display = 'none'; 
+        }
+    });
+}
