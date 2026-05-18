@@ -1,7 +1,7 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 let listaProdutos = [];
 let listaGrupos = [];
-let grupoSelecionadoId = null;
+let gruposAbertos = [];
 let produtoEditandoId = null; 
 
 window.onload = async () => {
@@ -30,14 +30,21 @@ async function carregarTudo() {
         listaGrupos = await resGrupos.json();
         listaCategorias = await resCat.json(); 
         
-        // 🚀 CORREÇÃO: Mantém o texto da pesquisa ativo ao recarregar a tela após salvar!
-        const termoAtual = document.getElementById('filtro-produtos-gestao') ? document.getElementById('filtro-produtos-gestao').value : '';
+        // 🚀 CORREÇÃO: Mantém o texto das pesquisas ativo ao recarregar a tela após salvar!
+        const termoAtualProdutos = document.getElementById('filtro-produtos-gestao') ? document.getElementById('filtro-produtos-gestao').value : '';
+        const termoAtualGrupos = document.getElementById('filtro-grupos-gestao') ? document.getElementById('filtro-grupos-gestao').value : '';
         
-        renderizarProdutos(termoAtual);
-        renderizarGrupos();
-        preencherSelectCategorias(); 
+        renderizarProdutos(termoAtualProdutos);
+        renderizarGrupos(termoAtualGrupos);
+        preencherSelectCategorias();
         
-        if (grupoSelecionadoId) selecionarGrupo(grupoSelecionadoId);
+        function filtrarGruposGestao() {
+            const termo = document.getElementById('filtro-grupos-gestao').value;
+            renderizarGrupos(termo);
+        }
+        
+        // As antigas linhas do grupoSelecionadoId foram removidas daqui!
+        
     } catch (e) { 
         console.error("Erro", e); 
     }
@@ -183,65 +190,131 @@ async function excluirProduto(id) {
 }
 
 // ==========================================
-// COLUNA 2: GRUPOS DE ADICIONAIS
+// ABA DE COMPLEMENTOS (GRUPOS E ADICIONAIS ANINHADOS)
 // ==========================================
-function renderizarGrupos() {
+
+// Função simples para alternar as Abas
+function abrirAba(idAba, botaoClicado) {
+    document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(idAba).classList.add('active');
+    botaoClicado.classList.add('active');
+}
+
+// Abre e fecha a Sanfona (Accordion) mantendo o estado salvo
+function toggleGrupo(elementoHeader, idGrupo) {
+    elementoHeader.classList.toggle('aberto');
+    if (elementoHeader.classList.contains('aberto')) {
+        if (!gruposAbertos.includes(idGrupo)) gruposAbertos.push(idGrupo);
+    } else {
+        gruposAbertos = gruposAbertos.filter(id => id !== idGrupo);
+    }
+}
+
+// O NOVO RENDERIZADOR: Constrói Grupos, Adicionais e Filtra tudo!
+// Função que escuta a barra de pesquisa de grupos e aciona o filtro
+function filtrarGruposGestao() {
+    const termo = document.getElementById('filtro-grupos-gestao') ? document.getElementById('filtro-grupos-gestao').value : '';
+    renderizarGrupos(termo);
+}
+
+function renderizarGrupos(filtro = '') {
     const div = document.getElementById('lista-grupos');
     div.innerHTML = '';
-    listaGrupos.forEach(g => {
+    
+    // Limpa a busca para ignorar acentos e letras maiúsculas
+    const termo = filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // Filtra: Mostra o grupo se o NOME do grupo bater OU se o NOME de algum item bater
+    const gruposFiltrados = listaGrupos.filter(g => {
+        if (termo === '') return true; // Se não tem filtro, mostra tudo
+        
+        const nomeGrupo = g.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (nomeGrupo.includes(termo)) return true; // Achou no nome do grupo
+
+        if (g.itens && g.itens.length > 0) {
+            return g.itens.some(item => {
+                const nomeItem = item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return nomeItem.includes(termo); // Achou no nome do adicional
+            });
+        }
+        return false;
+    });
+
+    if (gruposFiltrados.length === 0) {
+        div.innerHTML = '<p class="carregando" style="margin-top: 20px;">Nenhum grupo ou adicional encontrado com este nome.</p>';
+        return;
+    }
+
+    gruposFiltrados.forEach(g => {
         const isAtivo = g.ativo !== false;
-        const classeInativo = isAtivo ? '' : 'item-inativo';
-        const isSelecionado = g.id === grupoSelecionadoId ? 'selecionado' : '';
+        const classeInativoGrupo = isAtivo ? '' : 'item-inativo';
+        
+        // MÁGICA 1: Se tem uma pesquisa ativa, abre a sanfona automaticamente!
+        const estaAberto = (gruposAbertos.includes(g.id) || termo !== '') ? 'aberto' : '';
+        const badgeObrigatorio = g.obrigatorio ? '<span style="font-size:0.7rem; background:#ffeb3b; color:#f57f17; padding:2px 6px; border-radius:10px; margin-left:8px;">Obrigatório</span>' : '';
+
+        // Monta os itens (adicionais) de dentro do grupo primeiro
+        let itensHtml = '';
+        if (g.itens && g.itens.length > 0) {
+            g.itens.forEach((item, index) => {
+                const isItemAtivo = item.ativo !== false; 
+                const classeInativoItem = isItemAtivo ? '' : 'item-inativo';
+
+                // MÁGICA 2: Marca de amarelo o item específico que ela pesquisou!
+                const nomeItemParaBusca = item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const highlight = (termo !== '' && nomeItemParaBusca.includes(termo)) ? 'background: #fff9c4; border: 1px solid #ffeb3b;' : '';
+
+                itensHtml += `
+                    <div class="adicional-item" style="${highlight}">
+                        <div class="item-info ${classeInativoItem}">
+                            <span class="adicional-nome">${item.nome}</span>
+                            <span class="adicional-preco">+ R$ ${Number(item.preco).toFixed(2)}</span>
+                        </div>
+                        <div class="item-acoes">
+                            <label class="switch">
+                                <input type="checkbox" onchange="toggleAdicional(${g.id}, ${index}, this.checked)" ${isItemAtivo ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                            <button class="btn-icone" onclick="excluirAdicional(${g.id}, ${index})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            itensHtml = '<p style="color:#999; font-size:0.9rem; padding:10px; text-align:center;">Nenhum adicional cadastrado.</p>';
+        }
+
+        // Agora monta a "casca" do Acordeão e injeta os itens dentro
         div.innerHTML += `
-            <div class="item-linha ${isSelecionado}">
-                <div class="item-info ${classeInativo}" onclick="selecionarGrupo(${g.id})">
-                    <span class="item-nome">${g.nome}</span>
-                    <span class="item-detalhe">Limite: ${g.limite} | ${(g.itens||[]).length} itens</span>
+            <div class="grupo-accordion">
+                <div class="grupo-header ${estaAberto} ${classeInativoGrupo}" onclick="toggleGrupo(this, ${g.id})">
+                    <div class="grupo-titulo-area">
+                        <span class="grupo-nome">${g.nome} ${badgeObrigatorio}</span>
+                        <span class="grupo-detalhes">Limite: ${g.limite} | ${(g.itens||[]).length} itens</span>
+                    </div>
+                    <div class="grupo-acoes" onclick="event.stopPropagation()">
+                        <button class="btn-icone" title="Editar Grupo" onclick="abrirModalGrupo(${g.id})">✏️</button>
+                        <button class="btn-icone" title="Duplicar Grupo" onclick="duplicarGrupo(${g.id})">📄</button>
+                        <label class="switch">
+                            <input type="checkbox" onchange="toggleGrupoStatus(${g.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="seta">▼</span>
+                    </div>
                 </div>
-                <div class="item-acoes">
-                    <button class="btn-icone" title="Editar Grupo" onclick="abrirModalGrupo(${g.id})">✏️</button>
-                    <button class="btn-icone" title="Duplicar Grupo" onclick="duplicarGrupo(${g.id})">📄</button>
-                    <label class="switch">
-                        <input type="checkbox" onchange="toggleGrupo(${g.id}, this.checked)" ${isAtivo ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
+                
+                <div class="grupo-body">
+                    ${itensHtml}
+                    <button class="btn-novo-add" onclick="abrirModalAdicional(${g.id})">+ Adicionar novo item em: ${g.nome}</button>
                 </div>
             </div>
         `;
     });
 }
 
-async function duplicarGrupo(id) {
-    const g = listaGrupos.find(x => x.id === id);
-    if (!g) return;
-
-    const dadosDuplicados = {
-        nome: g.nome + " (Cópia)",
-        limite: parseInt(g.limite),
-        itens: g.itens || [],
-        ativo: true
-    };
-
-    try {
-        await fetch(`${API_URL}/grupos`, { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify(dadosDuplicados) 
-        });
-        await carregarTudo();
-    } catch (e) {
-        alert("❌ Erro ao duplicar grupo.");
-    }
-}
-
-function selecionarGrupo(id) {
-    grupoSelecionadoId = id;
-    renderizarGrupos(); 
-    renderizarAdicionais(); 
-    document.getElementById('btn-novo-adicional').style.display = 'block';
-}
-
-async function toggleGrupo(id, statusAtivo) {
+// Funções de manutenção adaptadas para trabalhar direto com o ID do Grupo
+async function toggleGrupoStatus(id, statusAtivo) {
     try {
         await fetch(`${API_URL}/grupos/${id}/status`, {
             method: 'PUT',
@@ -249,88 +322,54 @@ async function toggleGrupo(id, statusAtivo) {
             body: JSON.stringify({ ativo: statusAtivo })
         });
         await carregarTudo();
-    } catch(e) { alert("Erro ao mudar status"); }
+    } catch(e) { alert("Erro ao mudar status do grupo."); }
 }
 
-// ==========================================
-// COLUNA 3: ADICIONAIS (DENTRO DO GRUPO)
-// ==========================================
-function renderizarAdicionais() {
-    const div = document.getElementById('lista-adicionais');
-    const grupo = listaGrupos.find(g => g.id === grupoSelecionadoId);
-    
-    if (!grupo || !grupo.itens || grupo.itens.length === 0) {
-        div.innerHTML = '<p class="carregando">Nenhum adicional neste grupo.</p>';
-        return;
-    }
-
-    div.innerHTML = '';
-    grupo.itens.forEach((item, index) => {
-        const isAtivo = item.ativo !== false; 
-        const classeInativo = isAtivo ? '' : 'item-inativo';
-
-        div.innerHTML += `
-            <div class="item-linha">
-                <div class="item-info ${classeInativo}">
-                    <span class="item-nome">${item.nome}</span>
-                    <span class="item-detalhe">+ R$ ${Number(item.preco).toFixed(2)}</span>
-                </div>
-                <div class="item-acoes">
-                    <label class="switch">
-                        <input type="checkbox" onchange="toggleAdicional(${index}, this.checked)" ${isAtivo ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
-                    <button class="btn-icone" onclick="excluirAdicional(${index})">🗑️</button>
-                </div>
-            </div>
-        `;
-    });
-}
-
-async function toggleAdicional(indexItem, statusAtivo) {
-    const grupo = listaGrupos.find(g => g.id === grupoSelecionadoId);
-    grupo.itens[indexItem].ativo = statusAtivo;
-    
+async function duplicarGrupo(id) {
+    const g = listaGrupos.find(x => x.id === id);
+    if (!g) return;
+    const dadosDuplicados = { nome: g.nome + " (Cópia)", limite: parseInt(g.limite), itens: g.itens || [], ativo: true, obrigatorio: g.obrigatorio };
     try {
-        await fetch(`${API_URL}/grupos/${grupo.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(grupo)
-        });
+        await fetch(`${API_URL}/grupos`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(dadosDuplicados) });
         await carregarTudo();
-    } catch(e) { alert("Erro ao salvar."); }
+    } catch (e) { alert("❌ Erro ao duplicar grupo."); }
 }
 
-async function excluirAdicional(indexItem) {
-    if(!confirm("Excluir este adicional?")) return;
-    const grupo = listaGrupos.find(g => g.id === grupoSelecionadoId);
-    grupo.itens.splice(indexItem, 1);
-    
-    try {
-        await fetch(`${API_URL}/grupos/${grupo.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(grupo)
-        });
-        await carregarTudo();
-    } catch(e) { alert("Erro ao salvar."); }
-}
-
-function abrirModalAdicional() {
+function abrirModalAdicional(idGrupo) {
     const nome = prompt("Nome do Adicional:");
     if (!nome) return;
-    const preco = prompt("Preço (0 para grátis):");
+    const preco = prompt("Preço (Digite 0 para grátis):", "0");
     
-    const grupo = listaGrupos.find(g => g.id === grupoSelecionadoId);
+    const grupo = listaGrupos.find(g => g.id === idGrupo);
     const novoItem = { nome: nome, preco: parseFloat(preco) || 0, ativo: true };
     grupo.itens = grupo.itens || [];
     grupo.itens.push(novoItem);
     
+    // Deixa o grupo aberto para a esposa ver a mudança acontecer imediatamente!
+    if (!gruposAbertos.includes(grupo.id)) gruposAbertos.push(grupo.id);
+
     fetch(`${API_URL}/grupos/${grupo.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(grupo)
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(grupo)
     }).then(() => carregarTudo());
+}
+
+async function toggleAdicional(idGrupo, indexItem, statusAtivo) {
+    const grupo = listaGrupos.find(g => g.id === idGrupo);
+    grupo.itens[indexItem].ativo = statusAtivo;
+    try {
+        await fetch(`${API_URL}/grupos/${grupo.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(grupo) });
+        await carregarTudo();
+    } catch(e) { alert("Erro ao salvar adicional."); }
+}
+
+async function excluirAdicional(idGrupo, indexItem) {
+    if(!confirm("Excluir este adicional definitivamente?")) return;
+    const grupo = listaGrupos.find(g => g.id === idGrupo);
+    grupo.itens.splice(indexItem, 1);
+    try {
+        await fetch(`${API_URL}/grupos/${grupo.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(grupo) });
+        await carregarTudo();
+    } catch(e) { alert("Erro ao excluir adicional."); }
 }
 
 // ==========================================

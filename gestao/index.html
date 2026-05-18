@@ -134,37 +134,38 @@
   </div>
 </div>
 
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="abrirAba('aba-produtos', this)">🍔 1. Produtos Principais</button>
+            <button class="tab-btn" onclick="abrirAba('aba-complementos', this)">➕ 2. Grupos e Adicionais</button>
+        </div>
+
         <main class="gestao-container">
             
-            <section class="coluna-card">
-                <div class="coluna-header" style="padding-bottom: 10px;">
-                    <h2>PRODUTOS</h2>
+            <section id="aba-produtos" class="tab-content active">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="color: #555; margin: 0; font-size: 1.2rem;">Lista de Produtos</h2>
+                    <input type="text" style="display:none" aria-hidden="true" autocomplete="username">
+                    <input type="password" style="display:none" aria-hidden="true" autocomplete="current-password">
+
+                    <input type="search" id="filtro-produtos-gestao" placeholder="🔍 Buscar produto pelo nome..." oninput="filtrarProdutosGestao()" autocomplete="new-password" data-lpignore="true" class="input-padrao" style="width: 300px; box-sizing: border-box; font-size: 0.95rem; padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9;">
                 </div>
-                <!-- NOVO FILTRO DE PESQUISA -->
-                <div style="padding: 0 15px 10px 15px; border-bottom: 1px solid #00bcd4; margin-bottom: 10px;">
-                    <input type="text" id="filtro-produtos-gestao" placeholder="🔍 Buscar produto..." oninput="filtrarProdutosGestao()" class="input-padrao" style="width: 100%; box-sizing: border-box; font-size: 0.95rem; padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9;">
-                </div>
-                <div class="coluna-lista" id="lista-produtos">
+                
+                <div id="lista-produtos">
                     <p class="carregando">Carregando...</p>
                 </div>
             </section>
 
-            <section class="coluna-card">
-                <div class="coluna-header">
-                    <h2>GRUPOS DE ADICIONAIS</h2>
+            <section id="aba-complementos" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <p style="color: #666; margin: 0; font-size: 0.95rem;">Crie grupos de escolha e adicione os itens. Busque por um ingrediente para desativá-lo rapidamente.</p>
+                    
+                    <input type="text" style="display:none" aria-hidden="true" autocomplete="username">
+                    <input type="password" style="display:none" aria-hidden="true" autocomplete="current-password">
+                    <input type="search" id="filtro-grupos-gestao" placeholder="🔍 Buscar grupo ou adicional..." oninput="filtrarGruposGestao()" autocomplete="new-password" data-lpignore="true" class="input-padrao" style="width: 300px; box-sizing: border-box; font-size: 0.95rem; padding: 10px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9;">
                 </div>
-                <div class="coluna-lista" id="lista-grupos">
-                    <p class="carregando">Carregando...</p>
-                </div>
-            </section>
 
-            <section class="coluna-card">
-                <div class="coluna-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>ADICIONAIS</h2>
-                    <button id="btn-novo-adicional" onclick="abrirModalAdicional()" class="btn-add-mini" style="display: none;">+ NOVO</button>
-                </div>
-                <div class="coluna-lista" id="lista-adicionais">
-                    <p class="carregando" style="opacity: 0.6;">Selecione um Grupo na coluna ao lado para ver os adicionais.</p>
+                <div id="lista-grupos">
+                    <p class="carregando">Carregando...</p>
                 </div>
             </section>
 
