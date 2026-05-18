@@ -1189,7 +1189,7 @@ async function carregarConfiguracoesLoja() {
                 }
             } catch(e) {}
 
-            // 🛡️ TRAVA DE SEGURANÇA: Só atualiza se o textinho existir na tela
+            // 🛡️ TRAVA DE SEGURANÇA
             if (statusText) {
                 statusText.innerText = `🔴 Estamos fechados, abre ${textoAbertura}`;
                 statusText.style.color = "#f44336"; 
@@ -1198,11 +1198,22 @@ async function carregarConfiguracoesLoja() {
             const telaPreta = document.getElementById('overlay-loja-fechada');
             if (telaPreta) telaPreta.style.display = 'none';
 
+            // ⏱️ Oculta o tempo de entrega se a loja estiver fechada
+            const indicadorTempo = document.getElementById('indicador-tempo-entrega');
+            if (indicadorTempo) indicadorTempo.style.display = 'none';
+
         } else {
             lojaAberta = true;
             if (statusText) {
                 statusText.innerText = "🟢 Recebendo pedidos";
                 statusText.style.color = "#25D366"; 
+            }
+            
+            // ⏱️ Exibe o tempo de entrega em tempo real sincronizado com a Gestão!
+            const indicadorTempo = document.getElementById('indicador-tempo-entrega');
+            if (indicadorTempo) {
+                indicadorTempo.innerHTML = `⏱️ Tempo de Entrega: ~ ${configs.tempo_entrega || 45} min`;
+                indicadorTempo.style.display = 'flex';
             }
         }
 

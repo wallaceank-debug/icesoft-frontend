@@ -243,15 +243,20 @@
             </div>
             
             <div class="texto-loja">
-            <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
-            <p style="font-size: 0.85rem; color: #666; margin: 2px 0;">
-                <span id="loja-endereco-texto">Endereço não informado</span> • 
-                <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
-            </p>
-            <span id="indicador-status-loja" style="color: #25D366; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
-                🟢 Recebendo pedidos
-            </span>
-        </div>
+                <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
+                <p style="font-size: 0.85rem; color: #666; margin: 2px 0;">
+                    <span id="loja-endereco-texto">Endereço não informado</span> • 
+                    <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
+                </p>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <span id="indicador-status-loja" style="color: #25D366; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                        🟢 Recebendo pedidos
+                    </span>
+                    <span id="indicador-tempo-entrega" style="background: #fff3e0; color: #ff9800; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: none; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(255,152,0,0.1);">
+                        ⏱️ ~ 45 min
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 
