@@ -27,6 +27,26 @@
     flex-shrink: 0;
 }
 
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background-color: #ff3b30;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: bold;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid white;
+    z-index: 5;
+    pointer-events: none;
+}
+
 .menu-lateral:hover {
     width: 250px;
     align-items: flex-start;
@@ -144,7 +164,10 @@
     </a>
     
     <a href="../mesas/" class="menu-item">
-        <span class="menu-icone">🪑</span>
+        <span class="menu-icone" style="position: relative;">
+            🪑
+            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+        </span>
         <span class="menu-texto">Mesas/Comandas</span>
     </a>
     

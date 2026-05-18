@@ -126,6 +126,26 @@ body {
     background: rgba(0, 0, 0, 0.3);
 }
 
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background-color: #ff3b30;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: bold;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid white;
+    z-index: 5;
+    pointer-events: none;
+}
+
 /* ==========================================
    CABEÇALHO DA GESTÃO
    ========================================== */

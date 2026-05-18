@@ -53,6 +53,9 @@ async function carregarMesas() {
         const resposta = await fetch(`${API_URL}/mesas`);
         mesasAbertas = await resposta.json();
         renderizarGrade();
+        // 👉 ADICIONE ESTA LINHA AQUI: Atualiza o aviso no menu lateral
+        updateMesasNotificationBadge(mesasAbertas.length);
+
     } catch (e) {
         document.getElementById('container-mesas').innerHTML = '<p style="color: red;">Erro ao conectar com o servidor.</p>';
     }
@@ -834,4 +837,17 @@ function pesquisarProdutoMesa() {
             cardProduto.style.display = 'none'; 
         }
     });
+}
+
+// Função para atualizar a bolinha vermelha no menu
+function updateMesasNotificationBadge(count) {
+    const badge = document.getElementById('mesas-notification-badge');
+    if (!badge) return; // Proteção caso o elemento não exista na tela
+
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'flex'; // Mostra o aviso se houver mesas ocupadas
+    } else {
+        badge.style.display = 'none'; // Esconde se estiver tudo vazio
+    }
 }

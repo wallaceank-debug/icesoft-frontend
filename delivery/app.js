@@ -5,6 +5,7 @@ let cuponsSalvos = [];
 window.onload = async () => {
     await carregarProdutos(); 
     await carregarConfiguracoes(); 
+    atualizarBadgeMesasGlobal();
 };
 
 async function carregarProdutos() {
@@ -510,5 +511,27 @@ async function salvarTempoEntrega(tempo, botaoClicado) {
     } catch (e) {
         alert("Erro ao salvar o tempo.");
         botaoClicado.innerText = textoOriginal;
+    }
+}
+
+// Função para buscar mesas ativas e atualizar o ícone no menu lateral
+async function atualizarBadgeMesasGlobal() {
+    try {
+        // Usa a sua API da Icesoft para verificar
+        const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        const resposta = await fetch(`${API_URL}/mesas`);
+        const mesasAbertas = await resposta.json();
+        
+        const badge = document.getElementById('mesas-notification-badge');
+        if (badge) {
+            if (mesasAbertas.length > 0) {
+                badge.textContent = mesasAbertas.length;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.log("Aviso: Não foi possível checar as mesas abertas para o menu.", e);
     }
 }

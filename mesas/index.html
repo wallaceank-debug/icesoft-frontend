@@ -34,6 +34,28 @@
             background: #2196F3; color: white; padding: 12px 20px; border: none; 
             border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;
         }
+
+        /* CSS para o Aviso de Mesas Ocupadas (Menu Icesoft) */
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 4px; /* Posiciona no canto superior direito do ícone */
+            background-color: #ff3b30;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: bold;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 1px solid white;
+            z-index: 5;
+            pointer-events: none;
+        }
+
     </style>
 </head>
 <body style="display: flex; height: 100vh; background-color: #f0f2f5; margin: 0; font-family: 'Poppins', sans-serif;">
@@ -46,8 +68,11 @@
         <span class="menu-texto">Balcão PDV</span>
     </a>
     
-    <a href="../mesas/" class="menu-item ativo">
-        <span class="menu-icone">🪑</span>
+    <a href="../mesas/" class="menu-item">
+        <span class="menu-icone" style="position: relative;">
+            🪑
+            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+        </span>
         <span class="menu-texto">Mesas/Comandas</span>
     </a>
     

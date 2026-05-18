@@ -19,7 +19,10 @@
     </a>
     
     <a href="../mesas/" class="menu-item">
-        <span class="menu-icone">🪑</span>
+        <span class="menu-icone" style="position: relative;">
+            🪑
+            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+        </span>
         <span class="menu-texto">Mesas/Comandas</span>
     </a>
     
@@ -91,6 +94,7 @@
                     .slider-btn:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
                     .switch-btn input:checked + .slider-btn { background-color: #4CAF50; }
                     .switch-btn input:checked + .slider-btn:before { transform: translateX(24px); }
+
                 </style>
 
                 <div style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px;">
