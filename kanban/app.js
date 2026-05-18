@@ -14,6 +14,40 @@ let qtdPendentesAnterior = -1;
 let pedidosJaImpressos = []; 
 
 // ==========================================
+// ⏱️ MOTOR DO CRONÔMETRO (SLA)
+// ==========================================
+let tempoEntregaGlobal = 45; // Tempo padrão (será substituído pelo banco)
+
+function atualizarCronometros() {
+    document.querySelectorAll('.badge-cronometro').forEach(badge => {
+        if (!badge.getAttribute('data-hora')) return;
+
+        const dataPedido = new Date(badge.getAttribute('data-hora'));
+        const agora = new Date();
+        const diferencaMs = agora - dataPedido;
+        const SLA_ms = tempoEntregaGlobal * 60 * 1000;
+        const tempoRestanteMs = SLA_ms - diferencaMs;
+
+        if (tempoRestanteMs >= 0) {
+            // 🟢 No prazo (Verde)
+            const minutos = Math.floor(tempoRestanteMs / 60000);
+            const segundos = Math.floor((tempoRestanteMs % 60000) / 1000);
+            badge.innerHTML = `${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+            badge.style.background = '#00e676'; 
+        } else {
+            // 🔴 Atrasado (Vermelho)
+            const atrasoMs = Math.abs(tempoRestanteMs);
+            const minutos = Math.floor(atrasoMs / 60000);
+            const segundos = Math.floor((atrasoMs % 60000) / 1000);
+            badge.innerHTML = `ATRASADO: ${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+            badge.style.background = '#f44336'; 
+        }
+    });
+}
+// Faz o relógio rodar a cada 1 segundo
+setInterval(atualizarCronometros, 1000);
+
+// ==========================================
 // BUSCAR PEDIDOS NO SERVIDOR
 // ==========================================
 async function carregarPedidos() {
@@ -191,15 +225,25 @@ function renderizarKanban(pedidos) {
         
         // Pega apenas os dois primeiros nomes para não quebrar a tela
         const nomeCliente = (pedido.cliente_nome || "Anônimo").split(' ').slice(0, 2).join(' '); 
+        
+        // 🛠️ CORREÇÃO DO BUG DO NÚMERO (Puxa o diário e coloca o zero à esquerda)
+        const numeroVisual = String(pedido.numero_diario || pedido.id).padStart(2, '0');
 
-        // O NOVO CARD - CÓPIA EXATA DO SEU DESENHO!
+        // ⏱️ CRIA O SELO DO CRONÔMETRO (Apenas para pedidos não entregues)
+        let timerBadgeHtml = '';
+        if (pedido.status === 'Pendente Delivery' || pedido.status === 'A Preparar') {
+            timerBadgeHtml = `<span class="badge-cronometro" data-hora="${pedido.data_hora}" style="padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; color: white; background: #ccc; margin-left: 5px;">--:--</span>`;
+        }
+
+        // O NOVO CARD - COM NÚMERO DIÁRIO E CRONÔMETRO!
         const cardHtml = `
             <div style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 6px solid var(--cor-borda, #ffb74d); display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
 
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: #333; font-size: 1.7rem; line-height: 1;">#${pedido.id}</strong>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span style="color: #555; font-size: 1rem; font-weight: 600;">⏱️ ${horaVenda}</span>
+                    <strong style="color: #333; font-size: 1.7rem; line-height: 1;">#${numeroVisual}</strong>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span style="color: #555; font-size: 0.95rem; font-weight: 600;">⏱️ ${horaVenda}</span>
+                        ${timerBadgeHtml}
                         <button onclick="imprimirComandaKanban(pedidosGlobais.find(v => v.id === ${pedido.id}))" style="background: none; color: #555; border: none; padding: 0; cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Reimprimir Comanda">🖨️</button>
                         <button onclick="abrirDetalhes(${pedido.id})" style="background: none; border: none; padding: 0; cursor: pointer; font-size: 1.4rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Ver Detalhes do Pedido">🔍</button>
                     </div>
@@ -261,7 +305,7 @@ function abrirDetalhes(id) {
 
     const pagamentoDisplay = formatarPagamentoComTroco(pedido.forma_pagamento, pedido.valor_total);
 
-    document.getElementById('detalhe-id').innerText = `#${pedido.id}`;
+    document.getElementById('detalhe-id').innerText = '#' + String(pedido.numero_diario || pedido.id).padStart(2, '0');
     document.getElementById('detalhe-nome').innerText = pedido.cliente_nome || "Não informado";
     document.getElementById('detalhe-telefone').innerText = pedido.cliente_telefone || "Não informado";
     document.getElementById('detalhe-endereco').innerText = pedido.cliente_endereco || "Retirada Balcão / Não informado";
@@ -386,8 +430,18 @@ function imprimirComandaKanban(venda) {
 // ==========================================
 // INICIALIZAÇÃO E WEBSOCKETS
 // ==========================================
-window.onload = () => {
+window.onload = async () => {
     restaurarMemoriaDoSom();
+    
+    // Busca o tempo de entrega global do banco de dados
+    try {
+        const resConf = await fetch(`${API_URL}/configuracoes`);
+        const confs = await resConf.json();
+        if (confs.tempo_entrega) {
+            tempoEntregaGlobal = parseInt(confs.tempo_entrega);
+        }
+    } catch(e) { console.log("Erro ao buscar tempo, usando 45 min padrão."); }
+
     carregarPedidos();
 
     // Conecta no rádio do servidor para atualização em tempo real

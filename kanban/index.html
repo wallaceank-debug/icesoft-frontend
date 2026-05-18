@@ -7,137 +7,218 @@
     <title>Icesoft - Kanban Delivery</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        
-        /* ==========================================
-   MENU LATERAL SLIM (Retrátil) - UNIVERSAL
-   ========================================== */
-.menu-lateral {
-    width: 80px;
-    background-color: #00bcd4;
-    height: 100vh;
-    padding: 20px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    position: relative;
-    z-index: 1000;
-    flex-shrink: 0;
-}
+    /* ==========================================
+       1. RESET E ESTILOS BASE
+       ========================================== */
+    body { 
+        margin: 0; 
+        font-family: 'Poppins', sans-serif; 
+        display: flex; 
+        height: 100vh; 
+        background-color: #f0f2f5; 
+        overflow: hidden; 
+    }
 
-.menu-lateral:hover {
-    width: 250px;
-    align-items: flex-start;
-    padding: 20px 15px;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-}
+    .conteudo-principal { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        overflow: hidden; 
+    }
 
-.menu-item {
-    display: flex;
-    align-items: center;
-    width: 50px;
-    height: 50px;
-    background-color: white;
-    border-radius: 50%;
-    text-decoration: none;
-    color: #333;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    overflow: hidden;
-    white-space: nowrap;
-    cursor: pointer;
-    box-sizing: border-box;
-}
+    /* ==========================================
+       2. MENU LATERAL SLIM (Retrátil) - UNIVERSAL
+       ========================================== */
+    .menu-lateral {
+        width: 80px;
+        background-color: #00bcd4;
+        height: 100vh;
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        position: relative;
+        z-index: 1000;
+        flex-shrink: 0;
+    }
 
-.menu-lateral:hover .menu-item {
-    width: 100%;
-    border-radius: 25px; 
-}
+    .menu-lateral:hover {
+        width: 250px;
+        align-items: flex-start;
+        padding: 20px 15px;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+    }
 
-.menu-item:hover {
-    background-color: #e0f7fa;
-    transform: scale(1.05);
-}
+    .menu-item {
+        display: flex;
+        align-items: center;
+        width: 50px;
+        height: 50px;
+        background-color: white;
+        border-radius: 50%;
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        overflow: hidden;
+        white-space: nowrap;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
 
-/* Marcação de Aba Ativa */
-.menu-item.ativo {
-    background-color: #e0f7fa;
-    color: #00bcd4;
-    border: 2px solid white;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-    pointer-events: none;
-}
+    .menu-lateral:hover .menu-item {
+        width: 100%;
+        border-radius: 25px; 
+    }
 
-.menu-icone {
-    min-width: 50px;
-    text-align: center;
-    font-size: 1.3rem;
-}
+    .menu-item:hover {
+        background-color: #e0f7fa;
+        transform: scale(1.05);
+    }
 
-.menu-texto {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    margin-left: 5px;
-    font-size: 1rem;
-}
+    /* Marcação de Aba Ativa */
+    .menu-item.ativo {
+        background-color: #e0f7fa;
+        color: #00bcd4;
+        border: 2px solid white;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        pointer-events: none;
+    }
 
-.menu-lateral:hover .menu-texto {
-    opacity: 1;
-    transition-delay: 0.1s; 
-}
+    .menu-icone {
+        min-width: 50px;
+        text-align: center;
+        font-size: 1.3rem;
+    }
 
-/* SUBMENU RELATÓRIOS */
-.submenu-link {
-    color: white;
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 10px 15px;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    white-space: nowrap;
-    transition: background 0.2s, opacity 0.2s;
-    opacity: 0; 
-    pointer-events: none; 
-}
+    .menu-texto {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        margin-left: 5px;
+        font-size: 1rem;
+    }
 
-.menu-lateral:hover .submenu-link {
-    opacity: 1;
-    pointer-events: auto;
-}
+    .menu-lateral:hover .menu-texto {
+        opacity: 1;
+        transition-delay: 0.1s; 
+    }
 
-.submenu-link:hover {
-    background: rgba(0, 0, 0, 0.3);
-}
-        
-        body { margin: 0; font-family: 'Poppins', sans-serif; display: flex; height: 100vh; background-color: #f0f2f5; overflow: hidden; }
-        .conteudo-principal { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .header-kanban { background: #00bcd4; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; flex-shrink: 0; }
-        .header-kanban h1 { margin: 0; color: white; font-size: 1.5rem; font-weight: bold; }
-        
-        /* O Quadro Kanban (Rolagem horizontal se a tela for pequena) */
-        .board { display: flex; gap: 20px; padding: 20px; overflow-x: auto; flex: 1; align-items: flex-start; }
-        
-        /* As Colunas */
-        .coluna { flex: 0 0 320px; background: #eef2f5; border-radius: 12px; display: flex; flex-direction: column; max-height: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .coluna-header { padding: 15px; border-top-left-radius: 12px; border-top-right-radius: 12px; font-weight: bold; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Cores das Colunas */
-        .header-analise { background: #fff3e0; color: #e65100; border-bottom: 3px solid #ffb74d; }
-        .header-preparar { background: #e3f2fd; color: #1565c0; border-bottom: 3px solid #64b5f6; }
-        .header-entrega { background: #fbe9e7; color: #d84315; border-bottom: 3px solid #ff8a65; }
-        .header-entregue { background: #e8f5e9; color: #2e7d32; border-bottom: 3px solid #81c784; }
-        .header-cancelado { background: #ffebee; color: #c62828; border-bottom: 3px solid #e57373; }
+    /* SUBMENU RELATÓRIOS */
+    .submenu-link {
+        color: white;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 10px 15px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        white-space: nowrap;
+        transition: background 0.2s, opacity 0.2s;
+        opacity: 0; 
+        pointer-events: none; 
+    }
 
-        /* Área onde caem os cartões (rolagem vertical) */
-        .coluna-corpo { padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; }
+    .menu-lateral:hover .submenu-link {
+        opacity: 1;
+        pointer-events: auto;
+    }
 
-        /* Contador de pedidos */
-        .badge { background: rgba(0,0,0,0.1); padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; }
-    </style>
+    .submenu-link:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* ==========================================
+       3. KANBAN: CABEÇALHO E ÁREA PRINCIPAL
+       ========================================== */
+    .header-kanban { 
+        background: #00bcd4; 
+        padding: 15px 30px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        z-index: 10; 
+        flex-shrink: 0; 
+    }
+
+    .header-kanban h1 { 
+        margin: 0; 
+        color: white; 
+        font-size: 1.5rem; 
+        font-weight: bold; 
+    }
+    
+    /* O Quadro Kanban (Rolagem horizontal se a tela for pequena) */
+    .board { 
+        display: flex; 
+        gap: 20px; 
+        padding: 20px; 
+        overflow-x: auto; 
+        flex: 1; 
+        align-items: flex-start; 
+    }
+
+    /* ==========================================
+       4. KANBAN: COLUNAS E CARDS
+       ========================================== */
+    .coluna { 
+        flex: 0 0 320px; 
+        background: #eef2f5; 
+        border-radius: 12px; 
+        display: flex; 
+        flex-direction: column; 
+        max-height: 100%; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+    }
+
+    .coluna-header { 
+        padding: 15px; 
+        border-top-left-radius: 12px; 
+        border-top-right-radius: 12px; 
+        font-weight: bold; 
+        font-size: 1.1rem; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+    }
+
+    /* Área onde caem os cartões (rolagem vertical) */
+    .coluna-corpo { 
+        padding: 15px; 
+        overflow-y: auto; 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 15px; 
+    }
+
+    /* Contador de pedidos */
+    .badge { 
+        background: rgba(0,0,0,0.1); 
+        padding: 2px 10px; 
+        border-radius: 20px; 
+        font-size: 0.9rem; 
+    }
+
+    /* Cores das Colunas */
+    .header-analise   { background: #fff3e0; color: #e65100; border-bottom: 3px solid #ffb74d; }
+    .header-preparar  { background: #e3f2fd; color: #1565c0; border-bottom: 3px solid #64b5f6; }
+    .header-entrega   { background: #fbe9e7; color: #d84315; border-bottom: 3px solid #ff8a65; }
+    .header-entregue  { background: #e8f5e9; color: #2e7d32; border-bottom: 3px solid #81c784; }
+    .header-cancelado { background: #ffebee; color: #c62828; border-bottom: 3px solid #e57373; }
+
+    /* ==========================================
+       5. AJUSTE DE LARGURA DAS COLUNAS (SLA)
+       ========================================== */
+    .coluna, .coluna-kanban, .kanban-column, .column {
+        min-width: 340px !important;
+        max-width: 350px !important;
+    }
+</style>
 </head>
 <body>
 
