@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         
-        /* ==========================================
+    /* ==========================================
    MENU LATERAL SLIM (Retrátil) - UNIVERSAL
    ========================================== */
 .menu-lateral {
@@ -125,6 +125,12 @@
         /* Estilo para as miniaturas de imagem no painel */
         .preview-imagem { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-top: 10px; border: 1px dashed #ccc; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.9rem;}
         .preview-logo { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-top: 10px; border: 1px dashed #ccc; background-color: #f9f9f9; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.9rem;}
+
+        /* ESTILO DOS BOTÕES DE TEMPO DE ENTREGA (SLA) */
+        .btn-tempo { flex: 1; min-width: 65px; padding: 12px 5px; border: 2px solid #ddd; background: white; border-radius: 8px; font-weight: bold; color: #666; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
+        .btn-tempo:hover { border-color: #FF9800; color: #FF9800; }
+        .btn-tempo.ativo { background: #FF9800; border-color: #FF9800; color: white; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); pointer-events: none; }
+    
     </style>
 </head>
 <body>
@@ -231,6 +237,18 @@
                     <button id="btn-salvar-aparencia" onclick="salvarPersonalizacao()" style="width:100%; padding:15px; margin-top:25px; background:#4CAF50; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         💾 Salvar Aparência e Imagens
                     </button>
+                </div>
+
+                <div class="card-config">
+                    <h3>⏱️ Tempo de Entrega (SLA)</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Ajuste o tempo estimado conforme o movimento da cozinha. Isso altera o cronômetro do Kanban e avisa o cliente no cardápio online.</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <button class="btn-tempo" data-tempo="20" onclick="salvarTempoEntrega(20, this)">20 Min</button>
+                        <button class="btn-tempo" data-tempo="30" onclick="salvarTempoEntrega(30, this)">30 Min</button>
+                        <button class="btn-tempo" data-tempo="45" onclick="salvarTempoEntrega(45, this)">45 Min</button>
+                        <button class="btn-tempo" data-tempo="60" onclick="salvarTempoEntrega(60, this)">60 Min</button>
+                        <button class="btn-tempo" data-tempo="85" onclick="salvarTempoEntrega(85, this)">85 Min</button>
+                    </div>
                 </div>
 
                 <div class="card-config">

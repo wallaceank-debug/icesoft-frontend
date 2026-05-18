@@ -74,6 +74,13 @@ async function carregarConfiguracoes() {
             } catch(e) {}
         }
 
+        // Puxa o SLA de Tempo de Entrega (Card novo)
+        if (configs.tempo_entrega) {
+            marcarBotaoTempo(parseInt(configs.tempo_entrega));
+        } else {
+            marcarBotaoTempo(45); // Se não tiver nada salvo, marca 45 min
+        }
+
     } catch (e) {
         console.error("Erro ao carregar configurações:", e);
     }
@@ -472,4 +479,36 @@ async function salvarHorariosLoja() {
     }
     
     enviarParaNuvem({ horarios_funcionamento_auto: JSON.stringify(horarios) }, btn, textoOriginal, "#FF9800");
+}
+
+// ==========================================
+// ⏱️ CONTROLE DO TEMPO DE ENTREGA (SLA)
+// ==========================================
+function marcarBotaoTempo(tempo) {
+    document.querySelectorAll('.btn-tempo').forEach(btn => {
+        btn.classList.remove('ativo'); // Apaga todos
+        if (parseInt(btn.getAttribute('data-tempo')) === tempo) {
+            btn.classList.add('ativo'); // Acende só o escolhido
+        }
+    });
+}
+
+async function salvarTempoEntrega(tempo, botaoClicado) {
+    // Já acende o botão na mesma hora para o usuário sentir que funcionou
+    marcarBotaoTempo(tempo);
+    const textoOriginal = botaoClicado.innerText;
+    botaoClicado.innerText = "⏳"; // Dá um feedback visual de carregando
+    
+    try {
+        await fetch(`${API_URL}/configuracoes`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tempo_entrega: tempo })
+        });
+        botaoClicado.innerText = "✅";
+        setTimeout(() => { botaoClicado.innerText = textoOriginal; }, 2000);
+    } catch (e) {
+        alert("Erro ao salvar o tempo.");
+        botaoClicado.innerText = textoOriginal;
+    }
 }
