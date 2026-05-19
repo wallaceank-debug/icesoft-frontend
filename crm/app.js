@@ -76,7 +76,35 @@ function renderizarTabela(lista) {
     lista.forEach(cliente => {
         const nomeLimpo = cliente.nome || "Cliente não identificado";
         const totalGasto = Number(cliente.total_gasto).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const ultimaCompra = new Date(cliente.ultima_compra).toLocaleDateString('pt-BR');
+        
+        // --- INÍCIO: FAROL DE RETENÇÃO ---
+        const dataUltimaCompra = new Date(cliente.ultima_compra);
+        const hoje = new Date();
+        const diffDias = Math.floor((hoje - dataUltimaCompra) / (1000 * 60 * 60 * 24));
+        
+        let corFarol = '#25D366'; // Verde (Ativo - comprou nos últimos 15 dias)
+        let textoStatus = 'Ativo';
+        
+        if (diffDias >= 30) {
+            corFarol = '#f44336'; // Vermelho (Em Risco - não compra há 30 dias ou mais)
+            textoStatus = 'Em Risco';
+        } else if (diffDias >= 15) {
+            corFarol = '#ff9800'; // Amarelo (Esfriando - não compra entre 15 e 29 dias)
+            textoStatus = 'Esfriando';
+        }
+
+        // Monta a data com a bolinha colorida e o contador de dias
+        const ultimaCompra = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${corFarol}; box-shadow: 0 0 5px ${corFarol};" title="${textoStatus}"></span>
+                <span style="font-weight: 600;">${dataUltimaCompra.toLocaleDateString('pt-BR')}</span>
+            </div>
+            <div style="font-size: 0.8rem; color: #888; margin-top: 3px; margin-left: 20px;">
+                há ${diffDias} dias (${textoStatus})
+            </div>
+        `;
+        // --- FIM: FAROL DE RETENÇÃO ---
+
         const pedidosFeitos = Number(cliente.total_pedidos);
 
         // Lógica Visual da Fidelidade
@@ -109,8 +137,16 @@ function renderizarTabela(lista) {
         tbody.innerHTML += `
             <tr>
                 <td>
-                    <div style="font-weight: bold; color: #333;">${nomeLimpo}</div>
-                    <div style="color: #888; font-size: 0.85rem;">📱 ${cliente.telefone}</div>
+                    <div style="font-weight: bold; color: #333; font-size: 1.05rem;">${nomeLimpo}</div>
+                    <div style="color: #888; font-size: 0.85rem; margin-top: 2px;">📱 ${cliente.telefone}</div>
+                    <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="background: #fff3e0; color: #e65100; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #ffe0b2; display: inline-flex; align-items: center; gap: 4px;" title="Produto mais comprado por este cliente">
+                            ❤️ ${cliente.produto_favorito || 'Diversos'}
+                        </span>
+                        <button onclick="abrirModalZap('${cliente.telefone}', '${nomeLimpo}')" style="background: #25D366; color: white; border: none; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700; box-shadow: 0 2px 4px rgba(37,211,102,0.3); transition: 0.2s;">
+                            💬 Enviar Promoção
+                        </button>
+                    </div>
                 </td>
                 <td style="font-weight: 900; color: #00bcd4;">${totalGasto}</td>
                 <td style="color: #555;">${ultimaCompra}</td>
@@ -128,6 +164,54 @@ function filtrarClientes() {
         return nome.includes(termo) || tel.includes(termo);
     });
     renderizarTabela(filtrados);
+}
+
+// ==========================================
+// FUNÇÕES DE DISPARO WHATSAPP
+// ==========================================
+function abrirModalZap(telefone, nome) {
+    if (!telefone || telefone === 'undefined') return alert("Este cliente não tem um telefone registado válido.");
+    document.getElementById('zap-telefone-cliente').value = telefone;
+    document.getElementById('zap-nome-cliente').innerText = nome;
+    document.getElementById('zap-mensagem').value = '';
+    document.getElementById('modal-zap').style.display = 'flex';
+}
+
+function fecharModalZap() {
+    document.getElementById('modal-zap').style.display = 'none';
+}
+
+async function enviarMensagemZap() {
+    const btn = document.getElementById('btn-enviar-zap');
+    const telefone = document.getElementById('zap-telefone-cliente').value;
+    const mensagem = document.getElementById('zap-mensagem').value;
+
+    if (!mensagem.trim()) return alert("Escreva uma oferta ou mensagem antes de enviar!");
+
+    btn.innerText = 'Enviando...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/whatsapp/disparo-manual`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telefone, mensagem })
+        });
+        
+        const data = await res.json();
+        
+        if (data.sucesso) {
+            alert("✅ Oferta enviada com sucesso direto para o WhatsApp do cliente!");
+            fecharModalZap();
+        } else {
+            alert("❌ Erro: " + (data.erro || "Falha ao enviar a mensagem."));
+        }
+    } catch (e) {
+        alert("❌ Erro de conexão com o servidor. A mensagem não foi enviada.");
+    } finally {
+        btn.innerText = 'Enviar Oferta 🚀';
+        btn.disabled = false;
+    }
 }
 
 window.onload = iniciarCRM;

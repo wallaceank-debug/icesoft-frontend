@@ -273,6 +273,22 @@
     </div>
 </div>
 
+<div id="modal-zap" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+    <div style="background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <h3 style="margin-top: 0; color: #25D366; display: flex; align-items: center; gap: 10px;">💬 Enviar Oferta Exclusiva</h3>
+        <p style="font-size: 0.9rem; color: #555;">Enviando para: <strong id="zap-nome-cliente" style="color: #333;"></strong></p>
+        
+        <textarea id="zap-mensagem" rows="5" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; font-family: inherit; resize: vertical; box-sizing: border-box;" placeholder="Ex: Olá! Vimos que adora o nosso [Produto Favorito]. Para matar a saudade, preparámos um cupão de 15% de desconto para si hoje!"></textarea>
+        
+        <input type="hidden" id="zap-telefone-cliente">
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="fecharModalZap()" style="background: #f1f3f4; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; color: #555;">Cancelar</button>
+            <button id="btn-enviar-zap" onclick="enviarMensagemZap()" style="background: #25D366; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;">Enviar Oferta 🚀</button>
+        </div>
+    </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
