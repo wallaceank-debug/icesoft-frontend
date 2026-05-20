@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raio-X de Produtos - Icesoft</title>
+    <link rel="stylesheet" href="../pdv/style.css">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="conteudo-principal" style="width: 100%; max-width: 96%; margin: 0 auto; padding: 20px 40px; box-sizing: border-box;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <a href="index.html" style="background: #607d8b; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    ⬅️ Voltar
+                </a>
+                <h1 style="margin: 0; color: #333; font-size: 1.8rem;">Raio-X de Produtos & Curva ABC</h1>
+            </div>
+
+            <div class="card-filtro" style="margin: 0; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <div class="filtros-data" style="display: flex; gap: 15px;">
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #666;">Início:</label>
+                        <input type="date" id="filtro-inicio" class="input-data" onchange="carregarRaioX()">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: bold; color: #666;">Fim:</label>
+                        <input type="date" id="filtro-fim" class="input-data" onchange="carregarRaioX()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-kpis">
+            <div class="kpi-card" style="border-left: 5px solid #4CAF50;">
+                <div class="kpi-dados">
+                    <p>Produto Mais Vendido</p>
+                    <h3 id="kpi-top-produto" style="font-size: 1.2rem;">Carregando...</h3>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-left: 5px solid #FF9800;">
+                <div class="kpi-dados">
+                    <p>Adicional Campeão</p>
+                    <h3 id="kpi-top-adicional" style="font-size: 1.2rem;">Carregando...</h3>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-left: 5px solid #F44336;">
+                <div class="kpi-dados">
+                    <p>Pior Conversão (Atenção)</p>
+                    <h3 id="kpi-pior-conversao" style="font-size: 1.2rem;">Carregando...</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-graficos" style="grid-template-columns: 2fr 1fr; margin-top: 20px;">
+            <div class="grafico-card">
+                <h3>📊 Curva ABC & Conversão do Funil</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px;">
+                        <thead>
+                            <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd; user-select: none;">
+                                <th style="padding: 10px; cursor: pointer; text-align: center; transition: 0.2s;" onmouseover="this.style.background='#eef0f2'" onmouseout="this.style.background='transparent'" onclick="ordenarTabela('curva')">Curva <span id="icone-curva"></span></th>
+                                <th style="padding: 10px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#eef0f2'" onmouseout="this.style.background='transparent'" onclick="ordenarTabela('nome')">Produto <span id="icone-nome"></span></th>
+                                <th style="padding: 10px; cursor: pointer; text-align: center; transition: 0.2s;" onmouseover="this.style.background='#eef0f2'" onmouseout="this.style.background='transparent'" onclick="ordenarTabela('visitas')">Visitas <span id="icone-visitas">↕️</span></th>
+                                <th style="padding: 10px; cursor: pointer; text-align: center; transition: 0.2s;" onmouseover="this.style.background='#eef0f2'" onmouseout="this.style.background='transparent'" onclick="ordenarTabela('vendas')">Vendas <span id="icone-vendas">↕️</span></th>
+                                <th style="padding: 10px; cursor: pointer; text-align: center; transition: 0.2s;" onmouseover="this.style.background='#eef0f2'" onmouseout="this.style.background='transparent'" onclick="ordenarTabela('conversao')">Conversão <span id="icone-conversao">↕️</span></th>
+                                <th style="padding: 10px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#eef0f2'" onmouseout="this.style.background='transparent'" onclick="ordenarTabela('faturamento')">Faturamento <span id="icone-faturamento">⬇️</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-abc">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grafico-card">
+                <h3>🍯 Top 5 Adicionais (Insights)</h3>
+                <div class="grafico-container-barra" style="height: 300px;">
+                    <canvas id="graficoAdicionais"></canvas>
+                </div>
+                <p style="font-size: 0.85rem; color: #666; margin-top: 10px; text-align: center;">
+                    Use estes ingredientes para montar os seus novos "Açaís Prontos"!
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="produtos.js"></script>
+</body>
+</html>
