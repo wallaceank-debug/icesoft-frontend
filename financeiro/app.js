@@ -18,19 +18,37 @@ async function carregarCategorias() {
 
 async function carregarResumoFinanceiro() {
     try {
+        // Asegura que temos os saldos de bancos mais atualizados na memória
+        await carregarBancos();
+
         const res = await fetch(`${API_URL}/financeiro/resumo`);
         const dados = await res.json();
         
-        // Pinta os valores nos cards
+        // Pinta os valores nos cards tradicionais
         document.getElementById('fin-saldo').innerText = `R$ ${dados.saldo.toFixed(2).replace('.', ',')}`;
         document.getElementById('fin-receber').innerText = `R$ ${dados.receber.toFixed(2).replace('.', ',')}`;
         document.getElementById('fin-pagar').innerText = `R$ ${dados.pagar.toFixed(2).replace('.', ',')}`;
         
-        // Regra visual: Se o saldo ficar negativo, a fonte fica vermelha
+        // 🧠 MÁGICA: Filtra e soma o saldo atual de todas as contas, IGNORANDO o Caixa Físico / Gaveta
+        const saldoApenasBancos = contasBancariasGlobais
+            .filter(b => !b.nome.toLowerCase().includes('caixa físico') && !b.nome.toLowerCase().includes('gaveta'))
+            .reduce((soma, b) => soma + b.saldo_atual, 0);
+
+        // Alimenta o novo card
+        document.getElementById('fin-saldo-bancos').innerText = `R$ ${saldoApenasBancos.toFixed(2).replace('.', ',')}`;
+
+        // Alerta visual de saldo negativo para o Saldo Geral
         if (dados.saldo < 0) {
             document.getElementById('fin-saldo').style.color = '#f44336';
         } else {
             document.getElementById('fin-saldo').style.color = '#333';
+        }
+
+        // Alerta visual de saldo negativo para o Saldo de Bancos
+        if (saldoApenasBancos < 0) {
+            document.getElementById('fin-saldo-bancos').style.color = '#f44336';
+        } else {
+            document.getElementById('fin-saldo-bancos').style.color = '#333';
         }
     } catch (e) {
         console.error("Erro ao carregar resumo:", e);
@@ -202,7 +220,7 @@ async function salvarLancamento() {
 }
 
 // ==========================================
-// 🏦 LÓGICA DE CONTAS BANCÁRIAS
+// 🏦 LÓGICA DE CONTAS BANCÁRIAS (CORRIGIDO)
 // ==========================================
 async function carregarBancos() {
     try {
@@ -212,37 +230,101 @@ async function carregarBancos() {
 }
 
 async function abrirModalBancos() {
-    await carregarBancos(); // Atualiza a lista
+    await carregarBancos(); 
     const container = document.getElementById('lista-bancos-cadastrados');
     container.innerHTML = '';
     
     contasBancariasGlobais.forEach(banco => {
         container.innerHTML += `
-            <div style="padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-                <strong>${banco.nome}</strong>
-                <span style="color: #666; font-size: 0.85rem;">Saldo: R$ ${parseFloat(banco.saldo_inicial).toFixed(2)}</span>
+            <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: #333; font-size: 0.95rem;">${banco.nome}</strong>
+                    <div style="font-weight: bold; color: ${banco.saldo_atual >= 0 ? '#4CAF50' : '#f44336'}; font-size: 0.95rem;">
+                        R$ ${parseFloat(banco.saldo_atual).toFixed(2).replace('.', ',')}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <button onclick="prepararEdicaoBanco(${banco.id}, '${banco.nome}', ${banco.saldo_inicial})" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem;" title="Editar Banco">✏️</button>
+                    <button onclick="deletarBanco(${banco.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;" title="Excluir Banco">🗑️</button>
+                </div>
             </div>
         `;
     });
 
+    // Reseta o formulário para modo inclusão padrão ao abrir
+    document.getElementById('edit-banco-id').value = '';
     document.getElementById('novo-banco-nome').value = '';
+    document.getElementById('novo-banco-saldo').value = '0.00';
+    document.getElementById('titulo-acao-banco').innerText = 'Adicionar Novo Banco';
+    
+    const btnSalvar = document.getElementById('btn-salvar-banco');
+    if(btnSalvar) {
+        btnSalvar.innerText = '+ Salvar Banco';
+        btnSalvar.style.background = '#2196F3';
+    }
+
     document.getElementById('modal-bancos').style.display = 'flex';
 }
 
+function fecharModalBancos() {
+    document.getElementById('modal-bancos').style.display = 'none';
+}
+
+// Ativa o modo de edição jogando os dados para as caixas de texto
+function prepararEdicaoBanco(id, nome, saldo_inicial) {
+    document.getElementById('edit-banco-id').value = id;
+    document.getElementById('novo-banco-nome').value = nome;
+    document.getElementById('novo-banco-saldo').value = parseFloat(saldo_inicial).toFixed(2);
+    
+    document.getElementById('titulo-acao-banco').innerText = 'Editar Conta Bancária';
+    const btnSalvar = document.getElementById('btn-salvar-banco');
+    if (btnSalvar) {
+        btnSalvar.innerText = 'Atualizar Banco';
+        btnSalvar.style.background = '#FF9800'; // Cor laranja para alertar edição
+    }
+}
+
 async function salvarBanco() {
+    const idEdit = document.getElementById('edit-banco-id').value;
     const nome = document.getElementById('novo-banco-nome').value.trim();
+    const saldoInicial = parseFloat(document.getElementById('novo-banco-saldo').value) || 0;
+    
     if (!nome) return alert("⚠️ Digite o nome do banco!");
 
     try {
-        const res = await fetch(`${API_URL}/financeiro/bancos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome: nome, saldo_inicial: 0 })
-        });
+        let res;
+        if (idEdit) {
+            // Se tem ID na memória, atualiza usando PUT
+            res = await fetch(`${API_URL}/financeiro/bancos/${idEdit}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome: nome, saldo_inicial: saldoInicial })
+            });
+        } else {
+            // Se não tem ID, cria um novo registro usando POST
+            res = await fetch(`${API_URL}/financeiro/bancos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome: nome, saldo_inicial: saldoInicial })
+            });
+        }
         
         if (res.ok) {
-            alert("✅ Banco cadastrado com sucesso!");
-            await abrirModalBancos(); // Recarrega a lista no modal
-        } else alert("❌ Erro ao salvar banco.");
+            await abrirModalBancos();
+            await carregarResumoFinanceiro();
+        } else {
+            alert("❌ Erro ao salvar banco.");
+        }
+    } catch (e) { alert("❌ Falha de conexão."); }
+}
+
+async function deletarBanco(id) {
+    if (!confirm("⚠️ Tem certeza que deseja excluir este banco?")) return;
+    try {
+        const res = await fetch(`${API_URL}/financeiro/bancos/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            await carregarResumoFinanceiro(); 
+            await abrirModalBancos(); 
+        } else alert("❌ Erro ao deletar o banco.");
     } catch (e) { alert("❌ Falha de conexão."); }
 }

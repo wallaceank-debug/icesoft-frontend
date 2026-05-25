@@ -18,6 +18,7 @@
         .fin-card .valor { font-size: 1.8rem; font-weight: 700; color: #333; margin: 0; }
         
         .fin-card.saldo { border-color: #00bcd4; }
+        .fin-card.bancos { border-color: #2196F3; } /* 💙 Azul para identificar bancos */
         .fin-card.receitas { border-color: #4CAF50; }
         .fin-card.despesas { border-color: #f44336; }
         
@@ -97,6 +98,7 @@
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="fin-btn" onclick="abrirModalBancos()" style="background: #2196F3;">🏦 Bancos</button>
+                    <button class="fin-btn" onclick="window.location.href='graficos.html'" style="background: #FF9800;">📈 Gráficos</button>
                     <button class="fin-btn" onclick="window.location.href='dre.html'" style="background: #6200ea;">📊 Ver DRE</button>
                     <button class="fin-btn nova-receita" onclick="abrirModalLancamento('Receita')">+ Nova Receita</button>
                     <button class="fin-btn nova-despesa" onclick="abrirModalLancamento('Despesa')">- Nova Despesa</button>
@@ -108,6 +110,12 @@
                     <h3>Saldo Geral (Bancos + Caixa)</h3>
                     <p class="valor" id="fin-saldo">R$ 0,00</p>
                 </div>
+                
+                <div class="fin-card bancos">
+                    <h3>Saldo Apenas em Bancos</h3>
+                    <p class="valor" id="fin-saldo-bancos">R$ 0,00</p>
+                </div>
+                
                 <div class="fin-card receitas">
                     <h3>Contas a Receber (Mês)</h3>
                     <p class="valor" id="fin-receber">R$ 0,00</p>
@@ -178,13 +186,19 @@
             <div id="lista-bancos-cadastrados" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
                 </div>
 
-            <h3 style="font-size: 1rem; color: #666; margin-bottom: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">Adicionar Novo Banco</h3>
-            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Nome do Banco (Ex: Nubank, Sicredi)</label>
-            <input type="text" id="novo-banco-nome" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+            <h3 id="titulo-acao-banco" style="font-size: 1rem; color: #666; margin-bottom: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">Adicionar Novo Banco</h3>
+            
+            <input type="hidden" id="edit-banco-id" value="">
+            
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Nome do Banco (Ex: Nubank, Caixa Físico)</label>
+            <input type="text" id="novo-banco-nome" style="width:100%; padding:10px; margin-top:5px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Saldo Inicial (R$)</label>
+            <input type="number" step="0.01" id="novo-banco-saldo" placeholder="Ex: 1500.00" value="0.00" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
 
             <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button onclick="document.getElementById('modal-bancos').style.display='none'" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Fechar</button>
-                <button onclick="salvarBanco()" style="flex: 2; padding: 12px; background: #2196F3; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">+ Salvar Banco</button>
+                <button onclick="fecharModalBancos()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Fechar</button>
+                <button onclick="salvarBanco()" id="btn-salvar-banco" style="flex: 2; padding: 12px; background: #2196F3; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">+ Salvar Banco</button>
             </div>
         </div>
     </div>
