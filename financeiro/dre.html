@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRE - Icesoft</title>
+    <link rel="stylesheet" href="../pdv/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .fin-container { padding: 20px; flex: 1; overflow-y: auto; background-color: #f4f7f6; }
+        .dre-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 800px; margin: 0 auto; }
+        
+        .dre-row { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 1rem; }
+        .dre-row:last-child { border-bottom: none; }
+        .dre-row span:first-child { color: #555; }
+        .dre-row span:last-child { font-weight: bold; }
+        
+        .dre-row.receita span:last-child { color: #4CAF50; }
+        .dre-row.despesa span:last-child { color: #f44336; }
+        
+        .dre-subtotal { background: #e0f7fa; border-radius: 6px; margin: 8px 0; border: 1px solid #b2ebf2; }
+        .dre-subtotal span:first-child { color: #00838f; font-weight: bold; }
+        .dre-subtotal span:last-child { color: #00838f; }
+
+        .dre-total { background: #6200ea; color: white !important; border-radius: 8px; margin-top: 15px; font-size: 1.2rem; }
+        .dre-total span { color: white !important; font-weight: 800 !important; }
+        .dre-total.prejuizo { background: #d32f2f; }
+    </style>
+</head>
+<body>
+
+    <aside class="menu-lateral">
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
+        <a href="../pdv/" class="menu-item"><span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../financeiro/" class="menu-item ativo"><span class="menu-icone">🏦</span><span class="menu-texto">Financeiro</span></a>
+        <div class="menu-item" onclick="window.location.href='../pdv/'" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
+            <span class="menu-icone">⬅️</span><span class="menu-texto">Voltar ao PDV</span>
+        </div>
+    </aside>
+
+    <div class="conteudo-principal">
+        <header class="pdv-header" style="background-color: #333;">
+            <div class="logo-area"><h1>📊 DRE - Demonstrativo de Resultado</h1></div>
+            <button onclick="window.location.href='index.html'" style="padding: 8px 15px; background: #6200ea; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⬅️ Voltar ao Resumo</button>
+        </header>
+
+        <main class="fin-container">
+            <div class="dre-card" id="dre-conteudo">
+                <h2 style="text-align: center; margin-top: 0; color: #333; margin-bottom: 20px;">Competência: Mês Atual</h2>
+                <div style="text-align: center; color: #666; font-style: italic;">Calculando inteligência financeira...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+
+        window.onload = async () => {
+            const container = document.getElementById('dre-conteudo');
+            try {
+                const res = await fetch(`${API_URL}/financeiro/dre`);
+                const dre = await res.json();
+                
+                const fMoeda = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+                
+                const classeLucro = dre.lucro_liquido >= 0 ? 'dre-total' : 'dre-total prejuizo';
+                const textoLucro = dre.lucro_liquido >= 0 ? '(=) LUCRO LÍQUIDO' : '(=) PREJUÍZO LÍQUIDO';
+
+                container.innerHTML = `
+                    <h2 style="text-align: center; margin-top: 0; color: #333; margin-bottom: 20px;">Competência: Mês Atual</h2>
+                    
+                    <div class="dre-row receita"><span>1. Receita Bruta Operacional</span><span>${fMoeda(dre.receita_bruta)}</span></div>
+                    <div class="dre-row despesa"><span>(-) Deduções (Impostos, Taxas de Cartão)</span><span>${fMoeda(dre.deducoes)}</span></div>
+                    
+                    <div class="dre-row dre-subtotal"><span>(=) RECEITA LÍQUIDA</span><span>${fMoeda(dre.receita_liquida)}</span></div>
+                    
+                    <div class="dre-row despesa"><span>(-) CMV (Insumos, Embalagens, Revenda)</span><span>${fMoeda(dre.cmv)}</span></div>
+                    
+                    <div class="dre-row dre-subtotal"><span>(=) LUCRO BRUTO (Margem de Contribuição)</span><span>${fMoeda(dre.lucro_bruto)}</span></div>
+                    
+                    <div class="dre-row despesa"><span>(-) Despesas Operacionais (Aluguel, Folha, Manutenção)</span><span>${fMoeda(dre.despesas_operacionais)}</span></div>
+                    <div class="dre-row despesa"><span>(-) Despesas com Vendas (Marketing, Motoboy)</span><span>${fMoeda(dre.despesas_vendas)}</span></div>
+                    
+                    <div class="dre-row dre-subtotal"><span>(=) RESULTADO OPERACIONAL (EBITDA base)</span><span>${fMoeda(dre.resultado_operacional)}</span></div>
+                    
+                    <div class="dre-row despesa"><span>(-) Investimentos em Melhorias/Máquinas</span><span>${fMoeda(dre.investimentos)}</span></div>
+                    <div class="dre-row despesa"><span>(-) Despesas Financeiras (Empréstimos, Juros)</span><span>${fMoeda(dre.despesas_financeiras)}</span></div>
+                    <div class="dre-row despesa"><span>(-) Saídas Não Operacionais (Distribuição de Lucro)</span><span>${fMoeda(dre.distribuicao_lucros + dre.nao_operacional)}</span></div>
+                    <div class="dre-row receita"><span>(+) Outras Receitas / Aportes</span><span>${fMoeda(dre.outras_receitas)}</span></div>
+                    
+                    <div class="dre-row ${classeLucro}"><span>${textoLucro}</span><span>${fMoeda(dre.lucro_liquido)}</span></div>
+                `;
+            } catch (e) {
+                container.innerHTML = `<div style="text-align: center; color: red;">Erro ao gerar DRE. Verifique o servidor.</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

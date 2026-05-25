@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Financeiro - Icesoft</title>
+    <link rel="stylesheet" href="../pdv/style.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos específicos do Módulo Financeiro */
+        .fin-container { padding: 20px; flex: 1; overflow-y: auto; background-color: #f4f7f6; }
+        .fin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .fin-header h1 { margin: 0; color: #333; font-size: 1.8rem; }
+        
+        .fin-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .fin-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #ccc; }
+        .fin-card h3 { margin: 0 0 10px 0; color: #666; font-size: 1rem; font-weight: 600; }
+        .fin-card .valor { font-size: 1.8rem; font-weight: 700; color: #333; margin: 0; }
+        
+        .fin-card.saldo { border-color: #00bcd4; }
+        .fin-card.receitas { border-color: #4CAF50; }
+        .fin-card.despesas { border-color: #f44336; }
+        
+        .fin-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .fin-btn.nova-receita { background-color: #4CAF50; }
+        .fin-btn.nova-despesa { background-color: #f44336; }
+        .fin-btn:hover { filter: brightness(0.9); transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <aside class="menu-lateral">
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
+        
+        <a href="../pdv/" class="menu-item">
+            <span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span>
+        </a>
+        <a href="../mesas/" class="menu-item">
+            <span class="menu-icone" style="position: relative;">🪑<span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span></span>
+            <span class="menu-texto">Mesas/Comandas</span>
+        </a>
+        <a href="../gestao/" class="menu-item">
+            <span class="menu-icone">🍔</span><span class="menu-texto">Cardápio</span>
+        </a>
+        <a href="../delivery/" class="menu-item">
+            <span class="menu-icone">🛵</span><span class="menu-texto">Gestão Delivery</span>
+        </a>
+        <a href="../kanban/" class="menu-item">
+            <span class="menu-icone">📱</span><span class="menu-texto">Painel Kanban</span>
+        </a>
+        <a href="../integracoes/" class="menu-item">
+            <span class="menu-icone">🔌</span><span class="menu-texto">Integrações</span>
+        </a>
+        
+        <a href="../financeiro/" class="menu-item ativo">
+            <span class="menu-icone">🏦</span><span class="menu-texto">Financeiro</span>
+        </a>
+
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+                <span class="menu-icone">📊</span><span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+            </div>
+            <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
+                <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
+                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+                <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
+                <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
+            </div>
+        </div>
+
+        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
+            <span class="menu-icone" style="color: #f44336;">🚪</span><span class="menu-texto" style="color: #f44336;">Sair</span>
+        </div>
+    </aside>
+
+    <script>
+        function toggleRelatorios() {
+            const submenu = document.getElementById('submenu-relatorios');
+            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
+        }
+    </script>
+
+    <div class="conteudo-principal">
+        <header class="pdv-header" style="background-color: #333;">
+            <div class="logo-area">
+                <h1>🏦 MÓDULO FINANCEIRO</h1>
+            </div>
+        </header>
+
+        <main class="fin-container">
+            <div class="fin-header">
+                <div>
+                    <h1>Visão Geral</h1>
+                    <p style="color: #666; margin-top: 5px;">Acompanhe a saúde financeira da sua loja.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="fin-btn" onclick="abrirModalBancos()" style="background: #2196F3;">🏦 Bancos</button>
+                    <button class="fin-btn" onclick="window.location.href='dre.html'" style="background: #6200ea;">📊 Ver DRE</button>
+                    <button class="fin-btn nova-receita" onclick="abrirModalLancamento('Receita')">+ Nova Receita</button>
+                    <button class="fin-btn nova-despesa" onclick="abrirModalLancamento('Despesa')">- Nova Despesa</button>
+                </div>
+            </div>
+
+            <div class="fin-cards-grid">
+                <div class="fin-card saldo">
+                    <h3>Saldo Geral (Bancos + Caixa)</h3>
+                    <p class="valor" id="fin-saldo">R$ 0,00</p>
+                </div>
+                <div class="fin-card receitas">
+                    <h3>Contas a Receber (Mês)</h3>
+                    <p class="valor" id="fin-receber">R$ 0,00</p>
+                </div>
+                <div class="fin-card despesas">
+                    <h3>Contas a Pagar (Mês)</h3>
+                    <p class="valor" id="fin-pagar">R$ 0,00</p>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h2 style="margin-top: 0; color: #333; margin-bottom: 15px;">Últimos Lançamentos</h2>
+                <div id="fin-lista-lancamentos">
+                    <p style="color: #999; font-style: italic;">Carregando dados do servidor...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+        </main>
+    </div>
+
+    <div id="modal-lancamento" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000;">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h2 id="modal-titulo" style="margin-top:0; color:#333;">Novo Lançamento</h2>
+            
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Descrição</label>
+            <input type="text" id="lan-descricao" placeholder="Ex: Conta de Luz" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Valor (R$)</label>
+            <input type="number" step="0.01" id="lan-valor" placeholder="Ex: 150.00" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Categoria (DRE)</label>
+            <select id="lan-categoria" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+                <option value="">Carregando...</option>
+            </select>
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Conta Bancária / Caixa</label>
+            <select id="lan-conta" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+                <option value="">Carregando...</option>
+            </select>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Vencimento</label>
+                    <input type="date" id="lan-data" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Status</label>
+                    <select id="lan-status" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+                        <option value="Pendente">Pendente</option>
+                        <option value="Pago">Pago</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="fecharModalLancamento()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Cancelar</button>
+                <button onclick="salvarLancamento()" id="btn-salvar-lan" style="flex: 2; padding: 12px; background: #00bcd4; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+<div id="modal-bancos" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2500;">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h2 style="margin-top:0; color:#333;">🏦 Contas Bancárias</h2>
+            
+            <div id="lista-bancos-cadastrados" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                </div>
+
+            <h3 style="font-size: 1rem; color: #666; margin-bottom: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">Adicionar Novo Banco</h3>
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Nome do Banco (Ex: Nubank, Sicredi)</label>
+            <input type="text" id="novo-banco-nome" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="document.getElementById('modal-bancos').style.display='none'" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Fechar</button>
+                <button onclick="salvarBanco()" style="flex: 2; padding: 12px; background: #2196F3; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">+ Salvar Banco</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
