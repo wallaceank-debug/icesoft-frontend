@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa - Icesoft</title>
+    <link rel="stylesheet" href="../pdv/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .fin-container { padding: 20px; flex: 1; overflow-y: auto; background-color: #f4f7f6; }
+        .fluxo-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+        
+        /* Largura mínima aumentada para suportar 12 meses confortavelmente no ecrã */
+        .fluxo-table { width: 100%; border-collapse: collapse; min-width: 1400px; font-size: 0.95rem; }
+        .fluxo-table th, .fluxo-table td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+        .fluxo-table th:first-child, .fluxo-table td:first-child { text-align: left; font-weight: 600; color: #555; position: sticky; left: 0; background: white; border-right: 2px solid #eee; z-index: 2;}
+        
+        .fluxo-table th { background-color: #f8f9fa; color: #333; font-weight: bold; border-bottom: 2px solid #ddd; vertical-align: top; }
+        
+        .linha-grupo td { background-color: #e0f7fa; font-weight: 700; color: #00838f; border-top: 2px solid #b2ebf2; border-bottom: 2px solid #b2ebf2;}
+        .linha-grupo.despesa td { background-color: #ffebee; color: #c62828; border-top: 2px solid #ffcdd2; border-bottom: 2px solid #ffcdd2;}
+        
+        .linha-saldo td { background-color: #333; color: white !important; font-weight: bold; font-size: 1.1rem; }
+        .linha-saldo td:first-child { background-color: #222; }
+        
+        .valor-positivo { color: #4CAF50; font-weight: bold; }
+        .valor-negativo { color: #f44336; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <aside class="menu-lateral">
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
+        <a href="../pdv/" class="menu-item"><span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../financeiro/" class="menu-item ativo"><span class="menu-icone">🏦</span><span class="menu-texto">Financeiro</span></a>
+        <div class="menu-item" onclick="window.location.href='../pdv/'" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
+            <span class="menu-icone">⬅️</span><span class="menu-texto">Voltar ao PDV</span>
+        </div>
+    </aside>
+
+    <div class="conteudo-principal">
+        <header class="pdv-header" style="background-color: #333;">
+            <div class="logo-area"><h1>📆 FLUXO DE CAIXA (REALIZADO & PREVISTO)</h1></div>
+            <button onclick="window.location.href='index.html'" style="padding: 8px 15px; background: #6200ea; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⬅️ Voltar ao Resumo</button>
+        </header>
+
+        <main class="fin-container">
+            <div class="fluxo-card">
+                <h2 style="margin-top: 0; color: #333; margin-bottom: 15px;">Evolução e Previsão Financeira (12 Meses)</h2>
+                <div id="tabela-container">
+                    <p style="color: #666; font-style: italic;">Carregando panorama de caixa...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+
+        const formatarMes = (str) => {
+            const [y, m] = str.split('-');
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return `${meses[parseInt(m)-1]}/${y.substring(2)}`;
+        };
+
+        const fMoeda = (val) => `R$ ${val.toFixed(2).replace('.', ',')}`;
+
+        window.onload = async () => {
+            try {
+                const res = await fetch(`${API_URL}/financeiro/fluxo-caixa`);
+                const dados = await res.json();
+
+                const dataAtual = new Date();
+                const mesAtualStr = `${dataAtual.getFullYear()}-${String(dataAtual.getMonth() + 1).padStart(2, '0')}`;
+
+                let html = `<table class="fluxo-table">`;
+                
+                // Cabeçalho dos Meses com Etiquetas Inteligentes
+                html += `<tr><th>Categorias</th>`;
+                dados.forEach(d => {
+                    let badge = '';
+                    if (d.mes < mesAtualStr) badge = '<br><span style="color:#999; font-size:0.75rem; font-weight:normal;">(Realizado)</span>';
+                    else if (d.mes === mesAtualStr) badge = '<br><span style="color:#2196F3; font-size:0.75rem; font-weight:bold;">(Atual)</span>';
+                    else badge = '<br><span style="color:#FF9800; font-size:0.75rem; font-weight:bold;">(Previsto)</span>';
+                    
+                    html += `<th style="text-align: right; line-height: 1.2;">${formatarMes(d.mes)}${badge}</th>`;
+                });
+                html += `</tr>`;
+
+                // --- BLOCO DE RECEITAS ---
+                html += `<tr><td>(+) Vendas (PDV/Delivery)</td>`;
+                dados.forEach(d => html += `<td class="valor-positivo">${fMoeda(d.receita_vendas)}</td>`);
+                html += `</tr><tr><td>(+) Outras Receitas/Aportes</td>`;
+                dados.forEach(d => html += `<td class="valor-positivo">${fMoeda(d.receitas_manuais)}</td>`);
+                html += `</tr><tr class="linha-grupo"><td>(=) TOTAL DE ENTRADAS</td>`;
+                dados.forEach(d => html += `<td>${fMoeda(d.receita_total)}</td>`);
+                html += `</tr>`;
+
+                // --- BLOCO DE DESPESAS ---
+                html += `<tr><td>(-) C.M.V (Insumos/Embalagens)</td>`;
+                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.cmv)}</td>`);
+                html += `</tr><tr><td>(-) Despesas Operacionais (Aluguel/Folha)</td>`;
+                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.desp_op)}</td>`);
+                html += `</tr><tr><td>(-) Despesas com Vendas (Motoboy/MKT)</td>`;
+                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.desp_vendas)}</td>`);
+                html += `</tr><tr><td>(-) Impostos e Taxas</td>`;
+                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.impostos)}</td>`);
+                html += `</tr><tr><td>(-) Despesas Financeiras e Investimentos</td>`;
+                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.financeiras + d.investimentos)}</td>`);
+                html += `</tr><tr class="linha-grupo despesa"><td>(=) TOTAL DE SAÍDAS</td>`;
+                dados.forEach(d => html += `<td>${fMoeda(d.despesa_total)}</td>`);
+                html += `</tr>`;
+
+                // --- BLOCO FINAL ---
+                html += `<tr class="linha-saldo"><td>RESULTADO DO MÊS (SOBRA)</td>`;
+                dados.forEach(d => {
+                    const corStr = d.saldo_mes >= 0 ? '#4CAF50' : '#f44336';
+                    html += `<td style="color: ${corStr} !important;">${fMoeda(d.saldo_mes)}</td>`;
+                });
+                html += `</tr></table>`;
+
+                document.getElementById('tabela-container').innerHTML = html;
+
+            } catch (e) {
+                document.getElementById('tabela-container').innerHTML = `<p style="color: red;">Erro ao gerar relatório.</p>`;
+            }
+        };
+    </script>
+</body>
+</html>

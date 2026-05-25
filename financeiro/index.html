@@ -98,6 +98,8 @@
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="fin-btn" onclick="abrirModalBancos()" style="background: #2196F3;">🏦 Bancos</button>
+                    <button class="fin-btn" onclick="window.location.href='fluxo.html'" style="background: #3f51b5;">📆 Fluxo Realizado</button>
+                    <button class="fin-btn" onclick="abrirModalTransferencia()" style="background: #607d8b;">🔄 Auditar / Transferir</button>
                     <button class="fin-btn" onclick="window.location.href='graficos.html'" style="background: #FF9800;">📈 Gráficos</button>
                     <button class="fin-btn" onclick="window.location.href='dre.html'" style="background: #6200ea;">📊 Ver DRE</button>
                     <button class="fin-btn nova-receita" onclick="abrirModalLancamento('Receita')">+ Nova Receita</button>
@@ -106,28 +108,29 @@
             </div>
 
             <div class="fin-cards-grid">
-                <div class="fin-card saldo">
+                <div class="fin-card saldo" onclick="filtrarLancamentos('todos')" style="cursor: pointer;" title="Clique para ver todos os lançamentos">
                     <h3>Saldo Geral (Bancos + Caixa)</h3>
                     <p class="valor" id="fin-saldo">R$ 0,00</p>
                 </div>
                 
-                <div class="fin-card bancos">
+                <div class="fin-card bancos" onclick="filtrarLancamentos('todos')" style="cursor: pointer;" title="Clique para ver todos os lançamentos">
                     <h3>Saldo Apenas em Bancos</h3>
                     <p class="valor" id="fin-saldo-bancos">R$ 0,00</p>
                 </div>
                 
-                <div class="fin-card receitas">
+                <div class="fin-card receitas" onclick="filtrarLancamentos('receber')" style="cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s;" onmouseover="this.style.borderColor='#4CAF50'" onmouseout="this.style.borderColor='transparent'" title="Clique para ver quem está devendo">
                     <h3>Contas a Receber (Mês)</h3>
                     <p class="valor" id="fin-receber">R$ 0,00</p>
                 </div>
-                <div class="fin-card despesas">
+                
+                <div class="fin-card despesas" onclick="filtrarLancamentos('pagar')" style="cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s;" onmouseover="this.style.borderColor='#f44336'" onmouseout="this.style.borderColor='transparent'" title="Clique para ver o que precisa ser pago">
                     <h3>Contas a Pagar (Mês)</h3>
                     <p class="valor" id="fin-pagar">R$ 0,00</p>
                 </div>
             </div>
 
             <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h2 style="margin-top: 0; color: #333; margin-bottom: 15px;">Últimos Lançamentos</h2>
+                <h2 id="fin-titulo-tabela" style="margin-top: 0; color: #333; margin-bottom: 15px;">Últimos Lançamentos</h2>
                 <div id="fin-lista-lancamentos">
                     <p style="color: #999; font-style: italic;">Carregando dados do servidor...</p>
                 </div>
@@ -141,6 +144,8 @@
     <div id="modal-lancamento" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000;">
         <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             <h2 id="modal-titulo" style="margin-top:0; color:#333;">Novo Lançamento</h2>
+            
+            <input type="hidden" id="edit-lan-id" value="">
             
             <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Descrição</label>
             <input type="text" id="lan-descricao" placeholder="Ex: Conta de Luz" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
@@ -199,6 +204,30 @@
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button onclick="fecharModalBancos()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Fechar</button>
                 <button onclick="salvarBanco()" id="btn-salvar-banco" style="flex: 2; padding: 12px; background: #2196F3; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">+ Salvar Banco</button>
+            </div>
+        </div>
+    </div>
+
+<div id="modal-transferencia" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2400;">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h2 style="margin-top:0; color:#333; display: flex; align-items: center; gap: 10px;">🔄 Conciliação & Transferência</h2>
+            <p style="color:#666; font-size:0.85rem; margin-bottom: 20px;">Transfira os valores da Conta de Transição para os seus bancos reais e deconte as taxas das maquininhas.</p>
+            
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Conta de Origem (Onde sai o dinheiro)</label>
+            <select id="trans-origem" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;"></select>
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Conta de Destino (Para onde vai)</label>
+            <select id="trans-destino" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;"></select>
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Valor Bruto do Lote (R$)</label>
+            <input type="number" step="0.01" id="trans-valor-bruto" placeholder="Ex: 550.08" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Total de Taxas Descontadas (R$)</label>
+            <input type="number" step="0.01" id="trans-taxa" placeholder="Ex: 12.50" value="0.00" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="fecharModalTransferencia()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Cancelar</button>
+                <button onclick="executarTransferencia()" style="flex: 2; padding: 12px; background: #607d8b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Confirmar Auditoria</button>
             </div>
         </div>
     </div>

@@ -1,6 +1,7 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 let categoriasFinanceiras = []; // Memória global para as categorias
 let contasBancariasGlobais = []; // 👇 NOVO: Guarda os bancos na memória
+let filtroLancamentosAtual = 'todos'; // 👇 NOVO: Guarda o filtro ativo
 
 window.onload = async () => {
     await carregarCategorias(); // Carrega as categorias antes de tudo
@@ -55,18 +56,39 @@ async function carregarResumoFinanceiro() {
     }
 }
 
+// 👇 NOVA FUNÇÃO: Acionada quando você clica num dos cards
+function filtrarLancamentos(tipo) {
+    filtroLancamentosAtual = tipo;
+    carregarLancamentos(); // Manda a tabela se redesenhar com o novo filtro
+}
+
 async function carregarLancamentos() {
     const container = document.getElementById('fin-lista-lancamentos');
+    const tituloTabela = document.getElementById('fin-titulo-tabela');
+    
     try {
         const res = await fetch(`${API_URL}/financeiro/lancamentos`);
-        const lista = await res.json();
+        let lista = await res.json();
         
+        // 🧠 A MÁGICA DO FILTRO ACONTECE AQUI
+        if (filtroLancamentosAtual === 'receber') {
+            lista = lista.filter(item => item.tipo === 'Receita' && item.status === 'Pendente');
+            tituloTabela.innerHTML = '🔍 Filtrando: Contas a Receber (Pendentes)';
+            tituloTabela.style.color = '#4CAF50';
+        } else if (filtroLancamentosAtual === 'pagar') {
+            lista = lista.filter(item => item.tipo === 'Despesa' && item.status === 'Pendente');
+            tituloTabela.innerHTML = '🔍 Filtrando: Contas a Pagar (Pendentes)';
+            tituloTabela.style.color = '#f44336';
+        } else {
+            tituloTabela.innerHTML = 'Últimos Lançamentos';
+            tituloTabela.style.color = '#333';
+        }
+
         if (lista.length === 0) {
-            container.innerHTML = '<p style="color: #999; font-style: italic;">Nenhum lançamento encontrado ainda.</p>';
+            container.innerHTML = '<p style="color: #999; font-style: italic;">Nenhum lançamento encontrado para este filtro.</p>';
             return;
         }
 
-        // Desenha a tabela com a nova coluna de Ações
         let html = `<table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <tr style="border-bottom: 2px solid #eee; color: #666;">
                             <th style="padding: 10px;">Vencimento</th>
@@ -87,6 +109,8 @@ async function carregarLancamentos() {
                 d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
                 dataFormatada = d.toLocaleDateString('pt-BR');
             }
+            
+            const itemString = encodeURIComponent(JSON.stringify(item));
 
             html += `<tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px;">${dataFormatada}</td>
@@ -101,6 +125,7 @@ async function carregarLancamentos() {
                             R$ ${parseFloat(item.valor).toFixed(2).replace('.', ',')}
                         </td>
                         <td style="padding: 10px; text-align: center;">
+                            <button onclick="prepararEdicaoLancamento('${itemString}')" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Editar Lançamento">✏️</button>
                             <button onclick="deletarLancamento(${item.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Excluir Lançamento">🗑️</button>
                         </td>
                      </tr>`;
@@ -114,48 +139,38 @@ async function carregarLancamentos() {
     }
 }
 
-// Nova função que o botão da lixeira chama
 async function deletarLancamento(id) {
     if (!confirm("⚠️ Tem certeza que deseja excluir este lançamento? Essa ação não tem volta.")) return;
-    
     try {
         const res = await fetch(`${API_URL}/financeiro/lancamentos/${id}`, { method: 'DELETE' });
-        
         if (res.ok) {
-            // Se deu certo, manda a tela recalcular os cards e a tabela na hora!
             await carregarResumoFinanceiro();
             await carregarLancamentos();
-        } else {
-            alert("❌ Erro ao tentar excluir no banco de dados.");
-        }
-    } catch (e) {
-        alert("❌ Falha de conexão com o servidor.");
-    }
+        } else alert("❌ Erro ao tentar excluir no banco de dados.");
+    } catch (e) { alert("❌ Falha de conexão com o servidor."); }
 }
 
 // ==========================================
-// LÓGICA DO MODAL (NOVO LANÇAMENTO)
+// LÓGICA DO MODAL (NOVO LANÇAMENTO / EDITAR)
 // ==========================================
 let tipoLancamentoAtual = '';
 
 function abrirModalLancamento(tipo) {
     tipoLancamentoAtual = tipo; 
     document.getElementById('modal-titulo').innerText = `Nova ${tipo}`;
+    document.getElementById('edit-lan-id').value = ''; // Limpa a memória
     
     document.getElementById('lan-descricao').value = '';
     document.getElementById('lan-valor').value = '';
     document.getElementById('lan-data').value = '';
     document.getElementById('lan-status').value = 'Pendente';
     
-    // 👇 NOVO: Popula o select filtrando apenas Receitas ou apenas Despesas
     const selectCat = document.getElementById('lan-categoria');
     selectCat.innerHTML = '<option value="">Selecione a Categoria</option>';
-    const catsFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipo);
-    catsFiltradas.forEach(c => {
+    categoriasFinanceiras.filter(c => c.tipo === tipo).forEach(c => {
         selectCat.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
     });
 
-    // 👇 NOVO: Popula o select de Bancos
     const selectConta = document.getElementById('lan-conta');
     selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
     contasBancariasGlobais.forEach(b => {
@@ -163,7 +178,49 @@ function abrirModalLancamento(tipo) {
     });
 
     const btnSalvar = document.getElementById('btn-salvar-lan');
+    btnSalvar.innerText = "Salvar";
     btnSalvar.style.backgroundColor = (tipo === 'Receita') ? '#4CAF50' : '#f44336';
+    
+    document.getElementById('modal-lancamento').style.display = 'flex';
+}
+
+// 👇 NOVA FUNÇÃO MÁGICA: Preenche os dados para você editar!
+function prepararEdicaoLancamento(itemStringCodificado) {
+    const item = JSON.parse(decodeURIComponent(itemStringCodificado));
+    
+    tipoLancamentoAtual = item.tipo;
+    document.getElementById('modal-titulo').innerText = `Editar ${item.tipo}`;
+    document.getElementById('edit-lan-id').value = item.id; // Grava o ID
+    
+    document.getElementById('lan-descricao').value = item.descricao;
+    document.getElementById('lan-valor').value = parseFloat(item.valor).toFixed(2);
+    
+    // Formata a data para a caixinha do HTML
+    if (item.data_vencimento) {
+        const d = new Date(item.data_vencimento);
+        d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+        document.getElementById('lan-data').value = d.toISOString().split('T')[0];
+    }
+    
+    document.getElementById('lan-status').value = item.status;
+
+    // Popula Categorias já selecionando a correta
+    const selectCat = document.getElementById('lan-categoria');
+    selectCat.innerHTML = '<option value="">Selecione a Categoria</option>';
+    categoriasFinanceiras.filter(c => c.tipo === item.tipo).forEach(c => {
+        selectCat.innerHTML += `<option value="${c.id}" ${c.id === item.categoria_id ? 'selected' : ''}>${c.nome}</option>`;
+    });
+
+    // Popula Bancos já selecionando o correto
+    const selectConta = document.getElementById('lan-conta');
+    selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
+    contasBancariasGlobais.forEach(b => {
+        selectConta.innerHTML += `<option value="${b.id}" ${b.id === item.conta_id ? 'selected' : ''}>${b.nome}</option>`;
+    });
+
+    const btnSalvar = document.getElementById('btn-salvar-lan');
+    btnSalvar.innerText = "Atualizar";
+    btnSalvar.style.backgroundColor = '#FF9800'; // Fica Laranja para alertar edição
     
     document.getElementById('modal-lancamento').style.display = 'flex';
 }
@@ -173,48 +230,46 @@ function fecharModalLancamento() {
 }
 
 async function salvarLancamento() {
+    const idEdit = document.getElementById('edit-lan-id').value;
     const descricao = document.getElementById('lan-descricao').value.trim();
     const valor = parseFloat(document.getElementById('lan-valor').value);
     const data_vencimento = document.getElementById('lan-data').value;
     const status = document.getElementById('lan-status').value;
-    const categoria_id = document.getElementById('lan-categoria').value; // 👇 Pega a categoria
-    const conta_id = document.getElementById('lan-conta').value; // 👇 NOVO
+    const categoria_id = document.getElementById('lan-categoria').value;
+    const conta_id = document.getElementById('lan-conta').value;
 
-    if (!descricao || isNaN(valor) || valor <= 0 || !data_vencimento) {
-        return alert("⚠️ Por favor, preencha a descrição, o valor e o vencimento.");
-    }
-    if (!categoria_id) {
-        return alert("⚠️ Selecione uma Categoria para classificar este lançamento no DRE.");
-    }
+    if (!descricao || isNaN(valor) || valor <= 0 || !data_vencimento) return alert("⚠️ Por favor, preencha a descrição, valor e vencimento.");
+    if (!categoria_id || !conta_id) return alert("⚠️ Selecione a Categoria (DRE) e a Conta Bancária.");
 
     const btnSalvar = document.getElementById('btn-salvar-lan');
     btnSalvar.innerText = "Salvando...";
     btnSalvar.disabled = true;
 
     try {
-        const res = await fetch(`${API_URL}/financeiro/lancamentos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                descricao, valor, data_vencimento, status,
-                tipo: tipoLancamentoAtual,
-                categoria_id, // 👇 Envia a categoria para o banco
-                conta_id // 👇 Envia pro backend
-            })
-        });
+        const payload = { descricao, valor, data_vencimento, status, tipo: tipoLancamentoAtual, categoria_id, conta_id };
+        let res;
+
+        // Se tem ID na memória, ele Atualiza (PUT). Senão, ele Cria (POST).
+        if (idEdit) {
+            res = await fetch(`${API_URL}/financeiro/lancamentos/${idEdit}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+        } else {
+            res = await fetch(`${API_URL}/financeiro/lancamentos`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+        }
 
         if (res.ok) {
             fecharModalLancamento();
-            // MÁGICA: Manda a tela recalcular os cards e a tabela sozinhos!
             await carregarResumoFinanceiro();
             await carregarLancamentos();
         } else {
-            alert("❌ Erro ao salvar lançamento no banco.");
+            alert("❌ Erro ao salvar lançamento.");
         }
     } catch (e) {
         alert("❌ Falha de conexão com o servidor.");
     } finally {
-        btnSalvar.innerText = "Salvar";
         btnSalvar.disabled = false;
     }
 }
@@ -327,4 +382,74 @@ async function deletarBanco(id) {
             await abrirModalBancos(); 
         } else alert("❌ Erro ao deletar o banco.");
     } catch (e) { alert("❌ Falha de conexão."); }
+}
+
+// ==========================================
+// 🔄 LÓGICA DE TRANSFERÊNCIA E AUDITORIA
+// ==========================================
+function abrirModalTransferencia() {
+    const selectOrigem = document.getElementById('trans-origem');
+    const selectDestino = document.getElementById('trans-destino');
+    
+    selectOrigem.innerHTML = '<option value="">Selecione a Origem</option>';
+    selectDestino.innerHTML = '<option value="">Selecione o Destino</option>';
+    
+    contasBancariasGlobais.forEach(b => {
+        selectOrigem.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+        selectDestino.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+    });
+
+    // Inteligência: Já deixa a Conta de Transição pré-selecionada na origem
+    const contaTransicao = contasBancariasGlobais.find(b => b.nome.toLowerCase().includes('transição'));
+    if (contaTransicao) selectOrigem.value = contaTransicao.id;
+
+    document.getElementById('trans-valor-bruto').value = '';
+    document.getElementById('trans-taxa').value = '0.00';
+    document.getElementById('modal-transferencia').style.display = 'flex';
+}
+
+function fecharModalTransferencia() {
+    document.getElementById('modal-transferencia').style.display = 'none';
+}
+
+async function executarTransferencia() {
+    const origem = document.getElementById('trans-origem').value;
+    const destino = document.getElementById('trans-destino').value;
+    const valorBruto = parseFloat(document.getElementById('trans-valor-bruto').value);
+    const taxa = parseFloat(document.getElementById('trans-taxa').value) || 0;
+
+    if (!origem || !destino || isNaN(valorBruto) || valorBruto <= 0) {
+        return alert("⚠️ Por favor, preencha as contas e o valor bruto corretamente.");
+    }
+    if (origem === destino) {
+        return alert("⚠️ A conta de origem e a de destino não podem ser iguais.");
+    }
+    if (taxa >= valorBruto) {
+        return alert("⚠️ O valor das taxas não pode ser maior ou igual ao valor bruto.");
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/financeiro/transferencias`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                conta_origem_id: origem,
+                conta_destino_id: destino,
+                valor_bruto: valorBruto,
+                taxa: taxa,
+                descricao: `Conciliação de Cartões/Pix`
+            })
+        });
+
+        if (res.ok) {
+            alert("✅ Auditoria realizada! Dinheiro transferido e taxas computadas no DRE.");
+            fecharModalTransferencia();
+            await carregarResumoFinanceiro(); // Atualiza os cards principais
+            await carregarLancamentos(); // Atualiza a tabela de lançamentos
+        } else {
+            alert("❌ Erro ao processar a transferência no servidor.");
+        }
+    } catch (e) {
+        alert("❌ Falha de conexão com o servidor.");
+    }
 }
