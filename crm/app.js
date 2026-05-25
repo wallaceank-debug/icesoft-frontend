@@ -60,6 +60,7 @@ async function carregarClientes() {
         const res = await fetch(`${API_URL}/crm/clientes`);
         clientesGlobais = await res.json();
         renderizarTabela(clientesGlobais);
+        atualizarContadoresKPI();
     } catch (e) {
         document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Erro ao carregar clientes.</td></tr>';
     }
@@ -215,3 +216,62 @@ async function enviarMensagemZap() {
 }
 
 window.onload = iniciarCRM;
+
+// ==========================================
+// NOVOS FILTROS E CONTADORES DO CRM
+// ==========================================
+
+let ordemCRM = { coluna: '', direcao: 'desc' };
+
+// 1. Função que ordena a tabela ao clicar no título
+function ordenarClientes(coluna) {
+    if (ordemCRM.coluna === coluna) {
+        ordemCRM.direcao = ordemCRM.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+        ordemCRM.coluna = coluna;
+        ordemCRM.direcao = 'desc'; // Sempre começa mostrando o "Maior" primeiro
+    }
+
+    clientesGlobais.sort((a, b) => {
+        let valorA, valorB;
+
+        if (coluna === 'gasto') {
+            valorA = parseFloat(a.total_gasto || 0);
+            valorB = parseFloat(b.total_gasto || 0);
+        } else if (coluna === 'ultima_compra') {
+            valorA = new Date(a.ultima_compra).getTime();
+            valorB = new Date(b.ultima_compra).getTime();
+        } else if (coluna === 'fidelidade') {
+            valorA = parseInt(a.total_pedidos || 0);
+            valorB = parseInt(b.total_pedidos || 0);
+        }
+
+        if (valorA < valorB) return ordemCRM.direcao === 'asc' ? -1 : 1;
+        if (valorA > valorB) return ordemCRM.direcao === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // IMPORTANTE: Se a sua função de desenhar a tabela tiver outro nome (como desenharTabela ou renderizarTabelaClientes), troque o nome abaixo:
+    renderizarTabela(clientesGlobais);
+}
+
+// 2. Função que calcula as bolinhas baseadas na Última Compra
+function atualizarContadoresKPI() {
+    let ativos = 0;
+    let emRisco = 0;
+    let inativos = 0;
+    const hoje = new Date();
+
+    clientesGlobais.forEach(c => {
+        const dataCompra = new Date(c.ultima_compra);
+        const dias = Math.ceil(Math.abs(hoje - dataCompra) / (1000 * 60 * 60 * 24));
+
+        if (dias <= 30) ativos++;        // Comprou nos últimos 30 dias
+        else if (dias <= 60) emRisco++;  // Não compra há 1 ou 2 meses
+        else inativos++;                 // Sumiu há mais de 2 meses
+    });
+
+    document.getElementById('kpi-ativos').innerText = ativos;
+    document.getElementById('kpi-risco').innerText = emRisco;
+    document.getElementById('kpi-inativos').innerText = inativos;
+}

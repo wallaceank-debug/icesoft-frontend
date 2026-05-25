@@ -53,14 +53,16 @@ function processarRaioX(vendas, visitasDB) {
         let itens = typeof v.itens === 'string' ? JSON.parse(v.itens || '[]') : (v.itens || []);
         
         itens.forEach(item => {
-            let nomeProduto = item.nome || item.produto_nome || item.nomeBase;
-            if (!nomeProduto) return;
+            let nomeOriginal = item.nome || item.produto_nome || item.nomeBase;
+            if (!nomeOriginal) return;
             
-            nomeProduto = nomeProduto.replace('Delivery: ', '').split('(')[0].trim();
+            // 1. Limpa o nome do produto principal (jogando fora o que está depois do parêntese)
+            let nomeProduto = nomeOriginal.replace('Delivery: ', '').split('(')[0].trim();
             let preco = parseFloat(item.preco || 0);
             let qtd = parseInt(item.quantidade || 1);
             let totalItem = preco * qtd;
 
+            // 2. Soma as estatísticas do Produto Principal
             if (!produtosStats[nomeProduto]) {
                 produtosStats[nomeProduto] = { vendas: 0, faturamento: 0, visitas: 0 };
             }
@@ -68,13 +70,39 @@ function processarRaioX(vendas, visitasDB) {
             produtosStats[nomeProduto].faturamento += totalItem;
             faturamentoTotal += totalItem;
 
-            if (item.adicionais || item.opcoes_escolhidas) {
-                let extras = item.adicionais || item.opcoes_escolhidas;
-                extras.forEach(add => {
-                    let nomeAdd = add.nome || add;
-                    adicionaisStats[nomeAdd] = (adicionaisStats[nomeAdd] || 0) + qtd;
-                });
+            // ==========================================
+            // 3. O NOVO DETETIVE DE ADICIONAIS 🕵️‍♂️
+            // ==========================================
+            
+            // Método A: Lendo de dentro dos parênteses no nome (O formato que o seu banco usa!)
+            if (nomeOriginal.includes('(')) {
+                // Pega tudo que está entre o primeiro '(' e o último ')'
+                let textoDentro = nomeOriginal.substring(nomeOriginal.indexOf('(') + 1, nomeOriginal.lastIndexOf(')'));
+                
+                if (textoDentro) {
+                    // Quebra os adicionais pelas vírgulas ou sinais de adição
+                    let listaAdicionais = textoDentro.split(/[,+]/); 
+                    
+                    listaAdicionais.forEach(add => {
+                        let nomeAdd = add.trim();
+                        // Ignora textos que não são adicionais (como métodos de pagamento ou lixo)
+                        if (nomeAdd && nomeAdd.length > 1 && !nomeAdd.toLowerCase().includes('pagar')) {
+                            adicionaisStats[nomeAdd] = (adicionaisStats[nomeAdd] || 0) + qtd;
+                        }
+                    });
+                }
             }
+
+            // Método B: Lendo do formato estruturado (Garantia para o futuro)
+            const possíveisChavesExtras = ['adicionais', 'opcoes_escolhidas', 'extras'];
+            possíveisChavesExtras.forEach(chave => {
+                if (item[chave] && Array.isArray(item[chave])) {
+                    item[chave].forEach(add => {
+                        let nomeAdd = add.nome || add.nomeBase || (typeof add === 'string' ? add : null);
+                        if (nomeAdd) adicionaisStats[nomeAdd] = (adicionaisStats[nomeAdd] || 0) + qtd;
+                    });
+                }
+            });
         });
     });
 

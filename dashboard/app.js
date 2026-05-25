@@ -1,7 +1,7 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 
 // Variáveis para guardar as instâncias dos gráficos
-let chartEvolucao, chartPagamentos, chartOrigem, chartProdutos, chartDias;
+let chartEvolucao, chartPagamentos, chartOrigem, chartProdutos, chartDias, chartHorarios;
 
 window.onload = () => { carregarDashboard(); };
 
@@ -29,6 +29,25 @@ async function carregarDashboard() {
         
         // 3. Remove os cancelamentos para não mascarar o lucro (Trata tanto 'Cancelada' quanto 'Cancelado')
         const vendasValidas = vendas.filter(v => v.status !== 'Cancelada' && v.status !== 'Cancelado');
+
+        // 1. Prepara uma lista vazia com as 24 horas do dia
+        let contagemHorarios = new Array(24).fill(0);
+
+        vendas.forEach(v => {
+            // Ignora pedidos cancelados
+            if (v.status !== 'Cancelada' && v.status !== 'Cancelado') {
+                
+                // 2. Olha pro relógio e anota a hora da venda
+                if (v.data_hora) {
+                    let dataDoPedido = new Date(v.data_hora);
+                    let horaQueSaiu = dataDoPedido.getHours();
+                    contagemHorarios[horaQueSaiu]++; // Soma 1 pedido naquela hora
+                }
+            }
+        });
+
+        // 3. Manda desenhar o gráfico com essas contagens (Cole essa linha lá embaixo, perto de onde ele desenha os outros gráficos)
+        desenharGraficoHorarios(contagemHorarios);
 
         processarMetricasEGraficos(vendasValidas);
 
@@ -222,6 +241,35 @@ function desenharGraficoDiasSemana(dadosDaSemana) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+function desenharGraficoHorarios(dadosHorarios) {
+    const ctx = document.getElementById('graficoHorarios').getContext('2d');
+    if (chartHorarios) chartHorarios.destroy();
+
+    const labelsHoras = [
+        '00h', '01h', '02h', '03h', '04h', '05h', '06h', '07h', 
+        '08h', '09h', '10h', '11h', '12h', '13h', '14h', '15h', 
+        '16h', '17h', '18h', '19h', '20h', '21h', '22h', '23h'
+    ];
+
+    chartHorarios = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labelsHoras,
+            datasets: [{
+                label: 'Qtd. de Pedidos',
+                data: dadosHorarios,
+                backgroundColor: '#9C27B0', // Cor roxa para destacar!
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
     });
 }
