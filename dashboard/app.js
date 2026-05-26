@@ -1,7 +1,7 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 
 // Variáveis para guardar as instâncias dos gráficos
-let chartEvolucao, chartPagamentos, chartOrigem, chartProdutos, chartDias, chartHorarios;
+let chartEvolucao, chartPagamentos, chartOrigem, chartProdutos, chartDias, chartHorarios, chartTicketMedio;
 
 window.onload = () => { carregarDashboard(); };
 
@@ -30,24 +30,32 @@ async function carregarDashboard() {
         // 3. Remove os cancelamentos para não mascarar o lucro (Trata tanto 'Cancelada' quanto 'Cancelado')
         const vendasValidas = vendas.filter(v => v.status !== 'Cancelada' && v.status !== 'Cancelado');
 
-        // 1. Prepara uma lista vazia com as 24 horas do dia
+        // --- COMEÇO DO CÓDIGO DE HORÁRIOS E TICKET MÉDIO ---
         let contagemHorarios = new Array(24).fill(0);
+        let valorHorarios = new Array(24).fill(0); // Guarda o dinheiro ganho em cada hora
 
-        vendas.forEach(v => {
-            // Ignora pedidos cancelados
-            if (v.status !== 'Cancelada' && v.status !== 'Cancelado') {
+        vendasValidas.forEach(v => {
+            if (v.data_hora) {
+                let dataDoPedido = new Date(v.data_hora);
+                let horaQueSaiu = dataDoPedido.getHours();
                 
-                // 2. Olha pro relógio e anota a hora da venda
-                if (v.data_hora) {
-                    let dataDoPedido = new Date(v.data_hora);
-                    let horaQueSaiu = dataDoPedido.getHours();
-                    contagemHorarios[horaQueSaiu]++; // Soma 1 pedido naquela hora
-                }
+                contagemHorarios[horaQueSaiu]++; // Conta 1 pedido
+                valorHorarios[horaQueSaiu] += parseFloat(v.valor_total || 0); // Soma o dinheiro
             }
         });
 
-        // 3. Manda desenhar o gráfico com essas contagens (Cole essa linha lá embaixo, perto de onde ele desenha os outros gráficos)
+        // Calcula a média dividindo o dinheiro ganho pelos pedidos feitos na hora
+        let ticketMedioHorarios = new Array(24).fill(0);
+        for(let i = 0; i < 24; i++) {
+            if (contagemHorarios[i] > 0) {
+                // Arredonda para 2 casas decimais (ex: 45.50)
+                ticketMedioHorarios[i] = (valorHorarios[i] / contagemHorarios[i]).toFixed(2);
+            }
+        }
+
         desenharGraficoHorarios(contagemHorarios);
+        desenharGraficoTicketMedio(ticketMedioHorarios);
+        // --- FIM DO CÓDIGO DE HORÁRIOS E TICKET MÉDIO ---
 
         processarMetricasEGraficos(vendasValidas);
 
@@ -270,6 +278,46 @@ function desenharGraficoHorarios(dadosHorarios) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+function desenharGraficoTicketMedio(dadosTicket) {
+    const ctx = document.getElementById('graficoTicketMedio').getContext('2d');
+    if (chartTicketMedio) chartTicketMedio.destroy();
+
+    const labelsHoras = [
+        '00h', '01h', '02h', '03h', '04h', '05h', '06h', '07h', 
+        '08h', '09h', '10h', '11h', '12h', '13h', '14h', '15h', 
+        '16h', '17h', '18h', '19h', '20h', '21h', '22h', '23h'
+    ];
+
+    chartTicketMedio = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labelsHoras,
+            datasets: [{
+                label: 'Ticket Médio (R$)',
+                data: dadosTicket,
+                borderColor: '#4CAF50', // Verde dinheiro!
+                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                borderWidth: 3,
+                pointBackgroundColor: '#4CAF50',
+                pointRadius: 4,
+                fill: true,
+                tension: 0.4 // Deixa a linha suave e curvada
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    ticks: { callback: function(value) { return 'R$ ' + value; } }
+                },
+                x: { grid: { display: false } }
+            }
         }
     });
 }
