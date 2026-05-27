@@ -1525,20 +1525,32 @@ function fecharModalInfoLoja() {
 const inputTelefone = document.getElementById('cliente-telefone');
 if(inputTelefone) {
     inputTelefone.addEventListener('input', function (e) {
-        // 1. Aplica a Máscara Visual (XX) XXXXX-XXXX
-        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
-        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        // 1. Tira tudo que não é número
+        let numeroLimpo = e.target.value.replace(/\D/g, '');
 
-        // 2. O Gatilho: Se o número estiver completinho (15 caracteres)
+        // 2. O PULO DO GATO: Se começar com 55 e tiver números suficientes, arranca o 55 fora!
+        if (numeroLimpo.startsWith('55') && numeroLimpo.length >= 12) {
+            numeroLimpo = numeroLimpo.substring(2);
+        }
+
+        // 3. Aplica a Máscara Visual (XX) XXXXX-XXXX
+        let x = numeroLimpo.match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        if (!x) {
+            e.target.value = '';
+        } else {
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        }
+
+        // 4. O Gatilho do CRM: Se o número estiver completinho (15 caracteres)
         if (e.target.value.length === 15) {
             buscarDadosClienteCRM(e.target.value);
         } else {
-                // Se ele apagar um número, esconde o selo CRM e a Barrinha Fidelidade
-                if (document.getElementById('badge-crm')) document.getElementById('badge-crm').style.display = 'none';
-                
-                const areaFid = document.getElementById('area-fidelidade-checkout');
-                if (areaFid) areaFid.style.display = 'none';
-            }
+            // Se ele apagar um número, esconde o selo CRM e a Barrinha Fidelidade
+            if (document.getElementById('badge-crm')) document.getElementById('badge-crm').style.display = 'none';
+            
+            const areaFid = document.getElementById('area-fidelidade-checkout');
+            if (areaFid) areaFid.style.display = 'none';
+        }
     });
 }
 
