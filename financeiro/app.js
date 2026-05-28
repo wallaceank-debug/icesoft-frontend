@@ -4,11 +4,22 @@ let contasBancariasGlobais = []; // 👇 NOVO: Guarda os bancos na memória
 let filtroLancamentosAtual = 'todos'; // 👇 NOVO: Guarda o filtro ativo
 
 window.onload = async () => {
-    await carregarCategorias(); // Carrega as categorias antes de tudo
-    await carregarBancos(); // 👇 NOVO: Carrega os bancos ao iniciar
+    await carregarCategorias(); 
+    await carregarBancos(); 
+    popularFiltroBancos(); // 👇 Alimenta a nova caixinha de seleção de bancos
     await carregarResumoFinanceiro();
     await carregarLancamentos();
 };
+
+function popularFiltroBancos() {
+    const selectFiltro = document.getElementById('filtro-banco');
+    if(selectFiltro) {
+        selectFiltro.innerHTML = '<option value="">Todos os Bancos</option>';
+        contasBancariasGlobais.forEach(b => {
+            selectFiltro.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+        });
+    }
+}
 
 async function carregarCategorias() {
     try {
@@ -62,15 +73,33 @@ function filtrarLancamentos(tipo) {
     carregarLancamentos(); // Manda a tabela se redesenhar com o novo filtro
 }
 
+function limparFiltrosTabela() {
+    document.getElementById('filtro-busca').value = '';
+    document.getElementById('filtro-banco').value = '';
+    document.getElementById('filtro-data-inicio').value = '';
+    document.getElementById('filtro-data-fim').value = '';
+    filtroLancamentosAtual = 'todos';
+    carregarLancamentos();
+}
+
 async function carregarLancamentos() {
     const container = document.getElementById('fin-lista-lancamentos');
     const tituloTabela = document.getElementById('fin-titulo-tabela');
     
+    // 👇 Captura o que o usuário digitou/selecionou na barra
+    const busca = document.getElementById('filtro-busca')?.value || '';
+    const bancoId = document.getElementById('filtro-banco')?.value || '';
+    const dataInicio = document.getElementById('filtro-data-inicio')?.value || '';
+    const dataFim = document.getElementById('filtro-data-fim')?.value || '';
+    
     try {
-        const res = await fetch(`${API_URL}/financeiro/lancamentos`);
+        // 👇 Monta a URL com os filtros dinâmicos para o backend
+        const params = new URLSearchParams({ busca, banco_id: bancoId, data_inicio: dataInicio, data_fim: dataFim });
+        const res = await fetch(`${API_URL}/financeiro/lancamentos?${params}`);
+        
         let lista = await res.json();
         
-        // 🧠 A MÁGICA DO FILTRO ACONTECE AQUI
+        // 🧠 O filtro dos "Cards Superiores" (Pendente/Pago) atua junto com os filtros acima!
         if (filtroLancamentosAtual === 'receber') {
             lista = lista.filter(item => item.tipo === 'Receita' && item.status === 'Pendente');
             tituloTabela.innerHTML = '🔍 Filtrando: Contas a Receber (Pendentes)';

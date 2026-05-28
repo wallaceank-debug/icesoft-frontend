@@ -131,6 +131,32 @@
 
             <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h2 id="fin-titulo-tabela" style="margin-top: 0; color: #333; margin-bottom: 15px;">Últimos Lançamentos</h2>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Pesquisar (Descrição)</label>
+                        <input type="text" id="filtro-busca" placeholder="Ex: Conta de Luz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Banco / Conta</label>
+                        <select id="filtro-banco" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
+                            <option value="">Todos os Bancos</option>
+                        </select>
+                    </div>
+                    <div style="width: 130px;">
+                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Data Inicial</label>
+                        <input type="date" id="filtro-data-inicio" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
+                    </div>
+                    <div style="width: 130px;">
+                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Data Final</label>
+                        <input type="date" id="filtro-data-fim" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="carregarLancamentos()" style="padding: 9px 15px; background: #3f51b5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🔍 Filtrar</button>
+                        <button onclick="limparFiltrosTabela()" style="padding: 9px 15px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Limpar</button>
+                    </div>
+                </div>
+
                 <div id="fin-lista-lancamentos">
                     <p style="color: #999; font-style: italic;">Carregando dados do servidor...</p>
                 </div>
