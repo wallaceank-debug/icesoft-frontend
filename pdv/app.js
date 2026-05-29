@@ -225,6 +225,14 @@ function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
     
+    // 👇 NOVO: Garante que o botão sempre volte ao estado de "Novo Item" caso tenha sido editado antes
+    const btnConfirmar = document.querySelector('#modal-opcoes button[onclick^="salvarEdicao"]');
+    if (btnConfirmar) {
+        btnConfirmar.setAttribute('onclick', 'confirmarEscolhasEAdicionar()');
+        btnConfirmar.innerText = "Confirmar e Inserir";
+        btnConfirmar.style.backgroundColor = "#4CAF50";
+    }
+
     document.getElementById('detalhes-produto-topo').innerHTML = `
         <h2 style="margin:0; color:#00bcd4;">${produto.nome}</h2>
         <p style="color:#777; margin:5px 0;">Selecione os adicionais solicitados</p>
@@ -353,16 +361,37 @@ function atualizarTotais() {
 }
 
 // ==========================================
-// GESTÃO DO CARRINHO
+// GESTÃO DO CARRINHO (COM EDIÇÃO DE QUANTIDADE E AUTO-AGRUPAMENTO)
 // ==========================================
 function adicionarAoCarrinho(nomeBase, adicionais, preco) {
-    carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1 });
+    // 🧠 MÁGICA: Verifica se já existe um item exato no carrinho para agrupar!
+    const itemExistente = carrinho.find(item => 
+        item.nomeBase === nomeBase && 
+        JSON.stringify(item.adicionais) === JSON.stringify(adicionais) && 
+        item.preco === Number(preco)
+    );
+
+    if (itemExistente) {
+        itemExistente.qtd += 1;
+    } else {
+        carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1 });
+    }
     renderizarCarrinho();
 }
 
 function removerDoCarrinho(index) {
     carrinho.splice(index, 1);
     renderizarCarrinho();
+}
+
+// 👇 NOVA FUNÇÃO: Altera a quantidade direto no carrinho com clique rápido
+function alterarQuantidade(index, delta) {
+    carrinho[index].qtd += delta;
+    if (carrinho[index].qtd <= 0) {
+        removerDoCarrinho(index); // Se chegar a zero, remove da lista automaticamente
+    } else {
+        renderizarCarrinho();
+    }
 }
 
 function renderizarCarrinho() {
@@ -379,25 +408,33 @@ function renderizarCarrinho() {
     let subtotal = 0;
 
     carrinho.forEach((item, index) => {
-        subtotal += item.preco;
+        const precoTotalItem = item.preco * item.qtd; // Multiplica pela quantidade
+        subtotal += precoTotalItem;
+        
         let htmlAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
             htmlAdicionais = item.adicionais.map(adc => `
-                <div style="color: #666; font-size: 0.85rem; padding-left: 25px; margin-top: 3px;">+ ${adc}</div>
+                <div style="color: #666; font-size: 0.85rem; padding-left: 30px; margin-top: 3px;">+ ${adc}</div>
             `).join('');
         }
 
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:start; padding:15px 0; border-bottom:1px dashed #ddd;">
                 <div style="flex:1;">
-                    <div style="display:flex; align-items: center; gap: 8px;">
-                        <span style="font-weight:700; font-size:0.95rem; color:#888;">${item.qtd}x</span>
-                        <span style="font-weight:700; font-size:1.1rem; line-height:1.2; color:#333;">${item.nomeBase}</span>
+                    <div style="display:flex; align-items: center; gap: 10px;">
+                        
+                        <div style="display:flex; align-items:center; background:#f0f2f5; border-radius:6px; overflow:hidden; border: 1px solid #ddd;">
+                            <button onclick="alterarQuantidade(${index}, -1)" style="border:none; background:#fff; padding:4px 10px; cursor:pointer; font-weight:bold; color:#f44336; font-size: 1.1rem; transition:0.2s;">-</button>
+                            <span style="font-weight:800; font-size:0.95rem; color:#333; padding:0 10px; min-width: 15px; text-align: center;">${item.qtd}</span>
+                            <button onclick="alterarQuantidade(${index}, 1)" style="border:none; background:#fff; padding:4px 10px; cursor:pointer; font-weight:bold; color:#25D366; font-size: 1.1rem; transition:0.2s;">+</button>
+                        </div>
+                        
+                        <span onclick="editarItemCarrinho(${index})" style="font-weight:700; font-size:1.1rem; line-height:1.2; color:#00bcd4; cursor:pointer; text-decoration:underline;" title="Clique para editar complementos">${item.nomeBase}</span>
                     </div>
                     ${htmlAdicionais}
-                    <div style="color:#e91e63; font-weight:700; margin-top: 8px; padding-left: 25px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
+                    <div style="color:#e91e63; font-weight:800; margin-top: 8px; padding-left: 30px;">R$ ${precoTotalItem.toFixed(2).replace('.', ',')}</div>
                 </div>
-                <button onclick="removerDoCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.3rem; padding:5px; transition: 0.2s;">🗑️</button>
+                <button onclick="removerDoCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.3rem; padding:5px; transition: 0.2s;" title="Remover Item">🗑️</button>
             </div>
         `;
     });
@@ -566,7 +603,7 @@ async function finalizarVendaPDV() {
         if (item.adicionais && item.adicionais.length > 0) {
             nomeCompleto += " (" + item.adicionais.join(', ') + ")";
         }
-        return { nome: nomeCompleto, preco: item.preco };
+        return { nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
     });
     
     // Puxa o telefone e nome (Se não tiver, vai vazio)
@@ -633,6 +670,7 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
 
     let itensHtml = '';
     carrinho.forEach(item => {
+        const precoTotalItem = item.preco * item.qtd;
         let textoAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
             textoAdicionais = item.adicionais.map(adc => `<div style="font-size: 13px; padding-left: 10px;">- ${adc}</div>`).join('');
@@ -928,7 +966,7 @@ async function transferirParaMesa(numeroMesa) {
     const itensParaMesa = carrinho.map(item => {
         const listaAdicionais = item.adicionais || [];
         const nomeCompleto = listaAdicionais.length > 0 ? `${item.nomeBase} (${listaAdicionais.join(', ')})` : item.nomeBase;
-        return { nomeBase: item.nomeBase, adicionais: listaAdicionais, nome: nomeCompleto, preco: item.preco };
+        return { nomeBase: item.nomeBase, adicionais: listaAdicionais, nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
     });
 
     try {
@@ -1053,7 +1091,7 @@ async function finalizarDeliveryPDV() {
         if (item.adicionais && item.adicionais.length > 0) {
             nomeCompleto += " (" + item.adicionais.join(', ') + ")";
         }
-        return { nome: nomeCompleto, preco: item.preco };
+        return { nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
     });
 
     // 👇 NOVO: Inserindo a taxa de entrega como um item para aparecer na cozinha e no Kanban
@@ -1196,4 +1234,81 @@ async function buscarNomeClienteCheckout(telefoneFormatado) {
             }
         }
     } catch(e) { console.error("Erro na busca de cliente no checkout", e); }
+}
+
+// ==========================================
+// REEDIÇÃO DE COMPLEMENTOS DO CARRINHO (CORRIGIDO)
+// ==========================================
+function editarItemCarrinho(index) {
+    const itemNoCarrinho = carrinho[index];
+    const produtoOriginal = produtosDaNuvem.find(p => p.nome === itemNoCarrinho.nomeBase);
+    
+    if (!produtoOriginal) {
+        alert("Não foi possível reconfigurar este produto.");
+        return;
+    }
+
+    // 1. Abre o modal com os dados do produto original
+    verificarAdicao(produtoOriginal.id);
+
+    // 2. Aguarda o modal desenhar na tela (150ms)
+    setTimeout(() => {
+        // 3. Transforma o botão "Inserir" em "Salvar Alteração"
+        const btnConfirmar = document.querySelector('#modal-opcoes button[onclick*="confirmarEscolhas"]');
+        if (btnConfirmar) {
+            btnConfirmar.setAttribute('onclick', `salvarEdicaoCarrinho(${index})`);
+            btnConfirmar.innerText = "💾 Salvar Alterações";
+            btnConfirmar.style.backgroundColor = "#2196F3"; // Azul para destacar
+        }
+
+        // 4. Marca os complementos simulando o clique do operador do caixa
+        if (itemNoCarrinho.adicionais && itemNoCarrinho.adicionais.length > 0) {
+            itemNoCarrinho.adicionais.forEach(nomeAdicional => {
+                const todosCards = document.querySelectorAll('.item-opcional-card');
+                todosCards.forEach(card => {
+                    const spanNome = card.querySelector('span');
+                    if (spanNome && spanNome.innerText.trim() === nomeAdicional) {
+                        card.click(); // Faz a mágica de clicar e somar o preço!
+                    }
+                });
+            });
+        }
+    }, 150);
+}
+
+function salvarEdicaoCarrinho(index) {
+    // 1. Usa a memória (escolhasAtuais) que o modal já atualizou pra gente
+    const novosAdicionais = escolhasAtuais.map(e => e.nome);
+    const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
+    const precoFinal = precoBaseCalculado + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+
+    // 2. SUBSTITUI o item na mesma posição, mantendo a quantidade que ele já tinha
+    carrinho[index].adicionais = novosAdicionais;
+    carrinho[index].preco = precoFinal;
+
+    fecharModalOpcoes();
+    renderizarCarrinho();
+}
+
+// ==========================================
+// FUNÇÃO PARA LIMPAR COMPLETAMENTE O CARRINHO
+// ==========================================
+function limparCarrinhoCompleto() {
+    // Pede confirmação para o caixa não apagar sem querer
+    if (confirm("⚠️ Tem certeza que deseja limpar todo o carrinho e começar um novo pedido?")) {
+        carrinho = [];          // Esvazia a lista de itens
+        descontoGlobal = 0;     // Zera descontos
+        acrescimoGlobal = 0;    // Zera acréscimos
+        subtotalGlobalPDV = 0;  // Zera o subtotal
+        totalFinalGlobal = 0;   // Zera o total final
+        
+        // Se houver campos de cupom ou observações no seu PDV, limpamos eles aqui também:
+        const inputDesconto = document.getElementById('pdv-desconto');
+        const inputAcrescimo = document.getElementById('pdv-acrescimo');
+        if (inputDesconto) inputDesconto.value = '';
+        if (inputAcrescimo) inputAcrescimo.value = '';
+
+        // Atualiza o visual do carrinho para mostrar "Nenhum item adicionado" e recalcula os totais
+        renderizarCarrinho();
+    }
 }
