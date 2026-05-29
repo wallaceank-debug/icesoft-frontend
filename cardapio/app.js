@@ -299,7 +299,7 @@ function abrirModalEscolha(produto) {
     const visualTopo = produto.imagem_url
         ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
                <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 10px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
-               <img src="${produto.imagem_url}" style="width: 100%; height: 220px; object-fit: cover; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa;">
+               <img src="${produto.imagem_url}" onclick="abrirFotoInteira(this.src)" style="width: 100%; height: 220px; object-fit: cover; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa; cursor: pointer;">
            </div>`
         : `<div id="area-arraste" style="position: relative; font-size: 4rem; padding-top: 20px; padding-bottom: 10px; text-align: center;">
                <div style="position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: #ccc; border-radius: 10px; z-index: 10;"></div>
@@ -2180,4 +2180,35 @@ async function checarStatusPagamento(transacaoId) {
             }, 2000);
         }
     } catch (e) { }
+}
+
+// ==========================================
+// EFEITO FOTO EXPANDIDA (LIGHTBOX)
+// ==========================================
+function abrirFotoInteira(urlImagem) {
+    const lightbox = document.getElementById('lightbox-foto');
+    const img = document.getElementById('lightbox-img');
+    
+    img.src = urlImagem;
+    lightbox.style.display = 'flex';
+    
+    // Pequeno atraso para a animação do CSS funcionar graciosamente
+    setTimeout(() => {
+        lightbox.style.opacity = '1';
+        img.style.transform = 'scale(1)';
+    }, 10);
+}
+
+function fecharFotoInteira() {
+    const lightbox = document.getElementById('lightbox-foto');
+    const img = document.getElementById('lightbox-img');
+    
+    // Faz o efeito reverso (encolhe e some)
+    lightbox.style.opacity = '0';
+    img.style.transform = 'scale(0.8)';
+    
+    setTimeout(() => {
+        lightbox.style.display = 'none';
+        img.src = ''; // Limpa a memória
+    }, 300);
 }
