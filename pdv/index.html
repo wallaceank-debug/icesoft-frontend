@@ -237,6 +237,19 @@
                 <div id="checkout-total" style="color:#e91e63; font-size:2rem; font-weight:bold;">R$ 0,00</div>
             </div>
 
+            <div style="background:#e0f7fa; padding:12px; border-radius:8px; margin-bottom:10px; border: 1px solid #00bcd4;">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label style="color:#00838f; font-weight:600; font-size:0.8rem;">📱 WhatsApp (Fidelidade)</label>
+                        <input type="tel" id="checkout-telefone" class="input-padrao" placeholder="(24) 99999-9999" style="width:100%; font-size:1rem; padding:8px; border: 1px solid #00bcd4; border-radius: 8px; outline: none; box-sizing: border-box; margin-top: 3px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="color:#00838f; font-weight:600; font-size:0.8rem;">👤 Nome Cliente</label>
+                        <input type="text" id="checkout-nome" class="input-padrao" placeholder="Ex: Maria" style="width:100%; font-size:1rem; padding:8px; border: 1px solid #00bcd4; border-radius: 8px; outline: none; box-sizing: border-box; margin-top: 3px;">
+                    </div>
+                </div>
+            </div>
+
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #eee;">
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 1</label>
                 <select id="checkout-metodo-1" class="input-padrao" style="width:100%; margin-top:5px; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoPagamento()">

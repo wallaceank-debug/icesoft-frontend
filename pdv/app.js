@@ -440,6 +440,8 @@ function abrirModalCheckout() {
     document.getElementById('checkout-troco').style.color = '#25D366';
     
     document.getElementById('modal-checkout').style.display = 'flex';
+    document.getElementById('checkout-telefone').value = '';
+    document.getElementById('checkout-nome').value = '';
     verificarMetodoPagamento(); 
     
     setTimeout(() => {
@@ -567,6 +569,11 @@ async function finalizarVendaPDV() {
         return { nome: nomeCompleto, preco: item.preco };
     });
     
+    // Puxa o telefone e nome (Se não tiver, vai vazio)
+    const telefoneBruto = document.getElementById('checkout-telefone').value.trim();
+    const clienteTelefone = telefoneBruto ? padronizarTelefonePDV(telefoneBruto) : '';
+    const clienteNome = document.getElementById('checkout-nome').value.trim() || 'Cliente Balcão';
+
     const dadosDaVenda = {
         itens: JSON.stringify(itensFormatados), 
         produto_nome: "Venda Balcão", // 👈 CORREÇÃO: Título curto para não estourar o limite (varchar 255)
@@ -574,7 +581,9 @@ async function finalizarVendaPDV() {
         total: totalFinalGlobal,
         forma_pagamento: metodoFinalTexto, 
         status: "Concluída",
-        origem: "Balcão"
+        origem: "Balcão",
+        cliente_nome: clienteNome,
+        cliente_telefone: clienteTelefone
     };
 
     try {
@@ -1153,4 +1162,38 @@ async function atualizarBadgeMesasGlobal() {
     } catch (e) {
         console.log("Aviso: Não foi possível checar as mesas abertas para o menu.", e);
     }
+}
+
+// ==========================================
+// MÁSCARA E AUTOPREENCHIMENTO DO CRM NO PDV
+// ==========================================
+const inputTelCheckout = document.getElementById('checkout-telefone');
+if(inputTelCheckout) {
+    inputTelCheckout.addEventListener('input', function (e) {
+        let limpo = e.target.value.replace(/\D/g, '');
+        if (limpo.startsWith('55') && limpo.length >= 12) limpo = limpo.substring(2);
+        
+        let x = limpo.match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        
+        // Se bater 15 caracteres exatos, busca no banco se já conhecemos o cliente!
+        if (e.target.value.length === 15) {
+            buscarNomeClienteCheckout(e.target.value);
+        }
+    });
+}
+
+async function buscarNomeClienteCheckout(telefoneFormatado) {
+    try {
+        const res = await fetch(`${API_URL}/vendas`);
+        const vendas = await res.json();
+        const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
+
+        if(compras.length > 0) {
+            const ultimo = compras.reduce((max, p) => p.id > max.id ? p : max, compras[0]);
+            if(ultimo.cliente_nome) {
+                document.getElementById('checkout-nome').value = ultimo.cliente_nome;
+            }
+        }
+    } catch(e) { console.error("Erro na busca de cliente no checkout", e); }
 }

@@ -20,6 +20,7 @@ async function carregarConfiguracoes() {
         if (configs.msg_aceito) document.getElementById('msg-aceito').value = configs.msg_aceito;
         if (configs.msg_entrega) document.getElementById('msg-entrega').value = configs.msg_entrega;
         if (configs.msg_concluido) document.getElementById('msg-concluido').value = configs.msg_concluido;
+        if (configs.msg_balcao) document.getElementById('msg-balcao').value = configs.msg_balcao;
 
         if (configs.zap_url && configs.zap_instancia) {
             const badge = document.getElementById('status-zap');
@@ -63,7 +64,8 @@ async function salvarMensagens() {
         msg_recebido: document.getElementById('msg-recebido').value,
         msg_aceito: document.getElementById('msg-aceito').value,
         msg_entrega: document.getElementById('msg-entrega').value,
-        msg_concluido: document.getElementById('msg-concluido').value
+        msg_concluido: document.getElementById('msg-concluido').value,
+        msg_balcao: document.getElementById('msg-balcao').value
     };
 
     await enviarParaNuvem(payload, btn, textoOriginal, "#00bcd4");
