@@ -231,3 +231,14 @@ input:checked + .slider:before { transform: translateX(18px); }
 .submenu-link { color: white; text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 10px 15px; background: rgba(0, 0, 0, 0.15); border-radius: 8px; white-space: nowrap; transition: background 0.2s, opacity 0.2s; opacity: 0; pointer-events: none; }
 .menu-lateral:hover .submenu-link { opacity: 1; pointer-events: auto; }
 .submenu-link:hover { background: rgba(0, 0, 0, 0.3); }
+
+/* ==========================================
+   AJUSTE PARA OS NOVOS ÍCONES DO GOOGLE
+   ========================================== */
+.menu-icone.material-symbols-outlined {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    font-size: 1.6rem; /* Tamanho perfeito para visualização rápida */
+}
