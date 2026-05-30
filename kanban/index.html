@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Icesoft - Kanban Delivery</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
     <style>
     /* ==========================================
        1. RESET E ESTILOS BASE
@@ -243,68 +245,67 @@
 <body>
 
     <aside class="menu-lateral">
-    <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
-    
-    <a href="../pdv/" class="menu-item">
-        <span class="menu-icone">📋</span>
-        <span class="menu-texto">Balcão PDV</span>
-    </a>
-    
-    <a href="../mesas/" class="menu-item">
-        <span class="menu-icone" style="position: relative;">
-                🪑
-            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
-        </span>
-        <span class="menu-texto">Mesas/Comandas</span>
-    </a>
-    
-    <a href="../gestao/" class="menu-item">
-        <span class="menu-icone">🍔</span>
-        <span class="menu-texto">Cardápio</span>
-    </a>
-    
-    <a href="../delivery/" class="menu-item">
-        <span class="menu-icone">🛵</span>
-        <span class="menu-texto">Gestão Delivery</span>
-    </a>
-    
-    <a href="../kanban/" class="menu-item ativo">
-        <span class="menu-icone">📱</span>
-        <span class="menu-texto">Painel Kanban</span>
-    </a>
-    
-    <a href="../integracoes/" class="menu-item">
-            <span class="menu-icone">🔌</span>
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
+        
+        <a href="../pdv/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">point_of_sale</span>
+            <span class="menu-texto">Balcão PDV</span>
+        </a>
+        
+        <a href="../mesas/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined" style="position: relative;">
+                table_restaurant
+                <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+            </span>
+            <span class="menu-texto">Mesas/Comandas</span>
+        </a>
+        
+        <a href="../gestao/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">restaurant_menu</span>
+            <span class="menu-texto">Cardápio</span>
+        </a>
+        
+        <a href="../delivery/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">two_wheeler</span>
+            <span class="menu-texto">Gestão Delivery</span>
+        </a>
+        
+        <a href="../kanban/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">view_kanban</span>
+            <span class="menu-texto">Painel Kanban</span>
+        </a>
+        
+        <a href="../integracoes/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">hub</span>
             <span class="menu-texto">Integrações</span>
         </a>
 
-    <a href="../financeiro/" class="menu-item">
-        <span class="menu-icone">🏦</span>
-        <span class="menu-texto">Financeiro</span>
-    </a>
+        <a href="../financeiro/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">account_balance</span>
+            <span class="menu-texto">Financeiro</span>
+        </a>
+        
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
+                <span class="menu-icone material-symbols-outlined">bar_chart</span>
+                <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+            </div>
 
-    <!-- BLOCO DE RELATÓRIOS COM GAVETA -->
-    <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
-            <span class="menu-icone">📊</span>
-            <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+            <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
+                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
+                <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
+                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
+                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
+                <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
+                <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
+            </div>
         </div>
 
-        <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
-            <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
-            <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
-            <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
-            <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
-            <a href="historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
-            <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
+        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
+            <span class="menu-icone material-symbols-outlined" style="color: #f44336;">logout</span>
+            <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
         </div>
-    </div>
-
-    <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-        <span class="menu-icone" style="color: #f44336;">🚪</span>
-        <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
-    </div>
-</aside>
+    </aside>
 
 <script>
     function toggleRelatorios() {
@@ -317,18 +318,24 @@
         <header class="header-kanban">
             <h1>Gestão de Pedidos (Delivery)</h1>
             
-            <button id="btn-som" onclick="ativarSom()" style="background: #f44336; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                🔇 Alerta Sonoro: Desativado
-            </button>
-            
-            <button onclick="carregarPedidos()" style="background: white; color: #00bcd4; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">🔄 Atualizar Pedidos</button>
+            <div style="display: flex; gap: 15px;">
+                <button id="btn-som" onclick="ativarSom()" style="background: #f44336; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <span class="material-symbols-outlined" id="icone-som" style="font-size: 1.3rem;">volume_off</span>
+                    <span id="texto-som">Alerta Sonoro: Desativado</span>
+                </button>
+                
+                <button onclick="carregarPedidos()" style="background: white; color: #00bcd4; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.3rem;">refresh</span>
+                    <span>Atualizar Pedidos</span>
+                </button>
+            </div>
         </header>
 
         <main class="board">
             
             <div class="coluna" id="col-analise">
                 <div class="coluna-header header-analise">
-                    <span>📋 Em Análise</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">list_alt</span> Em Análise</span>
                     <span class="badge" id="qtd-analise">0</span>
                 </div>
                 <div class="coluna-corpo" id="corpo-analise">
@@ -338,7 +345,7 @@
 
             <div class="coluna" id="col-preparar">
                 <div class="coluna-header header-preparar">
-                    <span>👨‍🍳 A Preparar</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">soup_kitchen</span> A Preparar</span>
                     <span class="badge" id="qtd-preparar">0</span>
                 </div>
                 <div class="coluna-corpo" id="corpo-preparar"></div>
@@ -346,7 +353,7 @@
 
             <div class="coluna" id="col-entrega">
                 <div class="coluna-header header-entrega">
-                    <span>🛵 Saiu p/ Entrega</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">two_wheeler</span> Saiu p/ Entrega</span>
                     <span class="badge" id="qtd-entrega">0</span>
                 </div>
                 <div class="coluna-corpo" id="corpo-entrega"></div>
@@ -354,7 +361,7 @@
 
             <div class="coluna" id="col-entregue">
                 <div class="coluna-header header-entregue">
-                    <span>✅ Entregue</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">check_circle</span> Entregue</span>
                     <span class="badge" id="qtd-entregue">0</span>
                 </div>
                 <div class="coluna-corpo" id="corpo-entregue"></div>
@@ -362,7 +369,7 @@
 
             <div class="coluna" id="col-cancelado">
                 <div class="coluna-header header-cancelado">
-                    <span>❌ Cancelado</span>
+                    <span style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">cancel</span> Cancelado</span>
                     <span class="badge" id="qtd-cancelado">0</span>
                 </div>
                 <div class="coluna-corpo" id="corpo-cancelado"></div>
@@ -380,19 +387,19 @@
             <button onclick="fecharDetalhes()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:2rem; cursor:pointer; color:#888; line-height: 1;">&times;</button>
             
             <h2 style="margin:0; color:#00bcd4; border-bottom:2px solid #eee; padding-bottom:10px; display: flex; align-items: center; gap: 8px;">
-                📋 Pedido <span id="detalhe-id" style="color: #333;"></span>
+                <span class="material-symbols-outlined" style="font-size: 1.8rem;">receipt_long</span> Pedido <span id="detalhe-id" style="color: #333;"></span>
             </h2>
             
             <div style="background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee; font-size: 0.95rem;">
-                <p style="margin:0 0 8px 0;"><strong>👤 Cliente:</strong> <span id="detalhe-nome"></span></p>
-                <p style="margin:0 0 8px 0;"><strong>📱 WhatsApp:</strong> <span id="detalhe-telefone"></span></p>
-                <p style="margin:0 0 8px 0;"><strong>📍 Endereço:</strong> <span id="detalhe-endereco"></span></p>
-                <p style="margin:0;"><strong>💳 Pagamento:</strong> <span id="detalhe-pagamento" style="background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-weight: bold;"></span></p>
+                <p style="margin:0 0 8px 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">person</span><strong>Cliente:</strong> <span id="detalhe-nome"></span></p>
+                <p style="margin:0 0 8px 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">smartphone</span><strong>WhatsApp:</strong> <span id="detalhe-telefone"></span></p>
+                <p style="margin:0 0 8px 0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">location_on</span><strong>Endereço:</strong> <span id="detalhe-endereco"></span></p>
+                <p style="margin:0; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">payments</span><strong>Pagamento:</strong> <span id="detalhe-pagamento" style="background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-weight: bold;"></span></p>
             </div>
 
-            <h3 style="margin:5px 0 0 0; font-size:1.1rem; color:#333;">🛒 Itens do Pedido:</h3>
+            <h3 style="margin:5px 0 0 0; font-size:1.1rem; color:#333; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">shopping_cart</span> Itens do Pedido:</h3>
             <div id="detalhe-itens" style="background:#fff; border:1px solid #ddd; padding:10px; border-radius:8px; max-height:200px; overflow-y:auto;">
-                </div>
+            </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; background:#f0f2f5; padding:15px; border-radius:10px; margin-top:5px;">
                 <strong style="color:#555; font-size:1.1rem;">Total a Pagar:</strong>

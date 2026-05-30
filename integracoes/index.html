@@ -7,6 +7,8 @@
     <title>Integrações - Icesoft</title>
     <link rel="stylesheet" href="../gestao/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
     <style>
         .grid-integracoes {
             display: grid;
@@ -83,44 +85,61 @@
         <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
         
         <a href="../pdv/" class="menu-item">
-            <span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span>
-        </a>
-        <a href="../mesas/" class="menu-item">
-            <span class="menu-icone">🪑</span><span class="menu-texto">Mesas/Comandas</span>
-        </a>
-        <a href="../gestao/" class="menu-item">
-            <span class="menu-icone">🍔</span><span class="menu-texto">Cardápio</span>
-        </a>
-        <a href="../delivery/" class="menu-item">
-            <span class="menu-icone">🛵</span><span class="menu-texto">Gestão Delivery</span>
-        </a>
-        <a href="../kanban/" class="menu-item">
-            <span class="menu-icone">📱</span><span class="menu-texto">Painel Kanban</span>
-        </a>
-        <a href="../integracoes/" class="menu-item ativo">
-            <span class="menu-icone">🔌</span><span class="menu-texto">Integrações</span>
+            <span class="menu-icone material-symbols-outlined">point_of_sale</span>
+            <span class="menu-texto">Balcão PDV</span>
         </a>
         
-        <a href="../financeiro/" class="menu-item">
-            <span class="menu-icone">🏦</span>
-            <span class="menu-texto">Financeiro</span>
+        <a href="../mesas/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined" style="position: relative;">
+                table_restaurant
+                <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+            </span>
+            <span class="menu-texto">Mesas/Comandas</span>
+        </a>
+        
+        <a href="../gestao/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">restaurant_menu</span>
+            <span class="menu-texto">Cardápio</span>
+        </a>
+        
+        <a href="../delivery/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">two_wheeler</span>
+            <span class="menu-texto">Gestão Delivery</span>
+        </a>
+        
+        <a href="../kanban/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">view_kanban</span>
+            <span class="menu-texto">Painel Kanban</span>
+        </a>
+        
+        <a href="../integracoes/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">hub</span>
+            <span class="menu-texto">Integrações</span>
         </a>
 
+        <a href="../financeiro/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined">account_balance</span>
+            <span class="menu-texto">Financeiro</span>
+        </a>
+        
         <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
             <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
-                <span class="menu-icone">📊</span><span class="menu-texto" style="flex:1;">Relatórios ▾</span>
+                <span class="menu-icone material-symbols-outlined">bar_chart</span>
+                <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
             </div>
+
             <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
                 <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
                 <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
                 <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
                 <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
                 <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
+                <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
             </div>
         </div>
 
         <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-            <span class="menu-icone" style="color: #f44336;">🚪</span>
+            <span class="menu-icone material-symbols-outlined" style="color: #f44336;">logout</span>
             <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
         </div>
     </aside>
