@@ -105,21 +105,27 @@
 
         <div class="grid-kpis">
             <div class="kpi-card">
-                <div class="kpi-icone" style="background: #e0f2f1; color: #00897b;">💰</div>
+                <div class="kpi-icone" style="background: #e0f2f1; color: #00897b; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 2rem;">payments</span>
+                </div>
                 <div class="kpi-dados">
                     <p>Faturamento Bruto</p>
                     <h3 id="kpi-faturamento">R$ 0,00</h3>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icone" style="background: #fff3e0; color: #f57c00;">🏷️</div>
+                <div class="kpi-icone" style="background: #fff3e0; color: #f57c00; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 2rem;">local_offer</span>
+                </div>
                 <div class="kpi-dados">
                     <p>Ticket Médio</p>
                     <h3 id="kpi-ticket">R$ 0,00</h3>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icone" style="background: #e8eaf6; color: #3949ab;">📦</div>
+                <div class="kpi-icone" style="background: #e8eaf6; color: #3949ab; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined" style="font-size: 2rem;">shopping_bag</span>
+                </div>
                 <div class="kpi-dados">
                     <p>Total de Pedidos</p>
                     <h3 id="kpi-pedidos">0</h3>
@@ -130,49 +136,49 @@
         <div class="grid-graficos">
             
             <div class="grafico-card largura-total">
-                <h3>📈 Evolução do Faturamento Diário</h3>
+                <h3 style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">trending_up</span> Evolução do Faturamento Diário</h3>
                 <div class="grafico-container-alto">
                     <canvas id="graficoEvolucao"></canvas>
                 </div>
             </div>
 
             <div class="grafico-card">
-                <h3>💳 Formas de Pagamento</h3>
+                <h3 style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">credit_card</span> Formas de Pagamento</h3>
                 <div class="grafico-container-rosca">
                     <canvas id="graficoPagamentos"></canvas>
                 </div>
             </div>
 
             <div class="grafico-card">
-                <h3>🛵 Origem dos Pedidos (Canais)</h3>
+                <h3 style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">two_wheeler</span> Origem dos Pedidos (Canais)</h3>
                 <div class="grafico-container-rosca">
                     <canvas id="graficoOrigem"></canvas>
                 </div>
             </div>
 
             <div class="grafico-card">
-                <h3>🏆 Top 10 Produtos (Curva A)</h3>
+                <h3 style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">emoji_events</span> Top 10 Produtos (Curva A)</h3>
                 <div class="grafico-container-barra">
                     <canvas id="graficoTopProdutos"></canvas>
                 </div>
             </div>
 
             <div class="grafico-card">
-                <h3>🔥 Vendas por Dia da Semana</h3>
+                <h3 style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">local_fire_department</span> Vendas por Dia da Semana</h3>
                 <div class="grafico-container-barra">
                     <canvas id="graficoDiasSemana"></canvas>
                 </div>
             </div>
 
             <div class="grafico-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                <h3 style="margin-top: 0; color: #333;">⏰ Pedidos por Horário (Picos de Venda)</h3>
+                <h3 style="margin-top: 0; color: #333; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">schedule</span> Pedidos por Horário (Picos de Venda)</h3>
                 <div style="height: 300px;">
                     <canvas id="graficoHorarios"></canvas>
                 </div>
             </div>
             
             <div class="grafico-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                <h3 style="margin-top: 0; color: #333;">💰 Ticket Médio por Horário (Onde está o dinheiro)</h3>
+                <h3 style="margin-top: 0; color: #333; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">point_of_sale</span> Ticket Médio por Horário (Onde está o dinheiro)</h3>
                 <div style="height: 300px;">
                     <canvas id="graficoTicketMedio"></canvas>
                 </div>

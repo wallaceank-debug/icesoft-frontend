@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Funil de Vendas - Icesoft</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
         body { font-family: 'Poppins', sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
         .container-funil { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
@@ -36,7 +37,9 @@
 </head>
 <body>
     <div class="container-funil">
-        <h1>📊 Funil de Vendas Online</h1>
+        <h1 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <span class="material-symbols-outlined" style="font-size: 2.2rem;">stacked_bar_chart</span> Funil de Vendas Online
+        </h1>
         
         <div class="filtros">
             <div>
@@ -47,7 +50,9 @@
                 <label>Fim:</label>
                 <input type="date" id="dataFim">
             </div>
-            <button class="btn-filtrar" onclick="carregarFunil()">🔍 Filtrar</button>
+            <button class="btn-filtrar" onclick="carregarFunil()" style="display: flex; align-items: center; gap: 6px; justify-content: center;">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem;">search</span> Filtrar
+            </button>
         </div>
 
         <div id="corpo-funil">
@@ -88,7 +93,9 @@
             </div>
         </div>
         
-        <button onclick="window.history.back()" style="margin-top: 30px; width: 100%; padding: 15px; border: 1px solid #ddd; background: #fafafa; border-radius: 10px; cursor: pointer; font-weight: bold; color: #555; transition: 0.2s;">⬅️ Voltar para o Painel</button>
+        <button onclick="window.history.back()" style="margin-top: 30px; width: 100%; padding: 15px; border: 1px solid #ddd; background: #fafafa; border-radius: 10px; cursor: pointer; font-weight: bold; color: #555; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span class="material-symbols-outlined">arrow_back</span> Voltar para o Painel
+        </button>
     </div>
 
     <script>

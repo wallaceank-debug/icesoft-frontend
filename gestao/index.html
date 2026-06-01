@@ -102,7 +102,30 @@
             color: white;
             border-color: #e91e63;
             box-shadow: 0 2px 5px rgba(233, 30, 99, 0.4);
-        }   
+        }
+
+        /* 👇 NOVO: ESTILO DOS BOTÕES DO TOPO (PADRÃO ERP CLEAN) */
+        .btn-topo-clean {
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid #cccccc;
+            padding: 8px 15px;
+            border-radius: 6px; /* Borda mais retangular */
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .btn-topo-clean:hover {
+            background-color: #f8f9fa;
+            border-color: #999999;
+            transform: translateY(-1px);
+        }
     </style>
 
     <div class="conteudo-principal">
@@ -111,41 +134,57 @@
             <div class="titulo-area">
                 <h1>GESTÃO DE CARDÁPIO</h1>
             </div>
-            <div class="botoes-area">
-                <button onclick="abrirGerenciadorCategorias()" class="btn-topo" style="background:#FF4081; color: white; border: none;">⚙️ CATEGORIAS</button>
-                <button onclick="abrirGerenciadorCidades()" class="btn-topo" style="background:#9C27B0; color: white; border: none;">🏙️ CIDADES</button>
-                <button onclick="abrirGerenciadorBairros()" class="btn-topo" style="background:#FF9800; color: white; border: none;">🛵 TAXAS</button>
-                <!-- NOVO: Botão do Cofre do Pix -->
-                <button onclick="abrirConfigPagamentos()" class="btn-topo" style="background:#4CAF50; color: white; border: none;">💳 PIX (MP)</button>
+            
+            <div class="botoes-area" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="abrirGerenciadorCategorias()" class="btn-topo-clean">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">category</span> Categorias
+                </button>
+                <button onclick="abrirGerenciadorCidades()" class="btn-topo-clean">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">location_city</span> Cidades
+                </button>
+                <button onclick="abrirGerenciadorBairros()" class="btn-topo-clean">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">two_wheeler</span> Bairros
+                </button>
+                <button onclick="abrirConfigPagamentos()" class="btn-topo-clean">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">payments</span> Pix (MP)
+                </button>
                 
-                <button onclick="abrirModalProduto()" class="btn-topo">+ PRODUTO</button>
-                <button onclick="abrirModalGrupo()" class="btn-topo">+ GRUPO</button>
+                <button onclick="abrirModalProduto()" class="btn-topo-clean">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #00bcd4;">add_circle</span> Produto
+                </button>
+                <button onclick="abrirModalGrupo()" class="btn-topo-clean">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #00bcd4;">add_circle</span> Grupo
+                </button>
             </div>
         </header>
 
-        <!-- Botão no topo da Gestão de Cardápio -->
-        <button onclick="abrirModalEstoque()" style="background: #25D366; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; font-size: 1.1em; width: 100%; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-        📦 Abrir Controle Rápido de Estoque
+        <!-- Botão de Estoque Padronizado -->
+        <button onclick="abrirModalEstoque()" class="btn-topo-clean" style="width: 100%; justify-content: center; padding: 12px; font-size: 1.05rem; margin-bottom: 20px;">
+            <span class="material-symbols-outlined" style="color: #555;">inventory_2</span> Abrir Controle Rápido de Estoque
         </button>
 
         <!-- Tela Suspensa (Modal) Corrigida -->
-<div id="modalEstoque" style="display: none; position: fixed; top: 0; left: 80px; width: calc(100% - 80px); height: 100%; background: #ffffff; z-index: 99999; overflow-y: auto; padding: 20px; box-sizing: border-box;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #eee;">
-    <h2 style="margin: 0; font-size: 1.5em; color: #333;">📦 Estoque Rápido</h2>
-    <button onclick="fecharModalEstoque()" style="background: #ff4757; color: white; padding: 10px 15px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">❌ Fechar</button>
-  </div>
+        <div id="modalEstoque" style="display: none; position: fixed; top: 0; left: 80px; width: calc(100% - 80px); height: 100%; background: #ffffff; z-index: 99999; overflow-y: auto; padding: 20px; box-sizing: border-box;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #eee;">
+            <h2 style="margin: 0; font-size: 1.5em; color: #333; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">inventory_2</span> Estoque Rápido</h2>
+            <button onclick="fecharModalEstoque()" style="background: white; color: #f44336; border: 1px solid #f44336; padding: 10px 15px; font-weight: bold; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined">close</span> Fechar</button>
+          </div>
 
-  <!-- Nova Barra de Pesquisa Inteligente -->
-  <input type="text" id="filtroEstoque" onkeyup="filtrarEstoqueVisual()" placeholder="🔍 Digite 'Picolé' ou 'Geladinho' para filtrar..." style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc; font-size: 1.1em; box-sizing: border-box;">
-  
-  <div id="listaEstoqueProdutos" style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 50px;">
-    <!-- Os produtos vão aparecer aqui -->
-  </div>
-</div>
+          <!-- Nova Barra de Pesquisa Inteligente -->
+          <input type="text" id="filtroEstoque" onkeyup="filtrarEstoqueVisual()" placeholder="🔍 Digite 'Picolé' ou 'Geladinho' para filtrar..." style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc; font-size: 1.1em; box-sizing: border-box;">
+          
+          <div id="listaEstoqueProdutos" style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 50px;">
+            <!-- Os produtos vão aparecer aqui -->
+          </div>
+        </div>
 
         <div class="tabs-container">
-            <button class="tab-btn active" onclick="abrirAba('aba-produtos', this)">🍔 1. Produtos Principais</button>
-            <button class="tab-btn" onclick="abrirAba('aba-complementos', this)">➕ 2. Grupos e Adicionais</button>
+            <button class="tab-btn active" onclick="abrirAba('aba-produtos', this)" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem;">fastfood</span> 1. Produtos Principais
+            </button>
+            <button class="tab-btn" onclick="abrirAba('aba-complementos', this)" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem;">format_list_bulleted_add</span> 2. Grupos e Adicionais
+            </button>
         </div>
 
         <main class="gestao-container">

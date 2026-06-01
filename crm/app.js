@@ -83,25 +83,28 @@ function renderizarTabela(lista) {
         const hoje = new Date();
         const diffDias = Math.floor((hoje - dataUltimaCompra) / (1000 * 60 * 60 * 24));
         
-        let corFarol = '#25D366'; // Verde (Ativo - comprou nos últimos 15 dias)
+        let corFarol = '#25D366'; // Verde (Ativo - < 15 dias)
         let textoStatus = 'Ativo';
         
-        if (diffDias >= 30) {
-            corFarol = '#f44336'; // Vermelho (Em Risco - não compra há 30 dias ou mais)
-            textoStatus = 'Em Risco';
+        // 🛡️ Previne falha caso a data seja inválida ou muito antiga
+        if (isNaN(diffDias) || diffDias >= 30) {
+            corFarol = '#f44336'; 
+            textoStatus = 'Inativo'; 
         } else if (diffDias >= 15) {
-            corFarol = '#ff9800'; // Amarelo (Esfriando - não compra entre 15 e 29 dias)
-            textoStatus = 'Esfriando';
+            corFarol = '#ff9800'; 
+            textoStatus = 'Em Risco'; 
         }
+
+        const textoExibicaoDias = isNaN(diffDias) ? 'Desconhecido' : `há ${diffDias} dias`;
 
         // Monta a data com a bolinha colorida e o contador de dias
         const ultimaCompra = `
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${corFarol}; box-shadow: 0 0 5px ${corFarol};" title="${textoStatus}"></span>
-                <span style="font-weight: 600;">${dataUltimaCompra.toLocaleDateString('pt-BR')}</span>
+                <span style="font-weight: 600;">${isNaN(dataUltimaCompra.getTime()) ? '--/--/----' : dataUltimaCompra.toLocaleDateString('pt-BR')}</span>
             </div>
             <div style="font-size: 0.8rem; color: #888; margin-top: 3px; margin-left: 20px;">
-                há ${diffDias} dias (${textoStatus})
+                ${textoExibicaoDias} (${textoStatus})
             </div>
         `;
         // --- FIM: FAROL DE RETENÇÃO ---
@@ -157,13 +160,74 @@ function renderizarTabela(lista) {
     });
 }
 
+// ==========================================
+// SISTEMA DE FILTRO UNIFICADO (TEXTO + CARDS)
+// ==========================================
+let filtroStatusAtual = 'todos';
+
+function filtrarPorStatus(status) {
+    // 1. Efeito Toggle: Se clicar no mesmo cartão que já está ativo, desmarca
+    if (filtroStatusAtual === status) {
+        filtroStatusAtual = 'todos';
+    } else {
+        filtroStatusAtual = status;
+    }
+
+    // 2. Atualiza o visual dos cartões na tela (Destaca o selecionado e apaga os outros)
+    document.querySelectorAll('.card-kpi').forEach(card => {
+        if (filtroStatusAtual === 'todos') {
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+        } else {
+            if (card.dataset.status === filtroStatusAtual) {
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1.02)'; // Dá um leve zoom no selecionado
+            } else {
+                card.style.opacity = '0.5'; // Apaga os não selecionados
+                card.style.transform = 'scale(0.98)';
+            }
+        }
+    });
+
+    // 3. Roda a inteligência que redesenha a tabela
+    filtrarClientes();
+}
+
 function filtrarClientes() {
     const termo = document.getElementById('busca-cliente').value.toLowerCase();
+    const hoje = new Date();
+
     const filtrados = clientesGlobais.filter(c => {
+        // --- REGRA 1: Passa no filtro de Texto? ---
         const nome = (c.nome || '').toLowerCase();
         const tel = (c.telefone || '').toLowerCase();
-        return nome.includes(termo) || tel.includes(termo);
+        const passouTexto = nome.includes(termo) || tel.includes(termo);
+
+        // --- REGRA 2: Passa no filtro do Cartão (KPI)? ---
+        let passouStatus = true;
+        
+        if (filtroStatusAtual !== 'todos') {
+            let diffDias = 999; // Se não tem data, consideramos inativo
+            if (c.ultima_compra) {
+                const dataCompra = new Date(c.ultima_compra);
+                if (!isNaN(dataCompra.getTime())) {
+                    diffDias = Math.floor((hoje - dataCompra) / (1000 * 60 * 60 * 24));
+                }
+            }
+
+            if (filtroStatusAtual === 'ativos') {
+                passouStatus = (diffDias < 15);
+            } else if (filtroStatusAtual === 'risco') {
+                passouStatus = (diffDias >= 15 && diffDias < 30);
+            } else if (filtroStatusAtual === 'inativos') {
+                passouStatus = (diffDias >= 30);
+            }
+        }
+
+        // O cliente só aparece na tabela se passar nos dois testes
+        return passouTexto && passouStatus;
     });
+
     renderizarTabela(filtrados);
 }
 
@@ -263,12 +327,28 @@ function atualizarContadoresKPI() {
     const hoje = new Date();
 
     clientesGlobais.forEach(c => {
+        // 🛡️ Segurança: Se o cliente não tem data ou a data for inválida, consideramos Inativo
+        if (!c.ultima_compra) {
+            inativos++;
+            return;
+        }
+        
         const dataCompra = new Date(c.ultima_compra);
-        const dias = Math.ceil(Math.abs(hoje - dataCompra) / (1000 * 60 * 60 * 24));
+        if (isNaN(dataCompra.getTime())) {
+            inativos++;
+            return;
+        }
 
-        if (dias <= 30) ativos++;        // Comprou nos últimos 30 dias
-        else if (dias <= 60) emRisco++;  // Não compra há 1 ou 2 meses
-        else inativos++;                 // Sumiu há mais de 2 meses
+        // 🧠 A mesma matemática da tabela
+        const dias = Math.floor((hoje - dataCompra) / (1000 * 60 * 60 * 24));
+
+        if (dias < 15) {
+            ativos++;        // Verde (Ativos: < 15 dias)
+        } else if (dias < 30) {
+            emRisco++;       // Laranja (Em Risco: 15 a 29 dias)
+        } else {
+            inativos++;      // Vermelho (Inativos: 30+ dias)
+        }
     });
 
     document.getElementById('kpi-ativos').innerText = ativos;
