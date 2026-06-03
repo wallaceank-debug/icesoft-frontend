@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorias - Icesoft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        /* LAYOUT BASE E MENU LATERAL */
+        body { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; display: flex; height: 100vh; overflow: hidden; background-color: #f4f7f6; }
+        .conteudo-principal { flex: 1; overflow-y: auto; padding: 30px; position: relative; z-index: 1; }
+        
+        .menu-lateral { width: 80px; background-color: #00bcd4; height: 100vh; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 15px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; position: relative; z-index: 1000; flex-shrink: 0; }
+        .menu-lateral:hover { width: 250px; align-items: flex-start; padding: 20px 15px; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
+        .menu-item { display: flex; align-items: center; width: 50px; height: 50px; background-color: white; border-radius: 50%; text-decoration: none; color: #333; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; white-space: nowrap; cursor: pointer; box-sizing: border-box; }
+        .menu-lateral:hover .menu-item { width: 100%; border-radius: 25px; }
+        .menu-item:hover { background-color: #e0f7fa; transform: scale(1.05); }
+        .menu-icone { min-width: 50px; text-align: center; font-size: 1.3rem; }
+        .menu-texto { opacity: 0; transition: opacity 0.2s ease; margin-left: 5px; font-size: 1rem; }
+        .menu-lateral:hover .menu-texto { opacity: 1; transition-delay: 0.1s; }
+
+        /* ESTILOS DA TELA DE CATEGORIAS */
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .header-tela { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .btn-novo { background: #00bcd4; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-size: 1rem; }
+        .btn-novo:hover { background: #0097a7; transform: translateY(-2px); }
+        
+        .cat-card { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px 20px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.2s; }
+        .cat-card:hover { border-color: #00bcd4; box-shadow: 0 4px 10px rgba(0,188,212,0.1); }
+        
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #4CAF50; }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* MODAL E BOTÕES DE DIAS */
+        .modal-fundo { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-conteudo { background: white; padding: 30px; border-radius: 15px; width: 95%; max-width: 500px; }
+        .input-padrao { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; font-size: 1rem; font-family: inherit; box-sizing: border-box; }
+        
+        .btn-dia { background-color: #f0f0f0; border: 1px solid #ccc; color: #555; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: all 0.2s; }
+        .btn-dia.ativo { background-color: #ff4081; color: white; border-color: #ff4081; box-shadow: 0 2px 5px rgba(255, 64, 129, 0.4); }
+    </style>
+</head>
+<body>
+
+    <aside class="menu-lateral">
+        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
+        <a href="../pdv/" class="menu-item"><span class="menu-icone material-symbols-outlined">point_of_sale</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../mesas/" class="menu-item"><span class="menu-icone material-symbols-outlined">table_restaurant</span><span class="menu-texto">Mesas/Comandas</span></a>
+        <a href="../gestao/" class="menu-item"><span class="menu-icone material-symbols-outlined">restaurant_menu</span><span class="menu-texto">Cardápio</span></a>
+        <a href="../delivery/" class="menu-item"><span class="menu-icone material-symbols-outlined">two_wheeler</span><span class="menu-texto">Gestão Delivery</span></a>
+        <a href="../kanban/" class="menu-item"><span class="menu-icone material-symbols-outlined">view_kanban</span><span class="menu-texto">Painel Kanban</span></a>
+        <a href="../integracoes/" class="menu-item"><span class="menu-icone material-symbols-outlined">hub</span><span class="menu-texto">Integrações</span></a>
+        <a href="../financeiro/" class="menu-item"><span class="menu-icone material-symbols-outlined">account_balance</span><span class="menu-texto">Financeiro</span></a>
+        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;"><span class="menu-icone material-symbols-outlined" style="color: #f44336;">logout</span><span class="menu-texto" style="color: #f44336;">Sair do Sistema</span></div>
+    </aside>
+
+    <div class="conteudo-principal">
+        <button onclick="window.location.href='index.html'" style="margin-bottom: 20px; background: none; border: none; color: #00bcd4; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 1.1rem;">
+            <span class="material-symbols-outlined">arrow_back</span> Voltar para Produtos
+        </button>
+
+        <div class="container">
+            <div class="header-tela">
+                <div>
+                    <h1 style="margin: 0; color: #333; display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-outlined" style="color: #00bcd4; font-size: 2rem;">category</span> Gestão de Categorias
+                    </h1>
+                    <p style="color: #666; margin: 5px 0 0 0; font-size: 0.9rem;">Organize a ordem, visibilidade e os horários de ativação no Cardápio Digital.</p>
+                </div>
+                <button class="btn-novo" onclick="abrirModalCategoria()">
+                    <span class="material-symbols-outlined">add</span> Nova Categoria
+                </button>
+            </div>
+
+            <div id="lista-categorias">
+                <p style="text-align: center; color: #999;">Carregando categorias...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CRIAÇÃO / EDIÇÃO -->
+    <div id="modal-categoria" class="modal-fundo">
+        <div class="modal-conteudo">
+            <h2 id="titulo-modal" style="color: #00bcd4; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined">edit_square</span> <span id="texto-titulo">Nova Categoria</span>
+            </h2>
+            
+            <input type="hidden" id="cat-id">
+
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Nome da Categoria:</label>
+                    <input type="text" id="cat-nome" class="input-padrao" placeholder="Ex: Promoções da Madrugada" style="margin-top: 5px;">
+                </div>
+
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px dashed #ccc;">
+                    <input type="checkbox" id="cat-mostrar" checked style="width: 20px; height: 20px; accent-color: #00bcd4;">
+                    <span style="font-weight: 600; color: #333; font-size: 0.95rem;">📱 Mostrar no Cardápio Digital (App)</span>
+                </label>
+
+                <div style="background: #fff0f5; padding: 15px; border-radius: 8px; border: 1px dashed #ff4081;">
+                    <h4 style="margin: 0 0 5px 0; color: #ff4081; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined">schedule</span> Agendamento Especial (Opcional)
+                    </h4>
+                    <p style="font-size: 0.8rem; color: #888; margin: 0 0 10px 0;">Deixe em branco para exibir a categoria sempre.</p>
+
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;">
+                        <!-- O segredo: o toggle é feito direto no HTML agora! -->
+                        <button type="button" class="btn-dia" data-dia="0" onclick="this.classList.toggle('ativo')">Dom</button>
+                        <button type="button" class="btn-dia" data-dia="1" onclick="this.classList.toggle('ativo')">Seg</button>
+                        <button type="button" class="btn-dia" data-dia="2" onclick="this.classList.toggle('ativo')">Ter</button>
+                        <button type="button" class="btn-dia" data-dia="3" onclick="this.classList.toggle('ativo')">Qua</button>
+                        <button type="button" class="btn-dia" data-dia="4" onclick="this.classList.toggle('ativo')">Qui</button>
+                        <button type="button" class="btn-dia" data-dia="5" onclick="this.classList.toggle('ativo')">Sex</button>
+                        <button type="button" class="btn-dia" data-dia="6" onclick="this.classList.toggle('ativo')">Sáb</button>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Hora Início:</label>
+                            <input type="time" id="cat-hora-inicio" class="input-padrao" style="margin-top: 5px; padding: 8px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Hora Fim:</label>
+                            <input type="time" id="cat-hora-fim" class="input-padrao" style="margin-top: 5px; padding: 8px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="fecharModalCategoria()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #555;">Cancelar</button>
+                <button id="btn-salvar-cat" onclick="salvarCategoria()" style="flex: 1; padding: 12px; background: #00bcd4; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white;">💾 Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="categorias.js"></script>
+</body>
+</html>

@@ -69,6 +69,36 @@ function isPromocaoAtivaAgora(p) {
     return true; // Se passou pelos testes de tempo, a promoção brilha na tela!
 }
 
+// ==========================================
+// ⏱️ MOTOR DE CATEGORIAS AGENDADAS
+// ==========================================
+function isCategoriaAtivaAgora(cat) {
+    // Se não tem agendamento configurado, a categoria fica visível 24h
+    if ((!cat.dias_semana || cat.dias_semana === '') && (!cat.hora_inicio || cat.hora_inicio === '')) return true;
+
+    const agora = new Date();
+    const diaAtual = agora.getDay().toString(); // 0=Dom, 1=Seg...
+    const horaAtualStr = agora.toTimeString().substring(0, 5); // Ex: "12:26"
+
+    // 1. Checa o Dia da Semana
+    if (cat.dias_semana && cat.dias_semana.trim() !== '') {
+        if (!cat.dias_semana.includes(diaAtual)) return false; // Se hoje não for o dia marcado, esconde
+    }
+
+    // 2. Checa o Horário (Ex: das "14:00" às "18:00")
+    if (cat.hora_inicio && cat.hora_fim && cat.hora_inicio !== '' && cat.hora_fim !== '') {
+        if (cat.hora_fim < cat.hora_inicio) {
+            // Lógica para lojas que viram a madrugada (Ex: 18:00 às 02:00)
+            if (horaAtualStr < cat.hora_inicio && horaAtualStr > cat.hora_fim) return false;
+        } else {
+            // Horário normal no mesmo dia (Ex: 14:00 às 18:00)
+            if (horaAtualStr < cat.hora_inicio || horaAtualStr > cat.hora_fim) return false;
+        }
+    }
+
+    return true; // Se passou nos testes, exibe a categoria!
+}
+
 async function carregarTudo() {
     try {
         // 🌐 O "motor" agora busca as configurações no mesmo pacote!
@@ -94,9 +124,13 @@ async function carregarTudo() {
         gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
         bairrosGlobais = await resBairros.json(); 
         
-        // 🛡️ O FILTRO MÁGICO DAS CATEGORIAS (Apenas as visíveis no App)
+        // 🛡️ O FILTRO MÁGICO DAS CATEGORIAS (Visíveis no App E no horário agendado)
         const todasCategorias = await resCat.json();
-        categoriasGlobaisDelivery = todasCategorias.filter(c => c.ativo !== false && c.mostrar_cardapio !== false);
+        categoriasGlobaisDelivery = todasCategorias.filter(c => 
+            c.ativo !== false && 
+            c.mostrar_cardapio !== false &&
+            isCategoriaAtivaAgora(c) // 👈 A mágica acontece aqui!
+        );
 
         renderizarCardapio(produtosDaNuvem);
         renderizarMenuCategorias(produtosDaNuvem);

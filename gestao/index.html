@@ -136,7 +136,7 @@
             </div>
             
             <div class="botoes-area" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="abrirGerenciadorCategorias()" class="btn-topo-clean">
+                <button onclick="window.location.href='categorias.html'" class="btn-topo-clean">
                     <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">category</span> Categorias
                 </button>
                 <button onclick="abrirGerenciadorCidades()" class="btn-topo-clean">
@@ -465,7 +465,60 @@
         </div>
         
     </div>
-        
+    
+    <!-- MODAL AVANÇADO DE EDIÇÃO DE CATEGORIA -->
+        <div id="modal-edicao-categoria" class="modal-fundo" style="display:none; z-index: 3000;">
+            <div class="modal-conteudo" style="max-width: 500px; width: 95%;">
+                <h2 style="color: #00bcd4; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">edit_square</span> Editar Categoria
+                </h2>
+                <input type="hidden" id="categoria-id-edit">
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Nome da Categoria:</label>
+                    <input type="text" id="categoria-nome-edit" class="input-padrao" placeholder="Ex: Promoções">
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px dashed #ccc;">
+                        <input type="checkbox" id="categoria-mostrar-edit" style="width: 20px; height: 20px; accent-color: #9C27B0;">
+                        <span style="font-weight: 600; color: #333; font-size: 0.95rem;">📱 Mostrar no Cardápio Digital (App)</span>
+                    </label>
+
+                    <div style="background: #fff0f5; padding: 15px; border-radius: 8px; border: 1px dashed #ff4081; margin-top: 10px;">
+                        <h4 style="margin: 0 0 10px 0; color: #ff4081; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                            <span class="material-symbols-outlined">schedule</span> Agendamento (Opcional)
+                        </h4>
+                        <p style="font-size: 0.8rem; color: #888; margin: 0 0 10px 0;">Defina quando esta categoria deve aparecer no cardápio online.</p>
+
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;">
+                            <button type="button" class="btn-dia" data-dia-cat="0">Dom</button>
+                            <button type="button" class="btn-dia" data-dia-cat="1">Seg</button>
+                            <button type="button" class="btn-dia" data-dia-cat="2">Ter</button>
+                            <button type="button" class="btn-dia" data-dia-cat="3">Qua</button>
+                            <button type="button" class="btn-dia" data-dia-cat="4">Qui</button>
+                            <button type="button" class="btn-dia" data-dia-cat="5">Sex</button>
+                            <button type="button" class="btn-dia" data-dia-cat="6">Sáb</button>
+                        </div>
+
+                        <div style="display: flex; gap: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Hora Início:</label>
+                                <input type="time" id="categoria-hora-inicio" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; font-family: inherit;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #555;">Hora Fim:</label>
+                                <input type="time" id="categoria-hora-fim" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; font-family: inherit;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-botoes">
+                    <button onclick="fecharModalEdicaoCategoria()" class="btn-cancelar">Cancelar</button>
+                    <button id="btn-salvar-categoria-edit" onclick="salvarEdicaoCategoria()" class="btn-salvar">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+
     <script src="app.js"></script>
 </body>
 </html>

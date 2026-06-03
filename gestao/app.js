@@ -799,6 +799,12 @@ function renderizarListaCategoriasAdmin() {
             ? `<span style="background: #e0f7fa; color: #00bcd4; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold;">📱 App + PDV</span>`
             : `<span style="background: #ffebee; color: #f44336; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold;">🖥️ Só PDV</span>`;
 
+        // NOVO: Exibição visual indicando se há um agendamento ativo
+        let agendamentoHtml = '';
+        if (cat.hora_inicio || cat.hora_fim || cat.dias_semana) {
+            agendamentoHtml = `<span style="color: #ff4081; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; margin-left: 8px;"><span class="material-symbols-outlined" style="font-size: 0.9rem;">schedule</span> Agendada</span>`;
+        }
+
         container.innerHTML += `
             <div draggable="true"
                  ondragstart="dragStartCategoria(${index})"
@@ -810,7 +816,7 @@ function renderizarListaCategoriasAdmin() {
                     <span style="color: #ccc; cursor: grab; font-size: 1.2rem;">☰</span>
                     <div style="display: flex; flex-direction: column; text-align: left;">
                         <strong style="color: #333;">${cat.nome}</strong> 
-                        <div style="margin-top: 4px;">${seloHtml}</div>
+                        <div style="margin-top: 4px;">${seloHtml} ${agendamentoHtml}</div>
                     </div>
                 </div>
                 
@@ -819,6 +825,7 @@ function renderizarListaCategoriasAdmin() {
                         <input type="checkbox" onchange="toggleCategoriaApp(${cat.id}, this.checked)" ${isVisivel ? 'checked' : ''}>
                         <span class="slider"></span>
                     </label>
+                    <button onclick="abrirModalEdicaoCategoria(${cat.id})" style="background:none; border:none; color:#00bcd4; cursor:pointer; font-size:1.2rem;" title="Editar Categoria">✏️</button>
                     <button onclick="excluirCategoria(${cat.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;" title="Excluir">🗑️</button>
                 </div>
             </div>
@@ -906,6 +913,99 @@ async function excluirCategoria(id) {
         alert("Erro ao excluir categoria.");
     }
 }
+
+// ==========================================
+// EDIÇÃO AVANÇADA DE CATEGORIAS (AGENDAMENTO)
+// ==========================================
+function abrirModalEdicaoCategoria(id) {
+    const cat = listaCategorias.find(c => c.id === id);
+    if (!cat) return;
+
+    document.getElementById('categoria-id-edit').value = cat.id;
+    document.getElementById('categoria-nome-edit').value = cat.nome;
+    document.getElementById('categoria-mostrar-edit').checked = cat.mostrar_cardapio !== false;
+
+    // Reseta botões de dia do calendário da categoria
+    document.querySelectorAll('button[data-dia-cat]').forEach(b => b.classList.remove('ativo'));
+
+    // Preenche os dias se a categoria já tiver regras
+    if (cat.dias_semana) {
+        const diasSalvos = cat.dias_semana.split(',');
+        diasSalvos.forEach(diaNum => {
+            const btn = document.querySelector(`button[data-dia-cat="${diaNum}"]`);
+            if(btn) btn.classList.add('ativo');
+        });
+    }
+
+    document.getElementById('categoria-hora-inicio').value = cat.hora_inicio || '';
+    document.getElementById('categoria-hora-fim').value = cat.hora_fim || '';
+
+    // Esconde o painel principal de categorias e mostra o de edição por cima
+    document.getElementById('modal-categorias').style.display = 'none';
+    document.getElementById('modal-edicao-categoria').style.display = 'flex';
+}
+
+function fecharModalEdicaoCategoria() {
+    document.getElementById('modal-edicao-categoria').style.display = 'none';
+    // Devolve o usuário para a lista de categorias original
+    document.getElementById('modal-categorias').style.display = 'flex';
+}
+
+async function salvarEdicaoCategoria() {
+    const id = document.getElementById('categoria-id-edit').value;
+    const nome = document.getElementById('categoria-nome-edit').value.trim();
+    const mostrarApp = document.getElementById('categoria-mostrar-edit').checked;
+
+    const diasSelecionados = Array.from(document.querySelectorAll('button[data-dia-cat].ativo'))
+                                  .map(b => b.getAttribute('data-dia-cat')).join(',');
+    const horaInicio = document.getElementById('categoria-hora-inicio').value;
+    const horaFim = document.getElementById('categoria-hora-fim').value;
+
+    if (!nome) return alert("⚠️ O nome da categoria não pode ficar vazio!");
+
+    const btn = document.getElementById('btn-salvar-categoria-edit');
+    btn.innerText = '⏳ Salvando...';
+    btn.disabled = true;
+
+    const payload = {
+        nome: nome,
+        mostrar_cardapio: mostrarApp,
+        dias_semana: diasSelecionados, // Ex: "1,2,3"
+        hora_inicio: horaInicio,       // Ex: "18:00"
+        hora_fim: horaFim              // Ex: "23:59"
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/categorias/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            fecharModalEdicaoCategoria();
+            await carregarTudo();
+            renderizarListaCategoriasAdmin();
+        } else {
+            alert("❌ Erro ao atualizar as regras da categoria no banco de dados.");
+        }
+    } catch (e) {
+        alert("🔌 Erro de conexão ao tentar salvar.");
+    } finally {
+        btn.innerText = 'Salvar Alterações';
+        btn.disabled = false;
+    }
+}
+
+// 🪄 Mágica para fazer os novos botões de dias funcionarem ao clicar
+document.addEventListener('DOMContentLoaded', () => {
+    // Escuta cliques dinâmicos em qualquer botão de dia de categoria
+    document.body.addEventListener('click', function(e) {
+        if(e.target && e.target.hasAttribute('data-dia-cat')) {
+            e.target.classList.toggle('ativo');
+        }
+    });
+});
 
 // ==========================================
 // 🗺️ SISTEMA DE BAIRROS E TAXAS DE ENTREGA
