@@ -10,6 +10,7 @@ let lojaAberta = true; // Impede adicionar se estiver fechada
 let idsUpsellGlobais = [];
 let descontoUpsellGlobal = 0;
 let categoriasGlobaisDelivery = [];
+let categoriasCompletasDoBanco = []; // 🗺️ NOVA: Memória de todas as categorias
 let pedidoMinimoDeliveryGlobal = 0;
 
 let cuponsGlobais = [];
@@ -126,6 +127,8 @@ async function carregarTudo() {
         
         // 🛡️ O FILTRO MÁGICO DAS CATEGORIAS (Visíveis no App E no horário agendado)
         const todasCategorias = await resCat.json();
+        categoriasCompletasDoBanco = todasCategorias.map(c => c.nome); // 👈 Memória fotográfica do banco
+
         categoriasGlobaisDelivery = todasCategorias.filter(c => 
             c.ativo !== false && 
             c.mostrar_cardapio !== false &&
@@ -209,7 +212,7 @@ function renderizarBairros(cidadeFiltro = null) {
 function obterOrdemDasCategorias(listaProdutosAtual) {
     const categoriasPermitidas = categoriasGlobaisDelivery.map(c => c.nome);
     
-    // Coleta TODAS as categorias usadas (Principais e Adicionais)
+    // Coleta TODAS as categorias usadas (Principais e Adicionais) pelos produtos
     let todasCategoriasUsadas = new Set();
     
     listaProdutosAtual.forEach(p => {
@@ -225,7 +228,12 @@ function obterOrdemDasCategorias(listaProdutosAtual) {
         }
     });
 
-    const categoriasExtras = [...todasCategoriasUsadas].filter(c => !categoriasPermitidas.includes(c));
+    // 🛑 A CORTINA DE FERRO DAS CATEGORIAS:
+    // Pega as categorias usadas, mas SÓ adiciona como "Extra" se ela não existir no banco de dados (ex: 'Diversos').
+    // Se ela existe no banco (categoriasCompletasDoBanco), mas NÃO está nas permitidas, significa que ela está BLOQUEADA ou AGENDADA, então deve ser ESCONDIDA!
+    const categoriasExtras = [...todasCategoriasUsadas].filter(c => 
+        !categoriasPermitidas.includes(c) && !categoriasCompletasDoBanco.includes(c)
+    );
 
     return [...categoriasPermitidas, ...categoriasExtras];
 }
