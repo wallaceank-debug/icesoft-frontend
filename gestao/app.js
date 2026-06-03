@@ -86,12 +86,17 @@ function renderizarProdutos(filtro = '') {
                 const isAtivo = p.ativo !== false;
                 const classeInativo = isAtivo ? '' : 'item-inativo';
                 
+                // 👇 NOVO: Verifica as categorias adicionais antes de desenhar o HTML
+                let catsAdic = [];
+                try { catsAdic = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : (p.categorias_adicionais || []); } catch(e){}
+                let badgeAdicional = catsAdic.length > 0 ? `<span style="font-size: 0.7rem; background: #e0f7fa; color: #00838f; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">Também em: ${catsAdic.join(', ')}</span>` : '';
+
                 div.innerHTML += `
                     <div class="item-linha" draggable="true" ondragstart="dragStartProduto(${p.id})" ondragover="dragOverProduto(event)" ondrop="dropProduto(${p.id})" style="display: flex; align-items: center;">
                         <span style="color: #ccc; font-size: 1.2rem; margin-right: 15px; cursor: grab; padding: 5px;" title="Arraste para reordenar">☰</span>
                         
                         <div class="item-info ${classeInativo}" onclick="abrirModalProduto(${p.id})" style="cursor: pointer; flex: 1; padding: 5px 0;">
-                            <span class="item-nome">${p.emoji || ''} ${p.nome}</span>
+                            <span class="item-nome">${p.emoji || ''} ${p.nome} ${badgeAdicional}</span>
                             <span class="item-detalhe">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
                         </div>
                         
@@ -118,12 +123,17 @@ function renderizarProdutos(filtro = '') {
             const isAtivo = p.ativo !== false;
             const classeInativo = isAtivo ? '' : 'item-inativo';
             
+            // 👇 NOVO: Verifica as categorias adicionais antes de desenhar o HTML
+            let catsAdic = [];
+            try { catsAdic = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : (p.categorias_adicionais || []); } catch(e){}
+            let badgeAdicional = catsAdic.length > 0 ? `<span style="font-size: 0.7rem; background: #e0f7fa; color: #00838f; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">Também em: ${catsAdic.join(', ')}</span>` : '';
+
             div.innerHTML += `
                 <div class="item-linha" draggable="true" ondragstart="dragStartProduto(${p.id})" ondragover="dragOverProduto(event)" ondrop="dropProduto(${p.id})" style="display: flex; align-items: center;">
                     <span style="color: #ccc; font-size: 1.2rem; margin-right: 15px; cursor: grab; padding: 5px;" title="Arraste para reordenar">☰</span>
                     
                     <div class="item-info ${classeInativo}" onclick="abrirModalProduto(${p.id})" style="cursor: pointer; flex: 1; padding: 5px 0;">
-                        <span class="item-nome">${p.emoji || ''} ${p.nome}</span>
+                        <span class="item-nome">${p.emoji || ''} ${p.nome} ${badgeAdicional}</span>
                         <span class="item-detalhe">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
                     </div>
                     
@@ -155,6 +165,7 @@ async function duplicarProduto(id) {
         preco: parseFloat(p.preco),
         emoji: p.emoji,
         categoria: p.categoria || "Outros",
+        categorias_adicionais: p.categorias_adicionais || [],
         grupos_ids: p.grupos_ids || [],
         ativo: true
     };
@@ -431,6 +442,11 @@ function abrirModalProduto(id = null) {
         preencherSeguro('prod-preco', p.preco || '');
         preencherSeguro('prod-emoji', p.emoji || '');
         preencherSeguro('prod-categoria', p.categoria || 'Outros');
+        let catAdic = [];
+        if (p.categorias_adicionais) {
+            try { catAdic = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais; } catch(e){}
+        }
+        atualizarCategoriasAdicionais(catAdic);
         preencherSeguro('produto-tag', p.tag || '');
         preencherSeguro('produto-imagem', p.imagem_url || '');
         preencherSeguro('prod-descricao', (p.descricao && p.descricao !== 'null') ? p.descricao : '');
@@ -468,6 +484,7 @@ function abrirModalProduto(id = null) {
         preencherSeguro('prod-preco', '');
         preencherSeguro('prod-emoji', '🍨');
         preencherSeguro('prod-categoria', 'Outros'); 
+        atualizarCategoriasAdicionais([]); 
         preencherSeguro('produto-tag', '');
         preencherSeguro('produto-imagem', '');
         preencherSeguro('prod-descricao', '');
@@ -626,6 +643,7 @@ async function salvarProduto() {
     if (radioAtivo) tipoPromocao = radioAtivo.value;
 
     const gruposSelecionados = gruposSelecionadosTemporarios;
+    const categoriasExtras = Array.from(document.querySelectorAll('.check-cat-adicional:checked')).map(cb => cb.value);
 
     const dados = {
         nome: nome,
@@ -642,7 +660,8 @@ async function salvarProduto() {
         promo_inicio: lerSeguro('produto-promo-inicio'),
         promo_fim: lerSeguro('produto-promo-fim'),
         promo_pdv: lerCheckSeguro('produto-promo-pdv'),
-        grupos_ids: gruposSelecionados
+        grupos_ids: gruposSelecionados,
+        categorias_adicionais: categoriasExtras
     };
 
     try {
@@ -771,6 +790,37 @@ function preencherSelectCategorias() {
     listaCategorias.forEach(cat => {
         select.innerHTML += `<option value="${cat.nome}">${cat.nome}</option>`;
     });
+    atualizarCategoriasAdicionais();
+}
+
+function atualizarCategoriasAdicionais(catsSalvas = null) {
+    const container = document.getElementById('container-categorias-adicionais');
+    if (!container) return;
+    
+    const catPrincipal = document.getElementById('prod-categoria').value;
+    
+    let selecionadas = catsSalvas;
+    if (selecionadas === null) {
+        selecionadas = Array.from(document.querySelectorAll('.check-cat-adicional:checked')).map(cb => cb.value);
+    }
+
+    container.innerHTML = '';
+    
+    listaCategorias.forEach(cat => {
+        if(cat.nome === catPrincipal) return; 
+        
+        const isChecked = selecionadas.includes(cat.nome) ? 'checked' : '';
+        container.innerHTML += `
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; background: white; padding: 6px 12px; border-radius: 20px; border: 1px solid #ddd; font-size: 0.85rem; transition: 0.2s;" onmouseover="this.style.borderColor='#00bcd4'" onmouseout="this.style.borderColor='#ddd'">
+                <input type="checkbox" class="check-cat-adicional" value="${cat.nome}" ${isChecked} style="accent-color: #00bcd4; width:16px; height:16px;">
+                ${cat.nome}
+            </label>
+        `;
+    });
+
+    if(container.innerHTML === '') {
+        container.innerHTML = '<p style="color:#999; font-size:0.8rem; margin:0;">Nenhuma outra categoria disponível.</p>';
+    }
 }
 
 function abrirGerenciadorCategorias() {

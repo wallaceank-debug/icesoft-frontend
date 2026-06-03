@@ -208,11 +208,24 @@ function renderizarBairros(cidadeFiltro = null) {
 // ==========================================
 function obterOrdemDasCategorias(listaProdutosAtual) {
     const categoriasPermitidas = categoriasGlobaisDelivery.map(c => c.nome);
-    const produtosPermitidos = listaProdutosAtual.filter(p => 
-        categoriasPermitidas.includes(p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos')
-    );
-    const categoriasExtras = [...new Set(produtosPermitidos.map(p => p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos'))]
-        .filter(c => !categoriasPermitidas.includes(c));
+    
+    // Coleta TODAS as categorias usadas (Principais e Adicionais)
+    let todasCategoriasUsadas = new Set();
+    
+    listaProdutosAtual.forEach(p => {
+        todasCategoriasUsadas.add(p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos');
+        
+        if (p.categorias_adicionais) {
+            try {
+                let extras = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais;
+                if (Array.isArray(extras)) {
+                    extras.forEach(ext => todasCategoriasUsadas.add(ext));
+                }
+            } catch(e) {}
+        }
+    });
+
+    const categoriasExtras = [...todasCategoriasUsadas].filter(c => !categoriasPermitidas.includes(c));
 
     return [...categoriasPermitidas, ...categoriasExtras];
 }
@@ -224,7 +237,19 @@ function renderizarCardapio(lista) {
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
 
     categoriasOrdenadas.forEach(catNome => {
-        const produtosDestaCategoria = lista.filter(p => (p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos') === catNome);
+        // 🚀 AQUI ACONTECE A MÁGICA DO ESPELHAMENTO:
+        const produtosDestaCategoria = lista.filter(p => {
+            let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
+            if (catPrincipal === catNome) return true; // Passa se for a categoria principal
+
+            if (p.categorias_adicionais) {
+                try {
+                    let extras = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais;
+                    if (Array.isArray(extras) && extras.includes(catNome)) return true; // Passa se for a categoria espelhada
+                } catch(e) {}
+            }
+            return false;
+        });
         
         if (produtosDestaCategoria.length === 0) return;
 
@@ -1448,7 +1473,20 @@ function renderizarMenuCategorias(lista) {
     let html = '';
 
     categoriasOrdenadas.forEach(catNome => {
-        const temProduto = lista.some(p => (p.categoria && p.categoria !== 'null' ? p.categoria : 'Diversos') === catNome);
+        // Verifica se a categoria principal OU a adicional tem esse produto
+        const temProduto = lista.some(p => {
+            let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
+            if (catPrincipal === catNome) return true;
+            
+            if (p.categorias_adicionais) {
+                try {
+                    let extras = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais;
+                    if (Array.isArray(extras) && extras.includes(catNome)) return true;
+                } catch(e) {}
+            }
+            return false;
+        });
+
         if (temProduto) {
             html += `
             <div onclick="rolarParaCategoria('${catNome.replace(/'/g, "\\'")}')" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 0.95rem; transition: 0.2s;">

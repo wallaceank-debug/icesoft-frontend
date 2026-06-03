@@ -266,9 +266,17 @@
                         </div>
                         
                         <!-- CAMPO: CATEGORIA -->
-                        <select id="prod-categoria" class="input-padrao" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; font-family: 'Poppins', sans-serif;">
+                        <select id="prod-categoria" class="input-padrao" onchange="atualizarCategoriasAdicionais()" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; font-family: 'Poppins', sans-serif;">
                             <option value="Outros">Outros</option>
                         </select>
+
+                        <div style="margin-top: 5px; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+                            <label style="font-weight: bold; color: #555; font-size: 0.9rem; margin-bottom: 8px; display: block;">📑 Mostrar também nas categorias (Opcional):</label>
+                            <div id="container-categorias-adicionais" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 120px; overflow-y: auto;">
+                                <p style="color:#999; font-size:0.8rem; margin:0;">Carregando...</p>
+                            </div>
+                            <p style="font-size: 0.75rem; color: #888; margin-top: 8px; margin-bottom: 0;">Útil para exibir este produto na categoria padrão e numa "Promoção da Madrugada" simultaneamente.</p>
+                        </div>
 
                         <input type="url" id="produto-imagem" class="input-padrao" placeholder="Link da Imagem (URL ImgBB) - Opcional" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; display: none;"> 
                         <div style="margin-top: 5px; margin-bottom: 5px; background: #f0f8ff; padding: 10px; border-radius: 8px; border: 1px dashed #00bcd4;">
