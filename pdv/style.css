@@ -306,6 +306,10 @@ input:checked + .slider:before { transform: translateX(18px); }
     
     /* Compacta o texto e os espaços do DRE para não vazar tela */
     .dre-card { padding: 15px !important; }
-    .dre-row { font-size: 0.8rem !important; padding: 10px 5px !important; flex-wrap: wrap; }
+    
+    /* 👇 DUAS LINHAS NOVAS: Texto quebra linha, mas o R$ fica cravado na direita */
+    .dre-row { font-size: 0.8rem !important; padding: 10px 5px !important; flex-wrap: nowrap !important; gap: 10px; }
+    .dre-row span:last-child { flex-shrink: 0; text-align: right; }
+    
     .dre-total { font-size: 0.95rem !important; justify-content: center; gap: 5px; text-align: center; padding: 15px !important; flex-direction: column; }
 }
