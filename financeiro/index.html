@@ -24,7 +24,28 @@
         .fin-card.receitas { border-color: #4CAF50; }
         .fin-card.despesas { border-color: #f44336; }
         
-        .fin-btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        /* Estilo Clean para os botões do Topo */
+        .btn-topo-clean {
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid #cccccc;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .btn-topo-clean:hover {
+            background-color: #f8f9fa;
+            border-color: #999999;
+            transform: translateY(-1px);
+        }
         .fin-btn.nova-receita { background-color: #4CAF50; }
         .fin-btn.nova-despesa { background-color: #f44336; }
         .fin-btn:hover { filter: brightness(0.9); transform: translateY(-2px); }
@@ -103,28 +124,36 @@
     </script>
 
     <div class="conteudo-principal">
-        <header class="pdv-header" style="background-color: #333;">
+        <header class="pdv-header" style="background-color: #00bcd4;">
             <div class="logo-area">
-                <h1>🏦 MÓDULO FINANCEIRO</h1>
+                <h1> MÓDULO FINANCEIRO</h1>
             </div>
         </header>
 
         <main class="fin-container">
-            <div class="fin-header">
-                <div>
-                    <h1>Visão Geral</h1>
-                    <p style="color: #666; margin-top: 5px;">Acompanhe a saúde financeira da sua loja.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px;">
+                    <button onclick="abrirModalBancos()" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">account_balance</span> Bancos
+                    </button>
+                    <button onclick="window.location.href='fluxo.html'" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">calendar_month</span> Fluxo Realizado
+                    </button>
+                    <button onclick="abrirModalTransferencia()" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">sync_alt</span> Auditar / Transferir
+                    </button>
+                    <button onclick="window.location.href='graficos.html'" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">query_stats</span> Gráficos
+                    </button>
+                    <button onclick="window.location.href='dre.html'" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">analytics</span> Ver DRE
+                    </button>
+                    <button onclick="abrirModalLancamento('Receita')" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #4CAF50;">add_circle</span> Nova Receita
+                    </button>
+                    <button onclick="abrirModalLancamento('Despesa')" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #f44336;">do_not_disturb_on</span> Nova Despesa
+                    </button>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="fin-btn" onclick="abrirModalBancos()" style="background: #2196F3;">🏦 Bancos</button>
-                    <button class="fin-btn" onclick="window.location.href='fluxo.html'" style="background: #3f51b5;">📆 Fluxo Realizado</button>
-                    <button class="fin-btn" onclick="abrirModalTransferencia()" style="background: #607d8b;">🔄 Auditar / Transferir</button>
-                    <button class="fin-btn" onclick="window.location.href='graficos.html'" style="background: #FF9800;">📈 Gráficos</button>
-                    <button class="fin-btn" onclick="window.location.href='dre.html'" style="background: #6200ea;">📊 Ver DRE</button>
-                    <button class="fin-btn nova-receita" onclick="abrirModalLancamento('Receita')">+ Nova Receita</button>
-                    <button class="fin-btn nova-despesa" onclick="abrirModalLancamento('Despesa')">- Nova Despesa</button>
-                </div>
-            </div>
 
             <div class="fin-cards-grid">
                 <div class="fin-card saldo" onclick="filtrarLancamentos('todos')" style="cursor: pointer;" title="Clique para ver todos os lançamentos">
@@ -170,9 +199,13 @@
                         <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Data Final</label>
                         <input type="date" id="filtro-data-fim" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
                     </div>
-                    <div style="display: flex; gap: 5px;">
-                        <button onclick="carregarLancamentos()" style="padding: 9px 15px; background: #3f51b5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🔍 Filtrar</button>
-                        <button onclick="limparFiltrosTabela()" style="padding: 9px 15px; background: #ccc; color: #333; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Limpar</button>
+                    <div style="display: flex; gap: 5px; align-items: flex-end;">
+                        <button onclick="carregarLancamentos()" class="btn-topo-clean" style="height: 38px;">
+                            <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #3f51b5;">search</span> Filtrar
+                        </button>
+                        <button onclick="limparFiltrosTabela()" class="btn-topo-clean" style="height: 38px;">
+                            <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #666;">clear_all</span> Limpar
+                        </button>
                     </div>
                 </div>
 
@@ -219,6 +252,22 @@
                         <option value="Pendente">Pendente</option>
                         <option value="Pago">Pago</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- 👇 NOVO BLOCO: REPETIÇÃO E PARCELAS -->
+            <div id="area-recorrencia" style="display: flex; gap: 10px; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #ccc;">
+                <div style="flex: 1.5;">
+                    <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Repetição</label>
+                    <select id="lan-recorrencia" onchange="toggleParcelas()" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+                        <option value="unico">Lançamento Único</option>
+                        <option value="parcelado">Compra Parcelada</option>
+                        <option value="recorrente">Conta Mensal Fixa</option>
+                    </select>
+                </div>
+                <div style="flex: 1; display: none;" id="div-lan-parcelas">
+                    <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Meses/Parcelas</label>
+                    <input type="number" id="lan-qtd-meses" value="2" min="2" max="120" style="width:100%; padding:10px; margin-top:5px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
                 </div>
             </div>
 

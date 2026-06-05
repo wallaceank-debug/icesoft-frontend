@@ -194,6 +194,12 @@ function abrirModalLancamento(tipo) {
     document.getElementById('lan-data').value = '';
     document.getElementById('lan-status').value = 'Pendente';
     
+    // 👇 Garante que a área de repetição VAI APARECER ao criar um novo
+    document.getElementById('area-recorrencia').style.display = 'flex';
+    document.getElementById('lan-recorrencia').value = 'unico';
+    document.getElementById('lan-qtd-meses').value = '2';
+    toggleParcelas();
+    
     const selectCat = document.getElementById('lan-categoria');
     selectCat.innerHTML = '<option value="">Selecione a Categoria</option>';
     categoriasFinanceiras.filter(c => c.tipo === tipo).forEach(c => {
@@ -251,11 +257,20 @@ function prepararEdicaoLancamento(itemStringCodificado) {
     btnSalvar.innerText = "Atualizar";
     btnSalvar.style.backgroundColor = '#FF9800'; // Fica Laranja para alertar edição
     
+    // 👇 ESCONDE a repetição porque você só edita uma parcela por vez, não a série toda
+    const areaRec = document.getElementById('area-recorrencia');
+    if (areaRec) areaRec.style.display = 'none';
+    
     document.getElementById('modal-lancamento').style.display = 'flex';
 }
 
 function fecharModalLancamento() {
     document.getElementById('modal-lancamento').style.display = 'none';
+}
+
+function toggleParcelas() {
+    const tipo = document.getElementById('lan-recorrencia').value;
+    document.getElementById('div-lan-parcelas').style.display = (tipo !== 'unico') ? 'block' : 'none';
 }
 
 async function salvarLancamento() {
@@ -266,6 +281,9 @@ async function salvarLancamento() {
     const status = document.getElementById('lan-status').value;
     const categoria_id = document.getElementById('lan-categoria').value;
     const conta_id = document.getElementById('lan-conta').value;
+    // 👇 Captura as opções de recorrência
+    const recorrencia_tipo = document.getElementById('lan-recorrencia').value;
+    const qtd_meses = document.getElementById('lan-qtd-meses').value;
 
     if (!descricao || isNaN(valor) || valor <= 0 || !data_vencimento) return alert("⚠️ Por favor, preencha a descrição, valor e vencimento.");
     if (!categoria_id || !conta_id) return alert("⚠️ Selecione a Categoria (DRE) e a Conta Bancária.");
@@ -275,7 +293,7 @@ async function salvarLancamento() {
     btnSalvar.disabled = true;
 
     try {
-        const payload = { descricao, valor, data_vencimento, status, tipo: tipoLancamentoAtual, categoria_id, conta_id };
+        const payload = { descricao, valor, data_vencimento, status, tipo: tipoLancamentoAtual, categoria_id, conta_id, recorrencia_tipo, qtd_meses };
         let res;
 
         // Se tem ID na memória, ele Atualiza (PUT). Senão, ele Cria (POST).
