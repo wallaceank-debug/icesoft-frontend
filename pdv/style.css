@@ -242,3 +242,44 @@ input:checked + .slider:before { transform: translateX(18px); }
     vertical-align: middle;
     font-size: 1.6rem; /* Tamanho perfeito para visualização rápida */
 }
+
+/* ==========================================
+   📱 OTIMIZAÇÃO MOBILE GLOBAL (APP VIEW)
+   ========================================== */
+@media (max-width: 768px) {
+    body { flex-direction: column; }
+    
+    /* Transforma o menu lateral em Barra Inferior tipo App */
+    .menu-lateral {
+        width: 100%;
+        height: 65px;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+        z-index: 9999;
+    }
+    
+    /* Remove hover e esconde textos para caber no celular */
+    .menu-lateral:hover { width: 100%; padding: 0; }
+    .menu-lateral h2, .menu-texto, #submenu-relatorios { display: none !important; }
+    
+    .menu-item {
+        width: 45px;
+        height: 45px;
+        margin: auto 0;
+    }
+    
+    /* Protege o conteúdo para não ser engolido pela barra inferior */
+    .conteudo-principal {
+        padding-bottom: 80px; 
+    }
+
+    /* Ajustes Finos para o Financeiro no Celular */
+    .fin-header h1 { font-size: 1.3rem !important; }
+    .fin-cards-grid { grid-template-columns: 1fr !important; }
+    .fin-card { padding: 15px !important; }
+}

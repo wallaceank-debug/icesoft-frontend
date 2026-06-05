@@ -131,7 +131,7 @@
         </header>
 
         <main class="fin-container">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; white-space: nowrap; -webkit-overflow-scrolling: touch;">
                     <button onclick="abrirModalBancos()" class="btn-topo-clean">
                         <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">account_balance</span> Bancos
                     </button>
@@ -209,7 +209,7 @@
                     </div>
                 </div>
 
-                <div id="fin-lista-lancamentos">
+                <div id="fin-lista-lancamentos" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
                     <p style="color: #999; font-style: italic;">Carregando dados do servidor...</p>
                 </div>
             </div>
@@ -220,7 +220,7 @@
     </div>
 
     <div id="modal-lancamento" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2000;">
-        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             <h2 id="modal-titulo" style="margin-top:0; color:#333;">Novo Lançamento</h2>
             
             <input type="hidden" id="edit-lan-id" value="">
@@ -279,7 +279,7 @@
     </div>
 
 <div id="modal-bancos" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2500;">
-        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             <h2 style="margin-top:0; color:#333;">🏦 Contas Bancárias</h2>
             
             <div id="lista-bancos-cadastrados" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
@@ -303,7 +303,7 @@
     </div>
 
 <div id="modal-transferencia" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:2400;">
-        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <div style="background:white; padding:25px; border-radius:12px; width:90%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
             <h2 style="margin-top:0; color:#333; display: flex; align-items: center; gap: 10px;">🔄 Conciliação & Transferência</h2>
             <p style="color:#666; font-size:0.85rem; margin-bottom: 20px;">Transfira os valores da Conta de Transição para os seus bancos reais e deconte as taxas das maquininhas.</p>
             
