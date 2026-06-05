@@ -254,7 +254,7 @@ input:checked + .slider:before { transform: translateX(18px); }
         width: 100%;
         height: 65px !important;
         flex-direction: row !important;
-        justify-content: flex-start !important; /* Permite rolar para o lado */
+        justify-content: flex-start !important;
         align-items: center !important;
         padding: 0 10px !important;
         position: fixed;
@@ -262,38 +262,50 @@ input:checked + .slider:before { transform: translateX(18px); }
         left: 0;
         box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
         z-index: 9999;
-        overflow-x: auto !important; /* Ativa a rolagem com o dedo */
-        gap: 15px !important; /* Espaçamento bonito entre botões */
+        overflow-x: auto !important;
+        gap: 15px !important;
         -webkit-overflow-scrolling: touch;
     }
     
-    /* Esconde a barrinha de rolagem (Scrollbar) para ficar com visual limpo de App */
     .menu-lateral::-webkit-scrollbar { display: none; }
-    
-    /* Esconde os textos e logos */
     .menu-lateral:hover { width: 100%; padding: 0 10px !important; }
     .menu-lateral h2, .menu-texto, #submenu-relatorios { display: none !important; }
     
-    /* 🛑 O SEGREDO ANTI-DEFORMAÇÃO */
     .menu-item {
         width: 45px !important;
         height: 45px !important;
-        min-width: 45px !important; /* Impede de amassar a largura */
-        min-height: 45px !important; /* Impede de amassar a altura */
-        margin: 0 !important; /* Remove margens dos botões de 'Voltar/Sair' que quebravam o layout */
-        flex-shrink: 0 !important; /* ORDEM DE BLOQUEIO: Proíbe o navegador de esmagar o botão */
+        min-width: 45px !important;
+        min-height: 45px !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
         display: flex;
         justify-content: center;
         align-items: center;
     }
     
-    /* Protege o conteúdo principal para não ser engolido pela barra */
-    .conteudo-principal {
-        padding-bottom: 80px; 
-    }
-
-    /* Ajustes Finos para o Financeiro no Celular */
+    .conteudo-principal { padding-bottom: 80px; }
+    
+    /* Ajustes da Tela Inicial do Financeiro */
     .fin-header h1 { font-size: 1.3rem !important; }
     .fin-cards-grid { grid-template-columns: 1fr !important; }
     .fin-card { padding: 15px !important; }
+
+    /* 👇 NOVOS AJUSTES: FLUXO DE CAIXA, GRÁFICOS E DRE */
+    
+    /* Empilha os cabeçalhos para o botão "Voltar" não ficar esmagado */
+    .pdv-header { flex-direction: column !important; gap: 10px !important; padding: 15px !important; text-align: center; }
+    .logo-area h1 { font-size: 1.1rem !important; white-space: normal; line-height: 1.2; margin-bottom: 5px; }
+    
+    /* Protege a tabela do Fluxo de Caixa ativando o deslize horizontal suave */
+    .fluxo-card { padding: 10px !important; -webkit-overflow-scrolling: touch; }
+    .fluxo-table th, .fluxo-table td { font-size: 0.85rem !important; padding: 8px !important; }
+    
+    /* Força os Gráficos a formarem uma fila única de cima para baixo */
+    .graficos-grid { grid-template-columns: 1fr !important; gap: 15px !important; }
+    .grafico-card.full-width { grid-column: span 1 !important; }
+    
+    /* Compacta o texto e os espaços do DRE para não vazar tela */
+    .dre-card { padding: 15px !important; }
+    .dre-row { font-size: 0.8rem !important; padding: 10px 5px !important; flex-wrap: wrap; }
+    .dre-total { font-size: 0.95rem !important; justify-content: center; gap: 5px; text-align: center; padding: 15px !important; flex-direction: column; }
 }
