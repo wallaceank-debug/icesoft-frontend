@@ -382,7 +382,8 @@ function renderizarListaCupons() {
         }
 
         container.innerHTML += `
-            <div style="background:#fdfdfd; border:1px solid #e1bee7; border-radius:10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+            <div style="background:#fdfdfd; border:1px solid #e1bee7; border-radius:10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02); flex-shrink: 0;">
+                
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; background: white; border-bottom: 1px dashed #e1bee7;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <strong style="color:#8e24aa; font-size: 1.2rem; letter-spacing: 1px;">${cupom.codigo}</strong> 
@@ -435,7 +436,7 @@ function renderizarListaUpsell(upsellSalvos) {
     produtosGlobais.forEach(p => {
         const isChecked = upsellSalvos.includes(Number(p.id)) ? 'checked' : '';
         container.innerHTML += `
-            <label style="display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:5px; border:1px solid #ddd; cursor:pointer;">
+            <label style="display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:5px; border:1px solid #ddd; cursor:pointer; flex-shrink: 0;">
                 <input type="checkbox" class="chk-upsell" value="${p.id}" ${isChecked} style="width:20px; height:20px; accent-color:#e91e63; cursor: pointer;">
                 <span style="font-weight:600; color:#333;">${p.nome}</span>
                 <span style="margin-left:auto; color:#25D366; font-weight:bold;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
