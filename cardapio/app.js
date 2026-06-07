@@ -748,9 +748,7 @@ function aplicarCupom() {
 let passoCheckoutAtual = 1;
 
 function finalizarPedidoWhatsApp() {
-    cupomAtivo = null;
-    document.getElementById('input-cupom').value = '';
-    document.getElementById('msg-cupom').style.display = 'none';
+    // 🛑 Removemos as linhas que anulavam o cupomAtivo aqui!
     
     irParaPasso(1);
     
