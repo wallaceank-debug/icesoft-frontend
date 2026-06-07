@@ -627,12 +627,28 @@ function adicionarAoCarrinho(nome, preco) {
 
 function atualizarBarraCarrinho() {
     const barra = document.getElementById('carrinho-flutuante');
+    
+    // 👉 A MÁGICA: O gatilho roda PRIMEIRO para aplicar ou remover cupons automaticamente
+    if (typeof atualizarBarraCupom === 'function') atualizarBarraCupom();
+
     if (carrinho.length > 0) {
         barra.classList.replace('carrinho-oculto', 'carrinho-visivel');
         barra.style.display = 'flex';
-        let total = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+        
+        let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+        
+        // 👇 Aplica o desconto na barrinha flutuante
+        let desconto = 0;
+        if (cupomAtivo) {
+            let valorCupomNum = Number(cupomAtivo.valor) || 0;
+            desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
+        }
+        
+        let totalFinal = subtotal - desconto;
+        if(totalFinal < 0) totalFinal = 0;
+
         document.getElementById('carrinho-qtd').innerText = `${carrinho.length} item(ns)`;
-        document.getElementById('carrinho-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        document.getElementById('carrinho-total').innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
     } else {
         barra.classList.replace('carrinho-visivel', 'carrinho-oculto');
         barra.style.display = 'none';
@@ -657,7 +673,11 @@ function renderizarResumoCarrinho() {
     atualizarTotalCheckout();
 }
 
-function removerItemCarrinho(index) { carrinho.splice(index, 1); atualizarBarraCarrinho(); renderizarResumoCarrinho(); }
+function removerItemCarrinho(index) { 
+    carrinho.splice(index, 1); 
+    atualizarBarraCarrinho(); // Recalcula a matemática e invalida cupons primeiro!
+    renderizarResumoCarrinho(); // Depois desenha o checkout
+}
 
 function aplicarCupom() {
     const input = document.getElementById('input-cupom');
@@ -1212,7 +1232,7 @@ async function carregarConfiguracoesLoja() {
         if (configs.carrossel_destaques) { try { idsDestaquesGlobais = JSON.parse(configs.carrossel_destaques); } catch(e) {} }
         if (configs.upsell_desconto) descontoUpsellGlobal = Number(configs.upsell_desconto);
         if (configs.carrossel_upsell) { try { idsUpsellGlobais = JSON.parse(configs.carrossel_upsell); } catch(e) {} }
-        if (configs.cupons_delivery) { try { cuponsGlobais = JSON.parse(configs.cupons_delivery); } catch(e) {} }
+        if (configs.cupons_delivery) { try { cuponsGlobais = JSON.parse(configs.cupons_delivery); atualizarBarraCupom(); } catch(e) {} }
         if (configs.banner_loja && document.getElementById('img-banner-loja')) document.getElementById('img-banner-loja').src = configs.banner_loja;
         if (configs.logo_loja && document.getElementById('img-logo-loja')) document.getElementById('img-logo-loja').src = configs.logo_loja;
         if (configs.pedido_minimo_delivery) pedidoMinimoDeliveryGlobal = parseFloat(configs.pedido_minimo_delivery) || 0;
@@ -1760,7 +1780,6 @@ function renderizarListaCarrinhoCliente() {
         subtotal += Number(item.preco);
         
         let desc = '';
-        // Tratamento inteligente para separar o nome base dos adicionais na tela
         if (item.nome.includes('(')) {
             const partes = item.nome.split('(');
             const nomePrincipal = partes[0].trim();
@@ -1784,7 +1803,40 @@ function renderizarListaCarrinhoCliente() {
         `;
     });
     
-    document.getElementById('subtotal-carrinho-cliente').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+    // 👇 MATEMÁTICA DO DESCONTO NO CARRINHO
+    let desconto = 0;
+    let htmlDesconto = '';
+    
+    if (cupomAtivo) {
+        let valorCupomNum = Number(cupomAtivo.valor) || 0;
+        desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
+        htmlDesconto = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.95rem; color: #4CAF50;">
+                <span>Desconto (${cupomAtivo.codigo})</span>
+                <strong>- R$ ${desconto.toFixed(2).replace('.', ',')}</strong>
+            </div>
+        `;
+    }
+
+    let totalFinal = subtotal - desconto;
+    if(totalFinal < 0) totalFinal = 0;
+
+    const areaTotais = document.getElementById('area-totais-carrinho');
+    if(areaTotais) {
+        areaTotais.innerHTML = `
+            <div style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1rem; color: #777;">
+                    <span>Subtotal:</span>
+                    <span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
+                </div>
+                ${htmlDesconto}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                    <span style="font-size: 1.1rem; color: #333; font-weight: 600;">Total:</span>
+                    <strong style="font-size: 1.5rem; color: var(--cor-primaria, #e91e63);">R$ ${totalFinal.toFixed(2).replace('.', ',')}</strong>
+                </div>
+            </div>
+        `;
+    }
     
     if (carrinho.length === 0) {
         fecharModalCarrinho();
@@ -1794,8 +1846,8 @@ function renderizarListaCarrinhoCliente() {
 
 function removerItemCarrinhoCliente(index) {
     carrinho.splice(index, 1);
-    renderizarListaCarrinhoCliente();
-    if (typeof atualizarBarraCarrinho === "function") atualizarBarraCarrinho();
+    atualizarBarraCarrinho(); // Recalcula a matemática e invalida cupons primeiro!
+    renderizarListaCarrinhoCliente(); // Depois desenha o carrinho
 }
 
 function irParaCheckout() {
@@ -2291,4 +2343,79 @@ function fecharFotoInteira() {
         lightbox.style.display = 'none';
         img.src = ''; // Limpa a memória
     }, 300);
+}
+
+// ==========================================
+// 🎟️ GAMIFICAÇÃO: BARRA DE PROGRESSO DO CUPOM
+// ==========================================
+function atualizarBarraCupom() {
+    const barraCupom = document.getElementById('barra-cupom-flutuante');
+    if (!barraCupom) return;
+
+    // Busca nas configurações se existe algum cupom marcado para aparecer no rodapé
+    // (A variável 'destaque_rodape' será criada no Gestão Delivery depois)
+    const cupomDestaque = cuponsGlobais.find(c => c.destaque_rodape === true);
+
+    if (!cupomDestaque || !cupomDestaque.minimo || Number(cupomDestaque.minimo) <= 0) {
+        barraCupom.style.display = 'none';
+        return;
+    }
+
+    barraCupom.style.display = 'block';
+
+    const subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    const minimo = Number(cupomDestaque.minimo);
+    const falta = minimo - subtotal;
+    
+    let porcentagem = (subtotal / minimo) * 100;
+    if (porcentagem > 100) porcentagem = 100;
+
+    const textoChamada = document.getElementById('texto-cupom-chamada');
+    const textoFalta = document.getElementById('texto-cupom-falta');
+    const barraProgresso = document.getElementById('barra-cupom-progresso');
+
+    const valorDescontoTxt = cupomDestaque.tipo === 'porcentagem' ? `${cupomDestaque.valor}% OFF` : `R$ ${Number(cupomDestaque.valor).toFixed(2).replace('.', ',')} OFF`;
+
+    if (falta > 0) {
+        textoChamada.innerHTML = `🎟️ Desbloqueie ${valorDescontoTxt}`;
+        textoFalta.innerHTML = `Falta R$ ${falta.toFixed(2).replace('.', ',')}`;
+        barraProgresso.style.background = '#FF9800'; // Laranja enquanto enche
+        
+        // Se o cliente remover algo e cair do mínimo, removemos o auto-aplicar
+        if (cupomAtivo && cupomAtivo.codigo === cupomDestaque.codigo) {
+            cupomAtivo = null;
+            document.getElementById('input-cupom').value = '';
+            document.getElementById('msg-cupom').style.display = 'none';
+        }
+    } else {
+        textoChamada.innerHTML = `🎉 ${valorDescontoTxt} Liberado!`;
+        textoFalta.innerHTML = `Aplicado no carrinho`;
+        barraProgresso.style.background = '#25D366'; // Verde quando atinge a meta
+        
+        // Auto-aplica o cupom! (Se ele já não tiver outro cupom melhor digitado)
+        if (!cupomAtivo || cupomAtivo.codigo === cupomDestaque.codigo) {
+            cupomAtivo = cupomDestaque;
+            const inputCupom = document.getElementById('input-cupom');
+            const msgCupom = document.getElementById('msg-cupom');
+            
+            if (inputCupom && msgCupom) {
+                inputCupom.value = cupomDestaque.codigo;
+                msgCupom.innerText = `✅ Cupom de ${valorDescontoTxt} aplicado automaticamente!`;
+                msgCupom.style.color = "#25D366";
+                msgCupom.style.display = 'block';
+            }
+        }
+    }
+
+    barraProgresso.style.width = `${porcentagem}%`;
+
+    // Empurra a barra do cupom para cima se o botão do carrinho flutuante aparecer
+    if (carrinho.length > 0) {
+        barraCupom.style.bottom = '85px'; // Sobe para ficar acima do "Ver Carrinho"
+    } else {
+        barraCupom.style.bottom = '0px'; // Fica colada embaixo
+    }
+    
+    // Atualiza a matemática do checkout
+    if (typeof atualizarTotalCheckout === 'function') atualizarTotalCheckout();
 }

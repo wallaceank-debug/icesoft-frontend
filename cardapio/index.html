@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cardápio Digital - Icesoft</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/cardapio/style.css">
+    <link rel="stylesheet" href="./style.css">
     
     <style>
         /* A Variável Mágica */
@@ -280,6 +280,20 @@
         <h2>Cardápio Completo</h2>
         <p>Carregando os melhores sorvetes da região...</p>
     </main>
+
+    <div id="barra-cupom-flutuante" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong id="texto-cupom-chamada" style="font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 5px;">
+                🎟️ Desbloqueie Desconto
+            </strong>
+            <span id="texto-cupom-falta" style="font-size: 0.8rem; color: #666; font-weight: bold;">
+                Calculando...
+            </span>
+        </div>
+        <div style="background: #e0e0e0; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+            <div id="barra-cupom-progresso" style="background: #FF9800; width: 0%; height: 100%; transition: width 0.4s ease, background-color 0.4s ease;"></div>
+        </div>
+    </div>
 
     <div id="carrinho-flutuante" class="carrinho-oculto">
         <div class="carrinho-info">
@@ -614,7 +628,7 @@
         </div>
     </div>
 
-    <script src="/cardapio/app.js?v=108"></script>
+    <script src="./app.js"></script>
 
         <!-- ==========================================
          MODAL: CARRINHO (PASSO ANTES DO CHECKOUT)
@@ -636,7 +650,7 @@
                 <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
             </div>
 
-            <div style="background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed #ddd;">
+            <div id="area-totais-carrinho" style="background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed #ddd;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 1.1rem; color: #555; font-weight: 600;">Subtotal:</span>
                     <strong id="subtotal-carrinho-cliente" style="font-size: 1.5rem; color: var(--cor-primaria, #e91e63);">R$ 0,00</strong>

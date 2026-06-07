@@ -282,20 +282,24 @@ function abrirModalCupom(index = null) {
         document.getElementById('cupom-codigo').value = c.codigo;
         document.getElementById('cupom-tipo').value = c.tipo;
         document.getElementById('cupom-valor').value = c.valor;
-        document.getElementById('cupom-minimo').value = c.minimo || 0; // Puxando o mínimo
+        document.getElementById('cupom-minimo').value = c.minimo || 0; 
         document.getElementById('cupom-validade').value = c.validade || '';
         document.getElementById('cupom-limite').value = c.limite || 0;
         document.getElementById('cupom-publico').value = c.publico || 'todos';
+        // 👉 NOVO: Puxa se ele era destaque ou não
+        document.getElementById('cupom-destaque').checked = c.destaque_rodape || false;
     } else {
         document.getElementById('titulo-modal-cupom').innerText = `Criar Novo Cupom`;
         document.getElementById('cupom-index').value = '';
         document.getElementById('cupom-codigo').value = '';
         document.getElementById('cupom-tipo').value = 'porcentagem';
         document.getElementById('cupom-valor').value = '';
-        document.getElementById('cupom-minimo').value = 0; // Zerando o mínimo
+        document.getElementById('cupom-minimo').value = 0; 
         document.getElementById('cupom-validade').value = '';
         document.getElementById('cupom-limite').value = 0;
         document.getElementById('cupom-publico').value = 'todos';
+        // 👉 NOVO: Começa desmarcado
+        document.getElementById('cupom-destaque').checked = false;
     }
     document.getElementById('modal-cupom').style.display = 'flex';
 }
@@ -309,10 +313,13 @@ function salvarCupomModal() {
     const codigo = document.getElementById('cupom-codigo').value.trim().toUpperCase();
     const tipo = document.getElementById('cupom-tipo').value;
     const valor = parseFloat(document.getElementById('cupom-valor').value);
-    const minimo = parseFloat(document.getElementById('cupom-minimo').value) || 0; // Salvando o mínimo
+    const minimo = parseFloat(document.getElementById('cupom-minimo').value) || 0; 
     const validade = document.getElementById('cupom-validade').value;
     const limite = parseInt(document.getElementById('cupom-limite').value) || 0;
     const publico = document.getElementById('cupom-publico').value;
+    
+    // 👉 NOVO: Captura o botão de destaque
+    const destaque_rodape = document.getElementById('cupom-destaque').checked;
 
     if (!codigo || isNaN(valor) || valor <= 0) return alert("⚠️ Preencha o código e um valor de desconto válido!");
     
@@ -321,8 +328,13 @@ function salvarCupomModal() {
         return alert("⚠️ Este código já está em uso!");
     }
 
+    // 👉 NOVO: Se esse for o escolhido, tira a coroa dos outros para não quebrar o cardápio
+    if (destaque_rodape) {
+        cuponsSalvos.forEach(c => c.destaque_rodape = false);
+    }
+
     const cupomData = {
-        codigo, tipo, valor, minimo, validade, limite, publico, // Mínimo injetado aqui
+        codigo, tipo, valor, minimo, validade, limite, publico, destaque_rodape, // 👉 Adicionado aqui
         usos_atuais: 0, 
         receita_gerada: 0
     };
@@ -363,6 +375,11 @@ function renderizarListaCupons() {
 
         let descPublico = cupom.publico === 'novos' ? 'Só Clientes Novos' : cupom.publico === 'recorrentes' ? 'Só Recorrentes' : 'Todos os Clientes';
         infoExtra += `👤 ${descPublico}`;
+
+        // 👉 INJETE ESTA VALIDAÇÃO AQUI
+        if (cupom.destaque_rodape) {
+            infoExtra += `<span style="display:inline-block; margin-top:8px; color:#d84315; font-weight:bold; background:#fff3e0; padding:2px 8px; border-radius:4px;">⭐ Destaque na Barra do Cliente</span>`;
+        }
 
         container.innerHTML += `
             <div style="background:#fdfdfd; border:1px solid #e1bee7; border-radius:10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">

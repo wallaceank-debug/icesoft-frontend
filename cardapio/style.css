@@ -279,8 +279,9 @@ main#lista-produtos h2 {
 #carrinho-flutuante {
     position: fixed;
     bottom: 0;
-    left: 0;
+    left: 50%; /* Mantém cravado no centro do PC */
     width: 100%;
+    max-width: 480px; /* Respeita a largura do celular */
     background-color: #fff;
     padding: 15px 20px;
     display: flex;
@@ -289,21 +290,26 @@ main#lista-produtos h2 {
     box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
     transition: transform 0.3s ease-in-out;
     z-index: 1000;
+    box-sizing: border-box;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
-.carrinho-oculto { transform: translateY(100%); }
-.carrinho-visivel { transform: translateY(0); }
+/* Forçamos o -50% para a animação não jogar a barra para os lados */
+.carrinho-oculto { transform: translate(-50%, 100%) !important; }
+.carrinho-visivel { transform: translate(-50%, 0) !important; }
 
 .carrinho-info {
     display: flex;
     flex-direction: column;
 }
 
+/* RESTAURANDO AS CORES QUE EU APAGUEI SEM QUERER 👇 */
 #carrinho-qtd { font-size: 0.85rem; color: #777; }
 #carrinho-total { font-size: 1.2rem; font-weight: bold; color: #e91e63; }
 
 .btn-whatsapp {
-    background-color: #25D366; /* Verde Oficial do WhatsApp */
+    background-color: #25D366;
     color: white;
     border: none;
     padding: 12px 20px;
@@ -512,4 +518,24 @@ main#lista-produtos h2 {
 .btn-remover-item:hover {
     background: #ffe0e9;
     transform: scale(1.05);
+}
+
+/* =========================================
+   BARRA DE PROGRESSO DO CUPOM (GAMIFICAÇÃO)
+   ========================================= */
+#barra-cupom-flutuante {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background-color: #ffffff;
+    padding: 15px 20px 25px 20px; /* O segredo do encaixe: mais espaço embaixo! */
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.08);
+    z-index: 998; /* Fica logo abaixo do carrinho flutuante (que é 1000) */
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    bottom: 0;
 }
