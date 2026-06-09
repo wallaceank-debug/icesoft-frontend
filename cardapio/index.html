@@ -341,11 +341,11 @@
 
     <!-- ==========================================
          NOVO MODAL DE CHECKOUT EM ETAPAS
-         ========================================== -->
+     ========================================== -->
+    
     <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:flex-end; z-index:4000;">
         <div class="modal-conteudo checkout-container" style="background:#f4f7f6; padding:0; border-top-left-radius:20px; border-top-right-radius:20px; width:100%; max-width:500px; display:flex; flex-direction:column; height: 90vh; overflow: hidden; position: relative; animation: slideUp 0.3s ease-out;">
             
-            <!-- CABEÇALHO COM PROGRESSO -->
             <div class="checkout-header" style="background: white; padding: 20px 20px 15px 20px; border-bottom: 1px solid #eee; text-align: center; border-top-left-radius:20px; border-top-right-radius:20px; flex-shrink: 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <button onclick="voltarPassoCheckout()" id="btn-voltar-topo" style="background: none; border: none; font-size: 1.2rem; color: #666; cursor: pointer; display: none;">❮</button>
@@ -353,29 +353,22 @@
                     <button onclick="fecharModalCheckout()" style="background: none; border: none; font-size: 1.5rem; color: #999; cursor: pointer;">&times;</button>
                 </div>
                 
-                <div class="progresso-container">
-                    <div class="progresso-linha"></div>
+                <div class="progresso-container" style="justify-content: space-around;">
+                    <div class="progresso-linha" style="left: 25%; right: 25%;"></div>
                     <div class="progresso-passo ativo" id="ind-passo-1"><div class="bolinha">1</div><span>Entrega</span></div>
-                    <div class="progresso-passo" id="ind-passo-2"><div class="bolinha">2</div><span>Pagamento</span></div>
-                    <div class="progresso-passo" id="ind-passo-3"><div class="bolinha">3</div><span>Resumo</span></div>
+                    <div class="progresso-passo" id="ind-passo-2"><div class="bolinha">2</div><span>Pagamento Final</span></div>
                 </div>
             </div>
 
-            <!-- ÁREA DE ROLAGEM DOS PASSOS -->
             <div style="flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;">
                 
-                <!-- PASSO 1: IDENTIFICAÇÃO E ENTREGA -->
                 <div id="checkout-passo-1" class="checkout-passo ativo">
                     <div class="secao-checkout">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="margin: 0;">Seus Dados</h4>
                             <span id="badge-crm" style="display: none; background: #25D366; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3); animation: pulseRastreio 2s infinite;">✅ Cliente Encontrado</span>
                         </div>
-                        
-                        <!-- Telefone primeiro para ativar o gatilho -->
                         <input type="tel" id="cliente-telefone" class="input-clean" placeholder="WhatsApp (Ex: 24 99999-9999)" autocomplete="tel" style="font-size: 1.1rem; font-weight: bold; letter-spacing: 1px;">
-                        
-                        <!-- Nome vem depois -->
                         <input type="text" id="cliente-nome" class="input-clean" placeholder="Nome" autocomplete="name">
                     </div>
 
@@ -418,140 +411,106 @@
                                 <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua" style="flex: 2;">
                                 <input type="text" id="cliente-numero" class="input-clean" placeholder="Nº" style="flex: 1;">
                             </div>
-                            
                             <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-top: 10px;">
                         </div>
                     </div>
                 </div>
 
-                <!-- PASSO 2: PAGAMENTO -->
                 <div id="checkout-passo-2" class="checkout-passo">
-                    <div class="secao-checkout">
-                        <h4>Como você prefere pagar?</h4>
-                        
-                        <!-- NOVO: Pix Online Dinâmico  -->
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Pagamento via Pix Online')">
-                            <input type="radio" name="forma_pag" value="Pagamento via Pix Online" style="display: none;">
-                            <span style="font-size: 1.2rem;">💠</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Pix Online (Pagar agora)</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-
-                        <!-- NOVO: Pix na Entrega -->
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Pix na entrega via QR Code')">
-                            <input type="radio" name="forma_pag" value="Pix na entrega via QR Code" style="display: none;">
-                            <span style="font-size: 1.2rem;">📱</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Pix na Entrega (QR Code)</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Alimentação Pluxee')">
-                            <input type="radio" name="forma_pag" value="Alimentação Pluxee" style="display: none;">
-                            <span style="font-size: 1.2rem;">💠</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Alimentação Pluxee</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-                        
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Crédito')">
-                            <input type="radio" name="forma_pag" value="Cartão de Crédito" style="display: none;">
-                            <span style="font-size: 1.2rem;">💳</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Cartão de Crédito</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-                        
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Débito')">
-                            <input type="radio" name="forma_pag" value="Cartão de Débito" style="display: none;">
-                            <span style="font-size: 1.2rem;">💳</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Cartão de Débito</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-                        
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Dinheiro')">
-                            <input type="radio" name="forma_pag" value="Dinheiro" style="display: none;">
-                            <span style="font-size: 1.2rem;">💵</span>
-                            <span style="flex: 1; font-weight: bold; color: #333;">Dinheiro</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-
-                        <!-- Campo de troco (aparece só se escolher dinheiro) -->
-                        <div id="area-troco" style="display: none; margin-top: 10px; padding-left: 45px;">
-                            <input type="text" id="cliente-troco" class="input-clean" placeholder="Troco para quanto? (Deixe em branco se não precisar)">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PASSO 3: RESUMO E CONCLUSÃO -->
-                <div id="checkout-passo-3" class="checkout-passo">
-                    
                     <div id="ancora-fidelidade"></div>
 
                     <div class="secao-checkout">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4 style="margin: 0;">Informações</h4>
-                            <span onclick="irParaPasso(1)" style="color: var(--cor-primaria); font-size: 0.85rem; font-weight: bold; cursor: pointer;">Editar</span>
-                        </div>
-                        <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; font-size: 0.9rem; color: #555;">
-                            <div id="resumo-identificacao"><strong>Nome:</strong> ...<br><strong>Tel:</strong> ...</div>
-                            <div id="resumo-endereco" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
-                                <strong>Endereço:</strong> ...
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="secao-checkout">
-                        <h4>Seu Pedido</h4>
+                        <h4 style="margin-bottom: 10px;">Seu Pedido</h4>
                         <div id="lista-resumo-itens" style="margin-bottom: 15px;"></div>
                         
-                        <p id="gatilho-cupom" onclick="document.getElementById('area-inserir-cupom').style.display='flex'; this.style.display='none';" style="cursor: pointer; color: #888; font-style: italic; font-size: 0.9rem; text-decoration: underline; margin: 0 0 15px 0;">
-                            Possui um cupom de desconto?
+                        <p id="gatilho-cupom" onclick="document.getElementById('area-inserir-cupom').style.display='flex'; this.style.display='none';" style="cursor: pointer; color: var(--cor-primaria); font-size: 0.9rem; font-weight: bold; margin: 0 0 15px 0;">
+                            + Adicionar cupom de desconto
                         </p>
 
                         <div id="area-inserir-cupom" style="display: none; gap: 10px; margin-bottom: 15px;">
-                            <input type="text" id="input-cupom" placeholder="Cupom de desconto" class="input-clean" style="flex: 1; text-transform: uppercase;">
+                            <input type="text" id="input-cupom" placeholder="Cupom de desconto" class="input-clean" style="flex: 1; text-transform: uppercase; margin-bottom: 0;">
                             <button type="button" onclick="aplicarCupom()" style="padding: 0 15px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold;">Aplicar</button>
                         </div>
-                        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -10px; margin-bottom: 10px; display: none;"></div>
+                        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -5px; margin-bottom: 10px; display: none;"></div>
 
-                        <textarea id="cliente-observacao" class="input-clean" placeholder="Alguma observação no pedido?" rows="2" style="resize: none;"></textarea>
+                        <textarea id="cliente-observacao" class="input-clean" placeholder="Alguma observação no pedido?" rows="2" style="resize: none; margin-bottom: 0;"></textarea>
                     </div>
 
-                    <div class="secao-checkout">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4 style="margin: 0;">Pagamento</h4>
-                            <span onclick="irParaPasso(2)" style="color: var(--cor-primaria); font-size: 0.85rem; font-weight: bold; cursor: pointer;">Editar</span>
-                        </div>
-                        <div id="resumo-pagamento" style="background: #f9f9f9; padding: 15px; border-radius: 10px; font-size: 0.95rem; color: #333; font-weight: bold;">
-                            ...
-                        </div>
-                    </div>
-
-                    <div class="secao-checkout" style="background: white;">
+                    <div class="secao-checkout" style="background: #fafafa; border: 1px dashed #ccc;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
                             <span>Subtotal</span><span id="subtotal-display">R$ 0,00</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
                             <span>Taxa de Entrega</span><span id="taxa-entrega-display">R$ 0,00</span>
                         </div>
-                        <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #4CAF50;">
+                        <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #25D366; font-weight: bold;">
                             <span>Desconto</span><span id="desconto-display-valor">- R$ 0,00</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
-                            <strong style="color: #333; font-size: 1.1rem;">Total</strong>
-                            <strong id="total-checkout-display" style="color: #25D366; font-size: 1.4rem;">R$ 0,00</strong>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                            <strong style="color: #333; font-size: 1.1rem;">Total a Pagar</strong>
+                            <strong id="total-checkout-display" style="color: var(--cor-primaria); font-size: 1.4rem;">R$ 0,00</strong>
                         </div>
                     </div>
 
+                    <div class="secao-checkout">
+                        <h4 style="margin-bottom: 15px;">Como você prefere pagar?</h4>
+                        
+                        <p style="font-size: 0.8rem; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 8px;">Pagamento Online</p>
+                        
+                        <label class="card-selecao ativo" onclick="selecionarPagamento(this, 'Pagamento via Pix Online')" style="border-color: #25D366; background: #f0fdf4;">
+                            <input type="radio" name="forma_pag" value="Pagamento via Pix Online" checked style="display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-right: 10px;"><path d="M11.9999 1.1875L2.81244 10.375C2.36452 10.8229 2.36452 11.5521 2.81244 12L11.9999 21.1875C12.4478 21.6354 13.177 21.6354 13.6249 21.1875L22.8124 12C23.2604 11.5521 23.2604 10.8229 22.8124 10.375L13.6249 1.1875C13.177 0.739583 12.4478 0.739583 11.9999 1.1875ZM7.7291 12L11.9999 7.72917L16.2707 12L11.9999 16.2708L7.7291 12Z" fill="#32BCAD"/></svg>
+                            <div style="flex: 1;">
+                                <span style="font-weight: bold; color: #333; display: block;">Pix (Pagar Agora)</span>
+                                <span class="badge-recomendado">Aprovação Imediata</span>
+                            </div>
+                            <div class="radio-customizado marcado"></div>
+                        </label>
+
+                        <p style="font-size: 0.8rem; text-transform: uppercase; color: #888; font-weight: bold; margin-top: 20px; margin-bottom: 8px;">Pagar na Entrega</p>
+
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Crédito')">
+                            <input type="radio" name="forma_pag" value="Cartão de Crédito" style="display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                            <span style="flex: 1; font-weight: 600; color: #444;">Cartão de Crédito</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+                        
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Débito')">
+                            <input type="radio" name="forma_pag" value="Cartão de Débito" style="display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                            <span style="flex: 1; font-weight: 600; color: #444;">Cartão de Débito</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Alimentação Pluxee')">
+                            <input type="radio" name="forma_pag" value="Alimentação Pluxee" style="display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><circle cx="12" cy="14" r="2"></circle></svg>
+                            <span style="flex: 1; font-weight: 600; color: #444;">Alimentação Pluxee</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+                        
+                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Dinheiro')">
+                            <input type="radio" name="forma_pag" value="Dinheiro" style="display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#85bb65" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect><circle cx="12" cy="12" r="2"></circle></svg>
+                            <span style="flex: 1; font-weight: 600; color: #444;">Dinheiro em Espécie</span>
+                            <div class="radio-customizado"></div>
+                        </label>
+
+                        <div id="area-troco" style="display: none; margin-top: 10px; padding-left: 45px;">
+                            <input type="number" id="cliente-troco" class="input-clean" placeholder="Precisa de troco para quanto?">
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
-            <!-- RODAPÉ DE AÇÕES FIXO -->
             <div style="padding: 15px 20px 20px 20px; background: white; border-top: 1px solid #eee; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.02);">
-                <button id="btn-avancar-checkout" onclick="avancarPassoCheckout()" style="width: 100%; background: #25D366; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;">Continuar</button>
+                <button id="btn-avancar-checkout" onclick="avancarPassoCheckout()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;">Continuar para Pagamento</button>
             </div>
 
         </div>
     </div>
-</div>
 
 <div id="modal-info-loja" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:5000;">
         <div style="background:white; width:100%; max-width:500px; border-top-left-radius:25px; border-top-right-radius:25px; padding:25px; animation: slideUp 0.3s ease-out; box-sizing: border-box;">
@@ -670,8 +629,18 @@
          ========================================== -->
     <div id="modal-pix" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; z-index:9999; flex-direction:column; padding: 20px; box-sizing: border-box;">
         <div style="background:white; padding:30px 20px; border-radius:20px; text-align:center; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out;">
-            <h2 style="color: #00bcd4; margin-top: 0; font-size: 1.5rem;">Pague com Pix</h2>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Escaneie o QR Code ou copie o código abaixo para o pedido ser enviado à cozinha!</p>
+    
+    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px; margin-top: -10px;">
+        
+        <img src="/pix-icon.png" alt="Pix Oficial" style="height: 35px; object-fit: contain;">
+
+    </div>
+    
+    <div style="background: #e6f4ea; color: #1e8e3e; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 15px; text-transform: uppercase;">
+        🔒 Ambiente 100% Seguro
+    </div>
+
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Escaneie o QR Code ou copie o código abaixo para o pedido ser enviado à cozinha!</p>
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 20px;">
                 <img id="pix-qr-code" src="" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto; display: block;" alt="QR Code Pix">

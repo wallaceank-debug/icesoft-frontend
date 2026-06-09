@@ -539,3 +539,16 @@ main#lista-produtos h2 {
     border-top-right-radius: 20px;
     bottom: 0;
 }
+
+.badge-recomendado {
+    background-color: #e6f4ea;
+    color: #1e8e3e;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}

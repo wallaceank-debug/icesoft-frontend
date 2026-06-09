@@ -620,7 +620,11 @@ function fecharModalOpcoes() {
 function adicionarAoCarrinho(nome, preco) { 
     carrinho.push({ nome, preco: Number(preco) }); 
     atualizarBarraCarrinho();
-    if (document.getElementById('modal-checkout').style.display === 'flex') {
+    
+    // 🛡️ TRAVA DE SEGURANÇA (Evita que o botão quebre se o HTML sumir)
+    const modalCheckout = document.getElementById('modal-checkout');
+    
+    if (modalCheckout && modalCheckout.style.display === 'flex') {
         renderizarResumoCarrinho(); 
     }
 }
@@ -742,6 +746,35 @@ function aplicarCupom() {
     atualizarTotalCheckout();
 }
 
+function atualizarBotaoCTA() {
+    const btnAvancar = document.getElementById('btn-avancar-checkout');
+    if (!btnAvancar) return;
+
+    if (passoCheckoutAtual === 1) {
+        btnAvancar.innerText = 'Continuar para Pagamento';
+        btnAvancar.style.background = 'var(--cor-primaria)';
+        return;
+    }
+
+    // Se estiver no Passo 2 (Final)
+    const pagamentoSelecionado = document.querySelector('input[name="forma_pag"]:checked');
+    const valorTotalStr = document.getElementById('total-checkout-display').innerText;
+
+    if (pagamentoSelecionado) {
+        const pag = pagamentoSelecionado.value;
+        if (pag === 'Pagamento via Pix Online') {
+            btnAvancar.innerHTML = `Gerar Pix Seguro • <strong>${valorTotalStr}</strong>`;
+            btnAvancar.style.background = '#32BCAD'; // Cor oficial do Pix
+        } else {
+            btnAvancar.innerHTML = `Finalizar Pedido • <strong>${valorTotalStr}</strong>`;
+            btnAvancar.style.background = '#25D366'; // Verde conversão
+        }
+    } else {
+        btnAvancar.innerHTML = `Finalizar Pedido • <strong>${valorTotalStr}</strong>`;
+        btnAvancar.style.background = 'var(--cor-primaria)';
+    }
+}
+
 // ==========================================
 // 🚀 NOVO SISTEMA DE CHECKOUT EM PASSOS
 // ==========================================
@@ -803,6 +836,8 @@ function selecionarPagamento(elemento, forma) {
         areaTroco.style.display = 'none';
         document.getElementById('cliente-troco').value = '';
     }
+
+    atualizarBotaoCTA();
 }
 
 function validarPasso1() {
@@ -836,33 +871,6 @@ function validarPasso2() {
     return null;
 }
 
-function construirResumoPasso3() {
-    const nome = document.getElementById('cliente-nome').value.trim();
-    // 🚀 Passando pelo Padronizador
-    const tel = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
-    const tipo = document.querySelector('input[name="tipo_entrega"]:checked').value;
-    const pag = document.querySelector('input[name="forma_pag"]:checked').value;
-    
-    document.getElementById('resumo-identificacao').innerHTML = `<strong>👤 Nome:</strong> ${nome}<br><strong>📱 Tel:</strong> ${tel}`;
-    
-    if (tipo === 'delivery') {
-        const bairro = document.getElementById('cliente-bairro').value;
-        const rua = document.getElementById('cliente-rua').value.trim();
-        const num = document.getElementById('cliente-numero').value.trim();
-        const comp = document.getElementById('cliente-complemento').value.trim();
-        const textoComp = comp ? ` - ${comp}` : '';
-        document.getElementById('resumo-endereco').innerHTML = `<strong>🛵 Entrega em:</strong><br>${rua}, ${num}${textoComp}<br>${bairro}`;
-    } else {
-        document.getElementById('resumo-endereco').innerHTML = `<strong>🏬 Retirada na Loja</strong>`;
-    }
-
-    let textoPagamento = `💳 ${pag}`;
-    if (pag === 'Dinheiro') {
-        const troco = document.getElementById('cliente-troco').value.trim();
-        textoPagamento += troco ? ` (Troco para ${troco})` : ` (Sem troco)`;
-    }
-    document.getElementById('resumo-pagamento').innerText = textoPagamento;
-}
 
 function avancarPassoCheckout() {
     if (passoCheckoutAtual === 1) {
@@ -873,12 +881,8 @@ function avancarPassoCheckout() {
     else if (passoCheckoutAtual === 2) {
         const erro = validarPasso2();
         if (erro) return alert("⚠️ " + erro);
-        construirResumoPasso3();
-        atualizarTotalCheckout(); 
-        irParaPasso(3);
-    }
-    else if (passoCheckoutAtual === 3) {
-        // 🚀 O DESVIO DE FLUXO: Se for Pix, vai pro sistema dinâmico. Se for outro, vai pro WhatsApp!
+        
+        // 🚀 O DESVIO DE FLUXO DIRETO (Adeus Passo 3)
         const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
         if (pagamento === 'Pagamento via Pix Online') {
             gerarEPagarPix();
@@ -887,6 +891,7 @@ function avancarPassoCheckout() {
         }
     }
 }
+
 function voltarPassoCheckout() {
     if (passoCheckoutAtual > 1) {
         irParaPasso(passoCheckoutAtual - 1);
@@ -899,29 +904,26 @@ function irParaPasso(passo) {
     document.querySelectorAll('.checkout-passo').forEach(el => el.classList.remove('ativo'));
     document.getElementById(`checkout-passo-${passo}`).classList.add('ativo');
 
-    for (let i = 1; i <= 3; i++) {
+    // Agora o loop vai apenas até 2
+    for (let i = 1; i <= 2; i++) {
         const indicador = document.getElementById(`ind-passo-${i}`);
-        indicador.className = 'progresso-passo'; 
-        if (i < passo) indicador.classList.add('concluido');
-        else if (i === passo) indicador.classList.add('ativo');
+        if(indicador) {
+            indicador.className = 'progresso-passo'; 
+            if (i < passo) indicador.classList.add('concluido');
+            else if (i === passo) indicador.classList.add('ativo');
+        }
     }
 
-    const btnAvancar = document.getElementById('btn-avancar-checkout');
     const btnVoltar = document.getElementById('btn-voltar-topo');
     
     if (passo === 1) {
         btnVoltar.style.display = 'none';
-        btnAvancar.innerText = 'Continuar para Pagamento';
-        btnAvancar.style.background = 'var(--cor-primaria)'; // 🚀 BOTÃO AZUL
     } else if (passo === 2) {
         btnVoltar.style.display = 'block';
-        btnAvancar.innerText = 'Revisar Pedido';
-        btnAvancar.style.background = 'var(--cor-primaria)'; // 🚀 BOTÃO AZUL
-    } else if (passo === 3) {
-        btnVoltar.style.display = 'block';
-        btnAvancar.innerText = 'Enviar Pedido 🚀';
-        btnAvancar.style.background = '#25D366'; // Mantém o verde para o envio final
     }
+    
+    // Atualiza o visual do botão dependendo do passo atual
+    atualizarBotaoCTA();
 }
 
 function atualizarTotalCheckout() {
@@ -978,6 +980,8 @@ function atualizarTotalCheckout() {
     
     const totalDisplay = document.getElementById('total-checkout-display');
     if (totalDisplay) totalDisplay.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
+
+    atualizarBotaoCTA()
 }
 
 // 🚀 Atualizada para receber o Status e o ID da transação do Pix (se houver)
