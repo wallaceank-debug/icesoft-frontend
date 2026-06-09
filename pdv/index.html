@@ -15,7 +15,10 @@
         <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
         
         <a href="../pdv/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">point_of_sale</span>
+            <span class="menu-icone material-symbols-outlined" style="position: relative;">
+                point_of_sale
+                <span class="notification-badge" id="online-notification-badge" style="display: none; background-color: #25D366;">0</span>
+            </span>
             <span class="menu-texto">Balcão PDV</span>
         </a>
         
@@ -404,6 +407,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="app.js"></script>
     <script src="../radar.js"></script>
     

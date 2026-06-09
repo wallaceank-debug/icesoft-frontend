@@ -21,7 +21,13 @@
 
     <aside class="menu-lateral">
         <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
-        <a href="../pdv/" class="menu-item"><span class="menu-icone">📋</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../pdv/" class="menu-item">
+            <span class="menu-icone material-symbols-outlined" style="position: relative;">
+                point_of_sale
+                <span class="notification-badge" id="online-notification-badge" style="display: none; background-color: #25D366;">0</span>
+            </span>
+            <span class="menu-texto">Balcão PDV</span>
+        </a>
         <a href="../financeiro/" class="menu-item ativo"><span class="menu-icone">🏦</span><span class="menu-texto">Financeiro</span></a>
         <div class="menu-item" onclick="window.location.href='../pdv/'" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
             <span class="menu-icone">⬅️</span><span class="menu-texto">Voltar ao PDV</span>

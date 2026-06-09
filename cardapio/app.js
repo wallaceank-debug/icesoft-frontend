@@ -2417,3 +2417,15 @@ function atualizarBarraCupom() {
     // Atualiza a matemática do checkout
     if (typeof atualizarTotalCheckout === 'function') atualizarTotalCheckout();
 }
+
+// ==========================================
+// 📡 AVISAR O PDV QUE ESTOU ONLINE (SOCKET.IO)
+// ==========================================
+try {
+    const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+    socket.on('connect', () => {
+        socket.emit('entrou_no_cardapio'); // Avisa o servidor "Olá, abri o menu!"
+    });
+} catch(e) {
+    console.log("⚠️ Falha ao conectar no radar", e);
+}
