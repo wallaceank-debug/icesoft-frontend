@@ -7,6 +7,7 @@
     <title>Gráficos Financeiros - Icesoft</title>
     <link rel="stylesheet" href="../pdv/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .fin-container { padding: 20px; flex: 1; overflow-y: auto; background-color: #f4f7f6; }
@@ -15,33 +16,76 @@
         .grafico-card.full-width { grid-column: span 2; }
         .grafico-card h3 { text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 1.1rem; }
         canvas { max-height: 300px; }
+
+        @media (max-width: 768px) {
+            .graficos-grid { grid-template-columns: 1fr !important; }
+            .grafico-card.full-width { grid-column: span 1 !important; }
+            .pe-container { flex-direction: column; text-align: center; }
+            .pe-legenda { align-items: center !important; }
+        }
     </style>
 </head>
 <body>
 
     <aside class="menu-lateral">
         <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
-        <a href="../pdv/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                point_of_sale
-                <span class="notification-badge" id="online-notification-badge" style="display: none; background-color: #25D366;">0</span>
-            </span>
-            <span class="menu-texto">Balcão PDV</span>
-        </a>
-        <a href="../financeiro/" class="menu-item ativo"><span class="menu-icone">🏦</span><span class="menu-texto">Financeiro</span></a>
-        <div class="menu-item" onclick="window.location.href='../pdv/'" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-            <span class="menu-icone">⬅️</span><span class="menu-texto">Voltar ao PDV</span>
-        </div>
+        <a href="../pdv/" class="menu-item"><span class="menu-icone material-symbols-outlined">point_of_sale</span><span class="menu-texto">Balcão PDV</span></a>
+        <a href="../financeiro/" class="menu-item ativo"><span class="menu-icone material-symbols-outlined">account_balance</span><span class="menu-texto">Financeiro</span></a>
     </aside>
 
     <div class="conteudo-principal">
         <header class="pdv-header" style="background-color: #333;">
-            <div class="logo-area"><h1>📈 ANÁLISE VISUAL (MÊS ATUAL)</h1></div>
+            <div class="logo-area" style="display: flex; align-items: center; gap: 10px;">
+                <span class="material-symbols-outlined" style="color: white; font-size: 2rem;">query_stats</span>
+                <h1 style="margin: 0; color: white; font-size: 1.6rem;">ANÁLISE VISUAL (MÊS ATUAL)</h1>
+            </div>
             <button onclick="window.location.href='index.html'" style="padding: 8px 15px; background: #6200ea; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">⬅️ Voltar ao Resumo</button>
         </header>
 
         <main class="fin-container">
             <div class="graficos-grid">
+                
+                <div class="grafico-card full-width" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                         <h3 style="margin: 0; text-align: left;">Ponto de Equilíbrio</h3>
+                         <span class="material-symbols-outlined" style="color: #666; cursor: help;" title="O Ponto de Equilíbrio é o quanto você precisa vender para pagar todos os custos (zero a zero). Acima disso é Lucro!">info</span>
+                    </div>
+                    <div class="pe-container" style="display: flex; width: 100%; gap: 20px; align-items: center; flex-wrap: wrap;">
+                        
+                        <div style="flex: 1.5; min-width: 300px; position: relative;">
+                             <canvas id="graficoPE"></canvas>
+                             <div style="position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center;">
+                                 <strong style="font-size: 1.3rem; color: #333;" id="pe-texto-atual">R$ 0,00</strong><br>
+                                 <span style="font-size: 0.85rem; color: #666;">Receita atual</span>
+                             </div>
+                        </div>
+                        
+                        <div class="pe-legenda" style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px; align-items: flex-start;">
+                            <div style="display: flex; gap: 10px; align-items: flex-start; text-align: left;">
+                                <div style="width: 16px; height: 16px; border-radius: 4px; background: #c62828; margin-top: 3px; flex-shrink: 0;"></div>
+                                <div>
+                                    <strong style="color: #333; font-size: 0.95rem;">Faixa vermelha (Até R$ <span id="legenda-pe">0</span>)</strong>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #666; line-height: 1.3;">Receita abaixo do ponto de equilíbrio (Prejuízo).</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: flex-start; text-align: left;">
+                                <div style="width: 16px; height: 16px; border-radius: 4px; background: #ffca28; margin-top: 3px; flex-shrink: 0;"></div>
+                                <div>
+                                    <strong style="color: #333; font-size: 0.95rem;">Faixa amarela (Meta: R$ <span id="legenda-meta">0</span>)</strong>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #666; line-height: 1.3;">Equilíbrio atingido, buscando a margem ideal de lucro.</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: flex-start; text-align: left;">
+                                <div style="width: 16px; height: 16px; border-radius: 4px; background: #003366; margin-top: 3px; flex-shrink: 0;"></div>
+                                <div>
+                                    <strong style="color: #333; font-size: 0.95rem;">Faixa azul</strong>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #666; line-height: 1.3;">Lucro operacional acima do desejado!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grafico-card full-width">
                     <h3>Balanço do Mês (Entradas vs Saídas)</h3>
                     <canvas id="graficoBalanco"></canvas>
@@ -62,31 +106,103 @@
 
     <script>
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        const fMoeda = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // MÁGICA 1: O Plugin da Agulha do Ponto de Equilíbrio
+        const gaugeNeedle = {
+            id: 'gaugeNeedle',
+            afterDatasetDraw(chart, args, options) {
+                const { ctx, data, chartArea: { top, bottom, left, right, width, height } } = chart;
+                ctx.save();
+                
+                const needleValue = data.datasets[0].needleValue;
+                const dataTotal = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const safeValue = needleValue > dataTotal ? dataTotal : needleValue;
+                
+                // Calcula o Ângulo do Ponteiro
+                let angle = Math.PI + (1 / dataTotal * safeValue * Math.PI);
+                
+                const cx = width / 2;
+                const cy = chart._metasets[0].data[0].y; 
+
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+                
+                // Desenha a Agulha Preta
+                ctx.beginPath();
+                ctx.moveTo(0, -3);
+                ctx.lineTo(height - 40, 0); 
+                ctx.lineTo(0, 3);
+                ctx.fillStyle = '#333';
+                ctx.fill();
+                
+                // Bolinha no centro
+                ctx.beginPath();
+                ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        };
 
         window.onload = async () => {
             try {
                 const res = await fetch(`${API_URL}/financeiro/graficos`);
                 const dados = await res.json();
                 
-                // 1. Gráfico de Barras (Receitas x Despesas)
+                // --- PONTO DE EQUILÍBRIO ---
+                const pe = dados.ponto_equilibrio.pe;
+                const meta = dados.ponto_equilibrio.meta;
+                const atual = dados.ponto_equilibrio.atual;
+
+                document.getElementById('legenda-pe').innerText = pe.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('legenda-meta').innerText = meta.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('pe-texto-atual').innerText = fMoeda(atual);
+
+                new Chart(document.getElementById('graficoPE'), {
+                    type: 'doughnut',
+                    plugins: [gaugeNeedle],
+                    data: {
+                        labels: ['Abaixo do PE', 'Buscando Meta', 'Acima da Meta'],
+                        datasets: [{
+                            data: [pe, meta - pe, meta * 0.5], 
+                            backgroundColor: ['#c62828', '#ffca28', '#003366'],
+                            borderWidth: 1,
+                            needleValue: atual // Injeta o valor do faturamento
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        circumference: 180, rotation: 270, cutout: '65%', // Formato de Velocímetro meia lua
+                        plugins: { legend: { display: false } }
+                    }
+                });
+
+                // --- BALANÇO MENSAL ---
                 new Chart(document.getElementById('graficoBalanco'), {
                     type: 'bar',
                     data: {
                         labels: ['Mês Atual'],
                         datasets: [
-                            { label: 'Receitas (R$)', data: [dados.resumo_mes.receitas], backgroundColor: '#4CAF50', borderRadius: 8 },
-                            { label: 'Despesas (R$)', data: [dados.resumo_mes.despesas], backgroundColor: '#f44336', borderRadius: 8 }
+                            { label: 'Receitas Reais (R$)', data: [dados.resumo_mes.receitas], backgroundColor: '#4CAF50', borderRadius: 8 },
+                            { label: 'Despesas Reais (R$)', data: [dados.resumo_mes.despesas], backgroundColor: '#f44336', borderRadius: 8 }
                         ]
                     },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
                 });
 
-                // Paleta de cores gerada automaticamente para os gráficos de pizza
                 const coresPizza = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#8D6E63'];
 
-                // 2. Gráfico Donut (Despesas por Categoria)
-                const despesasLabels = dados.despesas_pizza.map(d => d.nome.substring(0, 25) + '...');
+                // --- DESPESAS COM PORCENTAGEM (%) ---
                 const despesasValores = dados.despesas_pizza.map(d => parseFloat(d.total));
+                const totalDespesasPizza = despesasValores.reduce((a,b) => a+b, 0);
+                
+                // MÁGICA 2: Converte os rótulos injetando a porcentagem ao lado do nome
+                const despesasLabels = dados.despesas_pizza.map(d => {
+                    const pct = totalDespesasPizza > 0 ? ((parseFloat(d.total) / totalDespesasPizza) * 100).toFixed(1) : 0;
+                    return `${d.nome.substring(0, 20)} (${pct}%)`;
+                });
+
                 new Chart(document.getElementById('graficoDespesas'), {
                     type: 'doughnut',
                     data: {
@@ -96,7 +212,7 @@
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
                 });
 
-                // 3. Gráfico Donut (Canais de Venda)
+                // --- CANAIS DE VENDA ---
                 const canaisLabels = dados.canais_venda.map(c => c.origem || 'Diversos');
                 const canaisValores = dados.canais_venda.map(c => parseFloat(c.total));
                 new Chart(document.getElementById('graficoCanais'), {

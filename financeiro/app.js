@@ -30,14 +30,13 @@ async function carregarCategorias() {
 
 async function carregarResumoFinanceiro() {
     try {
-        // Asegura que temos os saldos de bancos mais atualizados na memória
+        // Assegura que temos os saldos de bancos mais atualizados na memória
         await carregarBancos();
 
         const res = await fetch(`${API_URL}/financeiro/resumo`);
         const dados = await res.json();
         
-        // Pinta os valores nos cards tradicionais
-        document.getElementById('fin-saldo').innerText = `R$ ${dados.saldo.toFixed(2).replace('.', ',')}`;
+        // Pinta os valores nos cards tradicionais (Saldo Geral foi removido)
         document.getElementById('fin-receber').innerText = `R$ ${dados.receber.toFixed(2).replace('.', ',')}`;
         document.getElementById('fin-pagar').innerText = `R$ ${dados.pagar.toFixed(2).replace('.', ',')}`;
         
@@ -46,15 +45,8 @@ async function carregarResumoFinanceiro() {
             .filter(b => !b.nome.toLowerCase().includes('caixa físico') && !b.nome.toLowerCase().includes('gaveta'))
             .reduce((soma, b) => soma + b.saldo_atual, 0);
 
-        // Alimenta o novo card
+        // Alimenta o card de Saldo de Bancos
         document.getElementById('fin-saldo-bancos').innerText = `R$ ${saldoApenasBancos.toFixed(2).replace('.', ',')}`;
-
-        // Alerta visual de saldo negativo para o Saldo Geral
-        if (dados.saldo < 0) {
-            document.getElementById('fin-saldo').style.color = '#f44336';
-        } else {
-            document.getElementById('fin-saldo').style.color = '#333';
-        }
 
         // Alerta visual de saldo negativo para o Saldo de Bancos
         if (saldoApenasBancos < 0) {
@@ -62,6 +54,24 @@ async function carregarResumoFinanceiro() {
         } else {
             document.getElementById('fin-saldo-bancos').style.color = '#333';
         }
+
+        // 👇 NOVA MÁGICA: Renderiza os pequenos cards de bancos dinamicamente
+        const containerBancos = document.getElementById('container-saldos-bancos');
+        if (containerBancos) {
+            containerBancos.innerHTML = '';
+            contasBancariasGlobais.forEach(b => {
+                const corSaldo = b.saldo_atual >= 0 ? '#4CAF50' : '#f44336';
+                containerBancos.innerHTML += `
+                    <div style="background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 160px; flex-shrink: 0; border-left: 4px solid #2196F3;">
+                        <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${b.nome}">${b.nome}</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: ${corSaldo};">
+                            R$ ${parseFloat(b.saldo_atual).toFixed(2).replace('.', ',')}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
     } catch (e) {
         console.error("Erro ao carregar resumo:", e);
     }
