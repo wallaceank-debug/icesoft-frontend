@@ -10,6 +10,7 @@ let produtoEmSelecao = null;
 let escolhasAtuais = [];
 let subtotalGlobalPDV = 0;
 let caixaAtual = { id: null, status: 'Fechado' };
+let categoriasPlanosDeContas = []; // 💰 NOVA: Memória do Plano de Contas para o Caixa
 
 let descontoGlobal = 0;
 let acrescimoGlobal = 0;
@@ -24,15 +25,18 @@ window.onload = async () => {
 
 async function carregarDadosIniciais() {
     try {
-        const [resProd, resGrupos, resCat] = await Promise.all([
+        // 👇 AQUI ESTÁ A CORREÇÃO: Declaramos o resCatFin e o 4º fetch corretamente!
+        const [resProd, resGrupos, resCat, resCatFin] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
-            fetch(`${API_URL}/categorias`)
+            fetch(`${API_URL}/categorias`),
+            fetch(`${API_URL}/financeiro/categorias`) // 👈 Puxa os planos de contas
         ]);
         
         const todosProdutos = await resProd.json();
         const todosGrupos = await resGrupos.json();
         categoriasGlobais = await resCat.json(); 
+        categoriasPlanosDeContas = await resCatFin.json(); // 👈 Agora ele sabe quem é o resCatFin!
 
         produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
         gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
@@ -862,6 +866,46 @@ function abrirModalMovimentacao(tipo) {
     document.getElementById('titulo-movimentacao').innerText = `Registrar ${tipo}`;
     document.getElementById('input-valor-mov').value = '';
     document.getElementById('input-motivo-mov').value = '';
+    
+    // 👇 Preenche a lista de categorias do Yampa dinamicamente (Receita ou Despesa)
+    const selectCat = document.getElementById('input-categoria-mov');
+    if (selectCat) {
+        selectCat.innerHTML = '<option value="">🔄 Movimentação Interna (Oculta no DRE)</option>';
+        
+        const tipoFin = tipo === 'Sangria' ? 'Despesa' : 'Receita';
+        const catFiltradas = categoriasPlanosDeContas.filter(c => c.tipo === tipoFin);
+        
+        const nomesDRE = {
+            'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários',
+            'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais',
+            'despesas_vendas': '5 - Despesas Comerciais', 'investimentos': '6 - Investimentos',
+            'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
+            'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas / Aportes',
+            'movimentacao_interna': '11 - Movimentações Internas'
+        };
+
+        const agrupadas = {};
+        catFiltradas.forEach(c => {
+            if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
+            agrupadas[c.dre_ref].push(c);
+        });
+
+        let indexPaiContador = 1;
+        Object.keys(agrupadas).forEach((dre_ref) => {
+            const nomePai = nomesDRE[dre_ref] || dre_ref;
+            let optgroup = `<optgroup label="${nomePai}">`;
+            
+            agrupadas[dre_ref].forEach((cat, indexFilho) => {
+                const numeroBadge = `${indexPaiContador}.${indexFilho + 1}`;
+                optgroup += `<option value="${cat.id}">[${numeroBadge}] ${cat.nome}</option>`;
+            });
+            
+            optgroup += `</optgroup>`;
+            selectCat.innerHTML += optgroup;
+            indexPaiContador++;
+        });
+    }
+
     document.getElementById('btn-salvar-mov').style.backgroundColor = (tipo === 'Sangria') ? '#FF9800' : '#2196F3';
     document.getElementById('modal-movimentacao').style.display = 'flex';
 }
@@ -869,6 +913,9 @@ function abrirModalMovimentacao(tipo) {
 async function salvarMovimentacao() {
     const valor = parseFloat(document.getElementById('input-valor-mov').value);
     const motivo = document.getElementById('input-motivo-mov').value;
+    const catSelect = document.getElementById('input-categoria-mov');
+    const categoria_id = catSelect ? catSelect.value : null; // 👈 Pega a categoria
+    
     if (!valor || valor <= 0) return alert("Digite um valor válido!");
     if (!motivo) return alert("Informe o motivo da movimentação!");
 
@@ -876,7 +923,7 @@ async function salvarMovimentacao() {
         const resposta = await fetch(`${API_URL}/caixa/movimentacao`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ caixa_id: caixaAtual.id, tipo: tipoMovimentacaoAtual, valor: valor, motivo: motivo })
+            body: JSON.stringify({ caixa_id: caixaAtual.id, tipo: tipoMovimentacaoAtual, valor: valor, motivo: motivo, categoria_id: categoria_id }) // 👈 Envia pro servidor
         });
         if (resposta.ok) {
             alert(`✅ ${tipoMovimentacaoAtual} de R$ ${valor.toFixed(2)} registrada!`);

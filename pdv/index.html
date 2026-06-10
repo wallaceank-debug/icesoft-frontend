@@ -334,6 +334,12 @@
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Motivo / Observação</label>
                 <input type="text" id="input-motivo-mov" class="input-padrao" placeholder="Ex: Compra de Gelo" style="width:100%; margin-top:5px; font-size:1.1rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
             </div>
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="color:#555; font-weight:600; font-size:0.9rem;">Classificação Contábil (Opcional)</label>
+                <select id="input-categoria-mov" class="input-padrao" style="width:100%; margin-top:5px; font-size:0.95rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px; outline: none; background: #f9f9f9;">
+                    <option value="">🔄 Movimentação Interna (Oculta no DRE)</option>
+                </select>
+            </div>
             <div style="display: flex; gap: 10px;">
                 <button onclick="document.getElementById('modal-movimentacao').style.display='none'" style="flex: 1; padding: 12px; font-size: 1rem; border: 1px solid #ccc; background: #f0f0f0; border-radius: 8px; cursor: pointer;">Cancelar</button>
                 <button id="btn-salvar-mov" onclick="salvarMovimentacao()" style="flex: 2; padding: 12px; font-size: 1.1rem; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Salvar</button>

@@ -200,10 +200,42 @@ function abrirModalLancamento(tipo) {
     document.getElementById('lan-qtd-meses').value = '2';
     toggleParcelas();
     
+    // 🧠 MÁGICA YAMPA: Popula Categorias Separadas por Pai e Filho
     const selectCat = document.getElementById('lan-categoria');
-    selectCat.innerHTML = '<option value="">Selecione a Categoria</option>';
-    categoriasFinanceiras.filter(c => c.tipo === tipo).forEach(c => {
-        selectCat.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+    selectCat.innerHTML = '<option value="">Selecione a Subconta</option>';
+    
+    const nomesDRE = {
+        'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários (Deduções)',
+        'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais Fixas',
+        'despesas_vendas': '5 - Despesas Comerciais e Logística', 'investimentos': '6 - Investimentos',
+        'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
+        'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas / Aportes',
+        'movimentacao_interna': '11 - Movimentações Internas'
+    };
+
+    const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
+    const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro);
+    
+    const agrupadas = {};
+    catFiltradas.forEach(c => {
+        if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
+        agrupadas[c.dre_ref].push(c);
+    });
+
+    let indexPaiContador = 1;
+    Object.keys(agrupadas).forEach((dre_ref) => {
+        const nomePai = nomesDRE[dre_ref] || dre_ref;
+        let optgroup = `<optgroup label="${nomePai}">`;
+        
+        agrupadas[dre_ref].forEach((cat, indexFilho) => {
+            const numeroBadge = `${indexPaiContador}.${indexFilho + 1}`;
+            const isSelected = (typeof item !== 'undefined' && cat.id === item.categoria_id) ? 'selected' : '';
+            optgroup += `<option value="${cat.id}" ${isSelected}>[${numeroBadge}] ${cat.nome}</option>`;
+        });
+        
+        optgroup += `</optgroup>`;
+        selectCat.innerHTML += optgroup;
+        indexPaiContador++;
     });
 
     const selectConta = document.getElementById('lan-conta');
@@ -239,11 +271,42 @@ function prepararEdicaoLancamento(itemStringCodificado) {
     
     document.getElementById('lan-status').value = item.status;
 
-    // Popula Categorias já selecionando a correta
+    // 🧠 MÁGICA YAMPA: Popula Categorias Separadas por Pai e Filho
     const selectCat = document.getElementById('lan-categoria');
-    selectCat.innerHTML = '<option value="">Selecione a Categoria</option>';
-    categoriasFinanceiras.filter(c => c.tipo === item.tipo).forEach(c => {
-        selectCat.innerHTML += `<option value="${c.id}" ${c.id === item.categoria_id ? 'selected' : ''}>${c.nome}</option>`;
+    selectCat.innerHTML = '<option value="">Selecione a Subconta</option>';
+    
+    const nomesDRE = {
+        'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários (Deduções)',
+        'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais Fixas',
+        'despesas_vendas': '5 - Despesas Comerciais e Logística', 'investimentos': '6 - Investimentos',
+        'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
+        'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas / Aportes',
+        'movimentacao_interna': '11 - Movimentações Internas'
+    };
+
+    const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
+    const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro);
+    
+    const agrupadas = {};
+    catFiltradas.forEach(c => {
+        if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
+        agrupadas[c.dre_ref].push(c);
+    });
+
+    let indexPaiContador = 1;
+    Object.keys(agrupadas).forEach((dre_ref) => {
+        const nomePai = nomesDRE[dre_ref] || dre_ref;
+        let optgroup = `<optgroup label="${nomePai}">`;
+        
+        agrupadas[dre_ref].forEach((cat, indexFilho) => {
+            const numeroBadge = `${indexPaiContador}.${indexFilho + 1}`;
+            const isSelected = (typeof item !== 'undefined' && cat.id === item.categoria_id) ? 'selected' : '';
+            optgroup += `<option value="${cat.id}" ${isSelected}>[${numeroBadge}] ${cat.nome}</option>`;
+        });
+        
+        optgroup += `</optgroup>`;
+        selectCat.innerHTML += optgroup;
+        indexPaiContador++;
     });
 
     // Popula Bancos já selecionando o correto
@@ -452,6 +515,9 @@ function abrirModalTransferencia() {
 
     document.getElementById('trans-valor-bruto').value = '';
     document.getElementById('trans-taxa').value = '0.00';
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    document.getElementById('trans-data').value = d.toISOString().split('T')[0];
     document.getElementById('modal-transferencia').style.display = 'flex';
 }
 
@@ -464,9 +530,10 @@ async function executarTransferencia() {
     const destino = document.getElementById('trans-destino').value;
     const valorBruto = parseFloat(document.getElementById('trans-valor-bruto').value);
     const taxa = parseFloat(document.getElementById('trans-taxa').value) || 0;
+    const dataTrans = document.getElementById('trans-data').value;
 
-    if (!origem || !destino || isNaN(valorBruto) || valorBruto <= 0) {
-        return alert("⚠️ Por favor, preencha as contas e o valor bruto corretamente.");
+    if (!origem || !destino || isNaN(valorBruto) || valorBruto <= 0 || !dataTrans) {
+        return alert("⚠️ Por favor, preencha as contas, o valor bruto e a data corretamente.");
     }
     if (origem === destino) {
         return alert("⚠️ A conta de origem e a de destino não podem ser iguais.");
@@ -484,6 +551,7 @@ async function executarTransferencia() {
                 conta_destino_id: destino,
                 valor_bruto: valorBruto,
                 taxa: taxa,
+                data_transferencia: dataTrans, // 👇 Envia para o servidor
                 descricao: `Conciliação de Cartões/Pix`
             })
         });

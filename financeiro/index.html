@@ -138,6 +138,9 @@
                     <button onclick="abrirModalBancos()" class="btn-topo-clean">
                         <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">account_balance</span> Bancos
                     </button>
+                    <button onclick="window.location.href='categorias.html'" class="btn-topo-clean">
+                        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196f3;">list_alt</span> Plano de Contas
+                    </button>
                     <button onclick="window.location.href='fluxo.html'" class="btn-topo-clean">
                         <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">calendar_month</span> Fluxo Realizado
                     </button>
@@ -321,6 +324,9 @@
 
             <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Total de Taxas Descontadas (R$)</label>
             <input type="number" step="0.01" id="trans-taxa" placeholder="Ex: 12.50" value="0.00" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Data da Transferência / Fechamento</label>
+            <input type="date" id="trans-data" style="width:100%; padding:10px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none;">
 
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button onclick="fecharModalTransferencia()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Cancelar</button>

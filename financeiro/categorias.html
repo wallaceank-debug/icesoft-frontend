@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano de Contas - Icesoft</title>
+    <link rel="stylesheet" href="../pdv/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
+        .fin-container { padding: 30px; flex: 1; overflow-y: auto; max-width: 1000px; margin: 0 auto; }
+        
+        /* Estilo Yampa para os Grupos Pai */
+        .grupo-card { background: white; border-radius: 12px; border: 1px solid #e0e0e0; margin-bottom: 25px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .grupo-header { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #e0e0e0; background: #fcfcfc; }
+        .grupo-titulo-area { display: flex; align-items: center; gap: 15px; }
+        .folder-icon { background: #00bcd4; color: white; width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+        .grupo-titulo-area h3 { margin: 0; font-size: 1.15rem; color: #003366; font-weight: 700; }
+        .grupo-titulo-area span { color: #003366; font-size: 0.85rem; }
+        
+        .btn-add-sub { background: #f0f4f8; color: #003366; border: 1px solid #cfd8dc; padding: 8px 15px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn-add-sub:hover { background: #e3ecf3; }
+
+        /* Estilo Yampa para as Subcategorias (Filhos) */
+        .lista-subcontas { padding: 10px 20px 20px 20px; background: white; }
+        .subconta-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border: 1px solid #eee; margin-top: -1px; background: white; transition: 0.2s; cursor: grab; }
+        .subconta-item:first-child { border-top-left-radius: 8px; border-top-right-radius: 8px; margin-top: 10px; }
+        .subconta-item:last-child { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+        .subconta-item:hover { background: #f9fbff; z-index: 2; position: relative; }
+        .subconta-item:active { cursor: grabbing; background: #eef2f6; }
+        
+        .badge-num { background: #eef2f6; color: #455a64; font-weight: 700; font-size: 0.85rem; padding: 5px 8px; border-radius: 6px; border: 1px solid #cfd8dc; min-width: 45px; text-align: center; }
+        .subconta-nome { flex: 1; color: #333; font-weight: 500; font-size: 0.95rem; }
+
+        /* Modal Nova Subconta */
+        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center; }
+        .modal-box { background:white; padding:25px; border-radius:12px; width:90%; max-width:400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .input-clean { width:100%; padding:12px; margin-top:5px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; outline: none; font-family: 'Inter'; }
+    </style>
+</head>
+<body>
+
+    <div class="conteudo-principal">
+        <header class="pdv-header" style="background-color: white; border-bottom: 1px solid #eee;">
+            <div class="logo-area" style="display: flex; align-items: center; gap: 10px;">
+                <span class="material-symbols-outlined" style="color: #003366; font-size: 2rem;">account_tree</span>
+                <h1 style="margin: 0; color: #003366; font-size: 1.6rem; font-weight: 800;">Plano de Contas</h1>
+            </div>
+            <button onclick="window.location.href='index.html'" style="padding: 8px 15px; background: #f0f4f8; color: #003366; border: 1px solid #cfd8dc; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <span class="material-symbols-outlined" style="font-size:1.1rem;">arrow_back</span> Voltar
+            </button>
+        </header>
+
+        <main class="fin-container" id="container-planos">
+            <p style="text-align: center; color: #888;">Carregando estrutura...</p>
+        </main>
+    </div>
+
+    <div id="modal-subconta" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color:#003366; margin-bottom: 5px;">Nova Subconta</h3>
+            <p id="modal-desc-pai" style="color:#666; font-size:0.85rem; margin-bottom: 15px;">Adicionando em: Custos Variáveis</p>
+            
+            <input type="hidden" id="nova-sub-dre">
+            <input type="hidden" id="nova-sub-tipo">
+
+            <label style="font-weight: 600; color: #555; font-size: 0.9rem;">Nome da Subconta</label>
+            <input type="text" id="nova-sub-nome" placeholder="Ex: Combustível Entregadores" class="input-clean">
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="fecharModal()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Cancelar</button>
+                <button onclick="salvarSubconta()" style="flex: 2; padding: 12px; background: #003366; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        let categoriasLocais = [];
+
+        // A ESTRUTURA PAI PROFISSIONAL
+        const GRUPOS_PAI = [
+            { dre: 'receita_bruta', nome: 'Receitas Operacionais', tipo: 'Receita', icon: 'payments' },
+            { dre: 'deducoes', nome: 'Custos Tributários e Deduções', tipo: 'Despesa', icon: 'receipt_long' },
+            { dre: 'cmv', nome: 'Custos com Produtos (CMV)', tipo: 'Despesa', icon: 'inventory_2' },
+            { dre: 'despesas_operacionais', nome: 'Despesas Operacionais Fixas', tipo: 'Despesa', icon: 'domain' },
+            { dre: 'despesas_vendas', nome: 'Despesas Comerciais e Logística', tipo: 'Despesa', icon: 'local_shipping' },
+            { dre: 'investimentos', nome: 'Investimentos em Ativos', tipo: 'Despesa', icon: 'trending_up' },
+            { dre: 'despesas_financeiras', nome: 'Despesas Financeiras', tipo: 'Despesa', icon: 'account_balance_wallet' },
+            { dre: 'distribuicao_lucros', nome: 'Distribuição de Lucros', tipo: 'Despesa', icon: 'redeem' },
+            { dre: 'nao_operacional', nome: 'Saídas Não Operacionais', tipo: 'Despesa', icon: 'money_off' },
+            { dre: 'aporte_capital', nome: 'Outras Receitas e Aportes', tipo: 'Receita', icon: 'savings' },
+            { dre: 'movimentacao_interna', nome: 'Movimentações Internas (Fechamentos)', tipo: 'Receita', icon: 'sync_alt' }
+        ];
+
+        window.onload = async () => { await buscarCategorias(); };
+
+        async function buscarCategorias() {
+            try {
+                const res = await fetch(`${API_URL}/financeiro/categorias`);
+                categoriasLocais = await res.json();
+                renderizarInterface();
+            } catch (e) { alert("Erro ao buscar plano de contas."); }
+        }
+
+        function renderizarInterface() {
+            const container = document.getElementById('container-planos');
+            container.innerHTML = '';
+
+            let indexPaiContador = 1;
+
+            GRUPOS_PAI.forEach((grupo) => {
+                const subcategorias = categoriasLocais.filter(c => c.dre_ref === grupo.dre).sort((a,b) => a.ordem - b.ordem);
+                
+                let htmlSubcontas = '';
+                if (subcategorias.length === 0) {
+                    htmlSubcontas = `<p style="padding: 15px 20px; color: #999; font-style: italic; margin: 0;">Nenhuma subconta cadastrada.</p>`;
+                } else {
+                    subcategorias.forEach((sub, indexFilho) => {
+                        const numeroVisual = `${indexPaiContador}.${indexFilho + 1}`;
+                        htmlSubcontas += `
+                            <div class="subconta-item" draggable="true" 
+                                 ondragstart="iniciarArrasto(event, ${sub.id})" 
+                                 ondragover="permitirSoltar(event)" 
+                                 ondrop="soltarItem(event, ${sub.id})">
+                                <span class="material-symbols-outlined" style="color: #ccc; cursor: grab;">drag_indicator</span>
+                                <div class="badge-num">${numeroVisual}</div>
+                                <div class="subconta-nome">${sub.nome}</div>
+                                <button onclick="deletarSubconta(${sub.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; margin-left:auto;" title="Apagar Conta">🗑️</button>
+                            </div>
+                        `;
+                    });
+                }
+
+                container.innerHTML += `
+                    <div class="grupo-card">
+                        <div class="grupo-header">
+                            <div class="grupo-titulo-area">
+                                <div class="folder-icon"><span class="material-symbols-outlined">${grupo.icon}</span></div>
+                                <div>
+                                    <h3>${indexPaiContador} - ${grupo.nome}</h3>
+                                    <span>${subcategorias.length} subcontas</span>
+                                </div>
+                            </div>
+                            <button class="btn-add-sub" onclick="abrirModal('${grupo.dre}', '${grupo.nome}', '${grupo.tipo}')">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem;">add</span> Nova Subconta
+                            </button>
+                        </div>
+                        <div class="lista-subcontas">
+                            ${htmlSubcontas}
+                        </div>
+                    </div>
+                `;
+                indexPaiContador++;
+            });
+        }
+
+        // --- MÁGICA DRAG AND DROP (Apenas dentro do mesmo grupo) ---
+        let idArrastado = null;
+        function iniciarArrasto(e, id) { idArrastado = id; }
+        function permitirSoltar(e) { e.preventDefault(); }
+        
+        async function soltarItem(e, idAlvo) {
+            e.preventDefault();
+            if (idArrastado === null || idArrastado === idAlvo) return;
+
+            const idxDrag = categoriasLocais.findIndex(c => c.id === idArrastado);
+            const idxDrop = categoriasLocais.findIndex(c => c.id === idAlvo);
+
+            // Proteção: Só deixa reordenar dentro da mesma categoria pai!
+            if (categoriasLocais[idxDrag].dre_ref !== categoriasLocais[idxDrop].dre_ref) {
+                return alert("⚠️ Você só pode reordenar subcontas dentro da mesma pasta pai.");
+            }
+
+            const itemMovido = categoriasLocais.splice(idxDrag, 1)[0];
+            const novoAlvoIdx = categoriasLocais.findIndex(c => c.id === idAlvo);
+            categoriasLocais.splice(novoAlvoIdx, 0, itemMovido);
+
+            // Reajusta a ordem global no array
+            categoriasLocais.forEach((c, i) => c.ordem = i + 1);
+            
+            renderizarInterface();
+            await salvarNovaOrdemNoBanco();
+        }
+
+        async function salvarNovaOrdemNoBanco() {
+            const payload = categoriasLocais.map((cat, i) => ({ id: cat.id, ordem: cat.ordem }));
+            try {
+                await fetch(`${API_URL}/financeiro/categorias/ordem`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+            } catch (e) { console.error("Erro ao salvar ordem."); }
+        }
+
+        // --- CONTROLE DO MODAL ---
+        function abrirModal(dre_ref, nomePai, tipo) {
+            document.getElementById('nova-sub-dre').value = dre_ref;
+            document.getElementById('nova-sub-tipo').value = tipo;
+            document.getElementById('modal-desc-pai').innerText = `Adicionando em: ${nomePai}`;
+            document.getElementById('nova-sub-nome').value = '';
+            document.getElementById('modal-subconta').style.display = 'flex';
+            document.getElementById('nova-sub-nome').focus();
+        }
+
+        function fecharModal() { document.getElementById('modal-subconta').style.display = 'none'; }
+
+        async function salvarSubconta() {
+            const nome = document.getElementById('nova-sub-nome').value.trim();
+            const dre_ref = document.getElementById('nova-sub-dre').value;
+            const tipo = document.getElementById('nova-sub-tipo').value;
+
+            if (!nome) return alert("⚠️ Digite o nome da subconta!");
+
+            try {
+                const res = await fetch(`${API_URL}/financeiro/categorias`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, tipo, dre_ref })
+                });
+
+                if (res.ok) {
+                    fecharModal();
+                    await buscarCategorias();
+                } else alert("❌ Erro ao criar subconta.");
+            } catch (e) { alert("❌ Falha de rede."); }
+        }
+
+        async function deletarSubconta(id) {
+            if (!confirm("⚠️ Deseja excluir esta subconta?")) return;
+            try {
+                const res = await fetch(`${API_URL}/financeiro/categorias/${id}`, { method: 'DELETE' });
+                if (res.ok) await buscarCategorias();
+                else alert("❌ Erro ao deletar.");
+            } catch (e) { alert("❌ Falha de rede."); }
+        }
+    </script>
+</body>
+</html>
