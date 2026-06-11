@@ -9,6 +9,7 @@ window.onload = async () => {
     popularFiltroBancos(); // 👇 Alimenta a nova caixinha de seleção de bancos
     await carregarResumoFinanceiro();
     await carregarLancamentos();
+    await carregarAlertasInteligentes(); // 👇 NOVO: Carrega os conselhos do CFO
 };
 
 function popularFiltroBancos() {
@@ -576,5 +577,42 @@ async function executarTransferencia() {
         }
     } catch (e) {
         alert("❌ Falha de conexão com o servidor.");
+    }
+}
+
+// ==========================================
+// 💡 CENTRAL DE ALERTAS INTELIGENTES
+// ==========================================
+async function carregarAlertasInteligentes() {
+    const container = document.getElementById('central-alertas');
+    if (!container) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/financeiro/alertas`);
+        const alertas = await res.json();
+        
+        container.innerHTML = '';
+        
+        const paleta = {
+            'perigo': { bg: '#ffebee', border: '#f44336', text: '#c62828' }, // Vermelho
+            'alerta': { bg: '#fff8e1', border: '#ffc107', text: '#f57f17' }, // Amarelo
+            'sucesso': { bg: '#e8f5e9', border: '#4caf50', text: '#2e7d32' },// Verde
+            'dica': { bg: '#e3f2fd', border: '#2196f3', text: '#1565c0' }    // Azul
+        };
+
+        alertas.forEach(alerta => {
+            const cor = paleta[alerta.tipo];
+            container.innerHTML += `
+                <div style="background: ${cor.bg}; border-left: 5px solid ${cor.border}; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: flex-start; transition: transform 0.2s;">
+                    <span class="material-symbols-outlined" style="color: ${cor.text}; font-size: 2rem;">${alerta.icone}</span>
+                    <div>
+                        <h4 style="margin: 0 0 5px 0; color: ${cor.text}; font-size: 0.95rem; font-weight: 700;">${alerta.titulo}</h4>
+                        <p style="margin: 0; color: #555; font-size: 0.82rem; line-height: 1.4; font-weight: 500;">${alerta.texto}</p>
+                    </div>
+                </div>
+            `;
+        });
+    } catch(e) {
+        console.error("Erro ao carregar alertas:", e);
     }
 }
