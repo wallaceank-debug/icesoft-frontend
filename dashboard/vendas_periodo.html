@@ -313,18 +313,27 @@
 
     const formatarMoeda = (valor) => Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     
+    // 👇 NOVO: Força o horário do Brasil na listagem das vendas
     const formatarData = (dataISO) => {
         const data = new Date(dataISO);
-        return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return data.toLocaleString('pt-BR', { 
+            timeZone: 'America/Sao_Paulo', 
+            dateStyle: 'short', 
+            timeStyle: 'short' 
+        }).replace(',', ' às');
     };
 
+    // 👇 NOVO: Impede que o calendário pule um dia após as 21h
     function configurarDatasPadrao() {
         const hoje = new Date();
         const trintaDiasAtras = new Date();
         trintaDiasAtras.setDate(hoje.getDate() - 30);
 
-        document.getElementById('dataFim').value = hoje.toISOString().split('T')[0];
-        document.getElementById('dataInicio').value = trintaDiasAtras.toISOString().split('T')[0];
+        // Extrai a data no formato YYYY-MM-DD cravada no fuso de São Paulo
+        const formatarYMD = (data) => new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(data);
+
+        document.getElementById('dataFim').value = formatarYMD(hoje);
+        document.getElementById('dataInicio').value = formatarYMD(trintaDiasAtras);
     }
 
     async function buscarVendas() {

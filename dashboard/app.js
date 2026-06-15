@@ -15,8 +15,11 @@ async function carregarDashboard() {
         const trintaDias = new Date();
         trintaDias.setDate(hoje.getDate() - 30);
         
-        inicioInput = trintaDias.toISOString().split('T')[0];
-        fimInput = hoje.toISOString().split('T')[0];
+        // 👇 NOVO: Força o fuso brasileiro para não adiantar 1 dia por causa do UTC
+        const formatarYMD = (data) => new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(data);
+        
+        inicioInput = formatarYMD(trintaDias);
+        fimInput = formatarYMD(hoje);
         
         document.getElementById('filtro-inicio').value = inicioInput;
         document.getElementById('filtro-fim').value = fimInput;
@@ -90,15 +93,24 @@ function processarMetricasEGraficos(vendas) {
 
         // --- DATAS E DIAS DA SEMANA (Blindado contra fuso horário) ---
         if (v.data_hora) {
-            let dataVendaTexto = String(v.data_hora).split('T')[0].substring(0, 10);
-            if (dataVendaTexto.includes('-')) {
-                const [anoV, mesV, diaV] = dataVendaTexto.split('-');
-                // Cria data ao meio-dia para evitar que o fuso jogue a venda para o dia anterior
-                let dataObjeto = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
-                
-                faturamentoPorDiaDaSemana[dataObjeto.getDay()] += valor;
-                faturamentoPorData[dataVendaTexto] = (faturamentoPorData[dataVendaTexto] || 0) + valor;
-            }
+            // Cria um objeto de data considerando a string bruta do banco
+            let dataGeral = new Date(v.data_hora);
+            
+            // Força a extração da data no fuso de São Paulo (YYYY-MM-DD)
+            let dataFormatadaLocal = new Intl.DateTimeFormat('fr-CA', { 
+                timeZone: 'America/Sao_Paulo', 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit' 
+            }).format(dataGeral);
+            
+            // Extrai a data e converte para "Day" para o gráfico semanal, 
+            // setando horas para o meio-dia para evitar "turnos" fantasmas.
+            const [anoV, mesV, diaV] = dataFormatadaLocal.split('-');
+            let dataObjeto = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
+
+            faturamentoPorDiaDaSemana[dataObjeto.getDay()] += valor;
+            faturamentoPorData[dataFormatadaLocal] = (faturamentoPorData[dataFormatadaLocal] || 0) + valor;
         }
 
         // --- PRODUTOS (Leitura indestrutível do JSON do Banco) ---

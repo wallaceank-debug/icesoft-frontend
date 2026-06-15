@@ -199,24 +199,35 @@
         </div>
     </div>
 
-<div id="modal-opcoes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:3100;">
-        <div style="background:white; width:90%; max-width:500px; border-radius:20px; padding:25px; max-height:90vh; overflow-y:auto; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px;">
+    <div id="modal-opcoes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:3100;">
+        
+        <!-- A MÁGICA COMEÇA AQUI: display:flex e flex-direction:column -->
+        <div style="background:white; width:90%; max-width:500px; border-radius:20px; display:flex; flex-direction:column; max-height:90vh; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            
+            <!-- TOPO FIXO -->
+            <div id="detalhes-produto-topo" style="text-align:center; padding: 20px 25px 15px 25px; border-bottom: 2px solid #f0f2f5; flex-shrink: 0;">
             </div>
 
-            <div id="container-grupos-opcoes">
-                </div>
+            <!-- MEIO ROLÁVEL (Lista de Adicionais rola apenas aqui dentro) -->
+            <div id="container-grupos-opcoes" style="flex: 1; overflow-y: auto; padding: 15px 25px;">
+            </div>
 
-            <div style="margin-top:20px; padding:20px; background:#e0f7fa; border-radius:15px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <span style="font-size:0.9rem; color:#555;">Total deste item:</span><br>
-                    <strong id="preco-dinamico" style="font-size:1.4rem; color:#00bcd4;">R$ 0,00</strong>
+            <!-- RODAPÉ FIXO (Botão sempre à vista) -->
+            <div style="flex-shrink: 0; border-top: 2px solid #f0f2f5; padding: 20px 25px; background: #fafafa; border-radius: 0 0 20px 20px;">
+                <div style="background:#e0f7fa; border-radius:15px; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span style="font-size:0.9rem; color:#555;">Total deste item:</span><br>
+                        <strong id="preco-dinamico" style="font-size:1.4rem; color:#00bcd4;">R$ 0,00</strong>
+                    </div>
+                    <button onclick="confirmarEscolhasEAdicionarMesa()" style="background:#4CAF50; color:white; border:none; padding:15px 30px; border-radius:12px; font-weight:bold; cursor:pointer; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(76, 175, 80, 0.3); transition: 0.2s;">
+                        Confirmar e Inserir
+                    </button>
                 </div>
-                <button onclick="confirmarEscolhasEAdicionarMesa()" style="background:#4CAF50; color:white; border:none; padding:15px 30px; border-radius:12px; font-weight:bold; cursor:pointer; font-size: 1.1rem;">
-                    Confirmar e Inserir
+                <button onclick="fecharModalOpcoesMesa()" style="width:100%; background:none; border:none; color:#f44336; padding:15px 0 0 0; margin-top:5px; cursor:pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;">
+                    Cancelar
                 </button>
             </div>
-            <button onclick="fecharModalOpcoesMesa()" style="width:100%; background:none; border:none; color:#f44336; padding:15px; margin-top:10px; cursor:pointer; font-weight: bold;">Cancelar</button>
+            
         </div>
     </div>
 
@@ -263,6 +274,14 @@
                 <hr style="border: 0; border-top: 1px dashed #ccc; margin-bottom: 15px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:1.4rem; color:#333;">
                     <strong>A Cobrar:</strong> <strong id="total-pagamento-mesa" style="color:#e91e63;">R$ 0,00</strong>
+                </div>
+
+                <div style="background:#fff0f4; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px dashed #f48fb1;">
+                    <label style="color:#e91e63; font-weight:700; font-size:0.9rem; display:flex; align-items:center; gap:5px; margin-bottom: 8px;">
+                        <span class="material-symbols-outlined" style="font-size:1.2rem;">loyalty</span> Fidelidade & Cliente
+                    </label>
+                    <input type="text" id="mesa-cliente-telefone" placeholder="📱 WhatsApp (Com DDD)" style="width:100%; padding:10px; border:1px solid #f8bbd0; border-radius:8px; font-size:0.95rem; box-sizing: border-box; outline: none; margin-bottom: 8px;" onblur="buscarClienteCRM(this.value)">
+                    <input type="text" id="mesa-cliente-nome" placeholder="👤 Nome do Cliente (Opcional)" style="width:100%; padding:10px; border:1px solid #f8bbd0; border-radius:8px; font-size:0.95rem; box-sizing: border-box; outline: none;">
                 </div>
 
                 <!-- NOVO SISTEMA DE PAGAMENTO DIVIDIDO (MESAS) -->

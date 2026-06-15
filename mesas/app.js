@@ -17,7 +17,8 @@ let escolhasAtuaisMesa = [];
 
 window.onload = async () => {
     await carregarCardapio(); 
-    await carregarMesas();    
+    await carregarMesas();
+    await carregarClientesCRM();    
 
     // 🖱️ MÁGICA DO SCROLL: Transforma a rolagem vertical do mouse em horizontal
     const scrollCategorias = document.getElementById('categorias-mesa');
@@ -462,6 +463,10 @@ function abrirMesaOcupada(idMesa) {
     isPagamentoDivididoMesa = false;
     document.getElementById('mesa-metodo-1').value = 'Dinheiro';
     document.getElementById('recebido-pagamento-mesa').value = '';
+
+    if (document.getElementById('mesa-cliente-telefone')) document.getElementById('mesa-cliente-telefone').value = '';
+    if (document.getElementById('mesa-cliente-nome')) document.getElementById('mesa-cliente-nome').value = '';
+
     const areaPag2 = document.getElementById('area-pagamento-2-mesa');
     const btnAdd = document.getElementById('btn-add-pagamento-mesa');
     const inputValor1 = document.getElementById('mesa-valor-1');
@@ -738,6 +743,9 @@ async function finalizarPagamentoMesa() {
         const nomesApenas = itensSendoPagos.map(item => item.nome).join(' + ');
         const nomeCurto = nomesApenas.length > 250 ? nomesApenas.substring(0, 247) + '...' : nomesApenas;
 
+        const clienteTelefone = document.getElementById('mesa-cliente-telefone') ? document.getElementById('mesa-cliente-telefone').value.trim() : '';
+        const clienteNome = document.getElementById('mesa-cliente-nome') ? document.getElementById('mesa-cliente-nome').value.trim() : '';
+
         const vendaPayload = {
             itens: itensFormatadosDashboard, // Enviamos como lista, o servidor cuida da formatação pesada
             produto_nome: nomeCurto, // Título resumido que cabe perfeitamente no limite do banco
@@ -745,7 +753,9 @@ async function finalizarPagamentoMesa() {
             total: totalCobrado,
             forma_pagamento: metodoFinalTexto, 
             status: "Concluída",
-            origem: "Mesas"
+            origem: "Mesas",
+            cliente_telefone: clienteTelefone,
+            cliente_nome: clienteNome
         };
 
         const resVenda = await fetch(`${API_URL}/vendas`, {
@@ -849,5 +859,32 @@ function updateMesasNotificationBadge(count) {
         badge.style.display = 'flex'; // Mostra o aviso se houver mesas ocupadas
     } else {
         badge.style.display = 'none'; // Esconde se estiver tudo vazio
+    }
+}
+
+// ==========================================
+// 🎁 INTELIGÊNCIA DE FIDELIDADE (CRM)
+// ==========================================
+let clientesCRMGlobal = [];
+
+async function carregarClientesCRM() {
+    try {
+        const res = await fetch(`${API_URL}/crm/clientes`);
+        clientesCRMGlobal = await res.json();
+    } catch(e) { console.log("Erro ao carregar CRM nas mesas", e); }
+}
+
+function buscarClienteCRM(telefoneDigitado) {
+    if (!telefoneDigitado) return;
+    
+    // Limpa o que a pessoa digitou para deixar só os números (tira espaços, traços)
+    const numeroLimpo = telefoneDigitado.replace(/\D/g, '');
+    
+    // Procura na memória se já existe alguém com esse número
+    const cliente = clientesCRMGlobal.find(c => c.telefone && c.telefone.replace(/\D/g, '') === numeroLimpo);
+    
+    // Se achou, preenche o nome como num passe de mágica!
+    if (cliente && cliente.nome) {
+        document.getElementById('mesa-cliente-nome').value = cliente.nome;
     }
 }
