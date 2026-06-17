@@ -12,7 +12,7 @@ let descontoUpsellGlobal = 0;
 let categoriasGlobaisDelivery = [];
 let categoriasCompletasDoBanco = []; // 🗺️ NOVA: Memória de todas as categorias
 let pedidoMinimoDeliveryGlobal = 0;
-
+let topAdicionaisGlobais = []; // 🏆 Memória dos Adicionais Favoritos
 let cuponsGlobais = [];
 let cupomAtivo = null;
 let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
@@ -103,13 +103,16 @@ function isCategoriaAtivaAgora(cat) {
 async function carregarTudo() {
     try {
         // 🌐 O "motor" agora busca as configurações no mesmo pacote!
-        const [resProd, resGrupos, resBairros, resCat, resConfig] = await Promise.all([
+        const [resProd, resGrupos, resBairros, resCat, resConfig, resRankingAdic] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
             fetch(`${API_URL}/bairros`),
             fetch(`${API_URL}/categorias`),
-            fetch(`${API_URL}/configuracoes`) // 👈 AQUI! Pedimos a gaveta de configs
+            fetch(`${API_URL}/configuracoes`), // 👈 Pedimos a gaveta de configs
+            fetch(`${API_URL}/ranking/adicionais`) // 🏆 Pede o Top 3 Adicionais
         ]);
+
+        try { topAdicionaisGlobais = await resRankingAdic.json(); } catch(e) { topAdicionaisGlobais = []; }
 
         let produtosBrutos = await resProd.json();
         
@@ -408,8 +411,13 @@ function abrirModalEscolha(produto) {
                 const matchTag = nomeCompleto.match(/\[(.*?)\]/); // Procura qualquer texto entre [ ]
                 
                 if (matchTag) {
-                    tagHtml = `<span class="tag-recomendacao">${matchTag[1]}</span>`;
+                    tagHtml += `<span class="tag-recomendacao">${matchTag[1]}</span>`;
                     nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); // Remove a tag do nome para ficar limpo
+                }
+
+                // 🏆 NOVO: Gatilho da Prova Social (A tag verde pastel)
+                if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
+                    tagHtml += `<span style="font-size: 0.65rem; background: #c4eed0; color: #0f5223; padding: 3px 8px; border-radius: 12px; font-weight: bold; border: 1px solid #8fcf9e; margin-left: 6px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🔥 Mais Pedido</span>`;
                 }
 
                 if (grupo.limite === 1) {
