@@ -277,7 +277,7 @@ function renderizarCardapio(lista) {
             // 🚀 O CÉREBRO DAS TAGS AQUI
             let tagHtml = '';
             if (p.tag && p.tag !== '') {
-                const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade' };
+                const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade', 'poucas_unidades': 'Poucas Unidades' };
                 tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
             }
 
@@ -1347,7 +1347,7 @@ function renderizarCarrossel(produtos) {
         // 🚀 O CÉREBRO DAS TAGS TAMBÉM NO CARROSSEL
         let tagHtml = '';
         if (p.tag && p.tag !== '') {
-            const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade' };
+            const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade', 'poucas_unidades': 'Poucas Unidades' };
             tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
         }
 
