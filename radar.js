@@ -9,7 +9,20 @@ let radarGlobal_primeiraCarga = true;
 
 async function checarNovosPedidosGlobal() {
     try {
-        const res = await fetch(`${RADAR_API_URL}/vendas`);
+        // 1. O Radar pega o crachá no bolso do navegador
+        const cracha = localStorage.getItem('icesoft_token');
+        
+        // 2. O Radar mostra o crachá para o servidor
+        const res = await fetch(`${RADAR_API_URL}/vendas`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${cracha}`
+            }
+        });
+        
+        // 3. Se for barrado (ex: sessão expirou), o radar silencia sem quebrar a tela
+        if (res.status === 401 || res.status === 403) return;
+
         const vendas = await res.json();
         
         let maxIdAtual = 0;
