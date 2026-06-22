@@ -1,4 +1,4 @@
-const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+const API_URL = '[https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api](https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api)';
 
 // Variáveis para guardar as instâncias dos gráficos
 let chartEvolucao, chartPagamentos, chartOrigem, chartProdutos, chartDias, chartHorarios, chartTicketMedio;
@@ -26,8 +26,21 @@ async function carregarDashboard() {
     }
 
     try {
-        // 2. Busca as vendas enviando as datas diretamente para o Banco de Dados (Mais seguro e rápido!)
-        const resposta = await fetch(`${API_URL}/vendas?inicio=${inicioInput}&fim=${fimInput}`);
+        // 2. Busca as vendas com a fechadura de segurança
+        const cracha = localStorage.getItem('icesoft_token');
+        const resposta = await fetch(`${API_URL}/vendas?inicio=${inicioInput}&fim=${fimInput}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${cracha}`
+            }
+        });
+
+        // Se o servidor expulsar (token inválido), manda pro login
+        if (resposta.status === 401 || resposta.status === 403) {
+             fazerLogout();
+             return;
+        }
+
         let vendas = await resposta.json();
         
         // 3. Remove os cancelamentos para não mascarar o lucro (Trata tanto 'Cancelada' quanto 'Cancelado')

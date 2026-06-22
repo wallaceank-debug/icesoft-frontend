@@ -1,4 +1,4 @@
-const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+const API_URL = '[https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api](https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api)';
 let clientesGlobais = [];
 let configsFidelidade = { ativo: false, meta: 10, tipo: 'porcentagem', valor: 0 };
 
@@ -55,13 +55,28 @@ async function salvarConfigFidelidade() {
     }
 }
 
-async function carregarClientes() {
-    try {
-        const res = await fetch(`${API_URL}/crm/clientes`);
-        clientesGlobais = await res.json();
-        renderizarTabela(clientesGlobais);
-        atualizarContadoresKPI();
-    } catch (e) {
+async function carregarClientes() {  
+ try {  
+ // 1. Pega o crachá do bolso do navegador
+ const cracha = localStorage.getItem('icesoft_token');
+ 
+ // 2. Mostra o crachá na porta do servidor
+ const res = await fetch(`${API_URL}/crm/clientes`, {
+     method: 'GET',
+     headers: {
+         'Authorization': `Bearer ${cracha}`
+     }
+ });  
+ 
+ // Se o servidor expulsar (token inválido), manda pro login
+ if (res.status === 401 || res.status === 403) {
+     fazerLogout();
+     return;
+ }
+ 
+ clientesGlobais = await res.json();  
+ renderizarTabela(clientesGlobais);  
+ } catch (e) {
         document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Erro ao carregar clientes.</td></tr>';
     }
 }
