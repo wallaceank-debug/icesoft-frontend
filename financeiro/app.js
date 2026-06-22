@@ -34,7 +34,23 @@ async function carregarResumoFinanceiro() {
         // Assegura que temos os saldos de bancos mais atualizados na memória
         await carregarBancos();
 
-        const res = await fetch(`${API_URL}/financeiro/resumo`);
+        // 👇 1. Pega o crachá no bolso do navegador
+        const cracha = localStorage.getItem('icesoft_token');
+        
+        // 👇 2. Mostra o crachá para o servidor
+        const res = await fetch(`${API_URL}/financeiro/resumo`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${cracha}`
+            }
+        });
+        
+        // 👇 3. Se for barrado, joga para a tela de login
+        if (res.status === 401 || res.status === 403) {
+             window.location.href = '../login/index.html';
+             return;
+        }
+
         const dados = await res.json();
         
         // Pinta os valores nos cards tradicionais (Saldo Geral foi removido)
