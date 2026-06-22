@@ -126,7 +126,18 @@
 
         window.onload = async () => {
             try {
-                const res = await fetch(`${API_URL}/financeiro/fluxo-caixa`);
+                const cracha = localStorage.getItem('icesoft_token');
+                const res = await fetch(`${API_URL}/financeiro/fluxo-caixa`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${cracha}`
+                    }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                     window.location.href = '../login/index.html';
+                     return;
+                }
                 const dados = await res.json();
 
                 const dataAtual = new Date();

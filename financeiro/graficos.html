@@ -147,7 +147,18 @@
 
         window.onload = async () => {
             try {
-                const res = await fetch(`${API_URL}/financeiro/graficos`);
+                const cracha = localStorage.getItem('icesoft_token');
+                const res = await fetch(`${API_URL}/financeiro/graficos`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${cracha}`
+                    }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                     window.location.href = '../login/index.html';
+                     return;
+                }
                 const dados = await res.json();
                 
                 // --- PONTO DE EQUILÍBRIO ---
