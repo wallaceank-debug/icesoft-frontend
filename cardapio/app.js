@@ -2442,65 +2442,6 @@ try {
     console.log("⚠️ Falha ao conectar no radar", e);
 }
 
-// ==========================================
-// 🌭 CRONÔMETRO DO LANÇAMENTO DO HOTDOG
-// ==========================================
-function iniciarCronometroHotdog() {
-    const banner = document.getElementById('hotdog-banner');
-    const cronometroEl = document.getElementById('hotdog-cronometro');
-    const progressoEl = document.getElementById('hotdog-progresso');
-    const emojiEl = document.getElementById('hotdog-emoji');
-    
-    if (!banner) return;
-
-    // A Linha de Chegada: 19/06/2026 às 18:00:00 (No Fuso de Brasília -03:00)
-    const dataFinal = new Date('2026-06-19T18:00:00-03:00').getTime();
-    
-    // O ponto de largada da barrinha (Hoje, Terça, meia-noite)
-    const dataInicio = new Date('2026-06-16T00:00:00-03:00').getTime();
-    const duracaoTotal = dataFinal - dataInicio;
-
-    const intervalo = setInterval(() => {
-        const agora = new Date().getTime();
-        const distancia = dataFinal - agora;
-
-        // Se o grande momento chegou:
-        if (distancia < 0) {
-            clearInterval(intervalo);
-            cronometroEl.innerHTML = "🎉 JÁ ESTÁ DISPONÍVEL! PEÇA O SEU! 🎉";
-            cronometroEl.style.color = "#e91e63";
-            progressoEl.style.width = "100%";
-            emojiEl.style.left = "100%";
-            return;
-        }
-
-        // Matemática do tempo
-        const dias = Math.floor(distancia / (1000 * 60 * 60 * 24));
-        const horas = Math.floor((distancia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
-        const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-
-        // Junta os dias com as horas (ex: se falta 1 dia e 10h, mostra 34h)
-        const horasTotais = String(horas + (dias * 24)).padStart(2, '0');
-        const minFormatado = String(minutos).padStart(2, '0');
-        const segFormatado = String(segundos).padStart(2, '0');
-
-        cronometroEl.innerHTML = `${horasTotais}:${minFormatado}:${segFormatado}`;
-
-        // Calcula quantos % o Hotdog já andou
-        const tempoDecorrido = agora - dataInicio;
-        let porcentagem = (tempoDecorrido / duracaoTotal) * 100;
-        
-        // Travas de segurança
-        if (porcentagem < 0) porcentagem = 0;
-        if (porcentagem > 100) porcentagem = 100;
-
-        progressoEl.style.width = `${porcentagem}%`;
-        emojiEl.style.left = `${porcentagem}%`;
-
-    }, 1000);
-}
-
 // Ativa o gatilho assim que o cardápio carregar
 document.addEventListener('DOMContentLoaded', iniciarCronometroHotdog);
 // Backup caso a página já tenha carregado
