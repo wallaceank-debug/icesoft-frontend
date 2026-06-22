@@ -344,7 +344,17 @@
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Buscando dados...</td></tr>';
 
         try {
-            const resposta = await fetch(`${API_URL}/vendas?inicio=${inicio}&fim=${fim}`);
+            const cracha = localStorage.getItem('icesoft_token');
+            const resposta = await fetch(`${API_URL}/vendas?inicio=${inicio}&fim=${fim}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${cracha}` }
+            });
+
+            if (resposta.status === 401 || resposta.status === 403) {
+                 window.location.href = '../login/index.html';
+                 return;
+            }
+
             listaVendas = await resposta.json();
             renderizarTela();
         } catch (e) {

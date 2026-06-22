@@ -51,10 +51,19 @@ async function carregarCardapio() {
 
 async function carregarMesas() {
     try {
-        const resposta = await fetch(`${API_URL}/mesas`);
+        const cracha = localStorage.getItem('icesoft_token');
+        const resposta = await fetch(`${API_URL}/mesas`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${cracha}` }
+        });
+        
+        if (resposta.status === 401 || resposta.status === 403) {
+             window.location.href = '../login/index.html';
+             return;
+        }
+
         mesasAbertas = await resposta.json();
         renderizarGrade();
-        // 👉 ADICIONE ESTA LINHA AQUI: Atualiza o aviso no menu lateral
         updateMesasNotificationBadge(mesasAbertas.length);
 
     } catch (e) {
@@ -396,38 +405,36 @@ async function confirmarLancamentoMesa() {
         const textoOriginal = btn.innerText;
         btn.innerText = "Enviando...";
 
+        const cracha = localStorage.getItem('icesoft_token');
+
         if (idMesaEmAdicao) {
-            // MESA JÁ EXISTE: Soma os itens antigos com os novos e atualiza (PUT)
             const mesaAtual = mesasAbertas.find(m => m.id === idMesaEmAdicao);
-            const itensAntigos = mesaAtual.itens || [];
-            const itensCombinados = itensAntigos.concat(carrinhoLancamento);
+            const itensCombinados = (mesaAtual.itens || []).concat(carrinhoLancamento);
 
             const resposta = await fetch(`${API_URL}/mesas/${idMesaEmAdicao}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${cracha}`
+                },
                 body: JSON.stringify({ itens: itensCombinados })
             });
 
-            if (resposta.ok) {
-                fecharModalLancamento();
-                await carregarMesas(); 
-            } else { alert("Erro ao adicionar novos itens na mesa."); }
+            if (resposta.ok) { fecharModalLancamento(); await carregarMesas(); } 
+            else { alert("Erro ao adicionar novos itens na mesa."); }
 
         } else {
-            // MESA NOVA: Cria a mesa do zero (POST)
             const resposta = await fetch(`${API_URL}/mesas`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    numero: mesaEmEdicao,
-                    itens: carrinhoLancamento
-                })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${cracha}`
+                },
+                body: JSON.stringify({ numero: mesaEmEdicao, itens: carrinhoLancamento })
             });
 
-            if (resposta.ok) {
-                fecharModalLancamento();
-                await carregarMesas(); 
-            } else { alert("Erro ao abrir mesa no servidor."); }
+            if (resposta.ok) { fecharModalLancamento(); await carregarMesas(); } 
+            else { alert("Erro ao abrir mesa no servidor."); }
         }
         
         btn.innerText = textoOriginal;
