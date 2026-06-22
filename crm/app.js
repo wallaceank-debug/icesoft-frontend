@@ -76,6 +76,7 @@ async function carregarClientes() {
  
  clientesGlobais = await res.json();  
  renderizarTabela(clientesGlobais);  
+ atualizarContadoresKPI();
  } catch (e) {
         document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Erro ao carregar clientes.</td></tr>';
     }
