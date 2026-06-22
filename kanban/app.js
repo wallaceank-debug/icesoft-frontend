@@ -52,7 +52,23 @@ setInterval(atualizarCronometros, 1000);
 // ==========================================
 async function carregarPedidos() {
     try {
-        const res = await fetch(`${API_URL}/vendas`);
+        // 👇 1. Pega o crachá
+        const cracha = localStorage.getItem('icesoft_token');
+        
+        // 👇 2. Mostra o crachá
+        const res = await fetch(`${API_URL}/vendas`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${cracha}`
+            }
+        });
+        
+        // 👇 3. Bloqueio de Segurança
+        if (res.status === 401 || res.status === 403) {
+             window.location.href = '../login/index.html';
+             return;
+        }
+
         const vendas = await res.json();
         
         const hoje = new Date().toDateString();
@@ -290,9 +306,13 @@ function renderizarKanban(pedidos) {
 // ==========================================
 async function mudarStatus(id, novoStatus) {
     try {
+        const cracha = localStorage.getItem('icesoft_token');
         await fetch(`${API_URL}/vendas/${id}/status`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${cracha}` // 👈 O Crachá injetado aqui!
+            },
             body: JSON.stringify({ status: novoStatus })
         });
         carregarPedidos();
