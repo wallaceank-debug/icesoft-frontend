@@ -876,7 +876,15 @@ let clientesCRMGlobal = [];
 
 async function carregarClientesCRM() {
     try {
-        const res = await fetch(`${API_URL}/crm/clientes`);
+        const cracha = localStorage.getItem('icesoft_token');
+        const res = await fetch(`${API_URL}/crm/clientes`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${cracha}` }
+        });
+        
+        // Se for barrado, sai silenciosamente para não quebrar a tela de mesas
+        if (res.status === 401 || res.status === 403) return;
+
         clientesCRMGlobal = await res.json();
     } catch(e) { console.log("Erro ao carregar CRM nas mesas", e); }
 }
