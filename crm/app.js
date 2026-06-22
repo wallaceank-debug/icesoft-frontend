@@ -1,4 +1,4 @@
-const API_URL = '[https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api](https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api)';
+const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 let clientesGlobais = [];
 let configsFidelidade = { ativo: false, meta: 10, tipo: 'porcentagem', valor: 0 };
 
