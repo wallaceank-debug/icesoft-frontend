@@ -22,10 +22,21 @@ async function carregarRaioX() {
     }
 
     try {
+        const cracha = localStorage.getItem('icesoft_token'); // 🛡️ Pega o crachá salvo no navegador
+
         const [resVendas, resVisitas] = await Promise.all([
-            fetch(`${API_URL}/vendas?inicio=${inicioInput}&fim=${fimInput}`),
+            fetch(`${API_URL}/vendas?inicio=${inicioInput}&fim=${fimInput}`, {
+                headers: { 'Authorization': `Bearer ${cracha}` } // 🛡️ Mostra o crachá para o servidor
+            }),
             fetch(`${API_URL}/relatorios/raiox-produtos?inicio=${inicioInput}&fim=${fimInput}`)
         ]);
+
+        // Se o crachá estiver vencido ou errado, ele avisa
+        if (resVendas.status === 401 || resVendas.status === 403) {
+            console.error("Acesso negado ao buscar vendas.");
+            alert("Sua sessão expirou. Por favor, faça login novamente.");
+            return;
+        }
 
         // 🛡️ CORREÇÃO DE DADOS: Ignora cancelados E vendas do Balcão/Mesas (Pois não geram visitas online)
         const vendas = (await resVendas.json()).filter(v => 
