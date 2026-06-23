@@ -1143,11 +1143,8 @@ async function abrirTelaRastreio() {
     
     try {
         // Puxa as vendas para achar o ID exato desse pedido recém-criado e contar a fidelidade
-        const res = await fetch(`${API_URL}/vendas`);
-        const vendas = await res.json();
-        
-        // Filtra pelo telefone do cliente atual
-        const comprasDesteCliente = vendas.filter(v => v.cliente_telefone === rastreioTelefoneCliente);
+        const res = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(rastreioTelefoneCliente)}`);
+        const comprasDesteCliente = await res.json();
         
         if (comprasDesteCliente.length > 0) {
             // O pedido mais recente é o de maior ID
@@ -1181,7 +1178,7 @@ async function abrirTelaRastreio() {
 async function buscarStatusAtualizado() {
     if (!rastreioPedidoId) return;
     try {
-        const res = await fetch(`${API_URL}/vendas`);
+        const res = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(rastreioTelefoneCliente)}`);
         const vendas = await res.json();
         const pedidoVigiado = vendas.find(v => v.id === rastreioPedidoId);
         
@@ -1688,11 +1685,8 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
             badge.style.display = 'block';
         }
 
-        const res = await fetch(`${API_URL}/vendas`);
-        const vendas = await res.json();
-        
-        // Acha o histórico do cliente pelo WhatsApp
-        const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
+        const res = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(telefoneFormatado)}`);
+        const compras = await res.json();
         
         if (compras.length > 0) {
             // Filtra pedidos cancelados para não dar pontos indevidos (Cobre os dois gêneros de palavras)
