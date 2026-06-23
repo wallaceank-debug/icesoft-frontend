@@ -262,6 +262,20 @@
         </div>
     </div>
 
+    <!-- ==========================================
+         CARD FLUTUANTE DA MENSAGEM
+         ========================================== -->
+    <style>
+        /* Truque Mágico: Se não tiver texto, o card some e não ocupa espaço! */
+        #loja-mensagem-exibicao:empty { display: none !important; }
+    </style>
+    
+    <!-- 👇 Mudamos a margem aqui (de 0 para 20px no topo) para dar o respiro visual -->
+    <div style="max-width: 600px; margin: 20px auto 15px auto; padding: 0 20px; box-sizing: border-box;">
+        <div id="loja-mensagem-exibicao" style="background: white; border-radius: 12px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center; border: 1px solid #f0f0f0; color: var(--cor-primaria, #00bcd4); font-size: 0.9rem; font-weight: 600; line-height: 1.4; transition: transform 0.3s ease;">
+        </div>
+    </div>
+    
     <div class="area-busca-flutuante">
         <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
     </div>

@@ -2441,8 +2441,3 @@ try {
 } catch(e) {
     console.log("⚠️ Falha ao conectar no radar", e);
 }
-
-// Ativa o gatilho assim que o cardápio carregar
-document.addEventListener('DOMContentLoaded', iniciarCronometroHotdog);
-// Backup caso a página já tenha carregado
-if (document.readyState === 'complete') iniciarCronometroHotdog();
