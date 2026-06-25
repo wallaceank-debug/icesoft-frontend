@@ -439,10 +439,17 @@ function abrirModalEscolha(produto) {
                             </div>
                             <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
                         </div>
-                        <div style="display: flex; align-items: center; background: #f4f7f6; border: 1px solid #ddd; border-radius: 8px; padding: 2px;">
-                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
-                            <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">0</span>
-                            <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
+                        <div>
+                            <!-- Botão Inicial [+] super limpo -->
+                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0; transition: 0.2s;">
+                                +
+                            </div>
+                            <!-- Controle de Quantidade [- 1 +] (Fica invisível até o clique) -->
+                            <div id="controle-qtd-${identificador}" style="display: none; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
+                                <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
+                                <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">0</span>
+                                <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
+                            </div>
                         </div>
                     </div>`;
                 }
@@ -534,6 +541,20 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     }
 
     document.getElementById(spanId).innerText = qtdAtual;
+    
+    // 🚀 ALTERAÇÃO VISUAL: Esconde o botão [+] e mostra o [- 1 +] apenas quando selecionado
+    const btnIni = document.getElementById(`btn-add-ini-${spanId}`);
+    const controleQtd = document.getElementById(`controle-qtd-${spanId}`);
+    if (btnIni && controleQtd) {
+        if (qtdAtual > 0) {
+            btnIni.style.display = 'none';
+            controleQtd.style.display = 'flex';
+        } else {
+            btnIni.style.display = 'flex';
+            controleQtd.style.display = 'none';
+        }
+    }
+
     atualizarPrecoDinamico();
 }
 
