@@ -28,7 +28,20 @@ async function carregarTudo() {
             return p;
         });
 
-        listaGrupos = await resGrupos.json();
+        // 📸 O NOVO FILTRO BLINDADO DAS FOTOS DOS ADICIONAIS NA GESTÃO
+        let gruposBrutos = await resGrupos.json();
+        listaGrupos = gruposBrutos.map(g => {
+            if (g.itens) {
+                g.itens = g.itens.map(item => {
+                    if (item.imagem_url && !item.imagem_url.includes('http')) {
+                        const nomeArquivo = item.imagem_url.split('/').pop();
+                        item.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
+                    }
+                    return item;
+                });
+            }
+            return g;
+        });
         listaCategorias = await resCat.json(); 
         
         // 🚀 CORREÇÃO: Mantém o texto das pesquisas ativo ao recarregar a tela após salvar!
@@ -273,22 +286,32 @@ function renderizarGrupos(filtro = '') {
                 const isItemAtivo = item.ativo !== false; 
                 const classeInativoItem = isItemAtivo ? '' : 'item-inativo';
 
-                // MÁGICA 2: Marca de amarelo o item específico que ela pesquisou!
+                // Marca de amarelo se pesquisado
                 const nomeItemParaBusca = item.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const highlight = (termo !== '' && nomeItemParaBusca.includes(termo)) ? 'background: #fff9c4; border: 1px solid #ffeb3b;' : '';
 
+                // A miniatura da foto na Gestão
+                const imgThumb = item.imagem_url 
+                    ? `<img src="${item.imagem_url}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid #ddd; flex-shrink: 0;">`
+                    : `<div style="width: 45px; height: 45px; border-radius: 8px; border: 1px dashed #ccc; background: #fafafa; flex-shrink: 0; display: flex; justify-content: center; align-items: center; color: #ccc; font-size: 0.7rem;">sem foto</div>`;
+
+                // Forçando o layout horizontal limpo
                 itensHtml += `
-                    <div class="adicional-item" style="${highlight}">
-                        <div class="item-info ${classeInativoItem}">
-                            <span class="adicional-nome">${item.nome}</span>
-                            <span class="adicional-preco">+ R$ ${Number(item.preco).toFixed(2)}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; background: white; border-radius: 8px; margin-bottom: 5px; ${highlight}">
+                        <div class="${classeInativoItem}" style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                            ${imgThumb}
+                            <div style="display: flex; flex-direction: column; text-align: left;">
+                                <span style="font-weight: 600; color: #333; font-size: 1rem;">${item.nome}</span>
+                                <span style="color: #25D366; font-size: 0.85rem; font-weight: bold;">${item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                            </div>
                         </div>
-                        <div class="item-acoes">
-                            <label class="switch">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <label class="switch" style="margin: 0;">
                                 <input type="checkbox" onchange="toggleAdicional(${g.id}, ${index}, this.checked)" ${isItemAtivo ? 'checked' : ''}>
                                 <span class="slider"></span>
                             </label>
-                            <button class="btn-icone" onclick="excluirAdicional(${g.id}, ${index})">🗑️</button>
+                            <button style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #00bcd4;" onclick="abrirModalAdicional(${g.id}, ${index})" title="Editar">✏️</button>
+                            <button style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #f44336;" onclick="excluirAdicional(${g.id}, ${index})" title="Excluir">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -347,22 +370,96 @@ async function duplicarGrupo(id) {
     } catch (e) { alert("❌ Erro ao duplicar grupo."); }
 }
 
-function abrirModalAdicional(idGrupo) {
-    const nome = prompt("Nome do Adicional:");
-    if (!nome) return;
-    const preco = prompt("Preço (Digite 0 para grátis):", "0");
-    
+function abrirModalAdicional(idGrupo, indexItem = null) {
+    const modal = document.getElementById('modal-adicional');
+    const titulo = document.getElementById('titulo-modal-adicional');
     const grupo = listaGrupos.find(g => g.id === idGrupo);
-    const novoItem = { nome: nome, preco: parseFloat(preco) || 0, ativo: true };
-    grupo.itens = grupo.itens || [];
-    grupo.itens.push(novoItem);
     
-    // Deixa o grupo aberto para a esposa ver a mudança acontecer imediatamente!
-    if (!gruposAbertos.includes(grupo.id)) gruposAbertos.push(grupo.id);
+    document.getElementById('adic-grupo-id').value = idGrupo;
+    document.getElementById('adic-arquivo-foto').value = '';
 
-    fetch(`${API_URL}/grupos/${grupo.id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(grupo)
-    }).then(() => carregarTudo());
+    if (indexItem !== null) {
+        const item = grupo.itens[indexItem];
+        titulo.innerText = "Editar Adicional";
+        document.getElementById('adic-index').value = indexItem;
+        document.getElementById('adic-nome').value = item.nome;
+        document.getElementById('adic-preco').value = item.preco;
+        document.getElementById('adic-imagem-url').value = item.imagem_url || '';
+    } else {
+        titulo.innerText = "Novo Adicional";
+        document.getElementById('adic-index').value = '';
+        document.getElementById('adic-nome').value = '';
+        document.getElementById('adic-preco').value = '';
+        document.getElementById('adic-imagem-url').value = '';
+    }
+    
+    if (!gruposAbertos.includes(idGrupo)) gruposAbertos.push(idGrupo);
+    modal.style.display = 'flex';
+}
+
+function fecharModalAdicional() {
+    document.getElementById('modal-adicional').style.display = 'none';
+}
+
+async function salvarAdicional() {
+    const idGrupo = Number(document.getElementById('adic-grupo-id').value);
+    const indexItem = document.getElementById('adic-index').value;
+    const nome = document.getElementById('adic-nome').value.trim();
+    const preco = parseFloat(document.getElementById('adic-preco').value.replace(',', '.')) || 0;
+    let imagemUrl = document.getElementById('adic-imagem-url').value;
+
+    if (!nome) return alert("⚠️ Preencha o nome do adicional!");
+
+    const btn = document.getElementById('btn-salvar-adicional');
+    const textoOriginal = btn.innerText;
+    btn.innerText = '⏳ Salvando...';
+    btn.disabled = true;
+
+    // 📸 UPLOAD DA FOTO PARA A NUVEM 
+    const inputArquivo = document.getElementById('adic-arquivo-foto');
+    if (inputArquivo && inputArquivo.files.length > 0) {
+        const formData = new FormData();
+        formData.append('imagem', inputArquivo.files[0]);
+        try {
+            const resUpload = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+            const dadosUpload = await resUpload.json();
+            if (dadosUpload.sucesso) {
+                imagemUrl = dadosUpload.url;
+            } else {
+                alert("⚠️ Erro no upload da foto.");
+                btn.innerText = textoOriginal; btn.disabled = false; return;
+            }
+        } catch (e) {
+            alert("🔌 Erro de conexão ao enviar foto.");
+            btn.innerText = textoOriginal; btn.disabled = false; return;
+        }
+    }
+
+    const grupo = listaGrupos.find(g => g.id === idGrupo);
+    grupo.itens = grupo.itens || [];
+
+    if (indexItem !== '') {
+        // Editando existente
+        grupo.itens[indexItem].nome = nome;
+        grupo.itens[indexItem].preco = preco;
+        grupo.itens[indexItem].imagem_url = imagemUrl;
+    } else {
+        // Criando novo
+        grupo.itens.push({ nome, preco, imagem_url: imagemUrl, ativo: true });
+    }
+
+    try {
+        await fetch(`${API_URL}/grupos/${idGrupo}`, { 
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(grupo) 
+        });
+        fecharModalAdicional();
+        await carregarTudo();
+    } catch (e) {
+        alert("Erro ao salvar adicional.");
+    } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
 }
 
 async function toggleAdicional(idGrupo, indexItem, statusAtivo) {

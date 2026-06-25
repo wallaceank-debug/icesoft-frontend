@@ -531,6 +531,32 @@
             </div>
         </div>
 
+        <!-- MODAL DE ADICIONAIS COM FOTO -->
+        <div id="modal-adicional" class="modal-fundo" style="display:none; z-index: 3500;">
+            <div class="modal-conteudo" style="max-width: 400px; width: 95%;">
+                <h2 id="titulo-modal-adicional" style="color: #00bcd4; margin-top: 0;">Novo Adicional</h2>
+                <input type="hidden" id="adic-grupo-id">
+                <input type="hidden" id="adic-index">
+                
+                <label style="font-weight: bold; color: #555; font-size: 0.85rem;">Nome do Adicional:</label>
+                <input type="text" id="adic-nome" class="input-padrao" placeholder="Ex: Leite em Pó" style="margin-bottom: 10px;">
+                
+                <label style="font-weight: bold; color: #555; font-size: 0.85rem;">Preço (+R$):</label>
+                <input type="number" id="adic-preco" class="input-padrao" placeholder="0.00" step="0.01" style="margin-bottom: 10px;">
+                
+                <div style="margin-top: 5px; margin-bottom: 15px; background: #f0f8ff; padding: 12px; border-radius: 8px; border: 1px dashed #00bcd4;">
+                    <label style="font-size: 0.85rem; color: #00bcd4; font-weight: bold;">📸 Foto (Opcional):</label>
+                    <input type="file" id="adic-arquivo-foto" accept="image/*" style="width: 100%; margin-top: 5px; cursor: pointer; font-family: 'Poppins', sans-serif;">
+                    <input type="hidden" id="adic-imagem-url">
+                </div>
+
+                <div class="modal-botoes">
+                    <button onclick="fecharModalAdicional()" class="btn-cancelar">Cancelar</button>
+                    <button id="btn-salvar-adicional" onclick="salvarAdicional()" class="btn-salvar">Salvar Item</button>
+                </div>
+            </div>
+        </div>
+        
     <script src="app.js"></script>
 </body>
 </html>

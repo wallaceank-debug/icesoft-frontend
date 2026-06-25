@@ -125,7 +125,20 @@ async function carregarTudo() {
             return p;
         }).filter(p => p.ativo !== false);
 
-        gruposGlobais = (await resGrupos.json()).filter(g => g.ativo !== false);
+        // 📸 O NOVO FILTRO BLINDADO DAS FOTOS DOS ADICIONAIS
+        let gruposBrutos = await resGrupos.json();
+        gruposGlobais = gruposBrutos.filter(g => g.ativo !== false).map(g => {
+            if (g.itens) {
+                g.itens = g.itens.map(item => {
+                    if (item.imagem_url && !item.imagem_url.includes('http')) {
+                        const nomeArquivo = item.imagem_url.split('/').pop();
+                        item.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
+                    }
+                    return item;
+                });
+            }
+            return g;
+        });
         bairrosGlobais = await resBairros.json(); 
         
         // 🛡️ O FILTRO MÁGICO DAS CATEGORIAS (Visíveis no App E no horário agendado)
@@ -408,43 +421,59 @@ function abrirModalEscolha(produto) {
                 // 🚀 O INTERCEPTADOR DE TAGS ENTRA EM AÇÃO AQUI
                 let tagHtml = '';
                 let nomeLimpoVisual = nomeCompleto;
-                const matchTag = nomeCompleto.match(/\[(.*?)\]/); // Procura qualquer texto entre [ ]
+                const matchTag = nomeCompleto.match(/\[(.*?)\]/); 
                 
                 if (matchTag) {
                     tagHtml += `<span class="tag-recomendacao">${matchTag[1]}</span>`;
-                    nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); // Remove a tag do nome para ficar limpo
+                    nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); 
                 }
 
-                // 🏆 NOVO: Gatilho da Prova Social (A tag verde pastel)
+                // 🏆 NOVO: Gatilho da Prova Social 
                 if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
                     tagHtml += `<span style="font-size: 0.65rem; background: #c4eed0; color: #0f5223; padding: 3px 8px; border-radius: 12px; font-weight: bold; border: 1px solid #8fcf9e; margin-left: 6px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🔥 Mais Pedido</span>`;
                 }
 
+                // 📸 FOTO DO ADICIONAL COM ZOOM
+                const imgThumb = item.imagem_url
+                    ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid #eee; flex-shrink: 0; cursor: zoom-in; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`
+                    : ``; 
+
+                // INFO (NOME E PREÇO) EMPILHADOS
+                const nomePrecoHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 3px; justify-content: center;">
+                        <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                            <span style="font-weight:600; color:#333; line-height: 1.2;">${nomeLimpoVisual}</span>
+                            ${tagHtml}
+                        </div>
+                        <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                    </div>
+                `;
+
                 if (grupo.limite === 1) {
                     return `
                     <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" id="${identificador}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none;">
-                            <span style="font-weight: 500; color: #333;">${nomeLimpoVisual} ${tagHtml}</span>
+                        <div style="display:flex; align-items:center; gap:12px; flex: 1;">
+                            ${imgThumb}
+                            ${nomePrecoHtml}
                         </div>
-                        <span style="color:#25D366; font-size:0.9rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                        <div style="flex-shrink: 0; padding-left: 10px;">
+                            <!-- Caixinha de seleção movida para a Zona do Polegar (Direita) -->
+                            <input type="checkbox" id="${identificador}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none; flex-shrink: 0; width: 22px; height: 22px; margin: 0;">
+                        </div>
                     </div>`;
                 } else {
                     return `
                     <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            <div style="display: flex; align-items: center;">
-                                <span style="font-weight:600; color:#333;">${nomeLimpoVisual}</span>
-                                ${tagHtml}
-                            </div>
-                            <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                        <div style="display:flex; align-items:center; gap:12px; flex: 1;">
+                            ${imgThumb}
+                            ${nomePrecoHtml}
                         </div>
-                        <div>
+                        <div style="flex-shrink: 0; padding-left: 10px;">
                             <!-- Botão Inicial [+] super limpo -->
                             <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0; transition: 0.2s;">
                                 +
                             </div>
-                            <!-- Controle de Quantidade [- 1 +] (Fica invisível até o clique) -->
+                            <!-- Controle de Quantidade [- 1 +] -->
                             <div id="controle-qtd-${identificador}" style="display: none; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
                                 <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
                                 <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">0</span>
