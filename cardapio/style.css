@@ -321,6 +321,19 @@ main#lista-produtos h2 {
 }
 
 /* =========================================
+   MÁGICA DA PULSAÇÃO DO CARRINHO
+   ========================================= */
+@keyframes pulsoBotaoCarrinho {
+    0% { transform: scale(1); box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3); }
+    50% { transform: scale(1.1); box-shadow: 0 6px 15px rgba(37, 211, 102, 0.6); }
+    100% { transform: scale(1); box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3); }
+}
+
+.botao-pulsando {
+    animation: pulsoBotaoCarrinho 0.4s ease-in-out;
+}
+
+/* =========================================
    ESTILOS DO MODAL DE CHECKOUT
    ========================================= */
 .modal-oculto {

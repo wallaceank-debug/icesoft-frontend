@@ -717,6 +717,14 @@ function atualizarBarraCarrinho() {
     if (carrinho.length > 0) {
         barra.classList.replace('carrinho-oculto', 'carrinho-visivel');
         barra.style.display = 'flex';
+
+        // 🪄 O GATILHO DA PULSAÇÃO SUAVE
+        const btnCarrinho = barra.querySelector('.btn-whatsapp');
+        if (btnCarrinho) {
+            btnCarrinho.classList.remove('botao-pulsando');
+            void btnCarrinho.offsetWidth; // Pequeno truque para forçar o navegador a reiniciar a animação
+            btnCarrinho.classList.add('botao-pulsando');
+        }
         
         let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
         
