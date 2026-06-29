@@ -7,6 +7,7 @@ window.onload = async () => {
     await carregarCategorias(); 
     await carregarBancos(); 
     popularFiltroBancos(); // 👇 Alimenta a nova caixinha de seleção de bancos
+    popularFiltroCategorias(); // 👇 NOVO: Preenche a caixinha de categorias!
     await carregarResumoFinanceiro();
     await carregarLancamentos();
     await carregarAlertasInteligentes(); // 👇 NOVO: Carrega os conselhos do CFO
@@ -20,6 +21,42 @@ function popularFiltroBancos() {
             selectFiltro.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
         });
     }
+}
+
+function popularFiltroCategorias() {
+    const selectFiltroCat = document.getElementById('filtro-categoria');
+    if(!selectFiltroCat) return;
+    
+    selectFiltroCat.innerHTML = '<option value="">Todas as Categorias</option>';
+    
+    // Organiza bonito igual no DRE!
+    const nomesDRE = {
+        'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários',
+        'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais',
+        'despesas_vendas': '5 - Despesas Comerciais', 'investimentos': '6 - Investimentos',
+        'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
+        'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas',
+        'movimentacao_interna': '11 - Movimentações Internas'
+    };
+
+    const agrupadas = {};
+    categoriasFinanceiras.forEach(c => {
+        if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
+        agrupadas[c.dre_ref].push(c);
+    });
+
+    let indexPaiContador = 1;
+    Object.keys(agrupadas).forEach((dre_ref) => {
+        const nomePai = nomesDRE[dre_ref] || dre_ref;
+        let optgroup = `<optgroup label="${nomePai}">`;
+        
+        agrupadas[dre_ref].forEach((cat, indexFilho) => {
+            optgroup += `<option value="${cat.id}">[${indexPaiContador}.${indexFilho + 1}] ${cat.nome}</option>`;
+        });
+        optgroup += `</optgroup>`;
+        selectFiltroCat.innerHTML += optgroup;
+        indexPaiContador++;
+    });
 }
 
 async function carregarCategorias() {
@@ -103,6 +140,7 @@ function filtrarLancamentos(tipo) {
 function limparFiltrosTabela() {
     document.getElementById('filtro-busca').value = '';
     document.getElementById('filtro-banco').value = '';
+    document.getElementById('filtro-categoria').value = ''; // 👇 NOVO
     document.getElementById('filtro-data-inicio').value = '';
     document.getElementById('filtro-data-fim').value = '';
     filtroLancamentosAtual = 'todos';
@@ -115,6 +153,7 @@ async function carregarLancamentos() {
     
     const busca = document.getElementById('filtro-busca')?.value || '';
     const bancoId = document.getElementById('filtro-banco')?.value || '';
+    const categoriaId = document.getElementById('filtro-categoria')?.value || ''; // 👇 NOVO
     const dataInicio = document.getElementById('filtro-data-inicio')?.value || '';
     const dataFim = document.getElementById('filtro-data-fim')?.value || '';
     
@@ -122,7 +161,8 @@ async function carregarLancamentos() {
         // 👇 MÁGICA: Avisa ao servidor exatamente o que o usuário quer ver
         const params = new URLSearchParams({ 
             busca, 
-            banco_id: bancoId, 
+            banco_id: bancoId,
+            categoria_id: categoriaId, // 👇 NOVO 
             data_inicio: dataInicio, 
             data_fim: dataFim,
             filtro_card: filtroLancamentosAtual

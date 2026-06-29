@@ -187,33 +187,49 @@
             <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h2 id="fin-titulo-tabela" style="margin-top: 0; color: #333; margin-bottom: 15px;">Últimos Lançamentos</h2>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Pesquisar (Descrição)</label>
-                        <input type="text" id="filtro-busca" placeholder="Ex: Conta de Luz" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 25px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+                        
+                        <div>
+                            <label style="font-size: 0.85rem; color: #666; font-weight: bold; display: block; margin-bottom: 6px;">Pesquisar (Descrição)</label>
+                            <input type="text" id="filtro-busca" placeholder="Ex: Internet" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; box-sizing: border-box; font-family: inherit;">
+                        </div>
+                        
+                        <div>
+                            <label style="font-size: 0.85rem; color: #666; font-weight: bold; display: block; margin-bottom: 6px;">Plano de Contas</label>
+                            <select id="filtro-categoria" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; box-sizing: border-box; font-family: inherit; background: white;">
+                                <option value="">Todas as Categorias</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="font-size: 0.85rem; color: #666; font-weight: bold; display: block; margin-bottom: 6px;">Banco / Conta</label>
+                            <select id="filtro-banco" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; box-sizing: border-box; font-family: inherit; background: white;">
+                                <option value="">Todos os Bancos</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="font-size: 0.85rem; color: #666; font-weight: bold; display: block; margin-bottom: 6px;">Data Inicial</label>
+                            <input type="date" id="filtro-data-inicio" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; box-sizing: border-box; font-family: inherit;">
+                        </div>
+                        
+                        <div>
+                            <label style="font-size: 0.85rem; color: #666; font-weight: bold; display: block; margin-bottom: 6px;">Data Final</label>
+                            <input type="date" id="filtro-data-fim" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; box-sizing: border-box; font-family: inherit;">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="carregarLancamentos()" class="btn-topo-clean" style="flex: 1; height: 42px; justify-content: center; background: #3f51b5; color: white; border: none; box-shadow: 0 4px 6px rgba(63, 81, 181, 0.2);">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem;">search</span> Filtrar
+                            </button>
+                            <button onclick="limparFiltrosTabela()" class="btn-topo-clean" style="flex: 1; height: 42px; justify-content: center;">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #666;">clear_all</span> Limpar
+                            </button>
+                        </div>
+                        
                     </div>
-                    <div style="flex: 1; min-width: 150px;">
-                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Banco / Conta</label>
-                        <select id="filtro-banco" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
-                            <option value="">Todos os Bancos</option>
-                        </select>
-                    </div>
-                    <div style="width: 130px;">
-                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Data Inicial</label>
-                        <input type="date" id="filtro-data-inicio" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
-                    </div>
-                    <div style="width: 130px;">
-                        <label style="font-size: 0.85rem; color: #666; font-weight: bold;">Data Final</label>
-                        <input type="date" id="filtro-data-fim" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; outline: none;">
-                    </div>
-                    <div style="display: flex; gap: 5px; align-items: flex-end;">
-                        <button onclick="carregarLancamentos()" class="btn-topo-clean" style="height: 38px;">
-                            <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #3f51b5;">search</span> Filtrar
-                        </button>
-                        <button onclick="limparFiltrosTabela()" class="btn-topo-clean" style="height: 38px;">
-                            <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #666;">clear_all</span> Limpar
-                        </button>
-                    </div>
+                </div>
                 </div>
 
                 <div id="fin-lista-lancamentos" style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
