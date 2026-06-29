@@ -12,7 +12,6 @@
         .fin-container { padding: 20px; flex: 1; overflow-y: auto; background-color: #f4f7f6; }
         .fluxo-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
         
-        /* Largura mínima aumentada para suportar 12 meses confortavelmente no ecrã */
         .fluxo-table { width: 100%; border-collapse: collapse; min-width: 1400px; font-size: 0.95rem; }
         .fluxo-table th, .fluxo-table td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #f0f0f0; }
         .fluxo-table th:first-child, .fluxo-table td:first-child { text-align: left; font-weight: 600; color: #555; position: sticky; left: 0; background: white; border-right: 2px solid #eee; z-index: 2;}
@@ -27,74 +26,18 @@
         
         .valor-positivo { color: #4CAF50; font-weight: bold; }
         .valor-negativo { color: #f44336; font-weight: bold; }
+
+        /* 👇 NOVO: Estilos das subcontas (Visão Completa) */
+        .fluxo-detalhes td { background-color: #fafafa; color: #777; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
+        .fluxo-detalhes td:first-child { padding-left: 35px !important; position: sticky; left: 0; background-color: #fafafa; border-right: 2px solid #eee; z-index: 2; font-weight: 500; }
     </style>
 </head>
 <body>
 
     <aside class="menu-lateral">
         <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
-        
-        <a href="../pdv/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                point_of_sale
-                <span class="notification-badge" id="online-notification-badge" style="display: none; background-color: #25D366;">0</span>
-            </span>
-            <span class="menu-texto">Balcão PDV</span>
-        </a>
-        
-        <a href="../mesas/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                table_restaurant
-                <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
-            </span>
-            <span class="menu-texto">Mesas/Comandas</span>
-        </a>
-        
-        <a href="../gestao/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">restaurant_menu</span>
-            <span class="menu-texto">Cardápio</span>
-        </a>
-        
-        <a href="../delivery/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">two_wheeler</span>
-            <span class="menu-texto">Gestão Delivery</span>
-        </a>
-        
-        <a href="../kanban/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">view_kanban</span>
-            <span class="menu-texto">Painel Kanban</span>
-        </a>
-        
-        <a href="../integracoes/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">hub</span>
-            <span class="menu-texto">Integrações</span>
-        </a>
-
-        <a href="../financeiro/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">account_balance</span>
-            <span class="menu-texto">Financeiro</span>
-        </a>
-        
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
-                <span class="menu-icone material-symbols-outlined">bar_chart</span>
-                <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
-            </div>
-
-            <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
-                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
-                <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
-                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
-                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
-                <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
-                <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
-            </div>
-        </div>
-
-        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-            <span class="menu-icone material-symbols-outlined" style="color: #f44336;">logout</span>
-            <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
-        </div>
+        <a href="../pdv/" class="menu-item"><span class="menu-icone material-symbols-outlined">point_of_sale</span></a>
+        <a href="../financeiro/" class="menu-item ativo"><span class="menu-icone material-symbols-outlined">account_balance</span></a>
     </aside>
 
     <div class="conteudo-principal">
@@ -105,7 +48,15 @@
 
         <main class="fin-container">
             <div class="fluxo-card">
-                <h2 style="margin-top: 0; color: #333; margin-bottom: 15px;">Evolução e Previsão Financeira (12 Meses)</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin-top: 0; color: #333; margin-bottom: 0;">Evolução e Previsão Financeira (12 Meses)</h2>
+                    
+                    <!-- 👇 NOVO: Botão de alternância -->
+                    <button id="btn-visao" onclick="toggleVisao()" style="padding: 8px 15px; background: #00bcd4; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,188,212,0.3);">
+                        <span class="material-symbols-outlined" style="font-size:1.1rem;">visibility</span> Visão Completa
+                    </button>
+                </div>
+
                 <div id="tabela-container">
                     <p style="color: #666; font-style: italic;">Carregando panorama de caixa...</p>
                 </div>
@@ -115,6 +66,7 @@
 
     <script>
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        let visaoDetalhada = false;
 
         const formatarMes = (str) => {
             const [y, m] = str.split('-');
@@ -124,14 +76,53 @@
 
         const fMoeda = (val) => `R$ ${val.toFixed(2).replace('.', ',')}`;
 
+        // 👇 MÁGICA: Controla as linhas abertas e fechadas
+        window.toggleVisao = () => {
+            visaoDetalhada = !visaoDetalhada;
+            const btn = document.getElementById('btn-visao');
+            const detalhes = document.querySelectorAll('.fluxo-detalhes');
+            if (visaoDetalhada) {
+                btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1.1rem;">visibility_off</span> Visão Resumida`;
+                btn.style.background = '#607d8b';
+                detalhes.forEach(el => el.style.display = 'table-row');
+            } else {
+                btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1.1rem;">visibility</span> Visão Completa`;
+                btn.style.background = '#00bcd4';
+                detalhes.forEach(el => el.style.display = 'none');
+            }
+        };
+
+        // Extrai todos os nomes de subcontas que existiram nesses 12 meses
+        const getUniqueNames = (dados, bucket) => {
+            const names = new Set();
+            dados.forEach(d => { if(d.detalhes[bucket]) d.detalhes[bucket].forEach(item => names.add(item.nome)); });
+            return Array.from(names).sort();
+        };
+
+        // Renderiza a linha escondida para uma subconta específica percorrendo os 12 meses
+        const renderDetalhesFluxo = (dados, bucket) => {
+            let html = '';
+            const nomes = getUniqueNames(dados, bucket);
+            nomes.forEach(nome => {
+                html += `<tr class="fluxo-detalhes" style="display: none;">`;
+                html += `<td><span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 5px; color: #ccc;">subdirectory_arrow_right</span> ${nome}</td>`;
+                
+                dados.forEach(d => {
+                    const item = d.detalhes[bucket].find(i => i.nome === nome);
+                    const valor = item ? item.total : 0;
+                    html += `<td>${valor > 0 ? fMoeda(valor) : '<span style="color:#ccc;">-</span>'}</td>`;
+                });
+                
+                html += `</tr>`;
+            });
+            return html;
+        };
+
         window.onload = async () => {
             try {
                 const cracha = localStorage.getItem('icesoft_token');
                 const res = await fetch(`${API_URL}/financeiro/fluxo-caixa`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${cracha}`
-                    }
+                    headers: { 'Authorization': `Bearer ${cracha}` }
                 });
 
                 if (res.status === 401 || res.status === 403) {
@@ -145,7 +136,7 @@
 
                 let html = `<table class="fluxo-table">`;
                 
-                // Cabeçalho dos Meses com Etiquetas Inteligentes
+                // --- CABEÇALHO ---
                 html += `<tr><th>Categorias</th>`;
                 dados.forEach(d => {
                     let badge = '';
@@ -160,24 +151,44 @@
                 // --- BLOCO DE RECEITAS ---
                 html += `<tr><td>(+) Vendas (PDV/Delivery)</td>`;
                 dados.forEach(d => html += `<td class="valor-positivo">${fMoeda(d.receita_vendas)}</td>`);
-                html += `</tr><tr><td>(+) Outras Receitas/Aportes</td>`;
+                html += `</tr>`;
+
+                html += `<tr><td>(+) Outras Receitas/Aportes</td>`;
                 dados.forEach(d => html += `<td class="valor-positivo">${fMoeda(d.receitas_manuais)}</td>`);
-                html += `</tr><tr class="linha-grupo"><td>(=) TOTAL DE ENTRADAS</td>`;
+                html += `</tr>`;
+                html += renderDetalhesFluxo(dados, 'receitas_manuais'); // Injeta Subcontas
+                
+                html += `<tr class="linha-grupo"><td>(=) TOTAL DE ENTRADAS</td>`;
                 dados.forEach(d => html += `<td>${fMoeda(d.receita_total)}</td>`);
                 html += `</tr>`;
 
                 // --- BLOCO DE DESPESAS ---
                 html += `<tr><td>(-) C.M.V (Insumos/Embalagens)</td>`;
                 dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.cmv)}</td>`);
-                html += `</tr><tr><td>(-) Despesas Operacionais (Aluguel/Folha)</td>`;
+                html += `</tr>`;
+                html += renderDetalhesFluxo(dados, 'cmv'); // Injeta Subcontas
+
+                html += `<tr><td>(-) Despesas Operacionais (Aluguel/Folha)</td>`;
                 dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.desp_op)}</td>`);
-                html += `</tr><tr><td>(-) Despesas com Vendas (Motoboy/MKT)</td>`;
+                html += `</tr>`;
+                html += renderDetalhesFluxo(dados, 'despesas_operacionais'); // Injeta Subcontas
+
+                html += `<tr><td>(-) Despesas com Vendas (Motoboy/MKT)</td>`;
                 dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.desp_vendas)}</td>`);
-                html += `</tr><tr><td>(-) Impostos e Taxas</td>`;
+                html += `</tr>`;
+                html += renderDetalhesFluxo(dados, 'despesas_vendas'); // Injeta Subcontas
+
+                html += `<tr><td>(-) Impostos e Taxas</td>`;
                 dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.impostos)}</td>`);
-                html += `</tr><tr><td>(-) Despesas Financeiras e Investimentos</td>`;
+                html += `</tr>`;
+                html += renderDetalhesFluxo(dados, 'deducoes'); // Injeta Subcontas
+
+                html += `<tr><td>(-) Despesas Financeiras e Investimentos</td>`;
                 dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.financeiras + d.investimentos)}</td>`);
-                html += `</tr><tr class="linha-grupo despesa"><td>(=) TOTAL DE SAÍDAS</td>`;
+                html += `</tr>`;
+                html += renderDetalhesFluxo(dados, 'financeiras_invest'); // Injeta Subcontas
+
+                html += `<tr class="linha-grupo despesa"><td>(=) TOTAL DE SAÍDAS</td>`;
                 dados.forEach(d => html += `<td>${fMoeda(d.despesa_total)}</td>`);
                 html += `</tr>`;
 
@@ -192,7 +203,7 @@
                 document.getElementById('tabela-container').innerHTML = html;
 
             } catch (e) {
-                document.getElementById('tabela-container').innerHTML = `<p style="color: red;">Erro ao gerar relatório.</p>`;
+                document.getElementById('tabela-container').innerHTML = `<p style="color: red;">Erro ao gerar relatório de Fluxo de Caixa.</p>`;
             }
         };
     </script>

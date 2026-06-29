@@ -113,26 +113,29 @@ async function carregarLancamentos() {
     const container = document.getElementById('fin-lista-lancamentos');
     const tituloTabela = document.getElementById('fin-titulo-tabela');
     
-    // 👇 Captura o que o usuário digitou/selecionou na barra
     const busca = document.getElementById('filtro-busca')?.value || '';
     const bancoId = document.getElementById('filtro-banco')?.value || '';
     const dataInicio = document.getElementById('filtro-data-inicio')?.value || '';
     const dataFim = document.getElementById('filtro-data-fim')?.value || '';
     
     try {
-        // 👇 Monta a URL com os filtros dinâmicos para o backend
-        const params = new URLSearchParams({ busca, banco_id: bancoId, data_inicio: dataInicio, data_fim: dataFim });
-        const res = await fetch(`${API_URL}/financeiro/lancamentos?${params}`);
+        // 👇 MÁGICA: Avisa ao servidor exatamente o que o usuário quer ver
+        const params = new URLSearchParams({ 
+            busca, 
+            banco_id: bancoId, 
+            data_inicio: dataInicio, 
+            data_fim: dataFim,
+            filtro_card: filtroLancamentosAtual
+        });
         
+        const res = await fetch(`${API_URL}/financeiro/lancamentos?${params}`);
         let lista = await res.json();
         
-        // 🧠 O filtro dos "Cards Superiores" (Pendente/Pago) atua junto com os filtros acima!
+        // Formatação visual dos Títulos
         if (filtroLancamentosAtual === 'receber') {
-            lista = lista.filter(item => item.tipo === 'Receita' && item.status === 'Pendente');
             tituloTabela.innerHTML = '🔍 Filtrando: Contas a Receber (Pendentes)';
             tituloTabela.style.color = '#4CAF50';
         } else if (filtroLancamentosAtual === 'pagar') {
-            lista = lista.filter(item => item.tipo === 'Despesa' && item.status === 'Pendente');
             tituloTabela.innerHTML = '🔍 Filtrando: Contas a Pagar (Pendentes)';
             tituloTabela.style.color = '#f44336';
         } else {
@@ -166,11 +169,12 @@ async function carregarLancamentos() {
                 dataFormatada = d.toLocaleDateString('pt-BR');
             }
             
+            let iconeRepeticao = item.recorrente ? `<span class="material-symbols-outlined" style="font-size: 1rem; color: #9c27b0; vertical-align: middle; margin-left: 5px;" title="Conta de Repetição">repeat</span>` : '';
             const itemString = encodeURIComponent(JSON.stringify(item));
 
             html += `<tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px;">${dataFormatada}</td>
-                        <td style="padding: 10px; font-weight: 500;">${item.descricao}</td>
+                        <td style="padding: 10px; font-weight: 500;">${item.descricao} ${iconeRepeticao}</td>
                         <td style="padding: 10px;">${item.tipo}</td>
                         <td style="padding: 10px;">
                             <span style="background: ${corStatus}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem;">
@@ -182,7 +186,7 @@ async function carregarLancamentos() {
                         </td>
                         <td style="padding: 10px; text-align: center;">
                             <button onclick="prepararEdicaoLancamento('${itemString}')" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Editar Lançamento">✏️</button>
-                            <button onclick="deletarLancamento(${item.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Excluir Lançamento">🗑️</button>
+                            <button onclick="deletarLancamento(${item.id}, ${item.recorrente})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Excluir Lançamento">🗑️</button>
                         </td>
                      </tr>`;
         });
@@ -195,13 +199,21 @@ async function carregarLancamentos() {
     }
 }
 
-async function deletarLancamento(id) {
-    if (!confirm("⚠️ Tem certeza que deseja excluir este lançamento? Essa ação não tem volta.")) return;
+async function deletarLancamento(id, isRecorrente) {
+    if (!confirm("⚠️ Tem certeza que deseja excluir este lançamento?")) return;
+    
+    // 👇 A PERGUNTA INTELIGENTE DO SISTEMA (Para exclusão)
+    let deletarFuturos = false;
+    if (isRecorrente) {
+        deletarFuturos = confirm("🔄 ATENÇÃO: Esta é uma conta fixa/parcelada.\n\nDeseja excluir também TODOS os lançamentos FUTUROS dessa mesma conta?");
+    }
+
     try {
-        const res = await fetch(`${API_URL}/financeiro/lancamentos/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_URL}/financeiro/lancamentos/${id}?futuros=${deletarFuturos}`, { method: 'DELETE' });
         if (res.ok) {
             await carregarResumoFinanceiro();
             await carregarLancamentos();
+            await carregarAlertasInteligentes();
         } else alert("❌ Erro ao tentar excluir no banco de dados.");
     } catch (e) { alert("❌ Falha de conexão com o servidor."); }
 }
@@ -278,18 +290,19 @@ function abrirModalLancamento(tipo) {
     document.getElementById('modal-lancamento').style.display = 'flex';
 }
 
-// 👇 NOVA FUNÇÃO MÁGICA: Preenche os dados para você editar!
+let lancamentoSendoEditado = null; // 🧠 Memória global para edição
+
 function prepararEdicaoLancamento(itemStringCodificado) {
     const item = JSON.parse(decodeURIComponent(itemStringCodificado));
     
+    lancamentoSendoEditado = item; // Guarda na memória se ele é de repetição
     tipoLancamentoAtual = item.tipo;
     document.getElementById('modal-titulo').innerText = `Editar ${item.tipo}`;
-    document.getElementById('edit-lan-id').value = item.id; // Grava o ID
+    document.getElementById('edit-lan-id').value = item.id;
     
     document.getElementById('lan-descricao').value = item.descricao;
     document.getElementById('lan-valor').value = parseFloat(item.valor).toFixed(2);
     
-    // Formata a data para a caixinha do HTML
     if (item.data_vencimento) {
         const d = new Date(item.data_vencimento);
         d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
@@ -298,7 +311,6 @@ function prepararEdicaoLancamento(itemStringCodificado) {
     
     document.getElementById('lan-status').value = item.status;
 
-    // 🧠 MÁGICA YAMPA: Popula Categorias Separadas por Pai e Filho
     const selectCat = document.getElementById('lan-categoria');
     selectCat.innerHTML = '<option value="">Selecione a Subconta</option>';
     
@@ -336,7 +348,6 @@ function prepararEdicaoLancamento(itemStringCodificado) {
         indexPaiContador++;
     });
 
-    // Popula Bancos já selecionando o correto
     const selectConta = document.getElementById('lan-conta');
     selectConta.innerHTML = '<option value="">Selecione o Banco</option>';
     contasBancariasGlobais.forEach(b => {
@@ -345,9 +356,8 @@ function prepararEdicaoLancamento(itemStringCodificado) {
 
     const btnSalvar = document.getElementById('btn-salvar-lan');
     btnSalvar.innerText = "Atualizar";
-    btnSalvar.style.backgroundColor = '#FF9800'; // Fica Laranja para alertar edição
+    btnSalvar.style.backgroundColor = '#FF9800'; 
     
-    // 👇 ESCONDE a repetição porque você só edita uma parcela por vez, não a série toda
     const areaRec = document.getElementById('area-recorrencia');
     if (areaRec) areaRec.style.display = 'none';
     
@@ -371,22 +381,26 @@ async function salvarLancamento() {
     const status = document.getElementById('lan-status').value;
     const categoria_id = document.getElementById('lan-categoria').value;
     const conta_id = document.getElementById('lan-conta').value;
-    // 👇 Captura as opções de recorrência
     const recorrencia_tipo = document.getElementById('lan-recorrencia').value;
     const qtd_meses = document.getElementById('lan-qtd-meses').value;
 
     if (!descricao || isNaN(valor) || valor <= 0 || !data_vencimento) return alert("⚠️ Por favor, preencha a descrição, valor e vencimento.");
     if (!categoria_id || !conta_id) return alert("⚠️ Selecione a Categoria (DRE) e a Conta Bancária.");
 
+    // 👇 A PERGUNTA INTELIGENTE DO SISTEMA (Para edição)
+    let aplicar_futuros = false;
+    if (idEdit && lancamentoSendoEditado && lancamentoSendoEditado.recorrente) {
+        aplicar_futuros = confirm("🔄 ATENÇÃO: Esta é uma conta fixa/parcelada.\n\nDeseja aplicar o novo Valor e Categoria também para as parcelas FUTURAS?");
+    }
+
     const btnSalvar = document.getElementById('btn-salvar-lan');
     btnSalvar.innerText = "Salvando...";
     btnSalvar.disabled = true;
 
     try {
-        const payload = { descricao, valor, data_vencimento, status, tipo: tipoLancamentoAtual, categoria_id, conta_id, recorrencia_tipo, qtd_meses };
+        const payload = { descricao, valor, data_vencimento, status, tipo: tipoLancamentoAtual, categoria_id, conta_id, recorrencia_tipo, qtd_meses, aplicar_futuros };
         let res;
 
-        // Se tem ID na memória, ele Atualiza (PUT). Senão, ele Cria (POST).
         if (idEdit) {
             res = await fetch(`${API_URL}/financeiro/lancamentos/${idEdit}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -401,6 +415,7 @@ async function salvarLancamento() {
             fecharModalLancamento();
             await carregarResumoFinanceiro();
             await carregarLancamentos();
+            await carregarAlertasInteligentes();
         } else {
             alert("❌ Erro ao salvar lançamento.");
         }
