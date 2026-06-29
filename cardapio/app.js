@@ -294,6 +294,16 @@ function renderizarCardapio(lista) {
                 tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
             }
 
+            // 📦 NOVO: TAG DE ESTOQUE DINÂMICA
+            if (p.controlar_estoque && p.mostrar_estoque) {
+                const qtdEstoque = Number(p.estoque) || 0;
+                let corFundo = qtdEstoque > 5 ? '#e8f5e9' : '#fff3e0'; // Verde ou Laranja
+                let corTexto = qtdEstoque > 5 ? '#2e7d32' : '#e65100'; 
+                if (qtdEstoque <= 2) { corFundo = '#ffebee'; corTexto = '#c62828'; } // Vermelho Alerta
+                
+                tagHtml += `<div style="position: absolute; bottom: -10px; right: -5px; background: ${corFundo}; color: ${corTexto}; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid ${corTexto}50; z-index: 15;">📦 Restam ${qtdEstoque}</div>`;
+            }
+
             // 💰 MATEMÁTICA DA PROMOÇÃO (Preço Riscado)
             let precoHtml = `<div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
             
@@ -588,7 +598,18 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
 }
 
 function alterarQuantidadeModal(delta) {
-    quantidadeModal += delta;
+    let novaQuantidade = quantidadeModal + delta;
+    
+    // 🛑 NOVA TRAVA DE ESTOQUE: Impede que o cliente escolha mais do que tem na loja
+    if (produtoEmSelecao.controlar_estoque && delta > 0) {
+        const estoqueReal = Number(produtoEmSelecao.estoque) || 0;
+        if (novaQuantidade > estoqueReal) {
+            alert(`Desculpe! Temos apenas ${estoqueReal} unidade(s) deste produto no momento.`);
+            return; // Corta a função, o botão de [+] não faz nada!
+        }
+    }
+
+    quantidadeModal = novaQuantidade;
     if (quantidadeModal < 1) quantidadeModal = 1; 
     
     const display = document.getElementById('quantidade-modal-display');

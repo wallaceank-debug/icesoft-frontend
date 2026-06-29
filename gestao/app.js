@@ -550,7 +550,9 @@ function abrirModalProduto(id = null) {
         
         checarSeguro('prod-venda-peso', p.venda_por_peso === true);
         checarSeguro('produto-promo-pdv', p.promo_pdv === true);
-        
+        checarSeguro('prod-controlar-estoque', p.controlar_estoque === true); // NOVO
+        checarSeguro('prod-mostrar-estoque', p.mostrar_estoque === true); // NOVO
+
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
 
         // Promoções
@@ -588,6 +590,8 @@ function abrirModalProduto(id = null) {
         
         checarSeguro('prod-venda-peso', false);
         checarSeguro('produto-promo-pdv', false);
+        checarSeguro('prod-controlar-estoque', false); // NOVO
+        checarSeguro('prod-mostrar-estoque', false); // NOVO
 
         const radioNenhuma = document.querySelector('input[name="tipo_promocao"][value="nenhuma"]');
         if(radioNenhuma) radioNenhuma.checked = true;
@@ -750,6 +754,8 @@ async function salvarProduto() {
         categoria: lerSeguro('prod-categoria', 'Outros'),
         imagem_url: imagemFinalUrl, // <-- AGORA ELE USA O LINK CERTO (Nuvem ou Antigo)
         venda_por_peso: lerCheckSeguro('prod-venda-peso'),
+        controlar_estoque: lerCheckSeguro('prod-controlar-estoque'), // NOVO
+        mostrar_estoque: lerCheckSeguro('prod-mostrar-estoque'), // NOVO
         tag: lerSeguro('produto-tag'),
         tipo_promocao: tipoPromocao,
         valor_promocao: parseFloat(lerSeguro('prod-valor-promocao')) || 0,
