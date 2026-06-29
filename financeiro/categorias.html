@@ -60,9 +60,10 @@
 
     <div id="modal-subconta" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="margin-top:0; color:#003366; margin-bottom: 5px;">Nova Subconta</h3>
+            <h3 id="modal-titulo" style="margin-top:0; color:#003366; margin-bottom: 5px;">Nova Subconta</h3>
             <p id="modal-desc-pai" style="color:#666; font-size:0.85rem; margin-bottom: 15px;">Adicionando em: Custos Variáveis</p>
             
+            <input type="hidden" id="edit-sub-id" value="">
             <input type="hidden" id="nova-sub-dre">
             <input type="hidden" id="nova-sub-tipo">
 
@@ -71,7 +72,7 @@
 
             <div style="display: flex; gap: 10px;">
                 <button onclick="fecharModal()" style="flex: 1; padding: 12px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #333;">Cancelar</button>
-                <button onclick="salvarSubconta()" style="flex: 2; padding: 12px; background: #003366; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
+                <button id="btn-salvar-sub" onclick="salvarSubconta()" style="flex: 2; padding: 12px; background: #003366; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Salvar</button>
             </div>
         </div>
     </div>
@@ -120,6 +121,9 @@
                 } else {
                     subcategorias.forEach((sub, indexFilho) => {
                         const numeroVisual = `${indexPaiContador}.${indexFilho + 1}`;
+                        // Ajustando aspas para evitar quebra no HTML
+                        const nomeParaJS = sub.nome.replace(/'/g, "\\'"); 
+                        
                         htmlSubcontas += `
                             <div class="subconta-item" draggable="true" 
                                  ondragstart="iniciarArrasto(event, ${sub.id})" 
@@ -128,7 +132,11 @@
                                 <span class="material-symbols-outlined" style="color: #ccc; cursor: grab;">drag_indicator</span>
                                 <div class="badge-num">${numeroVisual}</div>
                                 <div class="subconta-nome">${sub.nome}</div>
-                                <button onclick="deletarSubconta(${sub.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; margin-left:auto;" title="Apagar Conta">🗑️</button>
+                                
+                                <div style="margin-left: auto; display: flex; gap: 10px;">
+                                    <button onclick="prepararEdicaoSubconta(${sub.id}, '${nomeParaJS}')" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Editar Conta">✏️</button>
+                                    <button onclick="deletarSubconta(${sub.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Apagar Conta">🗑️</button>
+                                </div>
                             </div>
                         `;
                     });
@@ -157,7 +165,7 @@
             });
         }
 
-        // --- MÁGICA DRAG AND DROP (Apenas dentro do mesmo grupo) ---
+        // --- MÁGICA DRAG AND DROP ---
         let idArrastado = null;
         function iniciarArrasto(e, id) { idArrastado = id; }
         function permitirSoltar(e) { e.preventDefault(); }
@@ -169,7 +177,6 @@
             const idxDrag = categoriasLocais.findIndex(c => c.id === idArrastado);
             const idxDrop = categoriasLocais.findIndex(c => c.id === idAlvo);
 
-            // Proteção: Só deixa reordenar dentro da mesma categoria pai!
             if (categoriasLocais[idxDrag].dre_ref !== categoriasLocais[idxDrop].dre_ref) {
                 return alert("⚠️ Você só pode reordenar subcontas dentro da mesma pasta pai.");
             }
@@ -178,7 +185,6 @@
             const novoAlvoIdx = categoriasLocais.findIndex(c => c.id === idAlvo);
             categoriasLocais.splice(novoAlvoIdx, 0, itemMovido);
 
-            // Reajusta a ordem global no array
             categoriasLocais.forEach((c, i) => c.ordem = i + 1);
             
             renderizarInterface();
@@ -194,19 +200,40 @@
             } catch (e) { console.error("Erro ao salvar ordem."); }
         }
 
-        // --- CONTROLE DO MODAL ---
+        // --- CONTROLE DO MODAL DE CRIAÇÃO ---
         function abrirModal(dre_ref, nomePai, tipo) {
+            document.getElementById('edit-sub-id').value = ''; // Limpa se tinha edição na memória
+            document.getElementById('modal-titulo').innerText = 'Nova Subconta';
+            document.getElementById('btn-salvar-sub').innerText = 'Salvar';
+            
             document.getElementById('nova-sub-dre').value = dre_ref;
             document.getElementById('nova-sub-tipo').value = tipo;
             document.getElementById('modal-desc-pai').innerText = `Adicionando em: ${nomePai}`;
+            document.getElementById('modal-desc-pai').style.display = 'block';
+            
             document.getElementById('nova-sub-nome').value = '';
+            document.getElementById('modal-subconta').style.display = 'flex';
+            document.getElementById('nova-sub-nome').focus();
+        }
+
+        // 👇 NOVO: FUNÇÃO PARA EDITAR A SUBCONTA
+        function prepararEdicaoSubconta(id, nomeAtual) {
+            document.getElementById('edit-sub-id').value = id;
+            document.getElementById('nova-sub-nome').value = nomeAtual;
+            
+            document.getElementById('modal-titulo').innerText = 'Editar Subconta';
+            document.getElementById('modal-desc-pai').style.display = 'none'; // Esconde a mensagem "Adicionando em"
+            document.getElementById('btn-salvar-sub').innerText = 'Atualizar';
+            
             document.getElementById('modal-subconta').style.display = 'flex';
             document.getElementById('nova-sub-nome').focus();
         }
 
         function fecharModal() { document.getElementById('modal-subconta').style.display = 'none'; }
 
+        // 👇 ATUALIZADO: Salva Criação OU Salva Edição dependendo de ter um ID
         async function salvarSubconta() {
+            const idEdit = document.getElementById('edit-sub-id').value;
             const nome = document.getElementById('nova-sub-nome').value.trim();
             const dre_ref = document.getElementById('nova-sub-dre').value;
             const tipo = document.getElementById('nova-sub-tipo').value;
@@ -214,15 +241,27 @@
             if (!nome) return alert("⚠️ Digite o nome da subconta!");
 
             try {
-                const res = await fetch(`${API_URL}/financeiro/categorias`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, tipo, dre_ref })
-                });
+                let res;
+                if (idEdit) {
+                    // MODO EDIÇÃO (PUT)
+                    res = await fetch(`${API_URL}/financeiro/categorias/${idEdit}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nome })
+                    });
+                } else {
+                    // MODO CRIAÇÃO (POST)
+                    res = await fetch(`${API_URL}/financeiro/categorias`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nome, tipo, dre_ref })
+                    });
+                }
 
                 if (res.ok) {
                     fecharModal();
-                    await buscarCategorias();
-                } else alert("❌ Erro ao criar subconta.");
+                    await buscarCategorias(); // Recarrega a tela com os dados atualizados
+                } else {
+                    alert("❌ Erro ao salvar subconta.");
+                }
             } catch (e) { alert("❌ Falha de rede."); }
         }
 
