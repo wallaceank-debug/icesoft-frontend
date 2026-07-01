@@ -81,19 +81,20 @@
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
         let categoriasLocais = [];
 
-        // A ESTRUTURA PAI PROFISSIONAL
+        // A ESTRUTURA PAI PROFISSIONAL (PADRÃO CFO)
         const GRUPOS_PAI = [
-            { dre: 'receita_bruta', nome: 'Receitas Operacionais', tipo: 'Receita', icon: 'payments' },
-            { dre: 'deducoes', nome: 'Custos Tributários e Deduções', tipo: 'Despesa', icon: 'receipt_long' },
-            { dre: 'cmv', nome: 'Custos com Produtos (CMV)', tipo: 'Despesa', icon: 'inventory_2' },
+            { dre: 'receita_bruta', nome: 'Receitas Operacionais Brutas', tipo: 'Receita', icon: 'payments' },
+            { dre: 'deducoes', nome: 'Deduções da Receita Bruta', tipo: 'Despesa', icon: 'receipt_long' },
+            { dre: 'cmv', nome: 'Custos Variáveis (CMV)', tipo: 'Despesa', icon: 'inventory_2' },
             { dre: 'despesas_operacionais', nome: 'Despesas Operacionais Fixas', tipo: 'Despesa', icon: 'domain' },
             { dre: 'despesas_vendas', nome: 'Despesas Comerciais e Logística', tipo: 'Despesa', icon: 'local_shipping' },
-            { dre: 'investimentos', nome: 'Investimentos em Ativos', tipo: 'Despesa', icon: 'trending_up' },
             { dre: 'despesas_financeiras', nome: 'Despesas Financeiras', tipo: 'Despesa', icon: 'account_balance_wallet' },
-            { dre: 'distribuicao_lucros', nome: 'Distribuição de Lucros', tipo: 'Despesa', icon: 'redeem' },
+            { dre: 'investimentos', nome: 'Investimentos em Ativos (CAPEX)', tipo: 'Despesa', icon: 'trending_up' },
+            { dre: 'outras_receitas', nome: 'Entradas Não Operacionais', tipo: 'Receita', icon: 'savings' },
             { dre: 'nao_operacional', nome: 'Saídas Não Operacionais', tipo: 'Despesa', icon: 'money_off' },
-            { dre: 'aporte_capital', nome: 'Outras Receitas e Aportes', tipo: 'Receita', icon: 'savings' },
-            { dre: 'movimentacao_interna', nome: 'Movimentações Internas (Fechamentos)', tipo: 'Receita', icon: 'sync_alt' }
+            { dre: 'aporte_capital', nome: 'Financiamentos e Sócios (Entradas)', tipo: 'Receita', icon: 'account_balance' },
+            { dre: 'distribuicao_lucros', nome: 'Financiamentos e Sócios (Saídas)', tipo: 'Despesa', icon: 'redeem' },
+            { dre: 'movimentacao_interna', nome: 'Movimentações Internas', tipo: 'Receita', icon: 'sync_alt' }
         ];
 
         window.onload = async () => { await buscarCategorias(); };

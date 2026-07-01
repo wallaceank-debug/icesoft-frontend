@@ -31,12 +31,18 @@ function popularFiltroCategorias() {
     
     // Organiza bonito igual no DRE!
     const nomesDRE = {
-        'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários',
-        'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais',
-        'despesas_vendas': '5 - Despesas Comerciais', 'investimentos': '6 - Investimentos',
-        'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
-        'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas',
-        'movimentacao_interna': '11 - Movimentações Internas'
+        'receita_bruta': '1 - Receitas Operacionais Brutas', 
+        'deducoes': '2 - Deduções da Receita Bruta',
+        'cmv': '3 - Custos Variáveis (CMV)', 
+        'despesas_operacionais': '4 - Despesas Operacionais Fixas',
+        'despesas_vendas': '5 - Despesas Comerciais e Logística', 
+        'despesas_financeiras': '6 - Despesas Financeiras',
+        'investimentos': '7 - Investimentos em Ativos (CAPEX)', 
+        'outras_receitas': '8.A - Entradas Não Operacionais',
+        'nao_operacional': '8.B - Saídas Não Operacionais', 
+        'aporte_capital': '9.A - Sócios e Financiamentos (Entradas)',
+        'distribuicao_lucros': '9.B - Sócios e Financiamentos (Saídas)', 
+        'movimentacao_interna': '10 - Movimentações Internas'
     };
 
     const agrupadas = {};
@@ -284,12 +290,18 @@ function abrirModalLancamento(tipo) {
     selectCat.innerHTML = '<option value="">Selecione a Subconta</option>';
     
     const nomesDRE = {
-        'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários (Deduções)',
-        'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais Fixas',
-        'despesas_vendas': '5 - Despesas Comerciais e Logística', 'investimentos': '6 - Investimentos',
-        'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
-        'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas / Aportes',
-        'movimentacao_interna': '11 - Movimentações Internas'
+        'receita_bruta': '1 - Receitas Operacionais Brutas', 
+        'deducoes': '2 - Deduções da Receita Bruta',
+        'cmv': '3 - Custos Variáveis (CMV)', 
+        'despesas_operacionais': '4 - Despesas Operacionais Fixas',
+        'despesas_vendas': '5 - Despesas Comerciais e Logística', 
+        'despesas_financeiras': '6 - Despesas Financeiras',
+        'investimentos': '7 - Investimentos em Ativos (CAPEX)', 
+        'outras_receitas': '8.A - Entradas Não Operacionais',
+        'nao_operacional': '8.B - Saídas Não Operacionais', 
+        'aporte_capital': '9.A - Sócios e Financiamentos (Entradas)',
+        'distribuicao_lucros': '9.B - Sócios e Financiamentos (Saídas)', 
+        'movimentacao_interna': '10 - Movimentações Internas'
     };
 
     const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
@@ -355,12 +367,18 @@ function prepararEdicaoLancamento(itemStringCodificado) {
     selectCat.innerHTML = '<option value="">Selecione a Subconta</option>';
     
     const nomesDRE = {
-        'receita_bruta': '1 - Receitas Operacionais', 'deducoes': '2 - Custos Tributários (Deduções)',
-        'cmv': '3 - Custos Variáveis (CMV)', 'despesas_operacionais': '4 - Despesas Operacionais Fixas',
-        'despesas_vendas': '5 - Despesas Comerciais e Logística', 'investimentos': '6 - Investimentos',
-        'despesas_financeiras': '7 - Despesas Financeiras', 'distribuicao_lucros': '8 - Distribuição de Lucros',
-        'nao_operacional': '9 - Saídas Não Operacionais', 'aporte_capital': '10 - Outras Receitas / Aportes',
-        'movimentacao_interna': '11 - Movimentações Internas'
+        'receita_bruta': '1 - Receitas Operacionais Brutas', 
+        'deducoes': '2 - Deduções da Receita Bruta',
+        'cmv': '3 - Custos Variáveis (CMV)', 
+        'despesas_operacionais': '4 - Despesas Operacionais Fixas',
+        'despesas_vendas': '5 - Despesas Comerciais e Logística', 
+        'despesas_financeiras': '6 - Despesas Financeiras',
+        'investimentos': '7 - Investimentos em Ativos (CAPEX)', 
+        'outras_receitas': '8.A - Entradas Não Operacionais',
+        'nao_operacional': '8.B - Saídas Não Operacionais', 
+        'aporte_capital': '9.A - Sócios e Financiamentos (Entradas)',
+        'distribuicao_lucros': '9.B - Sócios e Financiamentos (Saídas)', 
+        'movimentacao_interna': '10 - Movimentações Internas'
     };
 
     const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
