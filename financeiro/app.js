@@ -28,39 +28,35 @@ function popularFiltroCategorias() {
     if(!selectFiltroCat) return;
     
     selectFiltroCat.innerHTML = '<option value="">Todas as Categorias</option>';
+    const catFiltradas = categoriasFinanceiras.filter(c => c.ativa !== false);
     
-    // Organiza bonito igual no DRE!
-    const nomesDRE = {
-        'receita_bruta': '1 - Receitas Operacionais Brutas', 
-        'deducoes': '2 - Deduções da Receita Bruta',
-        'cmv': '3 - Custos Variáveis (CMV)', 
-        'despesas_operacionais': '4 - Despesas Operacionais Fixas',
-        'despesas_vendas': '5 - Despesas Comerciais e Logística', 
-        'despesas_financeiras': '6 - Despesas Financeiras',
-        'investimentos': '7 - Investimentos em Ativos (CAPEX)', 
-        'outras_receitas': '8.A - Entradas Não Operacionais',
-        'nao_operacional': '8.B - Saídas Não Operacionais', 
-        'aporte_capital': '9.A - Sócios e Financiamentos (Entradas)',
-        'distribuicao_lucros': '9.B - Sócios e Financiamentos (Saídas)', 
-        'movimentacao_interna': '10 - Movimentações Internas'
-    };
-
-    const agrupadas = {};
-    categoriasFinanceiras.filter(c => c.ativa !== false).forEach(c => {
-        if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
-        agrupadas[c.dre_ref].push(c);
-    });
+    // A ESTRUTURA PAI OFICIAL (Garante a sincronia de números com a tela de Categorias)
+    const GRUPOS_PAI = [
+        { dre: 'receita_bruta', nome: '1 - Receitas Operacionais Brutas' },
+        { dre: 'deducoes', nome: '2 - Deduções da Receita Bruta' },
+        { dre: 'cmv', nome: '3 - Custos Variáveis (CMV)' },
+        { dre: 'despesas_operacionais', nome: '4 - Despesas Operacionais Fixas' },
+        { dre: 'despesas_vendas', nome: '5 - Despesas Comerciais e Logística' },
+        { dre: 'despesas_financeiras', nome: '6 - Despesas Financeiras' },
+        { dre: 'investimentos', nome: '7 - Investimentos em Ativos (CAPEX)' },
+        { dre: 'outras_receitas', nome: '8 - Entradas Não Operacionais' },
+        { dre: 'nao_operacional', nome: '9 - Saídas Não Operacionais' },
+        { dre: 'aporte_capital', nome: '10 - Financiamentos e Sócios (Entradas)' },
+        { dre: 'distribuicao_lucros', nome: '11 - Financiamentos e Sócios (Saídas)' },
+        { dre: 'movimentacao_interna', nome: '12 - Movimentações Internas' }
+    ];
 
     let indexPaiContador = 1;
-    Object.keys(agrupadas).forEach((dre_ref) => {
-        const nomePai = nomesDRE[dre_ref] || dre_ref;
-        let optgroup = `<optgroup label="${nomePai}">`;
-        
-        agrupadas[dre_ref].forEach((cat, indexFilho) => {
-            optgroup += `<option value="${cat.id}">[${indexPaiContador}.${indexFilho + 1}] ${cat.nome}</option>`;
-        });
-        optgroup += `</optgroup>`;
-        selectFiltroCat.innerHTML += optgroup;
+    GRUPOS_PAI.forEach((grupo) => {
+        const subcategorias = catFiltradas.filter(c => c.dre_ref === grupo.dre).sort((a,b) => a.ordem - b.ordem);
+        if (subcategorias.length > 0) {
+            let optgroup = `<optgroup label="${grupo.nome}">`;
+            subcategorias.forEach((cat, indexFilho) => {
+                optgroup += `<option value="${cat.id}">[${indexPaiContador}.${indexFilho + 1}] ${cat.nome}</option>`;
+            });
+            optgroup += `</optgroup>`;
+            selectFiltroCat.innerHTML += optgroup;
+        }
         indexPaiContador++;
     });
 }
@@ -307,25 +303,32 @@ function abrirModalLancamento(tipo) {
     const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
     const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro && c.ativa !== false);
     
-    const agrupadas = {};
-    catFiltradas.forEach(c => {
-        if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
-        agrupadas[c.dre_ref].push(c);
-    });
+    const GRUPOS_PAI = [
+        { dre: 'receita_bruta', nome: '1 - Receitas Operacionais Brutas' },
+        { dre: 'deducoes', nome: '2 - Deduções da Receita Bruta' },
+        { dre: 'cmv', nome: '3 - Custos Variáveis (CMV)' },
+        { dre: 'despesas_operacionais', nome: '4 - Despesas Operacionais Fixas' },
+        { dre: 'despesas_vendas', nome: '5 - Despesas Comerciais e Logística' },
+        { dre: 'despesas_financeiras', nome: '6 - Despesas Financeiras' },
+        { dre: 'investimentos', nome: '7 - Investimentos em Ativos (CAPEX)' },
+        { dre: 'outras_receitas', nome: '8 - Entradas Não Operacionais' },
+        { dre: 'nao_operacional', nome: '9 - Saídas Não Operacionais' },
+        { dre: 'aporte_capital', nome: '10 - Financiamentos e Sócios (Entradas)' },
+        { dre: 'distribuicao_lucros', nome: '11 - Financiamentos e Sócios (Saídas)' },
+        { dre: 'movimentacao_interna', nome: '12 - Movimentações Internas' }
+    ];
 
     let indexPaiContador = 1;
-    Object.keys(agrupadas).forEach((dre_ref) => {
-        const nomePai = nomesDRE[dre_ref] || dre_ref;
-        let optgroup = `<optgroup label="${nomePai}">`;
-        
-        agrupadas[dre_ref].forEach((cat, indexFilho) => {
-            const numeroBadge = `${indexPaiContador}.${indexFilho + 1}`;
-            const isSelected = (typeof item !== 'undefined' && cat.id === item.categoria_id) ? 'selected' : '';
-            optgroup += `<option value="${cat.id}" ${isSelected}>[${numeroBadge}] ${cat.nome}</option>`;
-        });
-        
-        optgroup += `</optgroup>`;
-        selectCat.innerHTML += optgroup;
+    GRUPOS_PAI.forEach((grupo) => {
+        const subcategorias = catFiltradas.filter(c => c.dre_ref === grupo.dre).sort((a,b) => a.ordem - b.ordem);
+        if (subcategorias.length > 0) {
+            let optgroup = `<optgroup label="${grupo.nome}">`;
+            subcategorias.forEach((cat, indexFilho) => {
+                optgroup += `<option value="${cat.id}">[${indexPaiContador}.${indexFilho + 1}] ${cat.nome}</option>`;
+            });
+            optgroup += `</optgroup>`;
+            selectCat.innerHTML += optgroup;
+        }
         indexPaiContador++;
     });
 
@@ -384,25 +387,33 @@ function prepararEdicaoLancamento(itemStringCodificado) {
     const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
     const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro && (c.ativa !== false || c.id === item.categoria_id));
     
-    const agrupadas = {};
-    catFiltradas.forEach(c => {
-        if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
-        agrupadas[c.dre_ref].push(c);
-    });
+    const GRUPOS_PAI = [
+        { dre: 'receita_bruta', nome: '1 - Receitas Operacionais Brutas' },
+        { dre: 'deducoes', nome: '2 - Deduções da Receita Bruta' },
+        { dre: 'cmv', nome: '3 - Custos Variáveis (CMV)' },
+        { dre: 'despesas_operacionais', nome: '4 - Despesas Operacionais Fixas' },
+        { dre: 'despesas_vendas', nome: '5 - Despesas Comerciais e Logística' },
+        { dre: 'despesas_financeiras', nome: '6 - Despesas Financeiras' },
+        { dre: 'investimentos', nome: '7 - Investimentos em Ativos (CAPEX)' },
+        { dre: 'outras_receitas', nome: '8 - Entradas Não Operacionais' },
+        { dre: 'nao_operacional', nome: '9 - Saídas Não Operacionais' },
+        { dre: 'aporte_capital', nome: '10 - Financiamentos e Sócios (Entradas)' },
+        { dre: 'distribuicao_lucros', nome: '11 - Financiamentos e Sócios (Saídas)' },
+        { dre: 'movimentacao_interna', nome: '12 - Movimentações Internas' }
+    ];
 
     let indexPaiContador = 1;
-    Object.keys(agrupadas).forEach((dre_ref) => {
-        const nomePai = nomesDRE[dre_ref] || dre_ref;
-        let optgroup = `<optgroup label="${nomePai}">`;
-        
-        agrupadas[dre_ref].forEach((cat, indexFilho) => {
-            const numeroBadge = `${indexPaiContador}.${indexFilho + 1}`;
-            const isSelected = (typeof item !== 'undefined' && cat.id === item.categoria_id) ? 'selected' : '';
-            optgroup += `<option value="${cat.id}" ${isSelected}>[${numeroBadge}] ${cat.nome}</option>`;
-        });
-        
-        optgroup += `</optgroup>`;
-        selectCat.innerHTML += optgroup;
+    GRUPOS_PAI.forEach((grupo) => {
+        const subcategorias = catFiltradas.filter(c => c.dre_ref === grupo.dre).sort((a,b) => a.ordem - b.ordem);
+        if (subcategorias.length > 0) {
+            let optgroup = `<optgroup label="${grupo.nome}">`;
+            subcategorias.forEach((cat, indexFilho) => {
+                const isSelected = (cat.id === item.categoria_id) ? 'selected' : '';
+                optgroup += `<option value="${cat.id}" ${isSelected}>[${indexPaiContador}.${indexFilho + 1}] ${cat.nome}</option>`;
+            });
+            optgroup += `</optgroup>`;
+            selectCat.innerHTML += optgroup;
+        }
         indexPaiContador++;
     });
 
