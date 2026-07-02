@@ -125,16 +125,28 @@
                         // Ajustando aspas para evitar quebra no HTML
                         const nomeParaJS = sub.nome.replace(/'/g, "\\'"); 
                         
+                        // 👇 NOVO: Verifica se está inativa para mudar a opacidade e o ícone
+                        const opacity = sub.ativa === false ? '0.5' : '1';
+                        const bgStatus = sub.ativa === false ? '#f9f9f9' : 'white';
+                        const iconStatus = sub.ativa === false ? 'visibility_off' : 'visibility';
+                        const colorStatus = sub.ativa === false ? '#999' : '#00bcd4';
+                        const titleStatus = sub.ativa === false ? 'Reativar Conta' : 'Inativar Conta (Ocultar)';
+                        const btnAction = sub.ativa === false ? 'true' : 'false';
+
                         htmlSubcontas += `
                             <div class="subconta-item" draggable="true" 
                                  ondragstart="iniciarArrasto(event, ${sub.id})" 
                                  ondragover="permitirSoltar(event)" 
-                                 ondrop="soltarItem(event, ${sub.id})">
+                                 ondrop="soltarItem(event, ${sub.id})"
+                                 style="opacity: ${opacity}; background: ${bgStatus};">
                                 <span class="material-symbols-outlined" style="color: #ccc; cursor: grab;">drag_indicator</span>
-                                <div class="badge-num">${numeroVisual}</div>
-                                <div class="subconta-nome">${sub.nome}</div>
+                                <div class="badge-num" style="${sub.ativa === false ? 'text-decoration: line-through;' : ''}">${numeroVisual}</div>
+                                <div class="subconta-nome" style="${sub.ativa === false ? 'text-decoration: line-through; color: #999;' : ''}">${sub.nome}</div>
                                 
                                 <div style="margin-left: auto; display: flex; gap: 10px;">
+                                    <!-- Botão de Inativar (Olhinho) -->
+                                    <button onclick="toggleStatusSubconta(${sub.id}, ${btnAction})" style="background:none; border:none; color:${colorStatus}; cursor:pointer; font-size:1.2rem; transition: 0.2s; display: flex; align-items: center;" title="${titleStatus}"><span class="material-symbols-outlined" style="font-size: 1.2rem;">${iconStatus}</span></button>
+                                    
                                     <button onclick="prepararEdicaoSubconta(${sub.id}, '${nomeParaJS}')" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Editar Conta">✏️</button>
                                     <button onclick="deletarSubconta(${sub.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Apagar Conta">🗑️</button>
                                 </div>
@@ -263,6 +275,17 @@
                 } else {
                     alert("❌ Erro ao salvar subconta.");
                 }
+            } catch (e) { alert("❌ Falha de rede."); }
+        }
+
+        async function toggleStatusSubconta(id, novoStatus) {
+            try {
+                const res = await fetch(`${API_URL}/financeiro/categorias/${id}/status`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ativa: novoStatus })
+                });
+                if (res.ok) await buscarCategorias();
+                else alert("❌ Erro ao alterar visibilidade.");
             } catch (e) { alert("❌ Falha de rede."); }
         }
 

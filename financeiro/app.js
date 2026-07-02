@@ -46,7 +46,7 @@ function popularFiltroCategorias() {
     };
 
     const agrupadas = {};
-    categoriasFinanceiras.forEach(c => {
+    categoriasFinanceiras.filter(c => c.ativa !== false).forEach(c => {
         if(!agrupadas[c.dre_ref]) agrupadas[c.dre_ref] = [];
         agrupadas[c.dre_ref].push(c);
     });
@@ -305,7 +305,7 @@ function abrirModalLancamento(tipo) {
     };
 
     const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
-    const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro);
+    const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro && c.ativa !== false);
     
     const agrupadas = {};
     catFiltradas.forEach(c => {
@@ -382,7 +382,7 @@ function prepararEdicaoLancamento(itemStringCodificado) {
     };
 
     const tipoFiltro = (typeof item !== 'undefined') ? item.tipo : tipo;
-    const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro);
+    const catFiltradas = categoriasFinanceiras.filter(c => c.tipo === tipoFiltro && (c.ativa !== false || c.id === item.categoria_id));
     
     const agrupadas = {};
     catFiltradas.forEach(c => {
