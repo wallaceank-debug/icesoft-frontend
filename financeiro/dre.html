@@ -69,24 +69,21 @@
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
         let dreGlobal = null;
         let visaoDetalhada = false;
+        let visaoRegime = 'previsto'; // Começa mostrando o mês todo
 
         const fMoeda = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
         
         window.toggleVisao = () => {
             visaoDetalhada = !visaoDetalhada;
-            const btn = document.getElementById('btn-visao');
-            const detalhes = document.querySelectorAll('.dre-detalhes');
-            
-            if (visaoDetalhada) {
-                btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1.2rem;">visibility_off</span> Visão Resumida`;
-                btn.style.background = '#607d8b';
-                detalhes.forEach(el => el.style.display = 'block');
-            } else {
-                btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1.2rem;">visibility</span> Visão Completa`;
-                btn.style.background = '#00bcd4';
-                detalhes.forEach(el => el.style.display = 'none');
-            }
+            renderizarDRE(); // Redesenha a tela mantendo as abas certas
         };
+
+        // 👇 NOVO: Função que troca a chave do DRE (Efetuado x Previsto)
+        window.mudarVisaoRegime = (regime) => {
+            if(visaoRegime === regime) return;
+            visaoRegime = regime;
+            carregarDRE(); // Busca no servidor e recalcula
+        }
 
         const renderDetalhes = (refs) => {
             let html = '';
@@ -127,52 +124,76 @@
             return html;
         };
 
-        window.onload = async () => {
+        // 👇 ATUALIZADO: O construtor visual agora inclui o botão alternador
+        const renderizarDRE = () => {
             const container = document.getElementById('dre-conteudo');
-            try {
-                const res = await fetch(`${API_URL}/financeiro/dre`);
-                dreGlobal = await res.json();
-                
-                const classeLucro = dreGlobal.lucro_liquido >= 0 ? 'dre-total' : 'dre-total prejuizo';
-                const textoLucro = dreGlobal.lucro_liquido >= 0 ? '(=) LUCRO LÍQUIDO' : '(=) PREJUÍZO LÍQUIDO';
-                const pctLucro = dreGlobal.receita_bruta > 0 ? ((dreGlobal.lucro_liquido / dreGlobal.receita_bruta) * 100).toFixed(1) + '%' : '0%';
+            const classeLucro = dreGlobal.lucro_liquido >= 0 ? 'dre-total' : 'dre-total prejuizo';
+            const textoLucro = dreGlobal.lucro_liquido >= 0 ? '(=) LUCRO LÍQUIDO' : '(=) PREJUÍZO LÍQUIDO';
+            const pctLucro = dreGlobal.receita_bruta > 0 ? ((dreGlobal.lucro_liquido / dreGlobal.receita_bruta) * 100).toFixed(1) + '%' : '0%';
 
-                container.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            const btnVisaoCor = visaoDetalhada ? '#607d8b' : '#00bcd4';
+            const btnVisaoIcone = visaoDetalhada ? 'visibility_off' : 'visibility';
+            const btnVisaoTexto = visaoDetalhada ? 'Visão Resumida' : 'Visão Completa';
+
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+                    <div>
                         <h2 style="margin: 0; color: #333;">Competência: Mês Atual</h2>
-                        <button id="btn-visao" onclick="toggleVisao()" style="padding: 10px 18px; background: #00bcd4; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,188,212,0.3);">
-                            <span class="material-symbols-outlined" style="font-size:1.2rem;">visibility</span> Visão Completa
-                        </button>
+                        <div style="margin-top: 8px; display: inline-flex; background: #f0f0f0; padding: 4px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <button onclick="mudarVisaoRegime('previsto')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: ${visaoRegime === 'previsto' ? '#fff' : 'transparent'}; box-shadow: ${visaoRegime === 'previsto' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${visaoRegime === 'previsto' ? '#333' : '#888'}; transition: 0.2s;">🗓️ Mês Completo (Previsto)</button>
+                            <button onclick="mudarVisaoRegime('efetuado')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: ${visaoRegime === 'efetuado' ? '#fff' : 'transparent'}; box-shadow: ${visaoRegime === 'efetuado' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${visaoRegime === 'efetuado' ? '#333' : '#888'}; transition: 0.2s;">✅ Apenas Pagos (Efetuado)</button>
+                        </div>
                     </div>
-                    
-                    ${renderLinha('1. Receita Bruta Operacional', dreGlobal.receita_bruta, 'receita_bruta', 'receita')}
-                    ${renderLinha('(-) Deduções (Impostos, Taxas de Cartão)', dreGlobal.deducoes, 'deducoes', 'despesa')}
-                    
-                    ${renderLinha('(=) RECEITA LÍQUIDA', dreGlobal.receita_liquida, null, 'dre-subtotal')}
-                    
-                    ${renderLinha('(-) CMV (Insumos, Embalagens, Revenda)', dreGlobal.cmv, 'cmv', 'despesa')}
-                    
-                    ${renderLinha('(=) LUCRO BRUTO (Margem de Contribuição)', dreGlobal.lucro_bruto, null, 'dre-subtotal')}
-                    
-                    ${renderLinha('(-) Despesas Operacionais (Aluguel, Folha, Manutenção)', dreGlobal.despesas_operacionais, 'despesas_operacionais', 'despesa')}
-                    ${renderLinha('(-) Despesas com Vendas (Marketing, Motoboy)', dreGlobal.despesas_vendas, 'despesas_vendas', 'despesa')}
-                    
-                    ${renderLinha('(=) RESULTADO OPERACIONAL (EBITDA base)', dreGlobal.resultado_operacional, null, 'dre-subtotal')}
-                    
-                    ${renderLinha('(-) Investimentos em Melhorias/Máquinas', dreGlobal.investimentos, 'investimentos', 'despesa')}
-                    ${renderLinha('(-) Despesas Financeiras (Empréstimos, Juros)', dreGlobal.despesas_financeiras, 'despesas_financeiras', 'despesa')}
-                    ${renderLinha('(-) Saídas Não Operacionais (Distribuição de Lucro)', dreGlobal.distribuicao_lucros + dreGlobal.nao_operacional, ['distribuicao_lucros', 'nao_operacional'], 'despesa')}
-                    ${renderLinha('(+) Outras Receitas / Aportes', dreGlobal.outras_receitas, ['outras_receitas', 'aporte_capital'], 'receita')}
-                    
-                    <div class="dre-row ${classeLucro}">
-                        <span>${textoLucro}</span>
-                        <span><span class="pct-badge" style="background: rgba(255,255,255,0.2); color: white;">${pctLucro}</span> ${fMoeda(dreGlobal.lucro_liquido)}</span>
-                    </div>
-                `;
+                    <button id="btn-visao" onclick="toggleVisao()" style="padding: 10px 18px; background: ${btnVisaoCor}; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <span class="material-symbols-outlined" style="font-size:1.2rem;">${btnVisaoIcone}</span> ${btnVisaoTexto}
+                    </button>
+                </div>
+                
+                ${renderLinha('1. Receita Bruta Operacional', dreGlobal.receita_bruta, 'receita_bruta', 'receita')}
+                ${renderLinha('(-) Deduções (Impostos, Taxas de Cartão)', dreGlobal.deducoes, 'deducoes', 'despesa')}
+                
+                ${renderLinha('(=) RECEITA LÍQUIDA', dreGlobal.receita_liquida, null, 'dre-subtotal')}
+                
+                ${renderLinha('(-) CMV (Insumos, Embalagens, Revenda)', dreGlobal.cmv, 'cmv', 'despesa')}
+                
+                ${renderLinha('(=) LUCRO BRUTO (Margem de Contribuição)', dreGlobal.lucro_bruto, null, 'dre-subtotal')}
+                
+                ${renderLinha('(-) Despesas Operacionais (Aluguel, Folha, Manutenção)', dreGlobal.despesas_operacionais, 'despesas_operacionais', 'despesa')}
+                ${renderLinha('(-) Despesas com Vendas (Marketing, Motoboy)', dreGlobal.despesas_vendas, 'despesas_vendas', 'despesa')}
+                
+                ${renderLinha('(=) RESULTADO OPERACIONAL (EBITDA base)', dreGlobal.resultado_operacional, null, 'dre-subtotal')}
+                
+                ${renderLinha('(-) Investimentos em Melhorias/Máquinas', dreGlobal.investimentos, 'investimentos', 'despesa')}
+                ${renderLinha('(-) Despesas Financeiras (Empréstimos, Juros)', dreGlobal.despesas_financeiras, 'despesas_financeiras', 'despesa')}
+                ${renderLinha('(-) Saídas Não Operacionais (Distribuição de Lucro)', dreGlobal.distribuicao_lucros + dreGlobal.nao_operacional, ['distribuicao_lucros', 'nao_operacional'], 'despesa')}
+                ${renderLinha('(+) Outras Receitas / Aportes', dreGlobal.outras_receitas, ['outras_receitas', 'aporte_capital'], 'receita')}
+                
+                <div class="dre-row ${classeLucro}">
+                    <span>${textoLucro}</span>
+                    <span><span class="pct-badge" style="background: rgba(255,255,255,0.2); color: white;">${pctLucro}</span> ${fMoeda(dreGlobal.lucro_liquido)}</span>
+                </div>
+            `;
+
+            // Garante que o status da aba "visão completa" continue aberto se a pessoa trocar o regime
+            const detalhes = document.querySelectorAll('.dre-detalhes');
+            if(visaoDetalhada) {
+                detalhes.forEach(el => el.style.display = 'block');
+            }
+        };
+
+        const carregarDRE = async () => {
+            const container = document.getElementById('dre-conteudo');
+            container.innerHTML = '<h2 style="text-align: center; color: #333; margin-bottom: 20px;">Competência: Mês Atual</h2><div style="text-align: center; color: #666; font-style: italic;">Calculando inteligência financeira...</div>';
+            try {
+                const res = await fetch(`${API_URL}/financeiro/dre?visao=${visaoRegime}`);
+                dreGlobal = await res.json();
+                renderizarDRE();
             } catch (e) {
                 container.innerHTML = `<div style="text-align: center; color: red;">Erro ao gerar DRE. Verifique o servidor.</div>`;
             }
         };
+
+        window.onload = () => carregarDRE();
     </script>
 </body>
 </html>
