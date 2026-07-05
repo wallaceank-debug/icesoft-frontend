@@ -2514,3 +2514,18 @@ try {
 } catch(e) {
     console.log("⚠️ Falha ao conectar no radar", e);
 }
+
+// ==========================================
+// 📱 UX MOBILE: EVITAR QUE O TECLADO CUBRA OS CAMPOS
+// ==========================================
+document.addEventListener('focusin', function(e) {
+    const tag = e.target.tagName;
+    
+    // Verifica se o cliente tocou em um campo de digitação ou seleção
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        setTimeout(() => {
+            // Empurra o campo suavemente para o centro do espaço livre da tela
+            e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 400); // 400ms é o tempo exato para o teclado terminar a animação de subida no Android/iOS
+    }
+});
