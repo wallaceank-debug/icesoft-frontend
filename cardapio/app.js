@@ -256,20 +256,20 @@ function obterOrdemDasCategorias(listaProdutosAtual) {
 
 function renderizarCardapio(lista) {
     const container = document.getElementById('lista-produtos');
-    container.innerHTML = '<h2 style="margin-bottom: 20px;">Cardápio Completo</h2>';
+    container.innerHTML = '<h2 style="margin-bottom: 20px; color: #333;">Cardápio</h2>';
 
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
 
-    categoriasOrdenadas.forEach(catNome => {
-        // 🚀 AQUI ACONTECE A MÁGICA DO ESPELHAMENTO:
+    categoriasOrdenadas.forEach((catNome, index) => {
+        // Filtra os produtos desta categoria (mesma regra mágica de antes)
         const produtosDestaCategoria = lista.filter(p => {
             let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
-            if (catPrincipal === catNome) return true; // Passa se for a categoria principal
+            if (catPrincipal === catNome) return true;
 
             if (p.categorias_adicionais) {
                 try {
                     let extras = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais;
-                    if (Array.isArray(extras) && extras.includes(catNome)) return true; // Passa se for a categoria espelhada
+                    if (Array.isArray(extras) && extras.includes(catNome)) return true;
                 } catch(e) {}
             }
             return false;
@@ -277,9 +277,12 @@ function renderizarCardapio(lista) {
         
         if (produtosDestaCategoria.length === 0) return;
 
+        // IDs únicos para o Acordeão funcionar
         const catId = 'categoria-' + catNome.replace(/[^a-zA-Z0-9]/g, '');
+        const conteudoId = 'conteudo-' + catId;
 
-        container.innerHTML += `<h3 id="${catId}" style="color: var(--cor-primaria, #e91e63); margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px;">${catNome}</h3>`;
+        // Monta o recheio: a lista de produtos
+        let produtosHtml = '';
 
         produtosDestaCategoria.forEach(p => {
             const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
@@ -287,24 +290,24 @@ function renderizarCardapio(lista) {
                 ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
                 : ``;
             
-            // 🚀 O CÉREBRO DAS TAGS AQUI
+            // O CÉREBRO DAS TAGS
             let tagHtml = '';
             if (p.tag && p.tag !== '') {
                 const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade', 'poucas_unidades': 'Poucas Unidades' };
                 tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
             }
 
-            // 📦 NOVO: TAG DE ESTOQUE DINÂMICA
+            // TAG DE ESTOQUE DINÂMICA
             if (p.controlar_estoque && p.mostrar_estoque) {
                 const qtdEstoque = Number(p.estoque) || 0;
-                let corFundo = qtdEstoque > 5 ? '#e8f5e9' : '#fff3e0'; // Verde ou Laranja
+                let corFundo = qtdEstoque > 5 ? '#e8f5e9' : '#fff3e0'; 
                 let corTexto = qtdEstoque > 5 ? '#2e7d32' : '#e65100'; 
-                if (qtdEstoque <= 2) { corFundo = '#ffebee'; corTexto = '#c62828'; } // Vermelho Alerta
+                if (qtdEstoque <= 2) { corFundo = '#ffebee'; corTexto = '#c62828'; } 
                 
                 tagHtml += `<div style="position: absolute; bottom: -10px; right: -5px; background: ${corFundo}; color: ${corTexto}; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid ${corTexto}50; z-index: 15;">📦 Restam ${qtdEstoque}</div>`;
             }
 
-            // 💰 MATEMÁTICA DA PROMOÇÃO (Preço Riscado)
+            // MATEMÁTICA DA PROMOÇÃO (Preço Riscado)
             let precoHtml = `<div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
             
             if (isPromocaoAtivaAgora(p)) {
@@ -324,7 +327,7 @@ function renderizarCardapio(lista) {
                 `;
             }
 
-            // Visual do Produto com a tag flutuando por cima
+            // Visual do Produto
             const visualProduto = p.imagem_url 
                 ? `<div style="position: relative; flex-shrink: 0;">
                        ${tagHtml}
@@ -335,8 +338,8 @@ function renderizarCardapio(lista) {
                        <div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center;">${p.emoji || '🍦'}</div>
                    </div>`;
 
-            container.innerHTML += `
-                <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
+            produtosHtml += `
+                <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: center; background: white; margin-top: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
                     <div style="flex: 1; padding-right: 15px;">
                         <h3 style="margin: 0; color: #333; font-size: 1.05rem; font-weight: 600;">${p.nome}</h3>
                         ${htmlDescricao}
@@ -346,6 +349,28 @@ function renderizarCardapio(lista) {
                 </div>
             `;
         });
+
+        // MÁGICA DO ACORDEÃO: Deixa apenas a primeira categoria aberta por padrão
+        const isPrimeira = index === 0;
+        const displayInicial = isPrimeira ? 'block' : 'none';
+        const rotacaoSeta = isPrimeira ? 'transform: rotate(180deg);' : 'transform: rotate(0deg);';
+
+        container.innerHTML += `
+            <div style="background: #ffffff; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; overflow: hidden;">
+                <h3 id="${catId}" onclick="toggleCategoriaCardapio('${conteudoId}', this)" style="color: var(--cor-primaria, #e91e63); margin: 0; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.15rem; background: #fff; transition: background 0.2s; user-select: none;">
+                    
+                    <!-- A CAIXA FLEXÍVEL DO TÍTULO (Evita espremer o texto) -->
+                    <span style="flex: 1; padding-right: 15px; line-height: 1.3; word-break: break-word;">${catNome}</span>
+                    
+                    <!-- A SETA NATIVA LEVE (Substitui o expand_more) -->
+                    <span class="seta-categoria" style="transition: transform 0.3s; color: #999; font-size: 1rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; ${rotacaoSeta}">▼</span>
+                
+                </h3>
+                <div id="${conteudoId}" style="display: ${displayInicial}; padding: 0 15px 15px 15px; background: #fafafa; border-top: 1px solid #f0f0f0;">
+                    ${produtosHtml}
+                </div>
+            </div>
+        `;
     });
 }
 
@@ -1612,15 +1637,51 @@ function renderizarMenuCategorias(lista) {
     container.innerHTML = html;
 }
 
-window.rolarParaCategoria = function(nomeCategoria) {
-    const titulos = document.querySelectorAll('#lista-produtos h2, #lista-produtos h3');
+// Ação que abre e fecha a sanfona ao clicar nela
+window.toggleCategoriaCardapio = function(conteudoId, elementoHeader) {
+    const conteudo = document.getElementById(conteudoId);
+    const seta = elementoHeader.querySelector('.seta-categoria');
     
-    for (let titulo of titulos) {
-        if (titulo.innerText.trim().includes(nomeCategoria.trim()) || nomeCategoria.trim().includes(titulo.innerText.trim())) {
-            const posicaoY = titulo.getBoundingClientRect().top + window.scrollY - 80; 
-            window.scrollTo({ top: posicaoY, behavior: 'smooth' });
-            break; 
+    if (conteudo.style.display === 'none' || conteudo.style.display === '') {
+        // 1. Mostra a categoria
+        conteudo.style.display = 'block';
+        
+        // 2. 🪄 O GATILHO DA DESCIDA SUAVE
+        conteudo.classList.remove('animar-sanfona');
+        void conteudo.offsetWidth; // Truque para reiniciar a animação
+        conteudo.classList.add('animar-sanfona');
+
+        if(seta) seta.style.transform = 'rotate(180deg)'; // Gira a setinha para cima
+    } else {
+        conteudo.style.display = 'none';
+        if(seta) seta.style.transform = 'rotate(0deg)'; // Volta a setinha para baixo
+    }
+};
+
+// Inteligência que liga as bolinhas de atalho (Story) com as sanfonas
+window.rolarParaCategoria = function(nomeCategoria) {
+    const catId = 'categoria-' + nomeCategoria.replace(/[^a-zA-Z0-9]/g, '');
+    const headerElement = document.getElementById(catId);
+    
+    if (headerElement) {
+        const conteudoId = 'conteudo-' + catId;
+        const conteudo = document.getElementById(conteudoId);
+        const seta = headerElement.querySelector('.seta-categoria');
+        
+        // Se a pessoa clicou no atalho e a sanfona estava fechada, o sistema abre ela com animação!
+        if (conteudo && (conteudo.style.display === 'none' || conteudo.style.display === '')) {
+            conteudo.style.display = 'block';
+            
+            conteudo.classList.remove('animar-sanfona');
+            void conteudo.offsetWidth;
+            conteudo.classList.add('animar-sanfona');
+
+            if(seta) seta.style.transform = 'rotate(180deg)';
         }
+
+        // Rola a tela suavemente até a categoria
+        const y = headerElement.getBoundingClientRect().top + window.scrollY - 80; 
+        window.scrollTo({ top: y, behavior: 'smooth' });
     }
 };
 

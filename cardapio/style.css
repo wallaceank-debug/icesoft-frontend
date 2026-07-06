@@ -565,3 +565,15 @@ main#lista-produtos h2 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+/* =========================================
+   ANIMAÇÃO DE ABERTURA DAS CATEGORIAS (SANFONA)
+   ========================================= */
+@keyframes descerSuave {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animar-sanfona {
+    animation: descerSuave 0.3s ease-out forwards;
+}
