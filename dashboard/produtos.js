@@ -38,12 +38,11 @@ async function carregarRaioX() {
             return;
         }
 
-        // 🛡️ CORREÇÃO DE DADOS: Ignora cancelados E vendas do Balcão/Mesas (Pois não geram visitas online)
+        // 🛡️ CORREÇÃO DE DADOS: Pega APENAS as vendas do Cardápio Digital (Delivery e Retirada no App)
         const vendas = (await resVendas.json()).filter(v => 
             v.status !== 'Cancelada' && 
             v.status !== 'Cancelado' &&
-            !String(v.origem).toLowerCase().includes('balcão') &&
-            !String(v.origem).toLowerCase().includes('mesa')
+            (String(v.origem) === 'Delivery' || String(v.origem) === 'Balcão (App)')
         );
         const visitasDB = (await resVisitas.json()).visitas;
 
@@ -67,8 +66,8 @@ function processarRaioX(vendas, visitasDB) {
             let nomeOriginal = item.nome || item.produto_nome || item.nomeBase;
             if (!nomeOriginal) return;
             
-            // 1. Limpa o nome do produto principal (jogando fora o que está depois do parêntese)
-            let nomeProduto = nomeOriginal.replace('Delivery: ', '').split('(')[0].trim();
+            // 1. Limpa o nome do produto (tira tags de Upsell/Delivery e o que está depois do parêntese)
+            let nomeProduto = nomeOriginal.replace('Delivery: ', '').replace('🔥 Oferta: ', '').split('(')[0].trim();
             let preco = parseFloat(item.preco || 0);
             let qtd = parseInt(item.quantidade || 1);
             let totalItem = preco * qtd;
@@ -199,13 +198,19 @@ window.ordenarTabela = function(coluna, forcarDescendente = false) {
     tbody.innerHTML = '';
     dadosTabelaGlobal.forEach(p => {
         let corCurva = p.curva === 'A' ? '#4CAF50' : (p.curva === 'B' ? '#FF9800' : '#F44336');
+        
+        // 🚀 MÁGICA VISUAL: Identifica as Vendas por Impulso (Upsell)
+        let conversaoDisplay = (p.visitas === 0 && p.vendas > 0) 
+            ? `<span style="background: #ffebee; color: #e91e63; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; white-space: nowrap;">Impulso 🚀</span>` 
+            : `${p.conversao}%`;
+
         tbody.innerHTML += `
             <tr style="border-bottom: 1px solid #eee; transition: 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
                 <td style="padding: 10px; font-weight: bold; color: ${corCurva}; text-align: center;">${p.curva}</td>
                 <td style="padding: 10px;">${p.nome}</td>
                 <td style="padding: 10px; text-align: center;">${p.visitas} 👀</td>
                 <td style="padding: 10px; text-align: center;">${p.vendas} 🛒</td>
-                <td style="padding: 10px; text-align: center;">${p.conversao}%</td>
+                <td style="padding: 10px; text-align: center;">${conversaoDisplay}</td>
                 <td style="padding: 10px; font-weight: bold;">R$ ${p.faturamento.toFixed(2).replace('.', ',')}</td>
             </tr>
         `;
