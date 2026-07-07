@@ -356,17 +356,20 @@ function renderizarCardapio(lista) {
         const rotacaoSeta = isPrimeira ? 'transform: rotate(180deg);' : 'transform: rotate(0deg);';
 
         container.innerHTML += `
-            <div style="background: #ffffff; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; overflow: hidden;">
-                <h3 id="${catId}" onclick="toggleCategoriaCardapio('${conteudoId}', this)" style="color: var(--cor-primaria, #e91e63); margin: 0; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.15rem; background: #fff; transition: background 0.2s; user-select: none;">
+            <div style="margin-bottom: 20px;">
+                <!-- A BARRA ELEGANTE DA CATEGORIA -->
+                <h3 id="${catId}" onclick="toggleCategoriaCardapio('${conteudoId}', this)" style="color: #333; margin: 0 0 10px 0; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.1rem; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border-left: 6px solid var(--cor-primaria, #e91e63); transition: transform 0.2s; user-select: none;">
                     
-                    <!-- A CAIXA FLEXÍVEL DO TÍTULO (Evita espremer o texto) -->
-                    <span style="flex: 1; padding-right: 15px; line-height: 1.3; word-break: break-word;">${catNome}</span>
+                    <!-- A CAIXA FLEXÍVEL DO TÍTULO (Mais escura e com espaçamento elegante) -->
+                    <span style="flex: 1; padding-right: 15px; line-height: 1.3; word-break: break-word; font-weight: 700; letter-spacing: 0.5px;">${catNome}</span>
                     
-                    <!-- A SETA NATIVA LEVE (Substitui o expand_more) -->
-                    <span class="seta-categoria" style="transition: transform 0.3s; color: #999; font-size: 1rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; ${rotacaoSeta}">▼</span>
+                    <!-- A SETA COM A COR DA MARCA -->
+                    <span class="seta-categoria" style="transition: transform 0.3s; color: var(--cor-primaria, #e91e63); font-size: 1.2rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; ${rotacaoSeta}">▼</span>
                 
                 </h3>
-                <div id="${conteudoId}" style="display: ${displayInicial}; padding: 0 15px 15px 15px; background: #fafafa; border-top: 1px solid #f0f0f0;">
+                
+                <!-- O RECHEIO: Sem a caixa cinza por trás, deixando os produtos "flutuarem" no fundo -->
+                <div id="${conteudoId}" style="display: ${displayInicial}; padding: 5px 0;">
                     ${produtosHtml}
                 </div>
             </div>
