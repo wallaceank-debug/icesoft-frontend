@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- Reaproveita o seu sistema de login -->
+    <script src="../auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Icesoft - App Entregador</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* CABEÇALHO DO APP */
+        .header-app {
+            background: #00bcd4;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-app h1 { margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 8px; }
+        
+        .btn-atualizar {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+        }
+
+        /* ABAS (TABS) */
+        .tabs-container {
+            display: flex;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 55px; /* Altura do header */
+            z-index: 99;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 0;
+            font-weight: 600;
+            color: #888;
+            border-bottom: 3px solid transparent;
+            transition: 0.3s;
+        }
+
+        .tab.ativa {
+            color: #00bcd4;
+            border-bottom: 3px solid #00bcd4;
+        }
+
+        /* CONTEÚDO DAS LISTAS */
+        .conteudo-aba { display: none; padding: 15px; padding-bottom: 80px; }
+        .conteudo-aba.ativa { display: block; }
+
+        /* CARDS DO MOTOBOY */
+        .card-entrega {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid #ff9800; /* Laranja por padrão (Saiu p/ Entrega) */
+            position: relative;
+        }
+
+        .card-entrega.finalizado {
+            border-left: 5px solid #4CAF50;
+            opacity: 0.8;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 10px;
+        }
+
+        .numero-pedido { font-size: 1.4rem; font-weight: 900; color: #333; }
+        .nome-cliente { font-weight: 600; font-size: 1.1rem; margin-bottom: 5px; }
+        
+        .endereco-box {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .info-pagamento {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e0f7fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .pagamento-pendente { background: #ffebee; color: #c62828; }
+        .pagamento-ok { background: #e8f5e9; color: #2e7d32; }
+
+        /* BOTOES DE AÇÃO RÁPIDA */
+        .acoes-rapidas {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-acao {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-maps { background: #2196F3; }
+        .btn-whats { background: #25D366; }
+
+        /* MODAL DE DETALHES */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: flex-end; z-index: 2000;
+        }
+        .modal-content {
+            background: white; width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 20px; box-sizing: border-box; max-height: 85vh; overflow-y: auto;
+            transform: translateY(100%); transition: transform 0.3s ease-out;
+        }
+        .modal.aberto .modal-content { transform: translateY(0); }
+        
+        .fechar-modal {
+            width: 40px; height: 5px; background: #ddd; border-radius: 10px;
+            margin: 0 auto 15px auto;
+        }
+
+        .item-resumo {
+            display: flex; justify-content: space-between; padding: 8px 0;
+            border-bottom: 1px dashed #eee; color: #555; font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-app">
+        <h1><span class="material-symbols-outlined">two_wheeler</span> Minhas Entregas</h1>
+        <button class="btn-atualizar" onclick="carregarEntregas()"><span class="material-symbols-outlined">refresh</span></button>
+    </header>
+
+    <div class="tabs-container">
+        <div class="tab ativa" onclick="mudarAba('ativos')" id="tab-ativos">
+            Ativos (<span id="qtd-ativos">0</span>)
+        </div>
+        <div class="tab" onclick="mudarAba('finalizados')" id="tab-finalizados">
+            Finalizados
+        </div>
+    </div>
+
+    <!-- ABA 1: PEDIDOS ATIVOS (SAIU P/ ENTREGA) -->
+    <div id="conteudo-ativos" class="conteudo-aba ativa">
+        <div id="lista-ativos" style="text-align: center; color: #888; padding-top: 20px;">Carregando rotas...</div>
+    </div>
+
+    <!-- ABA 2: PEDIDOS FINALIZADOS (ENTREGUE) -->
+    <div id="conteudo-finalizados" class="conteudo-aba">
+        <div id="lista-finalizados" style="text-align: center; color: #888; padding-top: 20px;">Carregando histórico...</div>
+    </div>
+
+    <!-- MODAL PARA VER O QUE TEM NO PEDIDO (CASO O CLIENTE PERGUNTE) -->
+    <div class="modal" id="modal-detalhes" onclick="fecharModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="fechar-modal" onclick="fecharModal()"></div>
+            <h2 style="margin-top: 0; color: #333;" id="detalhe-titulo">Pedido #00</h2>
+            
+            <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; display: none;" id="detalhe-obs">
+                <strong>📝 Obs:</strong> <span id="texto-obs"></span>
+            </div>
+
+            <h3 style="font-size: 1rem; color: #666; margin-bottom: 5px;">Itens do Pedido:</h3>
+            <div id="detalhe-itens-lista" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 20px;"></div>
+            
+            <button onclick="fecharModal()" style="width: 100%; padding: 15px; background: #eee; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; color: #555;">Fechar Visualização</button>
+        </div>
+    </div>
+
+    <!-- IMPORTA O WEBSOCKET PARA ATUALIZAR SOZINHO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        let entregasGlobais = [];
+
+        function mudarAba(aba) {
+            document.getElementById('tab-ativos').classList.remove('ativa');
+            document.getElementById('tab-finalizados').classList.remove('ativa');
+            document.getElementById('conteudo-ativos').classList.remove('ativa');
+            document.getElementById('conteudo-finalizados').classList.remove('ativa');
+
+            document.getElementById(`tab-${aba}`).classList.add('ativa');
+            document.getElementById(`conteudo-${aba}`).classList.add('ativa');
+        }
+
+        // ==========================================
+        // LÓGICA DE BAIXA DO PEDIDO (ENTREGUE)
+        // ==========================================
+        async function marcarComoEntregue(id) {
+            event.stopPropagation(); // Impede que o modal de detalhes se abra ao clicar no botão
+            
+            const confirmar = confirm("📦 Confirmar que este pedido foi entregue ao cliente?");
+            if (!confirmar) return;
+
+            try {
+                const cracha = localStorage.getItem('icesoft_token');
+                const resposta = await fetch(`${API_URL}/vendas/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${cracha}`
+                    },
+                    body: JSON.stringify({ status: 'Entregue' })
+                });
+
+                if (resposta.ok) {
+                    carregarEntregas(); // Atualiza a tela do celular instantaneamente
+                } else {
+                    alert("⚠️ Erro ao atualizar o status no servidor.");
+                }
+            } catch (e) {
+                alert("🔌 Erro de conexão. Verifique o 4G/Wifi do celular.");
+            }
+        }
+
+        async function carregarEntregas() {
+            try {
+                const cracha = localStorage.getItem('icesoft_token');
+                // Buscamos apenas as vendas de hoje para não pesar o celular
+                const dataHoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+                
+                const res = await fetch(`${API_URL}/vendas?inicio=${dataHoje}&fim=${dataHoje}`, {
+                    headers: { 'Authorization': `Bearer ${cracha}` }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    window.location.href = '../login/index.html';
+                    return;
+                }
+
+                const vendas = await res.json();
+                entregasGlobais = vendas.filter(v => v.origem && v.origem.toLowerCase().includes('delivery'));
+                
+                renderizarListas();
+            } catch (e) {
+                document.getElementById('lista-ativos').innerHTML = "Erro ao conectar com a base.";
+            }
+        }
+
+        function extrairTrocoSeExistir(textoPagamento, valorTotal) {
+            if (!textoPagamento) return '';
+            if (textoPagamento.includes('Troco para')) {
+                const match = textoPagamento.match(/Troco para ([\d.,]+)/i);
+                if (match && match[1]) {
+                    const valorParaTroco = parseFloat(match[1].replace(',', '.'));
+                    const totalPedido = parseFloat(valorTotal);
+                    const troco = valorParaTroco - totalPedido;
+                    if (troco > 0) return ` (Levar R$ ${troco.toFixed(2).replace('.',',')} de troco)`;
+                }
+            }
+            return '';
+        }
+
+        function renderizarListas() {
+            const ativos = entregasGlobais.filter(v => v.status === 'Saiu p/ Entrega' || v.status === 'Pendente Delivery');
+            const finalizados = entregasGlobais.filter(v => v.status === 'Entregue');
+
+            document.getElementById('qtd-ativos').innerText = ativos.length;
+
+            const divAtivos = document.getElementById('lista-ativos');
+            const divFinalizados = document.getElementById('lista-finalizados');
+
+            divAtivos.innerHTML = ativos.length === 0 ? '<p style="text-align:center; color:#888;">Nenhuma entrega na mochila no momento!</p>' : '';
+            divFinalizados.innerHTML = finalizados.length === 0 ? '<p style="text-align:center; color:#888;">Nenhuma entrega finalizada hoje.</p>' : '';
+
+            // Função que desenha o Card
+            const criarCard = (pedido, isFinalizado) => {
+                const numPedido = String(pedido.numero_diario || pedido.id).padStart(2, '0');
+                const hora = new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const nomeCli = (pedido.cliente_nome || "Cliente").split(' ')[0];
+                const endereco = pedido.cliente_endereco || "Endereço não informado";
+                
+                const ehDinheiro = pedido.forma_pagamento && pedido.forma_pagamento.toLowerCase().includes('dinheiro');
+                const classePag = ehDinheiro ? 'pagamento-pendente' : 'pagamento-ok';
+                const iconePag = ehDinheiro ? 'payments' : 'check_circle';
+                const complementoTroco = ehDinheiro ? extrairTrocoSeExistir(pedido.forma_pagamento, pedido.valor_total) : '';
+
+                // Link Mágico do Google Maps
+                const linkMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco + ', Quatis RJ')}`;
+                
+                // Link Mágico do WhatsApp
+                let linkWhats = '#';
+                if (pedido.cliente_telefone) {
+                    const numWhats = "55" + pedido.cliente_telefone.replace(/\D/g, '');
+                    linkWhats = `https://wa.me/${numWhats}?text=Olá ${nomeCli}, aqui é o entregador da Icesoft! Estou a caminho com o seu pedido.`;
+                }
+
+                let acoesHtml = '';
+                if (!isFinalizado) {
+                    acoesHtml = `
+                        <div class="acoes-rapidas" style="flex-wrap: wrap;">
+                            <button onclick="marcarComoEntregue(${pedido.id})" class="btn-acao" style="background: #4CAF50; width: 100%; margin-bottom: 5px; flex-basis: 100%; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(76,175,80,0.3);">
+                                <span class="material-symbols-outlined">check_circle</span> Concluir Entrega
+                            </button>
+                            <a href="${linkMaps}" target="_blank" class="btn-acao btn-maps">
+                                <span class="material-symbols-outlined">map</span> GPS
+                            </a>
+                            <a href="${linkWhats}" target="_blank" class="btn-acao btn-whats" ${!pedido.cliente_telefone ? 'style="opacity:0.5; pointer-events:none;"' : ''}>
+                                <span class="material-symbols-outlined">forum</span> Avisar
+                            </a>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card-entrega ${isFinalizado ? 'finalizado' : ''}" onclick="abrirDetalhes(${pedido.id})">
+                        <div class="card-header">
+                            <span class="numero-pedido">#${numPedido}</span>
+                            <span style="color: #888; font-size: 0.9rem;">${hora}</span>
+                        </div>
+                        <div class="nome-cliente"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">person</span> ${pedido.cliente_nome || "Anônimo"}</div>
+                        
+                        <div class="endereco-box">
+                            <span class="material-symbols-outlined" style="color: #f44336;">location_on</span>
+                            <div>${endereco}</div>
+                        </div>
+
+                        <div class="info-pagamento ${classePag}">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined">${iconePag}</span>
+                                <span>${pedido.forma_pagamento.split('(')[0]} ${complementoTroco}</span>
+                            </div>
+                            <span>R$ ${Number(pedido.valor_total).toFixed(2).replace('.',',')}</span>
+                        </div>
+                        
+                        ${acoesHtml}
+                    </div>
+                `;
+            };
+
+            ativos.forEach(p => divAtivos.innerHTML += criarCard(p, false));
+            finalizados.forEach(p => divFinalizados.innerHTML += criarCard(p, true));
+        }
+
+        // ==========================================
+        // LÓGICA DO MODAL (DETALHES DO PEDIDO)
+        // ==========================================
+        function abrirDetalhes(id) {
+            // Ignora se clicou em um dos botões (Maps/Whats)
+            if(event.target.closest('.acoes-rapidas')) return;
+
+            const pedido = entregasGlobais.find(p => p.id === id);
+            if (!pedido) return;
+
+            document.getElementById('detalhe-titulo').innerText = `Pedido #${String(pedido.numero_diario || pedido.id).padStart(2, '0')}`;
+            
+            const areaObs = document.getElementById('detalhe-obs');
+            if (pedido.observacoes && pedido.observacoes !== 'null' && pedido.observacoes.trim() !== '') {
+                document.getElementById('texto-obs').innerText = pedido.observacoes;
+                areaObs.style.display = 'block';
+            } else {
+                areaObs.style.display = 'none';
+            }
+
+            let itensHtml = '';
+            try {
+                const itens = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
+                itens.forEach(item => {
+                    let nomeLimpo = item.nome.replace('Delivery: ', '');
+                    itensHtml += `
+                        <div class="item-resumo">
+                            <span>${item.quantidade || 1}x ${nomeLimpo.split('(')[0]}</span>
+                        </div>
+                    `;
+                });
+            } catch(e) { itensHtml = "Erro ao carregar itens."; }
+
+            document.getElementById('detalhe-itens-lista').innerHTML = itensHtml;
+            
+            const modal = document.getElementById('modal-detalhes');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('aberto'), 10);
+        }
+
+        function fecharModal(e) {
+            const modal = document.getElementById('modal-detalhes');
+            if (e && e.target !== modal && !e.target.classList.contains('fechar-modal')) return;
+            
+            modal.classList.remove('aberto');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        window.onload = () => {
+            carregarEntregas();
+
+            // Sincronização em Tempo Real (Mágica do WebSocket)
+            if (typeof io !== 'undefined') {
+                const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+                socket.on('novo_pedido_kanban', () => {
+                    carregarEntregas(); // Se o Kanban da loja mudar, o celular atualiza sozinho!
+                });
+            }
+        };
+    </script>
+</body>
+</html>

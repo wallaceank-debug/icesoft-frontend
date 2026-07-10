@@ -541,17 +541,23 @@
             `;
         }
 
-        // 🚀 BOTAO DE CANCELAMENTO
-        let botoesAcao = '';
+        // 🚀 BOTOES DE AÇÃO (IMPRIMIR E CANCELAR)
+        let botoesAcao = `
+            <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; text-align: center; display: flex; flex-direction: column; gap: 10px;">
+                <button onclick="imprimirPedidoDaLista(${index})" style="background: #333; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span class="material-symbols-outlined">print</span> Imprimir Comanda
+                </button>
+        `;
+
         if (!isCancelado) {
-            botoesAcao = `
-                <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; text-align: center;">
-                    <button onclick="cancelarPedido(${venda.id})" style="background: #f44336; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; box-shadow: 0 4px 6px rgba(244,67,54,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <span class="material-symbols-outlined">cancel</span> Cancelar Este Pedido
-                    </button>
-                </div>
+            botoesAcao += `
+                <button onclick="cancelarPedido(${venda.id})" style="background: #f44336; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; box-shadow: 0 4px 6px rgba(244,67,54,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span class="material-symbols-outlined">cancel</span> Cancelar Este Pedido
+                </button>
             `;
         }
+        
+        botoesAcao += `</div>`;
 
         document.getElementById('modal-corpo').innerHTML = htmlInteligencia + htmlItens + botoesAcao;
         document.getElementById('modalDetalhes').style.display = 'flex';
@@ -613,6 +619,127 @@
     }
 
 
+    // ==========================================
+    // IMPRESSÃO DE RECIBO (CÓPIA DO KANBAN)
+    // ==========================================
+    function formatarPagamentoComTroco(pagamentoOriginal, valorTotal) {
+        if (!pagamentoOriginal) return 'N/A';
+        const textoPagamento = pagamentoOriginal.toString();
+        
+        if (textoPagamento.includes('Troco para')) {
+            try {
+                const match = textoPagamento.match(/Troco para ([\d.,]+)/i);
+                if (match && match[1]) {
+                    const valorParaTroco = parseFloat(match[1].replace(',', '.'));
+                    const totalPedido = parseFloat(valorTotal);
+                    
+                    if (!isNaN(valorParaTroco) && !isNaN(totalPedido)) {
+                        const valorTrocoCalculado = valorParaTroco - totalPedido;
+                        if (valorTrocoCalculado > 0) return `Dinheiro (Levar R$ ${valorTrocoCalculado.toFixed(2).replace('.', ',')} de troco)`;
+                        else if (valorTrocoCalculado === 0) return `Dinheiro (Sem troco)`;
+                        else return `Dinheiro (⚠️ Troco solicitado é MENOR que o pedido)`;
+                    }
+                }
+            } catch (e) {}
+        }
+        return textoPagamento;
+    }
+
+    function imprimirPedidoDaLista(index) {
+        const venda = listaVendas[index];
+        if(!venda) return;
+        
+        // Garante que o container do cupom existe na tela (escondido)
+        let areaImpressao = document.getElementById('cupom-vendas');
+        if (!areaImpressao) {
+            areaImpressao = document.createElement('div');
+            areaImpressao.id = 'cupom-vendas';
+            areaImpressao.style.display = 'none';
+            document.body.appendChild(areaImpressao);
+        }
+        
+        let arrayItens = [];
+        try { arrayItens = typeof venda.itens === 'string' ? JSON.parse(venda.itens) : venda.itens; } 
+        catch (e) { arrayItens = []; }
+
+        let htmlItens = '';
+        arrayItens.forEach(item => {
+            let nomeLimpo = item.nome ? item.nome.replace('Delivery: ', '').replace('🔥 Oferta: ', '🔥 ') : 'Produto';
+            const qtd = item.quantidade || 1;
+            const precoItem = Number(item.preco * qtd).toFixed(2).replace('.',',');
+
+            let nomeBaseItem = nomeLimpo;
+            let adicionaisHtml = '';
+            const primeiroParentese = nomeLimpo.indexOf('(');
+            const ultimoParentese = nomeLimpo.lastIndexOf(')');
+            
+            if (primeiroParentese !== -1 && ultimoParentese !== -1 && ultimoParentese > primeiroParentese) {
+                nomeBaseItem = nomeLimpo.substring(0, primeiroParentese).trim();
+                const recheioAdicionais = nomeLimpo.substring(primeiroParentese + 1, ultimoParentese);
+                const listaAdicionais = recheioAdicionais.split(',');
+                listaAdicionais.forEach(adicional => {
+                    if(adicional.trim() !== '') adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
+                });
+            }
+            
+            htmlItens += `
+            <div style="margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;">
+                    <span style="flex: 1;">-> ${qtd}x ${nomeBaseItem}</span>
+                    <span style="margin-left: 10px;">R$ ${precoItem}</span>
+                </div>
+                ${adicionaisHtml}
+            </div>`;
+        });
+
+        const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
+        const pagamentoDisplay = formatarPagamentoComTroco(venda.forma_pagamento, venda.valor_total);
+        
+        areaImpressao.innerHTML = `
+            <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; text-align: center;">
+                <h2 style="margin: 0;">ICESOFT</h2>
+                <strong>COMANDA DE PRODUÇÃO</strong><br>
+                ${dataFormatada}
+            </div>
+            
+            <div style="font-size: 16px; margin-bottom: 10px; text-align: center;">
+                <strong style="font-size: 20px;">PEDIDO ${venda.numero_diario || venda.id}</strong><br>
+                <strong style="background: black; color: white; padding: 2px 5px;">${(venda.origem || 'Balcão').toUpperCase()}</strong>
+            </div>
+
+            <div style="margin-bottom: 10px; border-bottom: 1px dashed black; padding-bottom: 10px;">
+                <strong>Cliente:</strong> ${venda.cliente_nome || 'Balcão/Mesa'}<br>
+                <strong>WhatsApp:</strong> ${venda.cliente_telefone || '---'}<br>
+                <strong>Endereço:</strong> ${venda.cliente_endereco || 'Retirada no Local'}
+            </div>
+            
+            <div style="margin-bottom: 10px; font-size: 15px;">
+                <strong>📦 Itens do Pedido:</strong>
+            </div>
+
+            <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px;">
+                ${htmlItens}
+            </div>
+            
+            <div style="text-align: right; font-size: 18px; margin-bottom: 10px;">
+                <strong>TOTAL: R$ ${Number(venda.valor_total).toFixed(2).replace('.',',')}</strong>
+            </div>
+            
+            <div style="margin-bottom: 10px; font-size: 16px; border-top: 2px dashed black; padding-top: 10px;">
+                <strong>PAGAMENTO:</strong><br> 
+                <span style="font-size: 18px; font-weight: bold;">${pagamentoDisplay}</span><br>
+                ${venda.observacoes && venda.observacoes !== 'null' ? `<div style="margin-top: 10px; border: 2px solid black; padding: 5px;"><strong>⚠️ OBSERVAÇÃO:</strong><br>${venda.observacoes}</div>` : ''}
+            </div>
+            <div style="text-align: center; margin-top: 20px; font-size: 12px;">
+                -- Icesoft Sistema --
+            </div>
+        `;
+
+        areaImpressao.style.display = 'block';
+        window.print();
+        areaImpressao.style.display = 'none';
+    }
+
     // 🚀 FUNÇÃO QUE FAZ O CANCELAMENTO NO SERVIDOR
     async function cancelarPedido(idPedido) {
         const confirmar = confirm("Tem certeza que deseja marcar este pedido como CANCELADO?\n\nO valor dele será automaticamente removido do faturamento do seu painel.");
@@ -653,6 +780,25 @@
         buscarVendas(); 
     };
 </script>
+
+<style>
+    /* CSS EXCLUSIVO PARA A IMPRESSORA TÉRMICA (80mm) */
+    @media print {
+        body * { visibility: hidden; }
+        #cupom-vendas, #cupom-vendas * { visibility: visible; }
+        #cupom-vendas { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 80mm; 
+            font-family: monospace; 
+            font-size: 14px; 
+            color: black; 
+            padding-right: 5mm;
+        }
+        @page { margin: 0; }
+    }
+</style>
 
 </body>
 </html>
