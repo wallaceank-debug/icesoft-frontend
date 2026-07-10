@@ -2593,3 +2593,52 @@ document.addEventListener('focusin', function(e) {
         }, 400); // 400ms é o tempo exato para o teclado terminar a animação de subida no Android/iOS
     }
 });
+
+// ==========================================
+// 📲 MÁGICA DO APP NATIVO (PWA)
+// ==========================================
+let eventoInstalacaoPWA;
+
+// 1. Acorda o Trabalhador Invisível
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+        console.log("✅ Motor do App (PWA) ativado com sucesso!");
+    }).catch(err => console.log("⚠️ Erro no motor do App:", err));
+}
+
+// 2. Escuta quando o celular liberar a instalação
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); // Impede a barra padrão chata do Android
+    eventoInstalacaoPWA = e; // Guarda a permissão na manga
+    
+    // Espera 4 segundos para não ser agressivo assim que o cliente abre o menu
+    setTimeout(() => {
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner) {
+            banner.style.display = 'flex';
+            banner.style.animation = 'subirTela 0.4s ease-out'; // Aproveita sua animação já existente
+        }
+    }, 4000);
+});
+
+// 3. Ação do botão Instalar
+window.instalarPWA = function() {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+    
+    if (eventoInstalacaoPWA) {
+        eventoInstalacaoPWA.prompt(); // Mostra a telinha oficial de instalação do celular
+        eventoInstalacaoPWA.userChoice.then((escolha) => {
+            if (escolha.outcome === 'accepted') {
+                console.log('🎉 Cliente instalou o App Icesoft!');
+            }
+            eventoInstalacaoPWA = null;
+        });
+    }
+};
+
+// 4. Ação do botão "Agora não"
+window.fecharBannerPWA = function() {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+};

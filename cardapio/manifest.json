@@ -1,0 +1,17 @@
+{
+  "name": "Icesoft Delivery",
+  "short_name": "Icesoft",
+  "description": "Peça seu lanche rápido e fácil!",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#00bcd4",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
