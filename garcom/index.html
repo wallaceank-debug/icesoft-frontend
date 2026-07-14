@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- CABEÇALHO COM BOTÃO VOLTAR INVISÍVEL -->
+
     <header class="header-garcom">
         <div style="display: flex; align-items: center; gap: 10px;">
             <span class="material-symbols-outlined" id="btn-voltar-header" style="font-size: 28px; display: none; cursor: pointer;" onclick="voltarParaMesas()">arrow_back</span>
@@ -20,7 +20,6 @@
         <a href="../pdv/index.html" style="color: white; text-decoration: none;"><span class="material-symbols-outlined">exit_to_app</span></a>
     </header>
 
-    <!-- TELA 1: MAPA DE MESAS (Aparece primeiro) -->
     <div id="tela-mesas" class="tela-mesas">
         <button class="btn-nova-mesa-mobile" onclick="abrirModalNovaMesaMobile()">
             <span class="material-symbols-outlined">add</span> Abrir Nova Mesa Livre
@@ -30,13 +29,11 @@
         </div>
     </div>
 
-    <!-- TELA 2: PRODUTOS (Fica escondida até o garçom clicar em uma mesa) -->
     <div id="tela-produtos" style="display: none;">
         <div class="scroll-categorias" id="menu-categorias"></div>
         <div class="lista-produtos" id="lista-produtos"></div>
     </div>
 
-    <!-- BOTÃO FLUTUANTE DO CARRINHO (LANÇAMENTO) -->
     <div class="carrinho-flutuante" id="carrinho-flutuante" style="display: none;" onclick="abrirResumoPedido()">
         <div style="display: flex; align-items: center; gap: 10px;">
             <span class="material-symbols-outlined">shopping_cart</span>
@@ -45,7 +42,6 @@
         <span id="carrinho-total" style="font-weight: bold; font-size: 1.1rem;">R$ 0,00</span>
     </div>
 
-    <!-- GAVETA: ESCOLHER ADICIONAIS -->
     <div id="modal-adicionais" class="modal-overlay" style="display: none;">
         <div class="bottom-sheet">
             <div class="sheet-header">
@@ -59,7 +55,6 @@
         </div>
     </div>
 
-    <!-- GAVETA: REVISAR O QUE VAI ENVIAR PARA A COZINHA -->
     <div id="modal-resumo" class="modal-overlay" style="display: none;">
         <div class="bottom-sheet" style="height: 90vh; max-height: 90vh;">
             <div class="sheet-header">
@@ -75,7 +70,6 @@
         </div>
     </div>
 
-    <!-- GAVETA: CHECKOUT E PAGAMENTO NA MESA -->
     <div id="modal-pagamento-mobile" class="modal-overlay" style="display: none;">
         <div class="bottom-sheet" style="height: 95vh; max-height: 95vh; padding: 0;">
             <div class="sheet-header" style="padding: 20px; background: #f44336; color: white; margin: 0; border-radius: 20px 20px 0 0;">
