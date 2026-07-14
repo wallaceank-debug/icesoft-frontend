@@ -125,22 +125,21 @@ input:checked + .slider:before { transform: translateX(18px); }
 .categoria-btn.ativo { background: #e91e63; box-shadow: 0 4px 6px rgba(233, 30, 99, 0.3); }
 
 /* ==========================================
-   NOVA GRADE DE PRODUTOS CLEAN
+   NOVA GRADE DE PRODUTOS DE ALTA VELOCIDADE (SEM FOTOS)
    ========================================== */
 .area-produtos { flex: 1; overflow-y: auto; padding-right: 5px; }
 .area-produtos::-webkit-scrollbar { width: 6px; }
 .area-produtos::-webkit-scrollbar-thumb { background: #e0f7fa; border-radius: 10px; }
 
-.grade-produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; align-content: start; }
-.pdv-card { background: white; border-radius: 12px; border: 1px solid #00bcd4; padding: 10px; text-align: center; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-.pdv-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,188,212,0.2); }
-.pdv-card:active { transform: scale(0.96); }
+/* Layout mais largo para acomodar os nomes em linha reta e caber mais itens */
+.grade-produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-content: start; }
 
-.pdv-card img { width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: #e0f7fa; }
-.pdv-emoji { font-size: 3rem; margin-bottom: 8px; height: 90px; display: flex; align-items: center; justify-content: center; }
+.pdv-card { background: white; border-radius: 8px; border: 1px solid #ddd; border-left: 5px solid #00bcd4; padding: 15px 15px; text-align: left; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.2s; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.pdv-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,188,212,0.15); border-left-color: #e91e63; }
+.pdv-card:active { transform: scale(0.98); background-color: #f0fcfd; }
 
-.pdv-nome { font-weight: 700; color: #333; font-size: 0.8rem; line-height: 1.2; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.pdv-preco { color: #e91e63; font-weight: 800; font-size: 0.95rem; margin-top: auto; }
+.pdv-nome { font-weight: 700; color: #444; font-size: 0.95rem; line-height: 1.2; }
+.pdv-preco { color: #e91e63; font-weight: 800; font-size: 1.1rem; }
 
 /* ==========================================
    LADO DIREITO (Carrinho e Resumo do Pedido)

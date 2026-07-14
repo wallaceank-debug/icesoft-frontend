@@ -144,46 +144,36 @@ function renderizarGradeProdutos(lista) {
         return;
     }
 
-    // 🌐 MÁGICA DA URL: Pega o link da API e tira o "/api" do final
-    const BASE_URL = API_URL.replace('/api', '');
-
     lista.forEach(p => {
         // 💰 Aplica lógica visual de promoção no PDV
         let precoCalculado = calcularPrecoComDesconto(p);
-        let precoHtml = `<div class="pdv-preco" style="margin-top: 8px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
+        let isPromo = precoCalculado < Number(p.preco);
+        
+        let precoHtml = `<div class="pdv-preco">R$ ${precoCalculado.toFixed(2).replace('.', ',')}</div>`;
 
-        if (precoCalculado < Number(p.preco)) {
+        // Se estiver em promoção, risca o preço velho e mostra o novo embaixo
+        if (isPromo) {
             precoHtml = `
-                <div style="margin-top: 8px; display: flex; flex-direction: column; align-items: center; line-height: 1;">
-                    <span style="text-decoration: line-through; color: #999; font-size: 0.8rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
-                    <span class="pdv-preco" style="color: #6200ea; font-size: 1rem;">R$ ${precoCalculado.toFixed(2).replace('.', ',')}</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1;">
+                    <span style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                    <span class="pdv-preco" style="color: #6200ea;">R$ ${precoCalculado.toFixed(2).replace('.', ',')}</span>
                 </div>
             `;
         }
 
-        // 📸 CORREÇÃO DA IMAGEM: Se começar com "/uploads", bota o Easypanel na frente!
-        let urlFoto = p.imagem_url;
-        if (urlFoto && urlFoto.startsWith('/uploads/')) {
-            urlFoto = BASE_URL + urlFoto;
-        }
+        const temAdicional = p.grupos_ids && p.grupos_ids.length > 0;
+        const iconAdicional = temAdicional ? `<span class="material-symbols-outlined" style="color:#00bcd4; font-size:18px; vertical-align: middle;" title="Contém Adicionais">add_circle</span>` : '';
+        const tagPromo = isPromo ? `<span style="background:#6200ea; color:white; font-size:0.65rem; font-weight:bold; padding:2px 6px; border-radius:10px; margin-left: 5px; vertical-align: middle;">PROMO</span>` : '';
 
-        const visualProduto = urlFoto 
-            ? `<div style="position:relative;">
-                ${precoCalculado < Number(p.preco) ? '<span style="position:absolute; top:5px; right:5px; background:#6200ea; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:10px; z-index:2;">PROMO</span>' : ''}
-                <img src="${urlFoto}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-               </div>`
-            : `<div class="pdv-emoji" style="height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 8px; position:relative;">
-                ${precoCalculado < Number(p.preco) ? '<span style="position:absolute; top:5px; right:5px; background:#6200ea; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:10px;">PROMO</span>' : ''}
-                ${p.emoji || '🍨'}
-               </div>`;
-
+        // 🚀 MÁGICA DA VELOCIDADE: Layout limpo em formato de "Botão Largo" (Sem fotos)
         container.innerHTML += `
-            <div class="pdv-card" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 160px;">
-                <div>
-                    ${visualProduto}
-                    <div class="pdv-nome" style="line-height: 1.2;">${p.nome}</div>
+            <div class="pdv-card" onclick="verificarAdicao(${p.id})">
+                <div style="flex: 1; padding-right: 10px;">
+                    <div class="pdv-nome">${p.nome} ${iconAdicional} ${tagPromo}</div>
                 </div>
-                ${precoHtml}
+                <div>
+                    ${precoHtml}
+                </div>
             </div>
         `;
     });
