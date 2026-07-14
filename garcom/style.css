@@ -1,0 +1,53 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+body { background-color: #f4f7f6; color: #333; padding-bottom: 80px; }
+
+/* CABEÇALHO */
+.header-garcom { background: #00bcd4; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+/* SCROLL DE CATEGORIAS */
+.scroll-categorias { display: flex; overflow-x: auto; padding: 15px; gap: 10px; background: white; border-bottom: 1px solid #eee; position: sticky; top: 58px; z-index: 99; scroll-behavior: smooth; }
+.scroll-categorias::-webkit-scrollbar { display: none; }
+.btn-categoria { background: #f0f2f5; color: #555; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: 0.2s; font-size: 0.95rem; }
+.btn-categoria.ativo { background: #e91e63; color: white; }
+
+/* LISTA DE PRODUTOS */
+.lista-produtos { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+.produto-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.produto-card:active { background: #f8f9fa; transform: scale(0.98); }
+.prod-nome { font-size: 1rem; font-weight: 700; color: #333; margin-bottom: 4px; }
+.prod-preco { font-size: 1.1rem; font-weight: 900; color: #00bcd4; }
+
+/* BOTTOM SHEET (MÁGICA DO MOBILE) */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s; }
+.bottom-sheet { background: white; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; display: flex; flex-direction: column; max-height: 85vh; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.sheet-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; }
+.sheet-body { overflow-y: auto; margin-bottom: 15px; padding-bottom: 10px; }
+.sheet-footer { display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 15px; }
+
+/* ADICIONAIS */
+.grupo-adc { margin-bottom: 20px; }
+.grupo-adc-titulo { font-weight: bold; color: #555; font-size: 0.95rem; margin-bottom: 10px; text-transform: uppercase; }
+.item-adc { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #eee; font-size: 1rem; }
+.item-adc input[type="checkbox"] { width: 22px; height: 22px; accent-color: #e91e63; }
+
+/* ELEMENTOS GERAIS */
+.btn-primario { background: #e91e63; color: white; border: none; padding: 15px 20px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; width: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; }
+.btn-primario:active { transform: scale(0.98); }
+.carrinho-flutuante { position: fixed; bottom: 20px; left: 5%; width: 90%; background: #e91e63; color: white; padding: 15px 20px; border-radius: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4); z-index: 1000; cursor: pointer; }
+.input-garcom { width: 100%; padding: 15px; border: 1px solid #ccc; border-radius: 10px; font-size: 1.1rem; outline: none; }
+.input-garcom:focus { border-color: #00bcd4; }
+
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ==========================================
+   NOVO: TELA DE MESAS E PAGAMENTO MOBILE
+   ========================================== */
+.tela-mesas { padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 90px; }
+.mesa-mobile-card { display: flex; justify-content: space-between; align-items: center; padding: 20px 15px; border-radius: 12px; background: white; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; }
+.mesa-mobile-card:active { transform: scale(0.98); }
+.mesa-livre { border-left-color: #25D366; }
+.mesa-ocupada { border-left-color: #f44336; background: #fffafb; }
+
+.btn-nova-mesa-mobile { background: #00bcd4; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0, 188, 212, 0.2); cursor: pointer; }
+.input-pagamento { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; outline: none; margin-top: 5px; font-family: inherit; background: white; }
