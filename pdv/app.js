@@ -151,10 +151,9 @@ function renderizarGradeProdutos(lista) {
         
         let precoHtml = `<div class="pdv-preco">R$ ${precoCalculado.toFixed(2).replace('.', ',')}</div>`;
 
-        // Se estiver em promoção, risca o preço velho e mostra o novo alinhado à esquerda
         if (isPromo) {
             precoHtml = `
-                <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1;">
+                <div style="display: flex; flex-direction: column; align-items: center; line-height: 1.1;">
                     <span style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
                     <span class="pdv-preco" style="color: #6200ea;">R$ ${precoCalculado.toFixed(2).replace('.', ',')}</span>
                 </div>
@@ -162,16 +161,22 @@ function renderizarGradeProdutos(lista) {
         }
 
         const temAdicional = p.grupos_ids && p.grupos_ids.length > 0;
-        const iconAdicional = temAdicional ? `<span class="material-symbols-outlined" style="color:#00bcd4; font-size:16px; vertical-align: text-bottom;" title="Contém Adicionais">add_circle</span>` : '';
-        const tagPromo = isPromo ? `<span style="background:#6200ea; color:white; font-size:0.6rem; font-weight:bold; padding:2px 4px; border-radius:4px; vertical-align: text-bottom; margin-left: 3px;">%</span>` : '';
+        
+        // 👇 NOVO: O ícone ganhou uma classe específica e não fica mais colado ao nome
+        const iconAdicional = temAdicional ? `<span class="material-symbols-outlined icon-add-bottom" title="Contém Adicionais">add_circle</span>` : '';
+        const tagPromo = isPromo ? `<span style="background:#6200ea; color:white; font-size:0.6rem; font-weight:bold; padding:2px 4px; border-radius:4px; margin-top: 2px; display: inline-block;">PROMO</span>` : '';
 
-        // 🚀 MÁGICA DA VELOCIDADE: Layout compacto (Blocos/Teclas)
+        // 🚀 MÁGICA DA VELOCIDADE: Estrutura HTML limpa para o CSS organizar
         container.innerHTML += `
             <div class="pdv-card" onclick="verificarAdicao(${p.id})">
-                <div class="pdv-nome">${p.nome} ${iconAdicional} ${tagPromo}</div>
-                <div style="margin-top: 10px;">
+                <div class="pdv-nome-area">
+                    <div class="pdv-nome">${p.nome}</div>
+                    ${tagPromo}
+                </div>
+                <div style="margin-top: 4px;">
                     ${precoHtml}
                 </div>
+                ${iconAdicional}
             </div>
         `;
     });
