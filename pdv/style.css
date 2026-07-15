@@ -60,8 +60,9 @@ body {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    padding: 10px 25px; 
-    height: 55px;
+    padding: 15px 25px; 
+    min-height: 70px; /* 🛡️ Altura mínima para o Windows não esmagar a barra */
+    box-sizing: border-box; /* 🛡️ Protege o espaçamento interno do cabeçalho */
     flex-shrink: 0; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
