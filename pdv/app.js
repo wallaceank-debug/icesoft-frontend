@@ -222,17 +222,16 @@ function abrirModalEscolha(produto) {
     produtoEmSelecao = produto;
     escolhasAtuais = [];
     
-    // 👇 NOVO: Garante que o botão sempre volte ao estado de "Novo Item" caso tenha sido editado antes
+    // Volta o botão ao estado normal caso tenha sido editado
     const btnConfirmar = document.querySelector('#modal-opcoes button[onclick^="salvarEdicao"]');
     if (btnConfirmar) {
         btnConfirmar.setAttribute('onclick', 'confirmarEscolhasEAdicionar()');
         btnConfirmar.innerText = "Confirmar e Inserir";
-        btnConfirmar.style.backgroundColor = "#4CAF50";
+        btnConfirmar.style.backgroundColor = "#00e676";
     }
 
     document.getElementById('detalhes-produto-topo').innerHTML = `
-        <h2 style="margin:0; color:#00bcd4;">${produto.nome}</h2>
-        <p style="color:#777; margin:5px 0;">Selecione os adicionais solicitados</p>
+        <h2 style="margin:0; color:#022344; font-size: 1.5rem; font-weight: 400;">${produto.nome}</h2>
     `;
 
     const container = document.getElementById('container-grupos-opcoes');
@@ -242,30 +241,42 @@ function abrirModalEscolha(produto) {
         .map(id => gruposGlobais.find(g => g.id === Number(id)))
         .filter(g => g && g.ativo !== false); 
 
-    gruposDoProduto.forEach(grupo => {
+    gruposDoProduto.forEach((grupo, indexGrupo) => {
         const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
         if (itensAtivos.length === 0) return;
 
         let itensHtml = itensAtivos.map((item, idx) => {
             const chkId = `pdv-chk-${grupo.id}-${idx}`;
+            const precoAdc = Number(item.preco) > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</span>` : '';
+            
             return `
             <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${item.nome}', ${item.preco}, '${chkId}')" 
-                 style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; cursor:pointer;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="${chkId}" style="width:18px; height:18px; accent-color:#00bcd4; pointer-events:none;">
-                    <span style="font-weight: 500;">${item.nome}</span>
+                 style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">
+                    <span style="font-weight: 400; color: #022344; font-size: 1.1rem;">${item.nome}</span>
                 </div>
-                <span style="color:#25D366; font-weight:bold;">${item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2) : 'Grátis'}</span>
+                ${precoAdc}
             </div>`;
         }).join('');
 
+        // 🪄 MÁGICA: Abre a primeira categoria por padrão e fecha as demais (Sanfona)
+        const isOpen = indexGrupo === 0;
+        const displayBody = isOpen ? 'block' : 'none';
+        const iconHtml = isOpen 
+            ? `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${grupo.limite}</span>` 
+            : `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
+
         container.innerHTML += `
-            <div style="margin-bottom:15px;">
-                <div style="background:#f8f9fa; padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <strong style="color:#333;">${grupo.nome}</strong>
-                    <span style="font-size:0.75rem; color:white; background:#00bcd4; padding:2px 8px; border-radius:10px;">Até ${grupo.limite}</span>
+            <div style="margin-bottom:10px;">
+                <div onclick="toggleAccordionPDV(this)" style="background:#022344; color:white; padding:12px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;">
+                    <strong style="font-size: 1.1rem; font-weight: 400;">${grupo.nome}:</strong>
+                    <div class="grupo-icon-area">${iconHtml}</div>
+                    <input type="hidden" class="grupo-limite-val" value="${grupo.limite}">
                 </div>
-                ${itensHtml}
+                <div class="grupo-body-pdv" style="display:${displayBody}; padding: 5px 15px 10px 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px;">
+                    ${itensHtml}
+                </div>
             </div>
         `;
     });
@@ -273,6 +284,21 @@ function abrirModalEscolha(produto) {
     atualizarPrecoDinamico();
     document.getElementById('modal-opcoes').style.display = 'flex';
 }
+
+// 🪄 Controle inteligente da animação e troca do ícone ao clicar na barra azul
+window.toggleAccordionPDV = function(elementoHeader) {
+    const body = elementoHeader.nextElementSibling;
+    const iconArea = elementoHeader.querySelector('.grupo-icon-area');
+    const limite = elementoHeader.querySelector('.grupo-limite-val').value;
+
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        iconArea.innerHTML = `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${limite}</span>`;
+    } else {
+        body.style.display = 'none';
+        iconArea.innerHTML = `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
+    }
+};
 
 function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
