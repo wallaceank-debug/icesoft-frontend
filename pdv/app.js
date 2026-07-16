@@ -263,13 +263,17 @@ function abrirModalEscolha(produto) {
         // 🪄 MÁGICA: Abre a primeira categoria por padrão e fecha as demais (Sanfona)
         const isOpen = indexGrupo === 0;
         const displayBody = isOpen ? 'block' : 'none';
+        
+        // 🎨 NOVO: A cor baseia-se no estado inicial. Aberto é mais claro, fechado é escuro.
+        const bgHeader = isOpen ? '#0d4a82' : '#022344'; 
+        
         const iconHtml = isOpen 
             ? `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${grupo.limite}</span>` 
             : `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
 
         container.innerHTML += `
             <div style="margin-bottom:10px;">
-                <div onclick="toggleAccordionPDV(this)" style="background:#022344; color:white; padding:12px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;">
+                <div onclick="toggleAccordionPDV(this)" style="background:${bgHeader}; color:white; padding:12px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;">
                     <strong style="font-size: 1.1rem; font-weight: 400;">${grupo.nome}:</strong>
                     <div class="grupo-icon-area">${iconHtml}</div>
                     <input type="hidden" class="grupo-limite-val" value="${grupo.limite}">
@@ -285,17 +289,21 @@ function abrirModalEscolha(produto) {
     document.getElementById('modal-opcoes').style.display = 'flex';
 }
 
-// 🪄 Controle inteligente da animação e troca do ícone ao clicar na barra azul
+// 🪄 Controle inteligente da animação e troca do ícone/cor ao clicar na barra
 window.toggleAccordionPDV = function(elementoHeader) {
     const body = elementoHeader.nextElementSibling;
     const iconArea = elementoHeader.querySelector('.grupo-icon-area');
     const limite = elementoHeader.querySelector('.grupo-limite-val').value;
 
     if (body.style.display === 'none') {
+        // ABRINDO A SANFONA
         body.style.display = 'block';
+        elementoHeader.style.backgroundColor = '#0d4a82'; // 🎨 Fica claro
         iconArea.innerHTML = `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${limite}</span>`;
     } else {
+        // FECHANDO A SANFONA
         body.style.display = 'none';
+        elementoHeader.style.backgroundColor = '#022344'; // 🎨 Fica escuro
         iconArea.innerHTML = `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
     }
 };

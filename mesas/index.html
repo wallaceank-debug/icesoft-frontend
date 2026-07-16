@@ -9,143 +9,59 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
-        .grade-mesas {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 20px;
-            padding: 20px;
+        /* Estilização Premium dos Cards de Mesas */
+        .grade-mesas { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 25px; align-content: start; }
+        .mesa-card { 
+            background: white; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08); transition: 0.2s; border: 1px solid rgba(0,0,0,0.02); 
+            display: flex; flex-direction: column; justify-content: space-between; 
         }
-        .mesa-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: 0.2s;
-            border: 2px solid transparent;
-        }
-        .mesa-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .mesa-livre { border-color: #25D366; }
-        .mesa-livre h2 { color: #25D366; }
-        .mesa-ocupada { background: #fff0f4; border-color: #f44336; }
-        .mesa-ocupada h2 { color: #f44336; }
+        .mesa-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
         
-        .btn-nova-mesa {
-            background: #2196F3; color: white; padding: 12px 20px; border: none; 
-            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;
-        }
-
-        /* CSS para o Aviso de Mesas Ocupadas (Menu Icesoft) */
-        .notification-badge {
-            position: absolute;
-            top: 2px;
-            right: 4px; /* Posiciona no canto superior direito do ícone */
-            background-color: #ff3b30;
-            color: white;
-            border-radius: 50%;
-            font-size: 0.65rem;
-            font-weight: bold;
-            min-width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            border: 1px solid white;
-            z-index: 5;
-            pointer-events: none;
-        }
-
+        .mesa-livre { border-left: 5px solid #00e676; }
+        .mesa-livre h2 { color: #022344; font-weight: 600; font-size: 1.8rem; margin: 0; }
+        
+        .mesa-ocupada { border-left: 5px solid #ff5252; background: #fffafb; padding: 0; overflow: hidden;}
+        .mesa-ocupada h2 { color: #022344; font-weight: 600; font-size: 1.8rem; margin: 0; }
+        
+        .notification-badge { position: absolute; top: 2px; right: 4px; background-color: #ff3b30; color: white; border-radius: 50%; font-size: 0.65rem; font-weight: bold; min-width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 1px solid white; z-index: 5; pointer-events: none; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
     </style>
 </head>
-<body style="display: flex; height: 100vh; background-color: #f0f2f5; margin: 0; font-family: 'Poppins', sans-serif;">
+<body style="display: flex; height: 100vh; background-color: #f0f4f8; margin: 0; font-family: 'Poppins', sans-serif;">
 
+    <!-- NOVO MENU LATERAL PADRÃO -->
     <aside class="menu-lateral">
-        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
-        
-        <a href="../pdv/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                point_of_sale
-                <span class="notification-badge" id="online-notification-badge" style="display: none; background-color: #25D366;">0</span>
-            </span>
-            <span class="menu-texto">Balcão PDV</span>
-        </a>
-        
-        <a href="../mesas/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                table_restaurant
-                <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
-            </span>
-            <span class="menu-texto">Mesas/Comandas</span>
-        </a>
-        
-        <a href="../gestao/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">restaurant_menu</span>
-            <span class="menu-texto">Cardápio</span>
-        </a>
-        
-        <a href="../delivery/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">two_wheeler</span>
-            <span class="menu-texto">Gestão Delivery</span>
-        </a>
-        
-        <a href="../kanban/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">view_kanban</span>
-            <span class="menu-texto">Painel Kanban</span>
-        </a>
-        
-        <a href="../integracoes/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">hub</span>
-            <span class="menu-texto">Integrações</span>
-        </a>
-
-        <a href="../financeiro/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">account_balance</span>
-            <span class="menu-texto">Financeiro</span>
-        </a>
-        
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
-                <span class="menu-icone material-symbols-outlined">bar_chart</span>
-                <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
-            </div>
-
-            <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
-                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
-                <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
-                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
-                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
-                <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
-                <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
-            </div>
+        <div class="menu-item menu-user" title="Clientes acessando o Cardápio">
+            <span class="material-symbols-outlined" style="color: white; font-size: 1.8rem;">person</span>
+            <div id="online-notification-badge" class="badge-online" style="display: none;">0</div>
         </div>
-
-        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-            <span class="menu-icone material-symbols-outlined" style="color: #f44336;">logout</span>
-            <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
-        </div>
+        <a href="../dashboard/index.html" class="menu-item" title="Dashboard e Gráficos"><span class="material-symbols-outlined">bar_chart</span></a>
+        <a href="../pdv/" class="menu-item" title="Balcão PDV"><span class="material-symbols-outlined">point_of_sale</span></a>
+        <a href="../mesas/" class="menu-item ativo" title="Mesas e Comandas">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+        </a>
+        <a href="../gestao/" class="menu-item" title="Gestão de Cardápio"><span class="material-symbols-outlined">restaurant_menu</span></a>
+        <a href="../delivery/" class="menu-item" title="Gestão Delivery"><span class="material-symbols-outlined">two_wheeler</span></a>
+        <a href="../kanban/" class="menu-item" title="Painel Kanban da Cozinha"><span class="material-symbols-outlined">view_kanban</span></a>
+        <a href="../integracoes/" class="menu-item" title="Integrações e WhatsApp"><span class="material-symbols-outlined">hub</span></a>
+        <a href="../financeiro/" class="menu-item" title="Financeiro"><span class="material-symbols-outlined">account_balance</span></a>
+        <div class="menu-item menu-sair" onclick="fazerLogout()" title="Sair do Sistema"><span class="material-symbols-outlined">logout</span></div>
     </aside>
 
-<script>
-    function toggleRelatorios() {
-        const submenu = document.getElementById('submenu-relatorios');
-        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-    }
-</script>
-
-<script>
-    // Função limpa e única
-    function toggleRelatorios() {
-        const submenu = document.getElementById('submenu-relatorios');
-        submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-    }
-</script>
-
-    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-        <header style="background: #00bcd4; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h1 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Gestão de Mesas</h1>
-            <button onclick="abrirModalNovaMesa()" style="background: white; color: #00bcd4; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s;">+ Abrir Nova Mesa</button>
+    <div class="conteudo-principal">
+        <!-- NOVO CABEÇALHO PADRÃO -->
+        <header class="pdv-header">
+            <div class="logo-area">
+                <h1>GESTÃO DE MESAS</h1>
+            </div>
+            <div class="controles-header">
+                <button onclick="abrirModalNovaMesa()" style="background: #00e676; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">add</span> Abrir Nova Mesa
+                </button>
+            </div>
         </header>
 
         <main style="flex: 1; overflow-y: auto; padding: 20px;">
@@ -159,73 +75,80 @@
         
         <div style="background:white; width:95%; max-width:1100px; height:85vh; border-radius:15px; display:flex; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
             
-            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; background:#f0f2f5; border-right:1px solid #ddd;">
-               <div style="padding:15px 20px; background:#00bcd4; color:white; display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin:0;" id="titulo-modal-mesa">Lançando na Mesa --</h2>
-                    <button onclick="fecharModalLancamento()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; font-weight:bold;">X</button>
+            <div style="flex: 1; min-width: 0; display:flex; flex-direction:column; background:#f0f4f8; border-right:1px solid #ddd;">
+               <!-- TOPO DO MODAL (Navy Blue) -->
+               <div style="padding:15px 25px; background:#022344; color:white; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin:0; font-size: 1.4rem; font-weight: 500; letter-spacing: 0.5px;" id="titulo-modal-mesa">Lançando na Mesa --</h2>
+                    <button onclick="fecharModalLancamento()" style="background:none; border:none; color:white; font-size:2rem; cursor:pointer; transition: 0.2s;">&times;</button>
                 </div>
                 
-                <div style="padding: 15px 15px 5px 15px; background: white;">
-                    <input type="text" id="input-busca-mesa" placeholder="🔍 Buscar produto pelo nome..." onkeyup="pesquisarProdutoMesa()" style="width: 100%; padding: 12px 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border-color 0.2s;">
+                <!-- BARRA DE BUSCA -->
+                <div style="padding: 15px 20px 5px 20px; background: white;">
+                    <input type="text" id="input-busca-mesa" placeholder="🔍 Buscar produto pelo nome..." onkeyup="pesquisarProdutoMesa()" style="width: 100%; padding: 12px 15px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); transition: border-color 0.2s;">
                 </div>
 
-                <div id="categorias-mesa" style="display:flex; overflow-x:auto; gap:10px; padding:10px 15px; background:white; border-bottom:1px solid #ddd; scrollbar-width: thin;">
-                    </div>
+                <!-- CATEGORIAS -->
+                <div id="categorias-mesa" class="barra-categorias" style="padding: 15px 20px; background: white; border-bottom: 1px solid #eee; margin-bottom: 0;">
+                </div>
                 
-                <div id="produtos-mesa" style="flex:1; overflow-y:auto; padding:15px; display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px; align-content: start;">
+                <!-- PRODUTOS -->
+                <div id="produtos-mesa" class="grade-produtos" style="flex:1; overflow-y:auto; padding:20px; align-content: start;">
                 </div>
             </div>
 
+            <!-- CARRINHO LATERAL -->
             <div style="width: 350px; flex-shrink: 0; display:flex; flex-direction:column; background:white;">
-                <div style="padding:20px; border-bottom:1px solid #eee; background:#f8f9fa;">
-                    <h3 style="margin:0; color:#333;">Itens Adicionados</h3>
-                    <p style="margin:0; color:#888; font-size: 0.85rem;">Estes itens serão enviados para a mesa.</p>
+                <div style="padding:20px 25px; border-bottom:1px solid #eee; background:#fff;">
+                    <h3 style="margin:0; color:#333; font-weight: 600;">Itens Adicionados</h3>
+                    <p style="margin:5px 0 0 0; color:#888; font-size: 0.85rem;">Estes itens serão enviados para a mesa.</p>
                 </div>
                 
-                <div id="carrinho-mesa" style="flex:1; overflow-y:auto; padding:20px;">
-                    </div>
+                <div id="carrinho-mesa" style="flex:1; overflow-y:auto; padding:20px 25px;">
+                </div>
                 
-                <div style="padding:20px; border-top:1px solid #eee; background:#fff0f4;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:1.2rem; color:#333;">
-                        <strong>Total:</strong> <strong id="total-lancamento" style="color:#e91e63;">R$ 0,00</strong>
-                    </div>
-                    <div style="display:flex; gap:10px; flex-direction: column;">
-                        <button onclick="confirmarLancamentoMesa()" class="btn-confirmar" style="width:100%; padding:15px; border-radius:8px; background:#4CAF50; color:white; border:none; font-weight:bold; cursor:pointer; font-size:1.1rem;">✅ Enviar Pedido</button>
-                        <button onclick="fecharModalLancamento()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc; background:#f0f0f0; cursor:pointer; font-weight:bold; color:#555;">Cancelar</button>
+                <!-- RODAPÉ AZUL PREMIUM -->
+                <div style="padding: 15px; background: white; border-top: 1px solid #eee; flex-shrink: 0;">
+                    <div style="background: #0d4a82; border-radius: 12px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(13, 74, 130, 0.2);">
+                        <div style="color: white; display: flex; flex-direction: column; justify-content: center;">
+                            <span style="font-size:0.9rem; opacity: 0.9; margin-bottom: 2px;">Total:</span>
+                            <strong id="total-lancamento" style="font-size:1.6rem; font-weight: 600; line-height: 1;">R$ 0,00</strong>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button onclick="confirmarLancamentoMesa()" class="btn-confirmar" style="background:#00e676; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; font-size: 1rem; transition: 0.2s;">
+                                Enviar Pedido
+                            </button>
+                            <button onclick="fecharModalLancamento()" style="background:#ff5252; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; font-size: 1rem; transition: 0.2s;">
+                                Cancelar
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </div> <!-- 🛡️ A DIV HERÓICA! Ela fecha a coluna do carrinho lateral -->
 
-        </div>
-    </div>
+        </div> <!-- Fecha a caixa branca central do modal -->
+    </div> <!-- Fecha o fundo preto do modal -->
 
     <div id="modal-opcoes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); justify-content:center; align-items:center; z-index:3100;">
-        
-        <!-- A MÁGICA COMEÇA AQUI: display:flex e flex-direction:column -->
-        <div style="background:white; width:90%; max-width:500px; border-radius:20px; display:flex; flex-direction:column; max-height:90vh; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        <div style="background:white; width:90%; max-width:450px; border-radius:20px; padding:25px; display:flex; flex-direction:column; max-height:90vh; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
             
-            <!-- TOPO FIXO -->
-            <div id="detalhes-produto-topo" style="text-align:center; padding: 20px 25px 15px 25px; border-bottom: 2px solid #f0f2f5; flex-shrink: 0;">
-            </div>
-
-            <!-- MEIO ROLÁVEL (Lista de Adicionais rola apenas aqui dentro) -->
-            <div id="container-grupos-opcoes" style="flex: 1; overflow-y: auto; padding: 15px 25px;">
-            </div>
-
-            <!-- RODAPÉ FIXO (Botão sempre à vista) -->
-            <div style="flex-shrink: 0; border-top: 2px solid #f0f2f5; padding: 20px 25px; background: #fafafa; border-radius: 0 0 20px 20px;">
-                <div style="background:#e0f7fa; border-radius:15px; padding:15px 20px; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <span style="font-size:0.9rem; color:#555;">Total deste item:</span><br>
-                        <strong id="preco-dinamico" style="font-size:1.4rem; color:#00bcd4;">R$ 0,00</strong>
-                    </div>
-                    <button onclick="confirmarEscolhasEAdicionarMesa()" style="background:#4CAF50; color:white; border:none; padding:15px 30px; border-radius:12px; font-weight:bold; cursor:pointer; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(76, 175, 80, 0.3); transition: 0.2s;">
+            <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:15px; flex-shrink: 0;"></div>
+            
+            <div id="container-grupos-opcoes" style="flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 5px;"></div>
+            
+            <!-- RODAPÉ AZUL -->
+            <div style="flex-shrink: 0; background: #0d4a82; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <div style="color: white;">
+                    <span style="font-size:0.9rem; opacity: 0.9;">Total deste item:</span><br>
+                    <strong id="preco-dinamico" style="font-size:1.8rem; font-weight: 600;">R$ 0,00</strong>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button onclick="confirmarEscolhasEAdicionarMesa()" style="background:#00e676; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; font-size: 1rem; transition: 0.2s;">
                         Confirmar e Inserir
                     </button>
+                    <button onclick="fecharModalOpcoesMesa()" style="background:#ff5252; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; font-size: 1rem; transition: 0.2s;">
+                        Cancelar
+                    </button>
                 </div>
-                <button onclick="fecharModalOpcoesMesa()" style="width:100%; background:none; border:none; color:#f44336; padding:15px 0 0 0; margin-top:5px; cursor:pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;">
-                    Cancelar
-                </button>
             </div>
             
         </div>

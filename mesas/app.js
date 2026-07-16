@@ -85,15 +85,15 @@ function renderizarGrade() {
             const itens = mesaOcupada.itens || [];
             itens.forEach(item => totalMesa += Number(item.preco));
 
-            // Cartão da mesa ocupada com o botão "+" verde colado no rodapé
+            // 🛡️ CORREÇÃO: Removido o width 100% que estava estourando a caixa e adicionado box-sizing
             container.innerHTML += `
                 <div class="mesa-card mesa-ocupada" style="position: relative; padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div onclick="abrirMesaOcupada(${mesaOcupada.id})" style="padding: 20px; flex: 1;">
-                        <h2 style="margin: 0; font-size: 2rem;">Mesa ${numeroMesa}</h2>
-                        <p style="margin: 10px 0 0 0; font-weight: bold; color: #333;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">${itens.length} itens</p>
+                    <div onclick="abrirMesaOcupada(${mesaOcupada.id})" style="padding: 15px; flex: 1; cursor: pointer; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <h2 style="margin: 0; font-size: 1.8rem; color: #022344;">Mesa ${numeroMesa}</h2>
+                        <p style="margin: 8px 0 0 0; font-weight: bold; color: #333;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
+                        <p style="margin: 2px 0 0 0; font-size: 0.85rem; color: #666;">${itens.length} itens</p>
                     </div>
-                    <button onclick="event.stopPropagation(); abrirAdicaoMesa(${mesaOcupada.id}, '${numeroMesa}')" style="background: #00c853; color: white; border: none; width: 100%; padding: 8px; font-size: 2rem; font-weight: bold; cursor: pointer; line-height: 1; transition: 0.2s;">+</button>
+                    <button onclick="event.stopPropagation(); abrirAdicaoMesa(${mesaOcupada.id}, '${numeroMesa}')" style="background: #00e676; color: white; border: none; width: 100%; padding: 10px; font-size: 1.6rem; font-weight: bold; cursor: pointer; line-height: 1; transition: 0.2s;">+</button>
                 </div>
             `;
         } else {
@@ -151,11 +151,15 @@ function fecharModalLancamento() {
 
 function renderizarCategoriasMesa() {
     const nav = document.getElementById('categorias-mesa');
-    nav.innerHTML = `<button class="categoria-btn ${categoriaAtivaMesa === 'Todos' ? 'ativo' : ''}" onclick="mudarCategoriaMesa('Todos')" style="padding: 8px 15px; border:none; border-radius:20px; cursor:pointer; font-weight:bold; background: ${categoriaAtivaMesa === 'Todos' ? '#00bcd4' : '#eee'}; color: ${categoriaAtivaMesa === 'Todos' ? 'white' : '#555'};">Todos</button>`;
+    nav.innerHTML = '';
+    
+    // Aproveita as classes "categoria-btn" e "ativo" do nosso novo Design System
+    const classeTodos = categoriaAtivaMesa === 'Todos' ? 'ativo' : '';
+    nav.innerHTML += `<button class="categoria-btn ${classeTodos}" onclick="mudarCategoriaMesa('Todos')">Todos</button>`;
 
     categoriasGlobais.forEach(cat => {
-        const isAtivo = cat.nome === categoriaAtivaMesa;
-        nav.innerHTML += `<button onclick="mudarCategoriaMesa('${cat.nome}')" style="padding: 8px 15px; border:none; border-radius:20px; cursor:pointer; font-weight:bold; background: ${isAtivo ? '#00bcd4' : '#eee'}; color: ${isAtivo ? 'white' : '#555'}; white-space: nowrap;">${cat.nome}</button>`;
+        const classeAtivo = cat.nome === categoriaAtivaMesa ? 'ativo' : '';
+        nav.innerHTML += `<button class="categoria-btn ${classeAtivo}" onclick="mudarCategoriaMesa('${cat.nome}')">${cat.nome}</button>`;
     });
 }
 
@@ -174,30 +178,27 @@ function filtrarProdutosMesa() {
         lista = produtosNuvem.filter(p => (p.categoria || "Outros") === categoriaAtivaMesa);
     }
 
+    if(lista.length === 0) {
+        container.innerHTML = '<p style="padding: 20px; opacity: 0.7;">Nenhum produto encontrado nesta categoria.</p>';
+        return;
+    }
+
     lista.forEach(p => {
-        // 🍨 PLANO B PADRÃO: Já deixamos o emoji pronto!
-        let visualProduto = `<div style="font-size: 2.5rem; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; background:#f8f9fa; border-radius: 8px;">${p.emoji || '🍨'}</div>`;
+        const temAdicional = p.grupos_ids && p.grupos_ids.length > 0;
+        
+        // O famoso ícone vazado com ancoragem absoluta que criamos no PDV
+        const iconAdicional = temAdicional ? `<span class="material-symbols-outlined icon-add-bottom" title="Contém Adicionais">add_circle</span>` : '';
 
-        if (p.imagem_url) {
-            // 🛡️ CORREÇÃO 1: Garante que a foto puxe do servidor na nuvem, e não do seu PC local
-            let urlImagem = p.imagem_url.startsWith('http') 
-                ? p.imagem_url 
-                : API_URL.replace('/api', '') + (p.imagem_url.startsWith('/') ? '' : '/') + p.imagem_url;
-
-            // 🛡️ CORREÇÃO 2: A Mágica do "onerror". Se a foto falhar, esconde a foto e mostra o emoji!
-            visualProduto = `
-                <img src="${urlImagem}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width: 100%; height: 80px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <div style="font-size: 2.5rem; height: 80px; display: none; align-items: center; justify-content: center; margin-bottom: 8px; background:#f8f9fa; border-radius: 8px;">${p.emoji || '🍨'}</div>
-            `;
-        }
-
+        // 🚀 MÁGICA DA VELOCIDADE: Layout compacto em blocos (Sem fotos)
         container.innerHTML += `
-            <div class="produto-item-pdv" onclick="verificarAdicaoMesa(${p.id})" style="background:white; border:1px solid #ddd; border-radius:10px; padding:12px; text-align:center; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px;">
-                <div>
-                    ${visualProduto}
-                    <div style="font-weight:bold; color:#333; font-size:0.85rem; line-height: 1.2; margin-bottom: 5px;">${p.nome}</div>
+            <div class="pdv-card" onclick="verificarAdicaoMesa(${p.id})">
+                <div class="pdv-nome-area">
+                    <div class="pdv-nome">${p.nome}</div>
                 </div>
-                <div style="color:#e91e63; font-weight:900; font-size: 1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                <div style="margin-top: 4px;">
+                    <div class="pdv-preco">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                </div>
+                ${iconAdicional}
             </div>
         `;
     });
@@ -254,8 +255,7 @@ function abrirModalEscolhaMesa(produto) {
     escolhasAtuaisMesa = [];
     
     document.getElementById('detalhes-produto-topo').innerHTML = `
-        <h2 style="margin:0; color:#00bcd4;">${produto.nome}</h2>
-        <p style="color:#777; margin:5px 0;">Selecione os adicionais solicitados</p>
+        <h2 style="margin:0; color:#022344; font-size: 1.5rem; font-weight: 400;">${produto.nome}</h2>
     `;
 
     const container = document.getElementById('container-grupos-opcoes');
@@ -265,30 +265,43 @@ function abrirModalEscolhaMesa(produto) {
         .map(id => gruposGlobais.find(g => g.id === Number(id)))
         .filter(g => g && g.ativo !== false); 
 
-    gruposDoProduto.forEach(grupo => {
+    gruposDoProduto.forEach((grupo, indexGrupo) => {
         const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
         if (itensAtivos.length === 0) return;
 
         let itensHtml = itensAtivos.map((item, idx) => {
             const chkId = `mesa-chk-${grupo.id}-${idx}`;
+            const precoAdc = Number(item.preco) > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</span>` : '';
+            
             return `
             <div onclick="toggleOpcionalMesa(${grupo.id}, '${item.nome}', ${item.preco}, '${chkId}')" 
-                 style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee; cursor:pointer;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="${chkId}" style="width:18px; height:18px; accent-color:#00bcd4; pointer-events:none;">
-                    <span style="font-weight: 500;">${item.nome}</span>
+                 style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">
+                    <span style="font-weight: 400; color: #022344; font-size: 1.1rem;">${item.nome}</span>
                 </div>
-                <span style="color:#25D366; font-weight:bold;">${item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2) : 'Grátis'}</span>
+                ${precoAdc}
             </div>`;
         }).join('');
 
+        // 🪄 MÁGICA: Abre a primeira categoria por padrão e fecha as demais
+        const isOpen = indexGrupo === 0;
+        const displayBody = isOpen ? 'block' : 'none';
+        const bgHeader = isOpen ? '#0d4a82' : '#022344'; 
+        const iconHtml = isOpen 
+            ? `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${grupo.limite}</span>` 
+            : `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
+
         container.innerHTML += `
-            <div style="margin-bottom:15px;">
-                <div style="background:#f8f9fa; padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <strong style="color:#333;">${grupo.nome}</strong>
-                    <span style="font-size:0.75rem; color:white; background:#00bcd4; padding:2px 8px; border-radius:10px;">Até ${grupo.limite}</span>
+            <div style="margin-bottom:10px;">
+                <div onclick="toggleAccordionMesa(this)" style="background:${bgHeader}; color:white; padding:12px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;">
+                    <strong style="font-size: 1.1rem; font-weight: 400;">${grupo.nome}:</strong>
+                    <div class="grupo-icon-area">${iconHtml}</div>
+                    <input type="hidden" class="grupo-limite-val" value="${grupo.limite}">
                 </div>
-                ${itensHtml}
+                <div class="grupo-body-mesa" style="display:${displayBody}; padding: 5px 15px 10px 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px;">
+                    ${itensHtml}
+                </div>
             </div>
         `;
     });
@@ -296,6 +309,23 @@ function abrirModalEscolhaMesa(produto) {
     atualizarPrecoDinamicoMesa();
     document.getElementById('modal-opcoes').style.display = 'flex';
 }
+
+// 🪄 Controle inteligente da animação da Sanfona nas Mesas
+window.toggleAccordionMesa = function(elementoHeader) {
+    const body = elementoHeader.nextElementSibling;
+    const iconArea = elementoHeader.querySelector('.grupo-icon-area');
+    const limite = elementoHeader.querySelector('.grupo-limite-val').value;
+
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        elementoHeader.style.backgroundColor = '#0d4a82';
+        iconArea.innerHTML = `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${limite}</span>`;
+    } else {
+        body.style.display = 'none';
+        elementoHeader.style.backgroundColor = '#022344';
+        iconArea.innerHTML = `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
+    }
+};
 
 function toggleOpcionalMesa(grupoId, nomeItem, preco, chkId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
