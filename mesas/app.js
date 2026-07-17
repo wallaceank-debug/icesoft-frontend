@@ -18,7 +18,7 @@ let escolhasAtuaisMesa = [];
 window.onload = async () => {
     await carregarCardapio(); 
     await carregarMesas();
-    await carregarClientesCRM();    
+    // 🛡️ O CRM agora consulta as vendas antigas dinamicamente, eliminando o erro 401 da inicialização!
 
     // 🖱️ MÁGICA DO SCROLL: Transforma a rolagem vertical do mouse em horizontal
     const scrollCategorias = document.getElementById('categorias-mesa');
@@ -85,22 +85,23 @@ function renderizarGrade() {
             const itens = mesaOcupada.itens || [];
             itens.forEach(item => totalMesa += Number(item.preco));
 
-            // 🛡️ CORREÇÃO: Removido o width 100% que estava estourando a caixa e adicionado box-sizing
+            // 🛡️ CORREÇÃO: white-space: nowrap adicionado para impedir quebra de linha. Fonte padronizada em 1.6rem.
             container.innerHTML += `
                 <div class="mesa-card mesa-ocupada" style="position: relative; padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
                     <div onclick="abrirMesaOcupada(${mesaOcupada.id})" style="padding: 15px; flex: 1; cursor: pointer; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                        <h2 style="margin: 0; font-size: 1.8rem; color: #022344;">Mesa ${numeroMesa}</h2>
-                        <p style="margin: 8px 0 0 0; font-weight: bold; color: #333;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
+                        <h2 style="margin: 0; font-size: 1.6rem; color: #022344; white-space: nowrap;">Mesa ${numeroMesa}</h2>
+                        <p style="margin: 8px 0 0 0; font-weight: bold; color: #333; font-size: 1.1rem;">R$ ${totalMesa.toFixed(2).replace('.', ',')}</p>
                         <p style="margin: 2px 0 0 0; font-size: 0.85rem; color: #666;">${itens.length} itens</p>
                     </div>
                     <button onclick="event.stopPropagation(); abrirAdicaoMesa(${mesaOcupada.id}, '${numeroMesa}')" style="background: #00e676; color: white; border: none; width: 100%; padding: 10px; font-size: 1.6rem; font-weight: bold; cursor: pointer; line-height: 1; transition: 0.2s;">+</button>
                 </div>
             `;
         } else {
+            // 🛡️ CORREÇÃO: O cartão de mesa livre agora herda a mesma estrutura Flexbox de centralização da mesa ocupada.
             container.innerHTML += `
-                <div class="mesa-card mesa-livre" onclick="abrirNovaMesa('${numeroMesa}')">
-                    <h2 style="margin: 0; font-size: 2rem;">Mesa ${numeroMesa}</h2>
-                    <p style="margin: 10px 0 0 0; color: #666;">Livre</p>
+                <div class="mesa-card mesa-livre" onclick="abrirNovaMesa('${numeroMesa}')" style="padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 130px;">
+                    <h2 style="margin: 0; font-size: 1.6rem; color: #022344; white-space: nowrap;">Mesa ${numeroMesa}</h2>
+                    <p style="margin: 8px 0 0 0; color: #888; font-size: 0.95rem;">Livre</p>
                 </div>
             `;
         }
@@ -398,7 +399,7 @@ function renderizarCarrinhoMesa() {
     let subtotal = 0;
 
     if (carrinhoLancamento.length === 0) {
-        container.innerHTML = '<p style="color:#888; text-align:center; margin-top:20px;">Nenhum item selecionado.</p>';
+        container.innerHTML = '<p style="color:#888; text-align:center; margin-top:20px; font-size: 0.95rem;">Nenhum item selecionado.</p>';
         document.getElementById('total-lancamento').innerText = 'R$ 0,00';
         return;
     }
@@ -409,17 +410,24 @@ function renderizarCarrinhoMesa() {
         
         let htmlAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
-            htmlAdicionais = item.adicionais.map(adc => `<div style="font-size: 0.8rem; color: #666; padding-left: 10px;">+ ${adc}</div>`).join('');
+            htmlAdicionais = item.adicionais.map(adc => `
+                <div style="color: #666; font-size: 0.85rem; margin-top: 2px;">
+                    + ${adc}
+                </div>
+            `).join('');
         }
 
+        // 🚀 O NOVO CARD DO CARRINHO (Com bordas e lixeira Premium)
         container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:start; padding:10px 0; border-bottom:1px dashed #ddd;">
+            <div style="background: white; border: 1px solid #cfd8dc; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 <div style="flex:1;">
-                    <div style="font-weight:bold; color:#333;">${item.nomeBase}</div>
+                    <div style="font-weight: 600; color: #022344; font-size: 1.05rem;">${item.nomeBase}</div>
                     ${htmlAdicionais}
-                    <div style="color:#e91e63; font-weight:bold; font-size:0.9rem; margin-top: 5px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
+                    <div style="color: #e91e63; font-weight: 700; font-size: 1.05rem; margin-top: 8px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
                 </div>
-                <button onclick="removerDoCarrinhoMesa(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; padding: 5px;">🗑️</button>
+                <button onclick="removerDoCarrinhoMesa(${index})" style="background: none; color: #555; border: none; font-size: 1.5rem; cursor: pointer; transition: 0.2s;" title="Remover Item">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
             </div>
         `;
     });
@@ -534,32 +542,29 @@ function renderizarTelasDePagamento() {
 
     // 1. Itens restantes na mesa (Esquerda)
     if (itensRestantesNaMesa.length === 0) {
-        listaMesa.innerHTML = '<p style="text-align:center; color:#888;">Nenhum item restando na mesa.</p>';
+        listaMesa.innerHTML = '<p style="text-align:center; color:#888; font-size: 0.9rem; margin-top: 20px;">Nenhum item restando na mesa.</p>';
     } else {
         itensRestantesNaMesa.forEach((item, index) => {
-            // LÓGICA DE UI: Desempacota os adicionais em linhas separadas
             let htmlAdicionais = '';
             if (item.adicionais && item.adicionais.length > 0) {
                 htmlAdicionais = item.adicionais.map(adc => `
-                    <div style="color: #666; font-size: 0.9rem; padding-left: 20px; margin-top: 4px;">
-                        + ${adc}
+                    <div style="color: #022344; font-size: 0.85rem; margin-top: 2px;">
+                        +${adc}
                     </div>
                 `).join('');
             }
 
+            // 🚀 A MÁGICA: Cartão clicável para mover rápido!
             listaMesa.innerHTML += `
-                <div style="background: white; border: 1px solid #eee; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="background: white; border: 1px solid #cfd8dc; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; transition: 0.2s;" onclick="moverParaPagamento(${index})" onmouseover="this.style.borderColor='#0d4a82'" onmouseout="this.style.borderColor='#cfd8dc'">
                     <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-weight: 700; font-size: 1rem; color: #888;">1x</span>
-                            <span style="font-weight: bold; color: #333; font-size: 1.1rem;">${item.nomeBase || item.nome}</span>
-                        </div>
+                        <div style="font-weight: 600; color: #022344; font-size: 1.05rem;">${item.nomeBase || item.nome}</div>
                         ${htmlAdicionais}
-                        <div style="color: #e91e63; font-weight: 900; font-size: 1.1rem; margin-top: 8px; padding-left: 28px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+                        <div style="color: #1765ab; font-weight: 500; font-size: 1.05rem; margin-top: 8px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                     </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <button onclick="removerItemDaMesa(${index})" style="background: #fff0f4; color: #f44336; border: 1px solid #ffcdd2; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 1rem;" title="Cancelar este item">🗑️</button>
-                        <button onclick="moverParaPagamento(${index})" style="background: #e91e63; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">Pagar ➡</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="event.stopPropagation(); removerItemDaMesa(${index})" style="background: none; color: #ff5252; border: none; font-size: 1.5rem; cursor: pointer; transition: 0.2s;" title="Remover item da mesa"><span class="material-symbols-outlined">delete</span></button>
+                        <span class="material-symbols-outlined" style="color: #00e676; font-size: 1.8rem; margin-left: 5px;">arrow_forward</span>
                     </div>
                 </div>
             `;
@@ -568,31 +573,27 @@ function renderizarTelasDePagamento() {
 
     // 2. Itens sendo pagos agora (Direita)
     if (itensSendoPagos.length === 0) {
-        listaPagamento.innerHTML = '<p style="text-align:center; color:#888;">Selecione os itens ao lado que serão pagos agora.</p>';
+        listaPagamento.innerHTML = '<p style="text-align:center; color:#888; font-size: 0.9rem; margin-top: 20px;">Selecione os itens ao lado que serão pagos agora.</p>';
     } else {
         itensSendoPagos.forEach((item, index) => {
             subtotalPagamento += Number(item.preco);
             
-            // LÓGICA DE UI: Repete a formatação limpa para o lado direito também
             let htmlAdicionais = '';
             if (item.adicionais && item.adicionais.length > 0) {
                 htmlAdicionais = item.adicionais.map(adc => `
-                    <div style="color: #666; font-size: 0.9rem; padding-left: 20px; margin-top: 4px;">
-                        + ${adc}
+                    <div style="color: #022344; font-size: 0.85rem; margin-top: 2px;">
+                        +${adc}
                     </div>
                 `).join('');
             }
 
             listaPagamento.innerHTML += `
-                <div style="background: white; border: 1px solid #00bcd4; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <button onclick="voltarParaMesa(${index})" style="background: none; border: none; color: #f44336; cursor: pointer; font-size: 1.5rem; padding: 0 15px 0 5px;" title="Devolver para a mesa">⬅</button>
+                <div style="background: white; border: 1px solid #00e676; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,230,118,0.1);" onclick="voltarParaMesa(${index})">
+                    <span class="material-symbols-outlined" style="color: #ff5252; font-size: 1.5rem; margin-right: 15px;">arrow_back</span>
                     <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-weight: 700; font-size: 1rem; color: #888;">1x</span>
-                            <span style="font-weight: bold; color: #00838f; font-size: 1.1rem;">${item.nomeBase || item.nome}</span>
-                        </div>
+                        <div style="font-weight: 600; color: #022344; font-size: 1.05rem;">${item.nomeBase || item.nome}</div>
                         ${htmlAdicionais}
-                        <div style="color: #e91e63; font-weight: 900; font-size: 1.1rem; margin-top: 8px; padding-left: 28px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+                        <div style="color: #1765ab; font-weight: 500; font-size: 1.05rem; margin-top: 8px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                     </div>
                 </div>
             `;
@@ -900,36 +901,70 @@ function updateMesasNotificationBadge(count) {
 }
 
 // ==========================================
-// 🎁 INTELIGÊNCIA DE FIDELIDADE (CRM)
+// 🎁 INTELIGÊNCIA DE FIDELIDADE (CRM) E MÁSCARA - 100% SEGURO
 // ==========================================
-let clientesCRMGlobal = [];
 
-async function carregarClientesCRM() {
-    try {
-        const cracha = localStorage.getItem('icesoft_token');
-        const res = await fetch(`${API_URL}/crm/clientes`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${cracha}` }
-        });
+// 1. Ouve a digitação em tempo real, cria a máscara e busca sozinho
+const inputTelMesa = document.getElementById('mesa-cliente-telefone');
+if (inputTelMesa) {
+    inputTelMesa.addEventListener('input', function (e) {
+        // Remove tudo que não for número
+        let limpo = e.target.value.replace(/\D/g, '');
+        if (limpo.startsWith('55') && limpo.length >= 12) limpo = limpo.substring(2);
         
-        // Se for barrado, sai silenciosamente para não quebrar a tela de mesas
-        if (res.status === 401 || res.status === 403) return;
-
-        clientesCRMGlobal = await res.json();
-    } catch(e) { console.log("Erro ao carregar CRM nas mesas", e); }
+        // Aplica a máscara (XX) XXXXX-XXXX
+        let x = limpo.match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        
+        // MÁGICA: Ao bater 15 caracteres exatos, busca sozinho!
+        const inputNome = document.getElementById('mesa-cliente-nome');
+        if (e.target.value.length === 15) {
+            buscarClienteCRM(e.target.value);
+        } else {
+            // Se o operador apagar um número, limpa o nome para evitar confusão
+            inputNome.value = ''; 
+            inputNome.placeholder = "Nome do Cliente (Opcional)";
+        }
+    });
 }
 
-function buscarClienteCRM(telefoneDigitado) {
+async function buscarClienteCRM(telefoneDigitado) {
     if (!telefoneDigitado) return;
     
-    // Limpa o que a pessoa digitou para deixar só os números (tira espaços, traços)
     const numeroLimpo = telefoneDigitado.replace(/\D/g, '');
+    if (numeroLimpo.length < 10) return; 
     
-    // Procura na memória se já existe alguém com esse número
-    const cliente = clientesCRMGlobal.find(c => c.telefone && c.telefone.replace(/\D/g, '') === numeroLimpo);
+    const inputNome = document.getElementById('mesa-cliente-nome');
     
-    // Se achou, preenche o nome como num passe de mágica!
-    if (cliente && cliente.nome) {
-        document.getElementById('mesa-cliente-nome').value = cliente.nome;
+    try {
+        // Feedback visual: avisa o operador que está pensando...
+        inputNome.placeholder = "⏳ Buscando cliente...";
+
+        // 🎯 TENTATIVA 1: Busca o telefone com a máscara exata (ex: (24) 99999-9999)
+        let res = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(telefoneDigitado)}`);
+        let compras = await res.json();
+        
+        // 🎯 TENTATIVA 2: Se não achar com máscara, busca só os números puros (ex: 24999999999)
+        if (compras.length === 0) {
+            res = await fetch(`${API_URL}/vendas/cliente/${numeroLimpo}`);
+            compras = await res.json();
+        }
+        
+        // Se achou o cliente, preenche o nome e faz o brilho verde de sucesso!
+        if (compras.length > 0 && compras[0].cliente_nome) {
+            inputNome.value = compras[0].cliente_nome;
+            
+            inputNome.style.borderColor = "#00e676"; 
+            inputNome.style.boxShadow = "0 0 5px rgba(0, 230, 118, 0.5)";
+            setTimeout(() => {
+                inputNome.style.borderColor = "#cfd8dc";
+                inputNome.style.boxShadow = "none";
+            }, 1500);
+        } else {
+            inputNome.placeholder = "Nome do Cliente (Opcional)";
+        }
+    } catch(e) { 
+        console.log("Erro ao buscar histórico do cliente", e); 
+        inputNome.placeholder = "Nome do Cliente (Opcional)";
     }
 }

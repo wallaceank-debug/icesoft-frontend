@@ -158,103 +158,100 @@
 <div id="modal-pagamento-mesa" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); justify-content:center; align-items:center; z-index:3200;">
     <div style="background:#f0f2f5; width:95%; max-width:1200px; height:85vh; border-radius:15px; display:flex; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
 
-        <!-- COLUNA 1: ITENS NA MESA -->
         <div style="flex: 1; display:flex; flex-direction:column; background:white; border-right:1px solid #ddd;">
-            <div style="padding:15px 20px; background:#f44336; color:white; display:flex; justify-content:space-between; align-items:center;">
-                <h2 style="margin:0;" id="titulo-pagamento-mesa">Mesa --</h2>
-                <button onclick="fecharModalPagamentoMesa()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; font-weight:bold;">X</button>
+            <div style="padding:15px 20px; background:#0d4a82; color:white; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="margin:0; font-size: 1.4rem; font-weight: 500;" id="titulo-pagamento-mesa">Mesa --</h2>
+                <button onclick="fecharModalPagamentoMesa()" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer; line-height: 1; transition: 0.2s;">&times;</button>
             </div>
-            <div style="padding: 10px; background: #fff0f4; border-bottom: 1px solid #eee; text-align: center;">
-                <button onclick="moverTodosParaPagamento()" style="background: #2196F3; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem;">➡ Pagar Tudo</button>
+            <div style="padding: 15px; background: #fff; border-bottom: 1px solid #eee; text-align: center;">
+                <button onclick="moverTodosParaPagamento()" style="background: #022344; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <span class="material-symbols-outlined">play_arrow</span> Pagar Tudo
+                </button>
             </div>
-            <div id="lista-itens-mesa" style="flex:1; overflow-y:auto; padding:15px; display: flex; flex-direction: column; gap: 10px;">
-                <!-- Injetado via JS -->
-            </div>
+            <div id="lista-itens-mesa" style="flex:1; overflow-y:auto; padding:15px; display: flex; flex-direction: column; gap: 10px; background: #f8f9fa;">
+                </div>
         </div>
 
-        <!-- COLUNA 2: ITENS SENDO PAGOS (RESUMO) -->
         <div style="flex: 1; display:flex; flex-direction:column; background:#fafafa; border-right:1px solid #ddd;">
-            <div style="padding:15px 20px; background:#e0f7fa; border-bottom:1px solid #ddd; text-align: center;">
-                <h3 style="margin:0; color:#00838f;">Sendo Pago Agora</h3>
+            <div style="padding:15px 20px; background:#0d4a82; color:white; border-bottom:1px solid #0b3d6b; text-align: center; display: flex; align-items: center; justify-content: center; height: 60px;">
+                <h2 style="margin:0; font-size: 1.4rem; font-weight: 500;">Sendo Pago Agora</h2>
             </div>
-            <div id="lista-itens-pagamento" style="flex:1; overflow-y:auto; padding:15px; display: flex; flex-direction: column; gap: 10px;">
-                <!-- Injetado via JS -->
-            </div>
+            <div id="lista-itens-pagamento" style="flex:1; overflow-y:auto; padding:15px; display: flex; flex-direction: column; gap: 10px; background: #f8f9fa;">
+                </div>
         </div>
 
-        <!-- COLUNA 3: ÁREA DE COBRANÇA E BOTÃO -->
-        <div style="width: 380px; flex-shrink: 0; display:flex; flex-direction:column; background:white; overflow-y:auto;">
+        <div style="width: 360px; flex-shrink: 0; display:flex; flex-direction:column; background:white; overflow-y:auto;">
+            <div style="background: #0d4a82; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; height: 60px;">
+                <span style="font-size:1.1rem; font-weight: 400;">Subtotal</span> 
+                <strong id="subtotal-pagamento-mesa" style="font-size: 1.3rem; font-weight: 600;">R$ 0,00</strong>
+            </div>
+            
             <div style="padding:20px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:1.1rem; color:#555;">
-                    <span>Subtotal:</span> <strong id="subtotal-pagamento-mesa">R$ 0,00</strong>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; cursor: pointer; color: #ff5252;" onclick="pedirDescontoMesa()" title="Clique para adicionar desconto">
+                    <span>Descontos ✏️</span> <strong id="desconto-pagamento-mesa">- R$ 0,00</strong>
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px; cursor: pointer; color: #f44336;" onclick="pedirDescontoMesa()" title="Clique para adicionar desconto">
-                    <span>Desconto ✏️:</span> <strong id="desconto-pagamento-mesa">- R$ 0,00</strong>
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; cursor: pointer; color: #00bcd4;" onclick="pedirAcrescimoMesa()" title="Clique para adicionar taxa">
+                    <span>Acréscimos ✏️</span> <strong id="acrescimo-pagamento-mesa">+ R$ 0,00</strong>
                 </div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:15px; cursor: pointer; color: #2196F3;" onclick="pedirAcrescimoMesa()" title="Clique para adicionar taxa">
-                    <span>Acréscimo ✏️:</span> <strong id="acrescimo-pagamento-mesa">+ R$ 0,00</strong>
-                </div>
-                <hr style="border: 0; border-top: 1px dashed #ccc; margin-bottom: 15px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:1.4rem; color:#333;">
-                    <strong>A Cobrar:</strong> <strong id="total-pagamento-mesa" style="color:#e91e63;">R$ 0,00</strong>
+                
+                <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom:15px; font-size:1.2rem; color:#333;">
+                    <span style="font-weight: 400;">Total a Cobrar</span> <strong id="total-pagamento-mesa" style="font-size: 1.5rem; font-weight: 600;">R$ 0,00</strong>
                 </div>
 
-                <div style="background:#fff0f4; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px dashed #f48fb1;">
-                    <label style="color:#e91e63; font-weight:700; font-size:0.9rem; display:flex; align-items:center; gap:5px; margin-bottom: 8px;">
-                        <span class="material-symbols-outlined" style="font-size:1.2rem;">loyalty</span> Fidelidade & Cliente
-                    </label>
-                    <input type="text" id="mesa-cliente-telefone" placeholder="📱 WhatsApp (Com DDD)" style="width:100%; padding:10px; border:1px solid #f8bbd0; border-radius:8px; font-size:0.95rem; box-sizing: border-box; outline: none; margin-bottom: 8px;" onblur="buscarClienteCRM(this.value)">
-                    <input type="text" id="mesa-cliente-nome" placeholder="👤 Nome do Cliente (Opcional)" style="width:100%; padding:10px; border:1px solid #f8bbd0; border-radius:8px; font-size:0.95rem; box-sizing: border-box; outline: none;">
+                <div style="border: 1px solid #cfd8dc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <label style="color:#0d4a82; font-weight:600; font-size:0.95rem; display:flex; justify-content: center; margin-bottom: 10px;">Cliente & Fidelidade</label>
+                    <input type="text" id="mesa-cliente-telefone" placeholder="Whatsapp (com DDD)" style="width:100%; padding:10px; border:1px solid #cfd8dc; border-radius:6px; font-size:0.95rem; box-sizing: border-box; outline: none; margin-bottom: 8px;" onblur="buscarClienteCRM(this.value)">
+                    <input type="text" id="mesa-cliente-nome" placeholder="Nome do Cliente (Opcional)" style="width:100%; padding:10px; border:1px solid #cfd8dc; border-radius:6px; font-size:0.95rem; box-sizing: border-box; outline: none;">
                 </div>
 
-                <!-- NOVO SISTEMA DE PAGAMENTO DIVIDIDO (MESAS) -->
-                <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #eee;">
-                    <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 1</label>
-                    <select id="mesa-metodo-1" class="input-padrao" style="width:100%; margin-top:5px; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoMesa()">
-                        <option value="Dinheiro">💵 Dinheiro</option>
-                        <option value="PIX">💠 PIX</option>
-                        <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-                        <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                <div style="border: 1px solid #cfd8dc; border-radius: 8px; padding: 15px; margin-bottom: 10px; background: #fcfcfc;">
+                    <label style="color:#0d4a82; font-weight:600; font-size:0.95rem; display:flex; justify-content: center; margin-bottom: 10px;">Forma de Pagamento 1</label>
+                    <select id="mesa-metodo-1" style="width:100%; margin-bottom:10px; font-size:1rem; padding:10px; cursor:pointer; border: 1px solid #cfd8dc; border-radius: 6px; outline: none; color: #555; background: white;" onchange="verificarMetodoMesa()">
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
                     </select>
-                    <label style="color:#555; font-weight:600; font-size:0.8rem;">Valor a cobrar aqui (R$)</label>
-                    <input type="number" id="mesa-valor-1" class="input-padrao" style="width:100%; margin-top:5px; font-size:1.2rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;" onkeyup="calcularTrocoMesa()">
+                    <label style="color:#0d4a82; font-weight:600; font-size:0.95rem; display:flex; justify-content: center; margin-bottom: 10px;">Valor a cobrar (R$)</label>
+                    <input type="number" id="mesa-valor-1" style="width:100%; font-size:1.1rem; padding: 10px; border: 1px solid #cfd8dc; border-radius: 6px; outline: none; text-align: center; color: #555;" onkeyup="calcularTrocoMesa()">
                 </div>
 
-                <button id="btn-add-pagamento-mesa" onclick="togglePagamentoDivididoMesa()" style="width:100%; padding:10px; background:none; border:1px dashed #00bcd4; color:#00bcd4; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition: 0.2s;">
-                    + Dividir em 2 Pagamentos
+                <button id="btn-add-pagamento-mesa" onclick="togglePagamentoDivididoMesa()" style="width:100%; padding:10px; background:#e0f2f1; border:none; color:#009688; border-radius:6px; font-weight:bold; cursor:pointer; margin-bottom:10px; transition: 0.2s;">
+                    + Dividir em 2 Pagamentos?
                 </button>
 
-                <!-- Pagamento 2 (Oculto por padrão) -->
-                <div id="area-pagamento-2-mesa" style="display:none; background:#f0f4f8; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px dashed #90caf9;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                        <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 2</label>
-                        <button onclick="togglePagamentoDivididoMesa()" style="background:none; border:none; color:#f44336; font-size:0.8rem; cursor:pointer; font-weight:bold;">Remover Divisão</button>
+                <div id="area-pagamento-2-mesa" style="display:none; border: 1px solid #cfd8dc; background:#fcfcfc; padding:15px; border-radius:8px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <label style="color:#0d4a82; font-weight:600; font-size:0.95rem;">Forma 2</label>
+                        <button onclick="togglePagamentoDivididoMesa()" style="background:none; border:none; color:#f44336; font-size:0.8rem; cursor:pointer; font-weight:bold;">Remover</button>
                     </div>
-                    <select id="mesa-metodo-2" class="input-padrao" style="width:100%; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoMesa()">
-                        <option value="PIX">💠 PIX</option>
-                        <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-                        <option value="Cartão de Débito">💳 Cartão de Débito</option>
-                        <option value="Dinheiro">💵 Dinheiro</option>
+                    <select id="mesa-metodo-2" style="width:100%; margin-bottom:10px; font-size:1rem; padding:10px; cursor:pointer; border: 1px solid #cfd8dc; border-radius: 6px; outline: none; color: #555; background: white;" onchange="verificarMetodoMesa()">
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Dinheiro">Dinheiro</option>
                     </select>
-                    <label style="color:#555; font-weight:600; font-size:0.8rem;">Restante cobrado aqui (R$)</label>
-                    <input type="number" id="mesa-valor-2" class="input-padrao" readonly style="width:100%; margin-top:5px; font-size:1.2rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background:#e0e0e0; color:#555;">
+                    <label style="color:#0d4a82; font-weight:600; font-size:0.85rem; display:flex; justify-content: center; margin-bottom: 5px;">Restante cobrado aqui (R$)</label>
+                    <input type="number" id="mesa-valor-2" readonly style="width:100%; font-size:1.1rem; padding: 10px; border: 1px solid #cfd8dc; border-radius: 6px; background:#eeeeee; color:#555; text-align: center; outline: none;">
                 </div>
 
-                <div id="area-troco-mesa" style="background:#e0f7fa; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #b2ebf2; display:none;">
-                    <label style="color:#00838f; font-weight:600; font-size:0.9rem;">Cliente pagou em Dinheiro com (R$)</label>
-                    <input type="number" id="recebido-pagamento-mesa" class="input-padrao" placeholder="Ex: 50.00" style="width:100%; margin-top:5px; font-size:1.2rem; padding: 10px; border: 1px solid #00bcd4; border-radius: 8px;" onkeyup="calcularTrocoMesa()">
-                    <div style="text-align:right; margin-top:10px; font-weight:bold; color:#555;">
-                        Troco a devolver: <span id="troco-pagamento-mesa" style="color:#25D366; font-size:1.2rem;">R$ 0,00</span>
+                <div id="area-troco-mesa" style="border: 1px solid #cfd8dc; padding:15px; border-radius:8px; margin-bottom:15px; display:none; background: #fff;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                        <span style="font-size:0.85rem; color:#555;">Cliente deu (R$):</span>
+                        <input type="number" id="recebido-pagamento-mesa" placeholder="Ex: 50,00" style="width:100px; padding: 5px; border: 1px solid #cfd8dc; border-radius: 4px; outline: none; text-align: right;" onkeyup="calcularTrocoMesa()">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <span style="font-size:0.85rem; color:#555;">Troco a devolver:</span>
+                        <strong id="troco-pagamento-mesa" style="color:#00e676; font-size:1.1rem;">R$ 0,00</strong>
                     </div>
                 </div>
 
-                <button id="btn-finalizar-mesa" onclick="finalizarPagamentoMesa()" style="width:100%; padding:15px; border-radius:8px; background:#4CAF50; color:white; border:none; font-weight:bold; cursor:pointer; font-size:1.1rem;">💰 Confirmar Pagamento</button>
+                <button id="btn-finalizar-mesa" onclick="finalizarPagamentoMesa()" style="width:100%; padding:15px; border-radius:8px; background:#00e676; color:white; border:none; font-weight:600; cursor:pointer; font-size:1.1rem; box-shadow: 0 4px 6px rgba(0, 230, 118, 0.2); transition: 0.2s; margin-bottom: 20px;">Confirmar Pagamento</button>
             </div>
         </div>
     </div>
 </div>
 
-    <script src="app.js"></script>
-    <script src="../radar.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
