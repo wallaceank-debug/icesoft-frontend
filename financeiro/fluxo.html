@@ -9,27 +9,72 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
-        .fin-container { padding: 20px; flex: 1; overflow-y: auto; background-color: #f4f7f6; }
-        .fluxo-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+        .fin-container { padding: 20px; flex: 1; background-color: #f4f7f6; }
+        .fluxo-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
-        .fluxo-table { width: 100%; border-collapse: collapse; min-width: 1400px; font-size: 0.95rem; }
-        .fluxo-table th, .fluxo-table td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #f0f0f0; }
-        .fluxo-table th:first-child, .fluxo-table td:first-child { text-align: left; font-weight: 600; color: #555; position: sticky; left: 0; background: white; border-right: 2px solid #eee; z-index: 2;}
-        
-        .fluxo-table th { background-color: #f8f9fa; color: #333; font-weight: bold; border-bottom: 2px solid #ddd; vertical-align: top; }
-        
-        .linha-grupo td { background-color: #e0f7fa; font-weight: 700; color: #00838f; border-top: 2px solid #b2ebf2; border-bottom: 2px solid #b2ebf2;}
-        .linha-grupo.despesa td { background-color: #ffebee; color: #c62828; border-top: 2px solid #ffcdd2; border-bottom: 2px solid #ffcdd2;}
-        
-        .linha-saldo td { background-color: #333; color: white !important; font-weight: bold; font-size: 1.1rem; }
-        .linha-saldo td:first-child { background-color: #222; }
-        
-        .valor-positivo { color: #4CAF50; font-weight: bold; }
-        .valor-negativo { color: #f44336; font-weight: bold; }
+        /* MÁGICA 1: O container com rolagem interna para travar o cabeçalho */
+        #tabela-container {
+            max-height: 70vh; /* Altura máxima da tabela na tela */
+            overflow-y: auto;
+            overflow-x: auto;
+        }
 
-        /* 👇 NOVO: Estilos das subcontas (Visão Completa) */
-        .fluxo-detalhes td { background-color: #fafafa; color: #777; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
-        .fluxo-detalhes td:first-child { padding-left: 35px !important; position: sticky; left: 0; background-color: #fafafa; border-right: 2px solid #eee; z-index: 2; font-weight: 500; }
+        .fluxo-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1800px; font-size: 0.90rem; }
+        
+        /* MÁGICA 2: Estreitamento das linhas (padding reduzido) */
+        .fluxo-table th, .fluxo-table td { padding: 5px 12px; text-align: right; }
+        
+        /* MÁGICA 3: Travamento do Cabeçalho no Topo (Sticky) */
+        .fluxo-table thead th {
+            position: sticky;
+            background-color: #f8f9fa;
+            z-index: 5;
+            border-bottom: none;
+            box-shadow: inset 0 -2px 0 #ddd; /* Substitui a borda para não bugar na rolagem */
+            vertical-align: middle;
+        }
+        .fluxo-table thead tr:first-child th { top: 0; height: 45px; }
+        .fluxo-table thead tr:last-child th { top: 45px; height: 35px; } /* Gruda perfeitamente embaixo da linha de cima */
+        
+        /* Travamento da 1ª Coluna à Esquerda */
+        .fluxo-table thead tr:first-child th:first-child { z-index: 10; left: 0; box-shadow: inset -2px -2px 0 #ddd; }
+        .fluxo-table td:first-child { 
+            position: sticky; left: 0; background-color: #ffffff; z-index: 4; 
+            border-right: 2px solid #ddd; text-align: left; font-weight: 600; color: #444; 
+        }
+
+        /* Zebra Striping */
+        .linha-par td { background-color: #ffffff; border-bottom: 1px solid #f0f0f0; }
+        .linha-impar td { background-color: #f8fafc; border-bottom: 1px solid #f0f0f0; }
+        .linha-par td:first-child { background-color: #ffffff; }
+        .linha-impar td:first-child { background-color: #f8fafc; }
+
+        /* Linhas Mães e Fechamento */
+        .linha-grupo td { background-color: #f0f9ff; font-weight: 700; color: #0284c7; border-top: 2px solid #bae6fd; border-bottom: 2px solid #bae6fd; }
+        .linha-grupo td:first-child { background-color: #e0f2fe; }
+        .linha-grupo.despesa td { background-color: #fff1f2; color: #e11d48; border-top: 2px solid #fecdd3; border-bottom: 2px solid #fecdd3; }
+        .linha-grupo.despesa td:first-child { background-color: #ffe4e6; }
+        .linha-saldo td { background-color: #334155; color: white !important; font-weight: bold; font-size: 1.05rem; }
+        .linha-saldo td:first-child { background-color: #1e293b; border-right: 2px solid #0f172a; }
+        .linha-saldo.final td { background-color: #0f172a; font-size: 1.15rem; border-top: 2px solid #020617; }
+        .linha-saldo.final td:first-child { background-color: #020617; border-right: 2px solid #000; }
+        
+        /* Subcontas */
+        .fluxo-detalhes td { background-color: #fcfcfc; color: #64748b; font-size: 0.85rem; border-bottom: 1px dashed #e2e8f0; }
+        .fluxo-detalhes td:first-child { padding-left: 35px !important; background-color: #fcfcfc; font-weight: 500; }
+
+        /* Efeito Hover */
+        .fluxo-table tbody tr:hover td { background-color: #e2e8f0 !important; color: #0f172a !important; cursor: default; }
+        .fluxo-table tbody tr:hover td:first-child { box-shadow: inset 4px 0 0 0 #334155; }
+
+        .valor-positivo { color: #16a34a; font-weight: bold; }
+        .valor-negativo { color: #dc2626; font-weight: bold; }
+        .col-mes { border-left: 2px solid #f1f5f9; }
+        .col-av, .col-ah { background-color: transparent; font-size: 0.8rem; text-align: center !important; }
+
+        /* MÁGICA 4: O Destaque do Mês Atual */
+        .col-destaque { background-color: #e0f2fe !important; } /* Um azul bem claro e elegante */
+        .fluxo-table tbody tr:hover td.col-destaque { background-color: #bae6fd !important; }
     </style>
 </head>
 <body>
@@ -50,11 +95,6 @@
             <div class="fluxo-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 style="margin-top: 0; color: #333; margin-bottom: 0;">Evolução e Previsão Financeira (12 Meses)</h2>
-                    
-                    <!-- 👇 NOVO: Botão de alternância -->
-                    <button id="btn-visao" onclick="toggleVisao()" style="padding: 8px 15px; background: #00bcd4; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,188,212,0.3);">
-                        <span class="material-symbols-outlined" style="font-size:1.1rem;">visibility</span> Visão Completa
-                    </button>
                 </div>
 
                 <div id="tabela-container">
@@ -66,7 +106,6 @@
 
     <script>
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
-        let visaoDetalhada = false;
 
         const formatarMes = (str) => {
             const [y, m] = str.split('-');
@@ -74,48 +113,38 @@
             return `${meses[parseInt(m)-1]}/${y.substring(2)}`;
         };
 
-        const fMoeda = (val) => `R$ ${val.toFixed(2).replace('.', ',')}`;
-
-        // 👇 MÁGICA: Controla as linhas abertas e fechadas
-        window.toggleVisao = () => {
-            visaoDetalhada = !visaoDetalhada;
-            const btn = document.getElementById('btn-visao');
-            const detalhes = document.querySelectorAll('.fluxo-detalhes');
-            if (visaoDetalhada) {
-                btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1.1rem;">visibility_off</span> Visão Resumida`;
-                btn.style.background = '#607d8b';
-                detalhes.forEach(el => el.style.display = 'table-row');
-            } else {
-                btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:1.1rem;">visibility</span> Visão Completa`;
-                btn.style.background = '#00bcd4';
-                detalhes.forEach(el => el.style.display = 'none');
-            }
+        const fMoeda = (val) => {
+            if (val === 0) return '<span style="color:#ccc;">-</span>';
+            return `R$ ${Math.abs(val).toFixed(2).replace('.', ',')}`;
         };
 
-        // Extrai todos os nomes de subcontas que existiram nesses 12 meses
+        const fPerc = (val, isAH = false) => {
+            if (!val || isNaN(val) || !isFinite(val) || val === 0) return '<span style="color:#ccc;">-</span>';
+            const formatado = Math.abs(val).toFixed(1).replace('.', ',');
+            if (isAH) {
+                const color = val > 0 ? '#16a34a' : '#dc2626';
+                const prefix = val > 0 ? '▲ ' : '▼ ';
+                return `<span style="color:${color}; font-weight:600;">${prefix}${formatado}%</span>`;
+            }
+            return `<span style="color:#64748b;">${formatado}%</span>`;
+        };
+
+        window.toggleGrupo = (grupoId) => {
+            const linhas = document.querySelectorAll(`.detalhe-${grupoId}`);
+            const icone = document.getElementById(`icone-${grupoId}`);
+            if(linhas.length === 0) return;
+            
+            const isHidden = linhas[0].style.display === 'none';
+            linhas.forEach(linha => {
+                linha.style.display = isHidden ? 'table-row' : 'none';
+            });
+            if (icone) icone.innerText = isHidden ? 'expand_more' : 'chevron_right';
+        };
+
         const getUniqueNames = (dados, bucket) => {
             const names = new Set();
             dados.forEach(d => { if(d.detalhes[bucket]) d.detalhes[bucket].forEach(item => names.add(item.nome)); });
             return Array.from(names).sort();
-        };
-
-        // Renderiza a linha escondida para uma subconta específica percorrendo os 12 meses
-        const renderDetalhesFluxo = (dados, bucket) => {
-            let html = '';
-            const nomes = getUniqueNames(dados, bucket);
-            nomes.forEach(nome => {
-                html += `<tr class="fluxo-detalhes" style="display: none;">`;
-                html += `<td><span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 5px; color: #ccc;">subdirectory_arrow_right</span> ${nome}</td>`;
-                
-                dados.forEach(d => {
-                    const item = d.detalhes[bucket].find(i => i.nome === nome);
-                    const valor = item ? item.total : 0;
-                    html += `<td>${valor > 0 ? fMoeda(valor) : '<span style="color:#ccc;">-</span>'}</td>`;
-                });
-                
-                html += `</tr>`;
-            });
-            return html;
         };
 
         window.onload = async () => {
@@ -137,69 +166,126 @@
                 let html = `<table class="fluxo-table">`;
                 
                 // --- CABEÇALHO ---
-                html += `<tr><th>Categorias</th>`;
+                html += `<thead><tr><th rowspan="2" style="min-width: 280px; padding-bottom: 10px;">Categorias</th>`;
                 dados.forEach(d => {
+                    let isAtual = d.mes === mesAtualStr;
+                    let bgHl = isAtual ? ' col-destaque' : '';
                     let badge = '';
-                    if (d.mes < mesAtualStr) badge = '<br><span style="color:#999; font-size:0.75rem; font-weight:normal;">(Realizado)</span>';
-                    else if (d.mes === mesAtualStr) badge = '<br><span style="color:#2196F3; font-size:0.75rem; font-weight:bold;">(Atual)</span>';
-                    else badge = '<br><span style="color:#FF9800; font-size:0.75rem; font-weight:bold;">(Previsto)</span>';
+                    if (d.mes < mesAtualStr) badge = '<br><span style="color:#94a3b8; font-size:0.75rem; font-weight:normal;">(Realizado)</span>';
+                    else if (isAtual) badge = '<br><span style="color:#0284c7; font-size:0.75rem; font-weight:bold;">(Atual)</span>';
+                    else badge = '<br><span style="color:#d97706; font-size:0.75rem; font-weight:bold;">(Previsto)</span>';
                     
-                    html += `<th style="text-align: right; line-height: 1.2;">${formatarMes(d.mes)}${badge}</th>`;
+                    html += `<th colspan="3" class="col-mes${bgHl}" style="text-align: center; line-height: 1.2;">${formatarMes(d.mes)}${badge}</th>`;
                 });
-                html += `</tr>`;
-
-                // --- BLOCO DE RECEITAS ---
-                html += `<tr><td>(+) Vendas (PDV/Delivery)</td>`;
-                dados.forEach(d => html += `<td class="valor-positivo">${fMoeda(d.receita_vendas)}</td>`);
-                html += `</tr>`;
-
-                html += `<tr><td>(+) Outras Receitas/Aportes</td>`;
-                dados.forEach(d => html += `<td class="valor-positivo">${fMoeda(d.receitas_manuais)}</td>`);
-                html += `</tr>`;
-                html += renderDetalhesFluxo(dados, 'receitas_manuais'); // Injeta Subcontas
+                html += `</tr><tr>`;
                 
-                html += `<tr class="linha-grupo"><td>(=) TOTAL DE ENTRADAS</td>`;
-                dados.forEach(d => html += `<td>${fMoeda(d.receita_total)}</td>`);
-                html += `</tr>`;
-
-                // --- BLOCO DE DESPESAS ---
-                html += `<tr><td>(-) C.M.V (Insumos/Embalagens)</td>`;
-                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.cmv)}</td>`);
-                html += `</tr>`;
-                html += renderDetalhesFluxo(dados, 'cmv'); // Injeta Subcontas
-
-                html += `<tr><td>(-) Despesas Operacionais (Aluguel/Folha)</td>`;
-                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.desp_op)}</td>`);
-                html += `</tr>`;
-                html += renderDetalhesFluxo(dados, 'despesas_operacionais'); // Injeta Subcontas
-
-                html += `<tr><td>(-) Despesas com Vendas (Motoboy/MKT)</td>`;
-                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.desp_vendas)}</td>`);
-                html += `</tr>`;
-                html += renderDetalhesFluxo(dados, 'despesas_vendas'); // Injeta Subcontas
-
-                html += `<tr><td>(-) Impostos e Taxas</td>`;
-                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.impostos)}</td>`);
-                html += `</tr>`;
-                html += renderDetalhesFluxo(dados, 'deducoes'); // Injeta Subcontas
-
-                html += `<tr><td>(-) Despesas Financeiras e Investimentos</td>`;
-                dados.forEach(d => html += `<td class="valor-negativo">${fMoeda(d.financeiras + d.investimentos)}</td>`);
-                html += `</tr>`;
-                html += renderDetalhesFluxo(dados, 'financeiras_invest'); // Injeta Subcontas
-
-                html += `<tr class="linha-grupo despesa"><td>(=) TOTAL DE SAÍDAS</td>`;
-                dados.forEach(d => html += `<td>${fMoeda(d.despesa_total)}</td>`);
-                html += `</tr>`;
-
-                // --- BLOCO FINAL ---
-                html += `<tr class="linha-saldo"><td>RESULTADO DO MÊS (SOBRA)</td>`;
-                dados.forEach(d => {
-                    const corStr = d.saldo_mes >= 0 ? '#4CAF50' : '#f44336';
-                    html += `<td style="color: ${corStr} !important;">${fMoeda(d.saldo_mes)}</td>`;
+                dados.forEach((d) => {
+                    let isAtual = d.mes === mesAtualStr;
+                    let bgHl = isAtual ? ' col-destaque' : '';
+                    html += `<th class="col-mes${bgHl}" style="text-align: right; font-size: 0.8rem;">Valor Real</th>`;
+                    html += `<th class="col-av${bgHl}" title="Análise Vertical (% da Receita)">AV %</th>`;
+                    html += `<th class="col-ah${bgHl}" title="Análise Horizontal (Crescimento)">AH %</th>`;
                 });
-                html += `</tr></table>`;
+                html += `</tr></thead><tbody>`;
 
+                let rowCount = 0;
+
+                const renderLinha = (label, valorKey, config = {}) => {
+                    const { isGrupo = false, grupoId = null, isPositivo = true, cssClass = '', overrideCor = null, hideAV = false } = config;
+                    let bgClass = cssClass;
+                    if (!bgClass) { bgClass = rowCount % 2 === 0 ? 'linha-par' : 'linha-impar'; rowCount++; }
+                    
+                    let onClick = isGrupo ? `onclick="toggleGrupo('${grupoId}')" style="cursor:pointer;" title="Expandir/Recolher"` : '';
+                    let icone = isGrupo ? `<span id="icone-${grupoId}" class="material-symbols-outlined" style="font-size: 1.2rem; vertical-align: middle; margin-right: 5px; color: #0ea5e9;">chevron_right</span>` : '';
+                    let paddingFix = isGrupo ? '' : 'padding-left: 32px;'; 
+                    
+                    let row = `<tr class="${bgClass}"><td ${onClick} style="${paddingFix}">${icone}${label}</td>`;
+                    
+                    dados.forEach((d, index) => {
+                        let isAtual = d.mes === mesAtualStr;
+                        let bgHl = isAtual && !cssClass ? ' col-destaque' : ''; // Aplica destaque só nas linhas normais, respeita cores dos saldos
+                        
+                        let valor = typeof valorKey === 'function' ? valorKey(d) : (d[valorKey] || 0);
+                        let valorAnterior = index > 0 ? (typeof valorKey === 'function' ? valorKey(dados[index-1]) : (dados[index-1][valorKey] || 0)) : 0;
+                        
+                        let receitaTotal = d.receita_total;
+                        let avHTML = '<span style="color:#ccc;">-</span>';
+                        if (!hideAV && receitaTotal > 0 && valor !== 0) avHTML = fPerc((Math.abs(valor) / receitaTotal) * 100, false);
+                        
+                        let ahHTML = '<span style="color:#ccc;">-</span>';
+                        if (valorAnterior !== 0) ahHTML = fPerc(((valor - valorAnterior) / Math.abs(valorAnterior)) * 100, true);
+                        else if (valorAnterior === 0 && valor > 0) ahHTML = `<span style="color:#16a34a; font-weight:600;">▲ 100%</span>`;
+                        else if (valorAnterior === 0 && valor < 0) ahHTML = `<span style="color:#dc2626; font-weight:600;">▼ 100%</span>`;
+
+                        let tdClass = overrideCor ? '' : (isPositivo ? 'valor-positivo' : 'valor-negativo');
+                        let tdStyle = typeof overrideCor === 'function' ? `style="${overrideCor(valor)}"` : (overrideCor ? `style="${overrideCor}"` : '');
+                        let prefix = (isPositivo || valor === 0) ? '' : '- ';
+                        
+                        row += `<td class="col-mes ${tdClass}${bgHl}" ${tdStyle}>${valor === 0 ? '<span style="color:#ccc;">-</span>' : prefix + fMoeda(valor)}</td>`;
+                        row += `<td class="col-av${bgHl}">${avHTML}</td>`;
+                        row += `<td class="col-ah${bgHl}">${ahHTML}</td>`;
+                    });
+                    row += `</tr>`;
+                    return row;
+                };
+
+                const renderDetalhes = (bucket, grupoId) => {
+                    let h = '';
+                    const nomes = getUniqueNames(dados, bucket);
+                    nomes.forEach(nome => {
+                        h += `<tr class="fluxo-detalhes detalhe-${grupoId}" style="display: none;">`;
+                        h += `<td><span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle; margin-right: 5px; color: #cbd5e1;">subdirectory_arrow_right</span> ${nome}</td>`;
+                        
+                        dados.forEach((d, index) => {
+                            let isAtual = d.mes === mesAtualStr;
+                            let bgHl = isAtual ? ' col-destaque' : '';
+                            
+                            const item = d.detalhes[bucket].find(i => i.nome === nome);
+                            const valor = item ? item.total : 0;
+                            let valorAnterior = 0;
+                            if (index > 0) {
+                                const itemAnt = dados[index-1].detalhes[bucket].find(i => i.nome === nome);
+                                valorAnterior = itemAnt ? itemAnt.total : 0;
+                            }
+                            
+                            let receitaTotal = d.receita_total;
+                            let avHTML = '<span style="color:#ccc;">-</span>';
+                            if (receitaTotal > 0 && valor !== 0) avHTML = fPerc((Math.abs(valor) / receitaTotal) * 100, false);
+                            
+                            let ahHTML = '<span style="color:#ccc;">-</span>';
+                            if (valorAnterior !== 0) ahHTML = fPerc(((valor - valorAnterior) / Math.abs(valorAnterior)) * 100, true);
+                            else if (valorAnterior === 0 && valor > 0) ahHTML = `<span style="color:#16a34a; font-weight:600;">▲ 100%</span>`;
+                            else if (valorAnterior === 0 && valor < 0) ahHTML = `<span style="color:#dc2626; font-weight:600;">▼ 100%</span>`;
+
+                            h += `<td class="col-mes${bgHl}" style="color: #64748b;">${valor === 0 ? '<span style="color:#ccc;">-</span>' : fMoeda(valor)}</td>`;
+                            h += `<td class="col-av${bgHl}">${avHTML}</td>`;
+                            h += `<td class="col-ah${bgHl}">${ahHTML}</td>`;
+                        });
+                        h += `</tr>`;
+                    });
+                    return h;
+                };
+
+                html += renderLinha('💰 SALDO INICIAL DA EMPRESA', 'saldo_inicial', { cssClass: 'linha-grupo', overrideCor: 'color: #166534; font-weight: bold;', hideAV: true });
+                html += renderLinha('(+) Vendas (PDV/Delivery)', 'receita_vendas');
+                html += renderLinha('(+) Outras Receitas/Aportes', 'receitas_manuais', { isGrupo: true, grupoId: 'receitas' });
+                html += renderDetalhes('receitas_manuais', 'receitas');
+                html += renderLinha('(=) TOTAL DE ENTRADAS DO MÊS', 'receita_total', { cssClass: 'linha-grupo' });
+                html += renderLinha('(-) C.M.V (Insumos/Embalagens)', 'cmv', { isPositivo: false, isGrupo: true, grupoId: 'cmv' });
+                html += renderDetalhes('cmv', 'cmv');
+                html += renderLinha('(-) Despesas Operacionais (Aluguel/Folha)', 'desp_op', { isPositivo: false, isGrupo: true, grupoId: 'despop' });
+                html += renderDetalhes('despesas_operacionais', 'despop');
+                html += renderLinha('(-) Despesas com Vendas (Motoboy/MKT)', 'desp_vendas', { isPositivo: false, isGrupo: true, grupoId: 'despvendas' });
+                html += renderDetalhes('despesas_vendas', 'despvendas');
+                html += renderLinha('(-) Impostos e Taxas', 'impostos', { isPositivo: false, isGrupo: true, grupoId: 'impostos' });
+                html += renderDetalhes('deducoes', 'impostos');
+                html += renderLinha('(-) Despesas Financeiras e Investimentos', d => d.financeiras + d.investimentos, { isPositivo: false, isGrupo: true, grupoId: 'financeiras' });
+                html += renderDetalhes('financeiras_invest', 'financeiras');
+                html += renderLinha('(=) TOTAL DE SAÍDAS DO MÊS', 'despesa_total', { isPositivo: false, cssClass: 'linha-grupo despesa' });
+                html += renderLinha('(=) GERAÇÃO DE CAIXA NO MÊS', 'saldo_mes', { cssClass: 'linha-saldo', overrideCor: (v) => v >= 0 ? 'color: #86efac !important;' : 'color: #fca5a5 !important;', hideAV: true });
+                html += renderLinha('🏦 SALDO FINAL ACUMULADO', 'saldo_final', { cssClass: 'linha-saldo final', overrideCor: (v) => v >= 0 ? 'color: #4ade80 !important;' : 'color: #ef4444 !important;', hideAV: true });
+
+                html += `</tbody></table>`;
                 document.getElementById('tabela-container').innerHTML = html;
 
             } catch (e) {
