@@ -5,37 +5,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Raio-X de Produtos - Icesoft</title>
-    <link rel="stylesheet" href="../pdv/style.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../gestao/style.css">
+    <link rel="stylesheet" href="style.css"> <!-- A MÁGICA: O CSS que desenha os cards voltou! -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="conteudo-principal" style="width: 100%; max-width: 96%; margin: 0 auto; padding: 20px 40px; box-sizing: border-box;">
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-            
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <a href="index.html" style="background: #607d8b; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    ⬅️ Voltar
-                </a>
-                <h1 style="margin: 0; color: #333; font-size: 1.8rem;">Raio-X de Produtos & Curva ABC</h1>
-            </div>
 
-            <div class="card-filtro" style="margin: 0; padding: 15px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                <div class="filtros-data" style="display: flex; gap: 15px;">
-                    <div>
-                        <label style="font-size: 0.85rem; font-weight: bold; color: #666;">Início:</label>
-                        <input type="date" id="filtro-inicio" class="input-data" onchange="carregarRaioX()">
-                    </div>
-                    <div>
-                        <label style="font-size: 0.85rem; font-weight: bold; color: #666;">Fim:</label>
-                        <input type="date" id="filtro-fim" class="input-data" onchange="carregarRaioX()">
-                    </div>
-                </div>
+    <aside class="menu-lateral">
+        <div class="menu-item menu-user" title="Clientes acessando o Cardápio">
+            <span class="material-symbols-outlined" style="color: white; font-size: 1.8rem;">person</span>
+            <div id="online-notification-badge" class="badge-online" style="display: none;">0</div>
+        </div>
+        <a href="../dashboard/index.html" class="menu-item ativo" title="Dashboard e Gráficos">
+            <span class="material-symbols-outlined">bar_chart</span>
+        </a>
+        <a href="../pdv/" class="menu-item" title="Balcão PDV">
+            <span class="material-symbols-outlined">point_of_sale</span>
+        </a>
+        <a href="../mesas/" class="menu-item" title="Mesas e Comandas">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+        </a>
+        <a href="../gestao/" class="menu-item" title="Gestão de Cardápio">
+            <span class="material-symbols-outlined">restaurant_menu</span>
+        </a>
+        <a href="../delivery/" class="menu-item" title="Gestão Delivery">
+            <span class="material-symbols-outlined">two_wheeler</span>
+        </a>
+        <a href="../kanban/" class="menu-item" title="Painel Kanban da Cozinha">
+            <span class="material-symbols-outlined">view_kanban</span>
+        </a>
+        <a href="../integracoes/" class="menu-item" title="Integrações e WhatsApp">
+            <span class="material-symbols-outlined">hub</span>
+        </a>
+        <a href="../financeiro/" class="menu-item" title="Financeiro">
+            <span class="material-symbols-outlined">account_balance</span>
+        </a>
+        <div class="menu-item menu-sair" onclick="fazerLogout()" title="Sair do Sistema">
+            <span class="material-symbols-outlined">logout</span>
+        </div>
+    </aside>
+
+    <div class="conteudo-principal">
+        <header class="gestao-header" style="margin-bottom: 25px;">
+            <div class="titulo-area">
+                <h1>RAIO-X DE PRODUTOS</h1>
             </div>
+            <div class="botoes-area" style="display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 8px;">
+                <label style="color: white; font-weight: bold; font-size: 0.85rem;">Início:</label>
+                <input type="date" id="filtro-inicio" class="input-data" onchange="carregarRaioX()" style="padding: 6px; border-radius: 6px; border: none; outline: none; font-family: 'Poppins', sans-serif;">
+                
+                <label style="color: white; font-weight: bold; font-size: 0.85rem; margin-left: 10px;">Fim:</label>
+                <input type="date" id="filtro-fim" class="input-data" onchange="carregarRaioX()" style="padding: 6px; border-radius: 6px; border: none; outline: none; font-family: 'Poppins', sans-serif;">
+            </div>
+        </header>
+
+        <!-- SUBMENU DE NAVEGAÇÃO DOS RELATÓRIOS -->
+        <div style="display: flex; gap: 10px; margin: 0 15px 25px 15px; overflow-x: auto; padding: 25px 5px 30px 5px; align-items: center; white-space: nowrap; -webkit-overflow-scrolling: touch; border-bottom: 1px solid #eee;">
+            
+            <button onclick="window.location.href='index.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #022344;">dashboard</span> Visão Geral
+            </button>
+            
+            <button onclick="window.location.href='produtos.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #022344;">inventory_2</span> Raio-X de Produtos
+            </button>
+            
+            <button onclick="window.location.href='vendas_periodo.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #022344;">calendar_month</span> Vendas por Período
+            </button>
+            
+            <button onclick="window.location.href='historico_caixas.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #022344;">receipt_long</span> Auditoria de Caixas
+            </button>
+            
+            <button onclick="window.location.href='funil.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #022344;">stacked_bar_chart</span> Funil de Vendas
+            </button>
+            
+            <button onclick="window.location.href='../crm/index.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #022344;">handshake</span> CRM & Fidelidade
+            </button>
         </div>
 
+        <div style="padding: 0 25px;">
+            
         <div class="grid-kpis">
             <div class="kpi-card" style="border-left: 5px solid #4CAF50;">
                 <div class="kpi-dados">
