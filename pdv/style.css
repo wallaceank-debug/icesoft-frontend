@@ -142,7 +142,7 @@ body {
 .pdv-card:active { transform: scale(0.97); }
 
 .pdv-nome-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; padding: 0 15px; box-sizing: border-box; }
-.pdv-nome { font-weight: 500; color: #555; font-size: 0.8rem; line-height: 1.2; text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pdv-nome { font-weight: 500; color: #555; font-size: 0.8rem; line-height: 1.2; text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .pdv-preco { color: #022344; font-weight: 600; font-size: 1.1rem; }
 
 /* ==========================================

@@ -13,77 +13,48 @@
 <body>
 
     <aside class="menu-lateral">
-        <h2 style="color: white; font-size: 1.5rem; text-align: center; margin-bottom: 20px; white-space: nowrap; overflow: hidden;"> <span class="menu-texto">ConvertMenu</span></h2>
-        
-        <a href="../pdv/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                point_of_sale
-                <span class="notification-badge" id="online-notification-badge" style="display: none; background-color: #25D366;">0</span>
-            </span>
-            <span class="menu-texto">Balcão PDV</span>
-        </a>
-        
-        <a href="../mesas/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined" style="position: relative;">
-                table_restaurant
-                <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
-            </span>
-            <span class="menu-texto">Mesas/Comandas</span>
-        </a>
-        
-        <a href="../gestao/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">restaurant_menu</span>
-            <span class="menu-texto">Cardápio</span>
-        </a>
-        
-        <a href="../delivery/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">two_wheeler</span>
-            <span class="menu-texto">Gestão Delivery</span>
-        </a>
-        
-        <a href="../kanban/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">view_kanban</span>
-            <span class="menu-texto">Painel Kanban</span>
-        </a>
-        
-        <a href="../integracoes/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">hub</span>
-            <span class="menu-texto">Integrações</span>
-        </a>
-
-        <a href="../financeiro/" class="menu-item">
-            <span class="menu-icone material-symbols-outlined">account_balance</span>
-            <span class="menu-texto">Financeiro</span>
-        </a>
-        
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <div class="menu-item" onclick="toggleRelatorios()" style="justify-content: flex-start;">
-                <span class="menu-icone material-symbols-outlined">bar_chart</span>
-                <span class="menu-texto" style="flex:1;">Relatórios ▾</span>
-            </div>
-
-            <div id="submenu-relatorios" style="display: none; flex-direction: column; gap: 8px; width: 85%; margin-top: 10px; padding-left: 10px;">
-                <a href="../dashboard/index.html" class="submenu-link">Visão Geral</a>
-                <a href="../dashboard/produtos.html" class="submenu-link">Raio-X de Produtos</a>
-                <a href="../dashboard/vendas_periodo.html" class="submenu-link">Vendas por Período</a>
-                <a href="../crm/index.html" class="submenu-link">CRM & Fidelidade</a>
-                <a href="../dashboard/historico_caixas.html" class="submenu-link">Histórico de Caixas</a>
-                <a href="../dashboard/funil.html" class="submenu-link">Funil de Vendas</a>
-            </div>
+        <div class="menu-item menu-user" title="Clientes acessando o Cardápio">
+            <span class="material-symbols-outlined" style="color: white; font-size: 1.8rem;">person</span>
+            <div id="online-notification-badge" class="badge-online" style="display: none;">0</div>
         </div>
+        
+        <a href="../dashboard/index.html" class="menu-item" title="Dashboard e Gráficos">
+            <span class="material-symbols-outlined">bar_chart</span>
+        </a>
+        
+        <a href="../pdv/" class="menu-item" title="Balcão PDV">
+            <span class="material-symbols-outlined">point_of_sale</span>
+        </a>
+        
+        <a href="../mesas/" class="menu-item" title="Mesas e Comandas">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <span class="notification-badge" id="mesas-notification-badge" style="display: none;"></span>
+        </a>
+        
+        <a href="../gestao/" class="menu-item ativo" title="Gestão de Cardápio">
+            <span class="material-symbols-outlined">restaurant_menu</span>
+        </a>
+        
+        <a href="../delivery/" class="menu-item" title="Gestão Delivery">
+            <span class="material-symbols-outlined">two_wheeler</span>
+        </a>
+        
+        <a href="../kanban/" class="menu-item" title="Painel Kanban da Cozinha">
+            <span class="material-symbols-outlined">view_kanban</span>
+        </a>
+        
+        <a href="../integracoes/" class="menu-item" title="Integrações e WhatsApp">
+            <span class="material-symbols-outlined">hub</span>
+        </a>
 
-        <div class="menu-item" onclick="fazerLogout()" style="cursor: pointer; margin-top: auto; margin-bottom: 20px;">
-            <span class="menu-icone material-symbols-outlined" style="color: #f44336;">logout</span>
-            <span class="menu-texto" style="color: #f44336;">Sair do Sistema</span>
+        <a href="../financeiro/" class="menu-item" title="Financeiro">
+            <span class="material-symbols-outlined">account_balance</span>
+        </a>
+        
+        <div class="menu-item menu-sair" onclick="fazerLogout()" title="Sair do Sistema">
+            <span class="material-symbols-outlined">logout</span>
         </div>
     </aside>
-
-    <script>
-        function toggleRelatorios() {
-            const submenu = document.getElementById('submenu-relatorios');
-            submenu.style.display = submenu.style.display === 'none' ? 'flex' : 'none';
-        }
-    </script>
 
     <style>
         /* ==========================================

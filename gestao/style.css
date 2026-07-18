@@ -1,169 +1,80 @@
 /* ==========================================
-   LAYOUT PRINCIPAL: MENU + CONTEÚDO
+   NOVO DESIGN ERP PREMIUM (BACKGROUNDS E CORES)
    ========================================== */
 body { 
-    background-color: #ffffff; 
-    margin: 0; 
-    padding: 0; 
-    font-family: 'Poppins', sans-serif; 
-    display: flex; /* Cria a divisão 1/2 na tela */
-    height: 100vh; 
-    overflow: hidden; 
+    background-color: #f0f4f8; /* Fundo gelo clean */
+    margin: 0; padding: 0; font-family: 'Poppins', sans-serif; display: flex; height: 100vh; overflow: hidden; 
 }
-
-.conteudo-principal {
-    flex: 1; 
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto; 
-    position: relative;
-    background-color: #f8f9fa; 
-    z-index: 1; /* Garante que o conteúdo fique clicável */
-}
+.conteudo-principal { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
 
 /* ==========================================
-   MENU LATERAL SLIM (Retrátil) - UNIVERSAL
+   NOVO MENU LATERAL (Azul Escuro / Navy)
    ========================================== */
 .menu-lateral {
-    width: 80px;
-    background-color: #00bcd4;
-    height: 100vh;
-    padding: 20px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    position: relative;
-    z-index: 1000;
-    flex-shrink: 0;
-}
-
-.menu-lateral:hover {
-    width: 250px;
-    align-items: flex-start;
-    padding: 20px 15px;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+    width: 75px; 
+    background-color: #022344;
+    height: 100vh; padding: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 15px; 
+    z-index: 1000; flex-shrink: 0; border-right: 1px solid rgba(0,0,0,0.1);
 }
 
 .menu-item {
-    display: flex;
-    align-items: center;
-    width: 50px;
-    height: 50px;
-    background-color: white;
-    border-radius: 50%;
-    text-decoration: none;
-    color: #333;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    overflow: hidden;
-    white-space: nowrap;
-    cursor: pointer;
-    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    width: 45px; height: 45px;
+    background-color: #0d4a82;
+    border-radius: 12px;
+    color: white; font-weight: bold; cursor: pointer; transition: 0.2s;
+    position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.2); text-decoration: none;
 }
 
-.menu-lateral:hover .menu-item {
-    width: 100%;
-    border-radius: 25px; 
-}
+.menu-item:hover { background-color: #1765ab; transform: scale(1.05); }
+.menu-item.ativo { background-color: #00bcd4; box-shadow: 0 0 10px rgba(0, 188, 212, 0.5); pointer-events: none; }
+.menu-sair { margin-top: auto; background-color: #d32f2f; margin-bottom: 10px; }
+.menu-sair:hover { background-color: #b71c1c; }
 
-.menu-item:hover {
-    background-color: #e0f7fa;
-    transform: scale(1.05);
-}
+.menu-user { background: transparent !important; box-shadow: none !important; cursor: default; margin-bottom: 20px;}
+.badge-online { position: absolute; bottom: 0; right: 0; background-color: #25D366; color: white; border-radius: 50%; font-size: 0.7rem; font-weight: bold; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid #022344; }
 
-/* Marcação de Aba Ativa */
-.menu-item.ativo {
-    background-color: #e0f7fa;
-    color: #00bcd4;
-    border: 2px solid white;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
-    pointer-events: none;
+/* Dica de Ferramenta (Tooltip Mágico) */
+.menu-item::after {
+    content: attr(title); position: absolute; left: 65px;
+    background: white; color: #333; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); opacity: 0; visibility: hidden; white-space: nowrap; transition: 0.2s; z-index: 1000;
 }
-
-.menu-icone {
-    min-width: 50px;
-    text-align: center;
-    font-size: 1.3rem;
-}
-
-.menu-texto {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    margin-left: 5px;
-    font-size: 1rem;
-}
-
-.menu-lateral:hover .menu-texto {
-    opacity: 1;
-    transition-delay: 0.1s; 
-}
-
-/* SUBMENU RELATÓRIOS */
-.submenu-link {
-    color: white;
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding: 10px 15px;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    white-space: nowrap;
-    transition: background 0.2s, opacity 0.2s;
-    opacity: 0; 
-    pointer-events: none; 
-}
-
-.menu-lateral:hover .submenu-link {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.submenu-link:hover {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.notification-badge {
-    position: absolute;
-    top: 2px;
-    right: 4px;
-    background-color: #ff3b30;
-    color: white;
-    border-radius: 50%;
-    font-size: 0.65rem;
-    font-weight: bold;
-    min-width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    border: 1px solid white;
-    z-index: 5;
-    pointer-events: none;
-}
+.menu-item:hover::after { opacity: 1; visibility: visible; left: 55px; }
+.menu-texto, .menu-lateral h2 { display: none; }
 
 /* ==========================================
-   CABEÇALHO DA GESTÃO
+   NOVO CABEÇALHO SUPERIOR (Azul Contínuo)
    ========================================== */
 .gestao-header { 
-    background-color: #00bcd4; 
+    background-color: #022344;
     color: white; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    padding: 15px 30px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-    z-index: 10; /* Mantém os botões por cima de tudo */
-    position: relative; /* Ativa o z-index corretamente */
+    padding: 15px 25px; 
+    min-height: 70px;
+    box-sizing: border-box;
+    flex-shrink: 0; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-.titulo-area h1 { margin: 0; font-size: 1.6rem; letter-spacing: 2px; }
-.botoes-area { display: flex; gap: 15px; }
-.btn-topo { background: white; color: #00bcd4; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.btn-topo:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+.titulo-area h1 { font-size: 1.1rem; margin: 0; font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* 📱 OTIMIZAÇÃO MOBILE GLOBAL */
+@media (max-width: 768px) {
+    .menu-lateral {
+        width: 100%; height: 65px !important; flex-direction: row !important;
+        justify-content: flex-start !important; align-items: center !important;
+        padding: 0 10px !important; position: fixed; bottom: 0; left: 0;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.1); z-index: 9999;
+        overflow-x: auto !important; gap: 15px !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .menu-lateral::-webkit-scrollbar { display: none; }
+    .menu-item { width: 45px !important; height: 45px !important; min-width: 45px !important; margin: 0 !important; flex-shrink: 0 !important; }
+    .gestao-header { flex-direction: column !important; gap: 10px !important; padding: 15px !important; text-align: center; }
+    .conteudo-principal { padding-bottom: 80px; }
+}
 
 /* ==========================================
    NOVO LAYOUT: ABAS E SANFONA (ACCORDION)
