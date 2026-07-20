@@ -471,8 +471,43 @@
 
                     <div class="secao-checkout">
                         <h4 style="margin-bottom: 15px;">Como você prefere pagar?</h4>
-                        
-                        <p style="font-size: 0.8rem; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 8px;">Pagamento Online</p>
+
+                        <!-- 👇 O CHECKBOX DO SEU DESIGN -->
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer; background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce0ff;">
+                            <input type="checkbox" id="chk-pagamento-dividido" onchange="togglePagamentoDividido()" style="width: 20px; height: 20px; accent-color: var(--cor-primaria);">
+                            <span style="font-weight: bold; color: #0b57d0; font-size: 0.95rem;">Dividir Pagamento em 2 métodos</span>
+                        </label>
+
+                        <!-- 👇 A CAIXA QUE ABRE SE ELE MARCAR DIVIDIDO -->
+                        <div id="area-pagamento-dividido" style="display: none; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                            
+                            <label style="font-size: 0.85rem; font-weight: bold; color: #555;">PRIMEIRO MÉTODO</label>
+                            <select id="pag-div-1-metodo" class="input-clean select-clean" style="margin-bottom: 10px;" onchange="calcularRestanteDividido()">
+                                <option value="Pagamento via Pix Online">Pix Online (Pagar Agora)</option>
+                                <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
+                                <option value="Cartão de Débito">Cartão de Débito (Na Entrega)</option>
+                                <option value="Alimentação Pluxee">Alimentação Pluxee (Na Entrega)</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                            </select>
+                            <input type="number" id="pag-div-1-valor" class="input-clean" placeholder="Qual valor passar aqui? (Ex: 25,00)" oninput="calcularRestanteDividido()" step="0.01">
+
+                            <label style="font-size: 0.85rem; font-weight: bold; color: #555; margin-top: 10px; display: block;">RESTANTE DO VALOR</label>
+                            <select id="pag-div-2-metodo" class="input-clean select-clean" style="margin-bottom: 10px;" onchange="atualizarBotaoCTA()">
+                                <!-- Limitamos para não ter 2 códigos PIX simultâneos gerando confusão -->
+                                <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
+                                <option value="Cartão de Débito">Cartão de Débito (Na Entrega)</option>
+                                <option value="Alimentação Pluxee">Alimentação Pluxee (Na Entrega)</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                            </select>
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f4f7f6; padding: 15px; border-radius: 10px; border: 1px solid #ddd;">
+                                <span style="font-weight: bold; color: #666;">Valor Restante:</span>
+                                <strong id="pag-div-2-valor-display" style="color: var(--cor-primaria); font-size: 1.2rem;">R$ 0,00</strong>
+                            </div>
+                        </div>
+
+                        <!-- 👇 ENVOLVA OS PAGAMENTOS ANTIGOS NESTA DIV PARA PODERMOS ESCONDER -->
+                        <div id="area-pagamento-unico">
+                            <p style="font-size: 0.8rem; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 8px;">Pagamento Único</p>
                         
                         <label class="card-selecao ativo" onclick="selecionarPagamento(this, 'Pagamento via Pix Online')" style="border-color: #25D366; background: #f0fdf4;">
                             <input type="radio" name="forma_pag" value="Pagamento via Pix Online" checked style="display: none;">
@@ -517,17 +552,18 @@
                         <div id="area-troco" style="display: none; margin-top: 10px; padding-left: 45px;">
                             <input type="number" id="cliente-troco" class="input-clean" placeholder="Precisa de troco para quanto?">
                         </div>
-                    </div>
-                </div>
-
-            </div>
+                    </div> <!-- Fecha area-pagamento-unico -->
+                </div> <!-- Fecha secao-checkout "Como você prefere pagar?" -->
+                
+            </div> <!-- Fecha checkout-passo-2 -->
+            </div> <!-- Fecha a área de scroll (flex: 1) -->
 
             <div style="padding: 15px 20px 20px 20px; background: white; border-top: 1px solid #eee; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.02);">
                 <button id="btn-avancar-checkout" onclick="avancarPassoCheckout()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;">Continuar para Pagamento</button>
             </div>
 
-        </div>
-    </div>
+        </div> <!-- Fecha modal-conteudo -->
+    </div> <!-- Fecha modal-checkout -->
 
 <div id="modal-info-loja" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:5000;">
         <div style="background:white; width:100%; max-width:500px; border-top-left-radius:25px; border-top-right-radius:25px; padding:25px; animation: slideUp 0.3s ease-out; box-sizing: border-box;">

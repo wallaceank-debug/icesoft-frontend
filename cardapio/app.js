@@ -871,18 +871,33 @@ function atualizarBotaoCTA() {
         return;
     }
 
-    // Se estiver no Passo 2 (Final)
-    const pagamentoSelecionado = document.querySelector('input[name="forma_pag"]:checked');
-    const valorTotalStr = document.getElementById('total-checkout-display').innerText;
+    const totalDisplay = document.getElementById('total-checkout-display');
+    const valorTotalStr = totalDisplay ? totalDisplay.textContent : 'R$ 0,00';
+    
+    const chkDividido = document.getElementById('chk-pagamento-dividido');
+    const isDividido = chkDividido && chkDividido.checked;
 
+    if (isDividido) {
+        const metodo1 = document.getElementById('pag-div-1-metodo').value;
+        if (metodo1 === 'Pagamento via Pix Online') {
+            btnAvancar.innerHTML = `Gerar Pix Parcial Seguro`;
+            btnAvancar.style.background = '#32BCAD';
+        } else {
+            btnAvancar.innerHTML = `Finalizar Pedido • <strong>${valorTotalStr}</strong>`;
+            btnAvancar.style.background = '#25D366';
+        }
+        return;
+    }
+
+    const pagamentoSelecionado = document.querySelector('input[name="forma_pag"]:checked');
     if (pagamentoSelecionado) {
         const pag = pagamentoSelecionado.value;
         if (pag === 'Pagamento via Pix Online') {
             btnAvancar.innerHTML = `Gerar Pix Seguro • <strong>${valorTotalStr}</strong>`;
-            btnAvancar.style.background = '#32BCAD'; // Cor oficial do Pix
+            btnAvancar.style.background = '#32BCAD';
         } else {
             btnAvancar.innerHTML = `Finalizar Pedido • <strong>${valorTotalStr}</strong>`;
-            btnAvancar.style.background = '#25D366'; // Verde conversão
+            btnAvancar.style.background = '#25D366';
         }
     } else {
         btnAvancar.innerHTML = `Finalizar Pedido • <strong>${valorTotalStr}</strong>`;
@@ -981,6 +996,20 @@ function validarPasso1() {
 }
 
 function validarPasso2() {
+    const chkDividido = document.getElementById('chk-pagamento-dividido');
+    const isDividido = chkDividido && chkDividido.checked;
+    
+    if (isDividido) {
+        let totalFinal = getValorTotalCheckout();
+        let campoValor = document.getElementById('pag-div-1-valor');
+        let valor1 = campoValor ? parseFloat(campoValor.value.replace(',', '.')) : 0;
+        
+        if (isNaN(valor1) || valor1 <= 0 || valor1 >= totalFinal) {
+            return "No pagamento dividido, você precisa informar um valor válido para o primeiro método. Ele não pode ser vazio nem igual ao total.";
+        }
+        return null;
+    }
+
     const pag = document.querySelector('input[name="forma_pag"]:checked');
     if (!pag) return "Selecione uma forma de pagamento.";
     return null;
@@ -997,10 +1026,24 @@ function avancarPassoCheckout() {
         const erro = validarPasso2();
         if (erro) return alert("⚠️ " + erro);
         
-        // 🚀 O DESVIO DE FLUXO DIRETO (Adeus Passo 3)
-        const pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
-        if (pagamento === 'Pagamento via Pix Online') {
-            gerarEPagarPix();
+        const chkDividido = document.getElementById('chk-pagamento-dividido');
+        const isDividido = chkDividido && chkDividido.checked;
+        let temPix = false;
+        let valorParaOPix = null;
+
+        if (isDividido) {
+            const met1 = document.getElementById('pag-div-1-metodo').value;
+            if (met1 === 'Pagamento via Pix Online') { 
+                temPix = true; 
+                valorParaOPix = parseFloat(document.getElementById('pag-div-1-valor').value.replace(',', '.')) || 0;
+            }
+        } else {
+            const pag = document.querySelector('input[name="forma_pag"]:checked').value;
+            if (pag === 'Pagamento via Pix Online') temPix = true;
+        }
+
+        if (temPix) {
+            gerarEPagarPix(valorParaOPix);
         } else {
             processarEnvioWhatsApp();
         }
@@ -1075,7 +1118,6 @@ function atualizarTotalCheckout() {
     const valorDesconto = document.getElementById('desconto-display-valor');
 
     if (cupomAtivo) {
-        // 🛡️ TRAVA DE MATEMÁTICA: Força a ser número
         let valorCupomNum = Number(cupomAtivo.valor) || 0;
         
         if (cupomAtivo.tipo === 'porcentagem') {
@@ -1096,7 +1138,13 @@ function atualizarTotalCheckout() {
     const totalDisplay = document.getElementById('total-checkout-display');
     if (totalDisplay) totalDisplay.innerText = `R$ ${totalFinal.toFixed(2).replace('.', ',')}`;
 
-    atualizarBotaoCTA()
+    // 👇 Atualização segura do pagamento dividido (Blindado contra quebras no modal oculto)
+    const chkDividido = document.getElementById('chk-pagamento-dividido');
+    if(typeof calcularRestanteDividido === 'function' && chkDividido && chkDividido.checked) {
+        calcularRestanteDividido();
+    }
+
+    atualizarBotaoCTA();
 }
 
 // 🚀 Atualizada para receber o Status e o ID da transação do Pix (se houver)
@@ -1130,11 +1178,8 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
     let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0;
 
-    let pagamento = document.querySelector('input[name="forma_pag"]:checked').value;
-    if (pagamento === 'Dinheiro') {
-        const troco = document.getElementById('cliente-troco').value.trim();
-        if (troco) pagamento += ` (Troco para ${troco})`;
-    }
+    // Chama o orquestrador inteligente
+    let pagamento = obterFormaPagamentoFinal();
 
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
@@ -2322,7 +2367,7 @@ async function resgatarFidelidade() {
 // ==========================================
 let verificadorPix = null;
 
-async function gerarEPagarPix() {
+async function gerarEPagarPix(valorEspecifico = null) {
     const btn = document.getElementById('btn-avancar-checkout');
     btn.innerText = "⏳ Gerando Pix Seguro...";
     btn.disabled = true;
@@ -2353,7 +2398,7 @@ async function gerarEPagarPix() {
         const res = await fetch(`${API_URL}/pagamento/pix`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ valor: totalFinal, cliente_nome: nome, cliente_telefone: telefone })
+            body: JSON.stringify({ valor: (valorEspecifico !== null ? valorEspecifico : totalFinal), cliente_nome: nome, cliente_telefone: telefone })
         });
 
         const data = await res.json();
@@ -2642,3 +2687,81 @@ window.fecharBannerPWA = function() {
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.style.display = 'none';
 };
+
+// ==========================================
+// 🧮 LÓGICA DE PAGAMENTO DIVIDIDO
+// ==========================================
+function togglePagamentoDividido() {
+    const chkDividido = document.getElementById('chk-pagamento-dividido');
+    const isDividido = chkDividido && chkDividido.checked;
+    
+    document.getElementById('area-pagamento-unico').style.display = isDividido ? 'none' : 'block';
+    document.getElementById('area-pagamento-dividido').style.display = isDividido ? 'flex' : 'none';
+    document.getElementById('area-pagamento-dividido').style.flexDirection = 'column';
+    
+    if (isDividido) {
+        document.querySelectorAll('input[name="forma_pag"]').forEach(radio => radio.checked = false);
+        document.querySelectorAll('#area-pagamento-unico .card-selecao').forEach(card => {
+            card.classList.remove('ativo');
+            card.querySelector('.radio-customizado').classList.remove('marcado');
+        });
+        document.getElementById('area-troco').style.display = 'none';
+        calcularRestanteDividido();
+    }
+    atualizarBotaoCTA();
+}
+
+function getValorTotalCheckout() {
+    const totalDisplay = document.getElementById('total-checkout-display');
+    if (!totalDisplay) return 0;
+    // Usando textContent pois o innerText falha e trava tudo se o modal estiver escondido
+    const totalTexto = totalDisplay.textContent; 
+    return parseFloat(totalTexto.replace('R$ ', '').replace(',', '.')) || 0;
+}
+
+function calcularRestanteDividido() {
+    let totalFinal = getValorTotalCheckout();
+    let campoValor1 = document.getElementById('pag-div-1-valor');
+    if (!campoValor1) return;
+
+    let valor1 = parseFloat(campoValor1.value.replace(',', '.')) || 0;
+    
+    if (valor1 > totalFinal) {
+        valor1 = totalFinal;
+        campoValor1.value = valor1.toFixed(2);
+    }
+    
+    let restante = totalFinal - valor1;
+    const displayRestante = document.getElementById('pag-div-2-valor-display');
+    if (displayRestante) displayRestante.innerText = `R$ ${restante.toFixed(2).replace('.', ',')}`;
+    
+    atualizarBotaoCTA();
+}
+
+function obterFormaPagamentoFinal() {
+    const chkDividido = document.getElementById('chk-pagamento-dividido');
+    const isDividido = chkDividido && chkDividido.checked;
+    
+    if (isDividido) {
+        const met1 = document.getElementById('pag-div-1-metodo').value;
+        const met2 = document.getElementById('pag-div-2-metodo').value;
+        
+        let campoValor1 = document.getElementById('pag-div-1-valor');
+        let val1 = campoValor1 ? (parseFloat(campoValor1.value.replace(',', '.')) || 0) : 0;
+        
+        let total = getValorTotalCheckout();
+        let val2 = total - val1;
+        
+        return `${met1} (R$ ${val1.toFixed(2).replace('.', ',')}) + ${met2} (R$ ${val2.toFixed(2).replace('.', ',')})`;
+    } else {
+        let selecionado = document.querySelector('input[name="forma_pag"]:checked');
+        if (!selecionado) return "Não informado";
+        
+        let pagamento = selecionado.value;
+        if (pagamento === 'Dinheiro') {
+            const troco = document.getElementById('cliente-troco').value.trim();
+            if (troco) pagamento += ` (Troco para ${troco})`;
+        }
+        return pagamento;
+    }
+}
