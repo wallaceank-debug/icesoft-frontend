@@ -564,6 +564,18 @@
         const dataFormatada = new Date(venda.data_hora).toLocaleString('pt-BR');
         const pagamentoDisplay = formatarPagamentoComTroco(venda.forma_pagamento, venda.valor_total);
         
+        // 👇 LÓGICA FINANCEIRA DA NOVA NOTA 👇
+        const taxaEntrega = Number(venda.taxa_entrega || 0);
+        const desconto = Number(venda.desconto || 0);
+        const valorPagar = Number(venda.valor_total || 0);
+        const totalDoPedido = valorPagar - taxaEntrega + desconto;
+
+        let linhaDescontoHtml = '';
+        if (desconto > 0) {
+            linhaDescontoHtml = `<div>Desconto/Cupom = - R$ ${desconto.toFixed(2).replace('.',',')}</div>`;
+        }
+        // 👆 FIM DA LÓGICA 👇
+        
         areaImpressao.innerHTML = `
             <div style="border-bottom: 2px dashed black; padding-bottom: 10px; margin-bottom: 10px; text-align: center;">
                 <h2 style="margin: 0;">ICESOFT</h2>
@@ -590,9 +602,14 @@
                 ${htmlItens}
             </div>
             
-            <div style="text-align: right; font-size: 18px; margin-bottom: 10px;">
-                <strong>TOTAL: R$ ${Number(venda.valor_total).toFixed(2).replace('.',',')}</strong>
+            <!-- 👇 RODAPÉ FINANCEIRO ATUALIZADO 👇 -->
+            <div style="text-align: right; font-size: 15px; margin-bottom: 10px; line-height: 1.4;">
+                <div>Total do Pedido = R$ ${totalDoPedido.toFixed(2).replace('.',',')}</div>
+                <div>Frete = R$ ${taxaEntrega.toFixed(2).replace('.',',')}</div>
+                ${linhaDescontoHtml}
+                <div style="font-size: 18px; font-weight: bold; margin-top: 6px;">Valor a Pagar = R$ ${valorPagar.toFixed(2).replace('.',',')}</div>
             </div>
+            <!-- 👆 FIM DO RODAPÉ FINANCEIRO 👆 -->
             
             <div style="margin-bottom: 10px; font-size: 16px; border-top: 2px dashed black; padding-top: 10px;">
                 <strong>PAGAMENTO:</strong><br> 

@@ -718,9 +718,17 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
         `;
     });
 
-    let extraHtml = '';
-    if (descontoGlobal > 0) extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Desconto: - R$ ${descontoGlobal.toFixed(2).replace('.', ',')}</div>`;
-    if (acrescimoGlobal > 0) extraHtml += `<div style="text-align: right; font-size: 14px; color: #555;">Acréscimo: + R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}</div>`;
+    // 👇 LÓGICA FINANCEIRA DA NOVA NOTA 👇
+    let linhaDescontoHtml = '';
+    if (descontoGlobal > 0) {
+        linhaDescontoHtml = `<div>Desconto/Cupom = - R$ ${descontoGlobal.toFixed(2).replace('.', ',')}</div>`;
+    }
+
+    let linhaAcrescimoHtml = '';
+    if (acrescimoGlobal > 0) {
+        linhaAcrescimoHtml = `<div>Acréscimo/Taxa = + R$ ${acrescimoGlobal.toFixed(2).replace('.', ',')}</div>`;
+    }
+    // 👆 FIM DA LÓGICA 👇
 
     cupom.innerHTML = `
         <div style="text-align: center; margin-bottom: 15px;">
@@ -728,19 +736,35 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
             <p style="margin: 2px 0; font-size: 14px;">Cupom Não Fiscal</p>
             <p style="margin: 2px 0; font-size: 14px;">${dataHora}</p>
         </div>
-        <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin-bottom: 15px;">
+        
+        <div style="margin-bottom: 10px; font-size: 15px;">
+            <strong>📦 Itens do Pedido:</strong>
+        </div>
+
+        <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin-bottom: 10px;">
             ${itensHtml}
         </div>
-        <div style="text-align: right; font-size: 15px;">
-            <div style="font-size: 14px; color: #555;">Subtotal: R$ ${subtotalGlobalPDV.toFixed(2).replace('.', ',')}</div>
-            ${extraHtml}
-            <strong style="font-size: 20px; display: block; margin-top: 5px;">TOTAL: R$ ${totalFinalGlobal.toFixed(2).replace('.', ',')}</strong><br>
-            Pagamento: ${metodoPagamento}<br>
-            ${metodoPagamento === 'Dinheiro' ? `Recebido: R$ ${valorRecebido.toFixed(2).replace('.', ',')}<br>Troco: R$ ${troco.toFixed(2).replace('.', ',')}` : ''}
+        
+        <!-- 👇 RODAPÉ FINANCEIRO ATUALIZADO 👇 -->
+        <div style="text-align: right; font-size: 15px; margin-bottom: 10px; line-height: 1.4;">
+            <div>Total do Pedido = R$ ${subtotalGlobalPDV.toFixed(2).replace('.',',')}</div>
+            ${linhaAcrescimoHtml}
+            ${linhaDescontoHtml}
+            <div style="font-size: 18px; font-weight: bold; margin-top: 6px;">Valor a Pagar = R$ ${totalFinalGlobal.toFixed(2).replace('.',',')}</div>
         </div>
-        <div style="text-align: center; margin-top: 20px; font-size: 14px;">
+        <!-- 👆 FIM DO RODAPÉ FINANCEIRO 👆 -->
+        
+        <div style="margin-bottom: 10px; font-size: 15px; border-top: 2px dashed black; padding-top: 10px;">
+            <strong>PAGAMENTO:</strong><br> 
+            <span style="font-size: 16px; font-weight: bold;">${metodoPagamento}</span><br>
+            ${metodoPagamento.includes('Dinheiro') ? `
+            <span style="font-size: 14px;">Recebido: R$ ${valorRecebido.toFixed(2).replace('.',',')}</span><br>
+            <span style="font-size: 14px;">Troco: R$ ${troco.toFixed(2).replace('.',',')}</span>
+            ` : ''}
+        </div>
+        <div style="text-align: center; margin-top: 20px; font-size: 12px;">
             <p style="margin: 2px 0;">Obrigado pela preferência!</p>
-            <p style="margin: 2px 0;">~ Icesoft Sistema PDV ~</p>
+            <p style="margin: 2px 0;">-- Icesoft Sistema PDV --</p>
         </div>
     `;
 

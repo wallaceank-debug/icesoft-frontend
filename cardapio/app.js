@@ -1208,7 +1208,10 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
                 cliente_endereco: endereco,
                 origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
                 observacoes: observacao,
-                transacao_id: transacaoId
+                transacao_id: transacaoId,
+                // 👇 A MÁGICA: Agora o Cardápio despacha as gavetas separadas para o motor do sistema!
+                taxa_entrega: taxaEntrega,
+                desconto: desconto
             })
         });
 
