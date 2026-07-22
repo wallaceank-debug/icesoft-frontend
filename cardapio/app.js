@@ -798,67 +798,73 @@ function removerItemCarrinho(index) {
     renderizarResumoCarrinho(); // Depois desenha o checkout
 }
 
-function aplicarCupom() {
+async function aplicarCupom() {
     const input = document.getElementById('input-cupom');
     const codigo = input.value.trim().toUpperCase();
     const msg = document.getElementById('msg-cupom');
+    
+    // Captura o telefone para o servidor investigar
+    const telefoneBruto = document.getElementById('cliente-telefone').value.trim();
 
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
 
-    if (!codigo) { cupomAtivo = null; msg.style.display = 'none'; atualizarTotalCheckout(); return; }
+    if (!codigo) { 
+        cupomAtivo = null; 
+        msg.style.display = 'none'; 
+        atualizarTotalCheckout(); 
+        return; 
+    }
 
-    const cupom = cuponsGlobais.find(c => c.codigo === codigo);
-
-    if (!cupom) {
-        msg.innerText = "❌ Cupom inválido ou não existe.";
-        msg.style.color = "#f44336";
+    if (!telefoneBruto) {
+        msg.innerText = "⚠️ Preencha seu WhatsApp primeiro para podermos validar o cupom!";
+        msg.style.color = "#FF9800";
         msg.style.display = 'block';
         cupomAtivo = null;
         atualizarTotalCheckout();
         return;
     }
 
-    // 🛑 TRAVA 1: Limite de Usos
-    if (cupom.limite > 0 && (cupom.usos_atuais || 0) >= cupom.limite) {
-        msg.innerText = "❌ Este cupom esgotou o limite de usos.";
-        msg.style.color = "#f44336";
-        msg.style.display = 'block';
-        cupomAtivo = null;
-        atualizarTotalCheckout();
-        return;
-    }
+    const telefoneFormatado = padronizarTelefone(telefoneBruto);
 
-    // 🛑 TRAVA 2: Valor Mínimo
-    if (cupom.minimo > 0 && subtotal < cupom.minimo) {
-        msg.innerText = `❌ Exige compras acima de R$ ${Number(cupom.minimo).toFixed(2).replace('.', ',')}.`;
-        msg.style.color = "#f44336";
-        msg.style.display = 'block';
-        cupomAtivo = null;
-        atualizarTotalCheckout();
-        return;
-    }
+    msg.innerText = "⏳ Validando cupom...";
+    msg.style.color = "#555";
+    msg.style.display = 'block';
 
-    // 🛑 TRAVA 3: Validade (Data)
-    if (cupom.validade) {
-        const hoje = new Date().toISOString().split('T')[0];
-        if (hoje > cupom.validade) {
-            msg.innerText = "❌ Este cupom está expirado.";
+    try {
+        // Envia o código e o telefone para a rota blindada que criamos no server.js
+        const res = await fetch(`${API_URL}/cupons/validar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo: codigo, telefone: telefoneFormatado, subtotal: subtotal })
+        });
+
+        const data = await res.json();
+
+        // Se o servidor barrar (já usado, limite, etc), mostra o erro e anula o cupom
+        if (!res.ok || data.erro) {
+            msg.innerText = `❌ ${data.erro || "Cupom inválido."}`;
             msg.style.color = "#f44336";
             msg.style.display = 'block';
             cupomAtivo = null;
             atualizarTotalCheckout();
             return;
         }
-    }
 
-    // ✅ Passou na auditoria!
-    cupomAtivo = cupom;
-    const textoDesconto = cupomAtivo.tipo === 'porcentagem' ? `${cupomAtivo.valor}%` : `R$ ${Number(cupomAtivo.valor).toFixed(2).replace('.', ',')}`;
-    msg.innerText = `✅ Cupom de ${textoDesconto} aplicado!`;
-    msg.style.color = "#25D366";
-    msg.style.display = 'block';
-    
-    atualizarTotalCheckout();
+        // ✅ Passou na auditoria blindada do servidor!
+        cupomAtivo = data.cupom;
+        const textoDesconto = cupomAtivo.tipo === 'porcentagem' ? `${cupomAtivo.valor}%` : `R$ ${Number(cupomAtivo.valor).toFixed(2).replace('.', ',')}`;
+        msg.innerText = `✅ Cupom de ${textoDesconto} aplicado!`;
+        msg.style.color = "#25D366";
+        msg.style.display = 'block';
+        
+        atualizarTotalCheckout();
+
+    } catch (e) {
+        msg.innerText = "❌ Erro ao validar. Verifique a internet e tente de novo.";
+        msg.style.color = "#f44336";
+        cupomAtivo = null;
+        atualizarTotalCheckout();
+    }
 }
 
 function atualizarBotaoCTA() {
@@ -1021,6 +1027,13 @@ function avancarPassoCheckout() {
         const erro = validarPasso1();
         if (erro) return alert("⚠️ " + erro);
         irParaPasso(2);
+        
+        // 🛡️ RE-VALIDAÇÃO BLINDADA DO CUPOM
+        // Se houver algum cupom no campo (seja digitado pelo cliente ou auto-aplicado pela gamificação),
+        // forçamos a validação agora que temos o número do celular dele!
+        if (document.getElementById('input-cupom').value.trim() !== '') {
+            aplicarCupom();
+        }
     } 
     else if (passoCheckoutAtual === 2) {
         const erro = validarPasso2();
@@ -1193,27 +1206,28 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
     const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
     
     try {
-        const res = await fetch(`${API_URL}/vendas`, {
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                itens: JSON.stringify(itensFormatados), 
-                produto_nome: "Pedido App Delivery", 
-                valor_total: totalFinal, 
-                total: totalFinal, 
-                forma_pagamento: pagamento, 
-                status: statusForcado,
-                cliente_nome: nome,
-                cliente_telefone: telefone,
-                cliente_endereco: endereco,
-                origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
-                observacoes: observacao,
-                transacao_id: transacaoId,
-                // 👇 A MÁGICA: Agora o Cardápio despacha as gavetas separadas para o motor do sistema!
-                taxa_entrega: taxaEntrega,
-                desconto: desconto
-            })
-        });
+            const res = await fetch(`${API_URL}/vendas`, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    itens: JSON.stringify(itensFormatados), 
+                    produto_nome: "Pedido App Delivery", 
+                    valor_total: totalFinal, 
+                    total: totalFinal, 
+                    forma_pagamento: pagamento, 
+                    status: statusForcado,
+                    cliente_nome: nome,
+                    cliente_telefone: telefone,
+                    cliente_endereco: endereco,
+                    origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
+                    observacoes: observacao,
+                    transacao_id: transacaoId,
+                    // 👇 A MÁGICA: Agora o Cardápio despacha as gavetas separadas para o motor do sistema!
+                    taxa_entrega: taxaEntrega,
+                    desconto: desconto,
+                    cupom_usado: cupomAtivo ? cupomAtivo.codigo : null // 🎟️ ENVIA O NOME DO CUPOM PARA GRAVAÇÃO!
+                })
+            });
 
         if (!res.ok) console.log("Aviso: Falha ao registrar na nuvem.");
     } catch (e) { 

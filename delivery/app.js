@@ -373,7 +373,10 @@ function renderizarListaCupons() {
         if (cupom.limite > 0) infoExtra += `🎯 Usos: ${cupom.usos_atuais || 0} de ${cupom.limite} &nbsp;|&nbsp; `;
         else infoExtra += `🎯 Usos: ${cupom.usos_atuais || 0} (Ilimitado) &nbsp;|&nbsp; `;
 
-        let descPublico = cupom.publico === 'novos' ? 'Só Clientes Novos' : cupom.publico === 'recorrentes' ? 'Só Recorrentes' : 'Todos os Clientes';
+        let descPublico = cupom.publico === 'novos' ? 'Só Clientes Novos' : 
+                          cupom.publico === 'recorrentes' ? 'Só Recorrentes' : 
+                          cupom.publico === 'unico' ? '1 Uso por Cliente' : 
+                          'Todos os Clientes (Livres)';
         infoExtra += `👤 ${descPublico}`;
 
         // 👉 INJETE ESTA VALIDAÇÃO AQUI
