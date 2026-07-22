@@ -163,13 +163,25 @@
             return `R$ ${Math.abs(val).toFixed(2).replace('.', ',')}`;
         };
 
-        const fPerc = (val, isAH = false) => {
+        // 🧠 MÁGICA: Agora a função recebe se a linha é uma despesa (isPositivo = false) ou receita (isPositivo = true)
+        const fPerc = (val, isAH = false, isPositivo = true) => {
             if (!val || isNaN(val) || !isFinite(val) || val === 0) return '<span style="color:#ccc;">-</span>';
             const formatado = Math.abs(val).toFixed(1).replace('.', ',');
+            
             if (isAH) {
-                const color = val > 0 ? '#16a34a' : '#dc2626';
                 const prefix = val > 0 ? '▲ ' : '▼ ';
-                return `<span style="color:${color}; font-weight:600;">${prefix}${formatado}%</span>`;
+                let cor = '';
+                
+                // Lógica Inteligente de Cores
+                if (isPositivo) {
+                    // Para Vendas e Receitas: Subir é Bom (Verde), Cair é Ruim (Vermelho)
+                    cor = val > 0 ? '#16a34a' : '#dc2626';
+                } else {
+                    // Para Despesas e Custos: Subir é Ruim (Vermelho), Cair é Bom (Verde)
+                    cor = val > 0 ? '#dc2626' : '#16a34a';
+                }
+                
+                return `<span style="color:${cor}; font-weight:600;">${prefix}${formatado}%</span>`;
             }
             return `<span style="color:#64748b;">${formatado}%</span>`;
         };
@@ -248,19 +260,28 @@
                     
                     dados.forEach((d, index) => {
                         let isAtual = d.mes === mesAtualStr;
-                        let bgHl = isAtual && !cssClass ? ' col-destaque' : ''; // Aplica destaque só nas linhas normais, respeita cores dos saldos
+                        let bgHl = isAtual && !cssClass ? ' col-destaque' : ''; 
                         
                         let valor = typeof valorKey === 'function' ? valorKey(d) : (d[valorKey] || 0);
                         let valorAnterior = index > 0 ? (typeof valorKey === 'function' ? valorKey(dados[index-1]) : (dados[index-1][valorKey] || 0)) : 0;
                         
                         let receitaTotal = d.receita_total;
                         let avHTML = '<span style="color:#ccc;">-</span>';
-                        if (!hideAV && receitaTotal > 0 && valor !== 0) avHTML = fPerc((Math.abs(valor) / receitaTotal) * 100, false);
+                        if (!hideAV && receitaTotal > 0 && valor !== 0) {
+                            avHTML = fPerc((Math.abs(valor) / receitaTotal) * 100, false);
+                        }
                         
+                        // Passando a inteligência "isPositivo" para a função do AH
                         let ahHTML = '<span style="color:#ccc;">-</span>';
-                        if (valorAnterior !== 0) ahHTML = fPerc(((valor - valorAnterior) / Math.abs(valorAnterior)) * 100, true);
-                        else if (valorAnterior === 0 && valor > 0) ahHTML = `<span style="color:#16a34a; font-weight:600;">▲ 100%</span>`;
-                        else if (valorAnterior === 0 && valor < 0) ahHTML = `<span style="color:#dc2626; font-weight:600;">▼ 100%</span>`;
+                        if (valorAnterior !== 0) {
+                            ahHTML = fPerc(((valor - valorAnterior) / Math.abs(valorAnterior)) * 100, true, isPositivo);
+                        } else if (valorAnterior === 0 && valor > 0) {
+                            const cor = isPositivo ? '#16a34a' : '#dc2626';
+                            ahHTML = `<span style="color:${cor}; font-weight:600;" title="Novo Lançamento">▲ 100,0%</span>`;
+                        } else if (valorAnterior === 0 && valor < 0) {
+                            const cor = isPositivo ? '#dc2626' : '#16a34a';
+                            ahHTML = `<span style="color:${cor}; font-weight:600;" title="Novo Lançamento">▼ 100,0%</span>`;
+                        }
 
                         let tdClass = overrideCor ? '' : (isPositivo ? 'valor-positivo' : 'valor-negativo');
                         let tdStyle = typeof overrideCor === 'function' ? `style="${overrideCor(valor)}"` : (overrideCor ? `style="${overrideCor}"` : '');
@@ -274,7 +295,7 @@
                     return row;
                 };
 
-                const renderDetalhes = (bucket, grupoId) => {
+                const renderDetalhes = (bucket, grupoId, isPositivo = true) => {
                     let h = '';
                     const nomes = getUniqueNames(dados, bucket);
                     nomes.forEach(nome => {
@@ -295,12 +316,21 @@
                             
                             let receitaTotal = d.receita_total;
                             let avHTML = '<span style="color:#ccc;">-</span>';
-                            if (receitaTotal > 0 && valor !== 0) avHTML = fPerc((Math.abs(valor) / receitaTotal) * 100, false);
+                            if (receitaTotal > 0 && valor !== 0) {
+                                avHTML = fPerc((Math.abs(valor) / receitaTotal) * 100, false);
+                            }
                             
+                            // Inteligência repassada também para as Subcontas/Filhas
                             let ahHTML = '<span style="color:#ccc;">-</span>';
-                            if (valorAnterior !== 0) ahHTML = fPerc(((valor - valorAnterior) / Math.abs(valorAnterior)) * 100, true);
-                            else if (valorAnterior === 0 && valor > 0) ahHTML = `<span style="color:#16a34a; font-weight:600;">▲ 100%</span>`;
-                            else if (valorAnterior === 0 && valor < 0) ahHTML = `<span style="color:#dc2626; font-weight:600;">▼ 100%</span>`;
+                            if (valorAnterior !== 0) {
+                                ahHTML = fPerc(((valor - valorAnterior) / Math.abs(valorAnterior)) * 100, true, isPositivo);
+                            } else if (valorAnterior === 0 && valor > 0) {
+                                const cor = isPositivo ? '#16a34a' : '#dc2626';
+                                ahHTML = `<span style="color:${cor}; font-weight:600;" title="Novo Lançamento">▲ 100,0%</span>`;
+                            } else if (valorAnterior === 0 && valor < 0) {
+                                const cor = isPositivo ? '#dc2626' : '#16a34a';
+                                ahHTML = `<span style="color:${cor}; font-weight:600;" title="Novo Lançamento">▼ 100,0%</span>`;
+                            }
 
                             h += `<td class="col-mes${bgHl}" style="color: #64748b;">${valor === 0 ? '<span style="color:#ccc;">-</span>' : fMoeda(valor)}</td>`;
                             h += `<td class="col-av${bgHl}">${avHTML}</td>`;
@@ -311,22 +341,32 @@
                     return h;
                 };
 
+                // Montagem da Estrutura (Passando 'false' para as despesas para ativar o indicador reverso)
                 html += renderLinha('💰 SALDO INICIAL DA EMPRESA', 'saldo_inicial', { cssClass: 'linha-grupo', overrideCor: 'color: #166534; font-weight: bold;', hideAV: true });
                 html += renderLinha('(+) Vendas (PDV/Delivery)', 'receita_vendas');
                 html += renderLinha('(+) Outras Receitas/Aportes', 'receitas_manuais', { isGrupo: true, grupoId: 'receitas' });
-                html += renderDetalhes('receitas_manuais', 'receitas');
+                html += renderDetalhes('receitas_manuais', 'receitas', true);
+                
                 html += renderLinha('(=) TOTAL DE ENTRADAS DO MÊS', 'receita_total', { cssClass: 'linha-grupo' });
+                
+                // Despesas passam o isPositivo: false
                 html += renderLinha('(-) C.M.V (Insumos/Embalagens)', 'cmv', { isPositivo: false, isGrupo: true, grupoId: 'cmv' });
-                html += renderDetalhes('cmv', 'cmv');
+                html += renderDetalhes('cmv', 'cmv', false);
+                
                 html += renderLinha('(-) Despesas Operacionais (Aluguel/Folha)', 'desp_op', { isPositivo: false, isGrupo: true, grupoId: 'despop' });
-                html += renderDetalhes('despesas_operacionais', 'despop');
+                html += renderDetalhes('despesas_operacionais', 'despop', false);
+                
                 html += renderLinha('(-) Despesas com Vendas (Motoboy/MKT)', 'desp_vendas', { isPositivo: false, isGrupo: true, grupoId: 'despvendas' });
-                html += renderDetalhes('despesas_vendas', 'despvendas');
+                html += renderDetalhes('despesas_vendas', 'despvendas', false);
+                
                 html += renderLinha('(-) Impostos e Taxas', 'impostos', { isPositivo: false, isGrupo: true, grupoId: 'impostos' });
-                html += renderDetalhes('deducoes', 'impostos');
+                html += renderDetalhes('deducoes', 'impostos', false);
+                
                 html += renderLinha('(-) Despesas Financeiras e Investimentos', d => d.financeiras + d.investimentos, { isPositivo: false, isGrupo: true, grupoId: 'financeiras' });
-                html += renderDetalhes('financeiras_invest', 'financeiras');
+                html += renderDetalhes('financeiras_invest', 'financeiras', false);
+                
                 html += renderLinha('(=) TOTAL DE SAÍDAS DO MÊS', 'despesa_total', { isPositivo: false, cssClass: 'linha-grupo despesa' });
+                
                 html += renderLinha('(=) GERAÇÃO DE CAIXA NO MÊS', 'saldo_mes', { cssClass: 'linha-saldo', overrideCor: (v) => v >= 0 ? 'color: #86efac !important;' : 'color: #fca5a5 !important;', hideAV: true });
                 html += renderLinha('🏦 SALDO FINAL ACUMULADO', 'saldo_final', { cssClass: 'linha-saldo final', overrideCor: (v) => v >= 0 ? 'color: #4ade80 !important;' : 'color: #ef4444 !important;', hideAV: true });
 
