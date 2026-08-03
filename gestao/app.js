@@ -1564,13 +1564,157 @@ async function carregarInsumos() {
     } catch(e) { console.error("Erro Insumos"); }
 }
 
-function abrirGerenciadorInsumos() {
-    document.getElementById('modal-insumos').style.display = 'flex';
-    renderizarInsumosAdmin();
+// ==========================================
+// MÁGICA DA TELA DE ESTOQUE (ABAS INTERNAS)
+// ==========================================
+function alternarAbaInsumos(aba) {
+    const btnCad = document.getElementById('btn-aba-insumos-cadastro');
+    const btnConf = document.getElementById('btn-aba-insumos-conferencia');
+    const divCad = document.getElementById('conteudo-insumos-cadastro');
+    const divConf = document.getElementById('conteudo-insumos-conferencia');
+
+    if (aba === 'cadastro') {
+        btnCad.style.color = '#ff9800'; btnCad.style.borderBottomColor = '#ff9800';
+        btnConf.style.color = '#888'; btnConf.style.borderBottomColor = 'transparent';
+        divCad.style.display = 'block'; divConf.style.display = 'none';
+        renderizarInsumosAdmin();
+    } else {
+        btnConf.style.color = '#ff9800'; btnConf.style.borderBottomColor = '#ff9800';
+        btnCad.style.color = '#888'; btnCad.style.borderBottomColor = 'transparent';
+        divCad.style.display = 'none'; divConf.style.display = 'block';
+        renderizarConferenciaEstoque();
+    }
 }
 
-function fecharGerenciadorInsumos() {
-    document.getElementById('modal-insumos').style.display = 'none';
+let perdasEmReais = {};
+
+function renderizarConferenciaEstoque() {
+    const tbody = document.getElementById('tabela-conferencia-estoque');
+    tbody.innerHTML = '';
+    perdasEmReais = {}; // Zera o cálculo
+    
+    if(listaInsumos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #999;">Nenhuma matéria-prima cadastrada.</td></tr>';
+        document.getElementById('total-perda-conferencia').innerText = 'R$ 0,00';
+        return;
+    }
+
+    // Ordena alfabeticamente igual aos grandes ERPs
+    const insumosOrdenados = [...listaInsumos].sort((a, b) => a.nome.localeCompare(b.nome));
+
+    insumosOrdenados.forEach(ins => {
+        const estoqueSistema = Number(ins.estoque || 0);
+        tbody.innerHTML += `
+            <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 15px; color: #444; font-weight: 600; font-size: 1.05rem;">${ins.nome}</td>
+                <td style="padding: 15px; text-align: center; color: #00bcd4; font-weight: bold; font-size: 1.1rem;">${estoqueSistema.toFixed(2)} <span style="font-size: 0.8rem; color:#888;">${ins.unidade}</span></td>
+                <td style="padding: 15px; text-align: center;">
+                    <input type="number" id="conf-input-${ins.id}" class="input-padrao" placeholder="Ex: 500" step="0.01" style="width: 120px; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; border: 2px solid #ddd; outline: none;" oninput="calcularDiferencaConferencia(${ins.id}, ${estoqueSistema}, ${ins.custo}, '${ins.unidade}')">
+                </td>
+                <td id="conf-diff-${ins.id}" style="padding: 15px; text-align: center; font-weight: bold; color: #bbb; font-size: 1.05rem;">-</td>
+                <td id="conf-perda-${ins.id}" style="padding: 15px; text-align: right; font-weight: bold; color: #bbb; font-size: 1.05rem;">R$ 0,00</td>
+            </tr>
+        `;
+    });
+    calcularTotalPerdaConferencia();
+}
+
+function calcularDiferencaConferencia(id, estoqueSistema, custoUnitario, unidade) {
+    const inputVal = document.getElementById(`conf-input-${id}`).value;
+    const tdDiff = document.getElementById(`conf-diff-${id}`);
+    const tdPerda = document.getElementById(`conf-perda-${id}`);
+    
+    if (inputVal === '') {
+        tdDiff.innerText = '-'; tdDiff.style.color = '#bbb';
+        tdPerda.innerText = 'R$ 0,00'; tdPerda.style.color = '#bbb';
+        perdasEmReais[id] = 0;
+        calcularTotalPerdaConferencia();
+        return;
+    }
+
+    const conferido = parseFloat(inputVal.replace(',', '.')) || 0;
+    const diferencaFisica = conferido - estoqueSistema;
+    
+    let corDiff = '#888';
+    if (diferencaFisica < 0) corDiff = '#f44336'; // Menos do que devia (Ladrão invisível)
+    else if (diferencaFisica > 0) corDiff = '#4CAF50'; // Mais do que devia (Sobrou)
+    
+    tdDiff.innerText = `${diferencaFisica > 0 ? '+' : ''}${diferencaFisica.toFixed(2)} ${unidade}`;
+    tdDiff.style.color = corDiff;
+
+    const custoFinanceiro = diferencaFisica * custoUnitario;
+    
+    if (custoFinanceiro < 0) {
+        tdPerda.innerText = `- R$ ${Math.abs(custoFinanceiro).toFixed(2).replace('.', ',')}`;
+        tdPerda.style.color = '#f44336';
+        perdasEmReais[id] = Math.abs(custoFinanceiro); // Soma ao prejuízo
+    } else if (custoFinanceiro > 0) {
+        tdPerda.innerText = `+ R$ ${custoFinanceiro.toFixed(2).replace('.', ',')}`;
+        tdPerda.style.color = '#4CAF50';
+        perdasEmReais[id] = -custoFinanceiro; // Abate do prejuízo
+    } else {
+        tdPerda.innerText = 'R$ 0,00'; tdPerda.style.color = '#bbb';
+        perdasEmReais[id] = 0;
+    }
+    
+    calcularTotalPerdaConferencia();
+}
+
+function calcularTotalPerdaConferencia() {
+    let total = 0;
+    for (let id in perdasEmReais) { total += perdasEmReais[id]; }
+    
+    const elTotal = document.getElementById('total-perda-conferencia');
+    if (total > 0) {
+        elTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')} (Prejuízo)`;
+        elTotal.style.color = '#f44336';
+    } else if (total < 0) {
+        elTotal.innerText = `R$ ${Math.abs(total).toFixed(2).replace('.', ',')} (Sobra Lucrativa)`;
+        elTotal.style.color = '#4CAF50';
+    } else {
+        elTotal.innerText = `R$ 0,00 (Estoque Perfeito)`;
+        elTotal.style.color = '#333';
+    }
+}
+
+async function salvarConferenciaEstoque() {
+    const promessas = [];
+    
+    listaInsumos.forEach(ins => {
+        const input = document.getElementById(`conf-input-${ins.id}`);
+        if (input && input.value !== '') {
+            const novoEstoque = parseFloat(input.value.replace(',', '.')) || 0;
+            if (novoEstoque !== Number(ins.estoque)) {
+                // Envia a ordem cirúrgica de alteração para o banco
+                promessas.push(
+                    fetch(`${API_URL}/insumos/${ins.id}/sincronizar`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ estoque: novoEstoque })
+                    })
+                );
+            }
+        }
+    });
+
+    if (promessas.length === 0) return alert("Nenhuma quantidade conferida foi preenchida ou alterada.");
+
+    const btn = document.querySelector('button[onclick="salvarConferenciaEstoque()"]');
+    const textoOriginal = btn.innerText;
+    btn.innerText = '⏳ Sincronizando e zerando diferenças...';
+    btn.disabled = true;
+
+    try {
+        await Promise.all(promessas);
+        alert("✅ Estoque físico sincronizado com sucesso! Seu sistema agora reflete a realidade da geladeira.");
+        await carregarInsumos();
+        renderizarConferenciaEstoque(); // Zera e redesenha a tela atualizada
+    } catch (e) {
+        alert("❌ Falha de rede ao tentar sincronizar o estoque com o servidor.");
+    } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
 }
 
 function renderizarInsumosAdmin() {
