@@ -242,6 +242,18 @@
                         <p style="margin:0; font-size: 0.85rem; color: #666;">Digite o peso real que está na geladeira. O sistema cruza as informações com o que foi vendido para encontrar diferenças de montagem (porções mal pesadas ou perdas).</p>
                     </div>
 
+                    <!-- 👇 NOVA BARRA DE PESQUISA E LIMITE NA CONFERÊNCIA -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="search" id="filtro-conferencia-gestao" oninput="filtrarConferenciaEstoque()" placeholder="🔍 Buscar item para conferência..." class="input-padrao" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.95rem; font-family: 'Poppins', sans-serif; background: #f9f9f9;">
+                        
+                        <select id="limite-conferencia-gestao" onchange="filtrarConferenciaEstoque()" class="input-padrao" style="padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9; font-family: 'Poppins', sans-serif; font-weight: bold; color: #555; cursor: pointer;">
+                            <option value="20">Mostrar 20</option>
+                            <option value="50">Mostrar 50</option>
+                            <option value="100">Mostrar 100</option>
+                            <option value="todos">Mostrar Todos</option>
+                        </select>
+                    </div>
+
                     <div style="background: white; border-radius: 8px; border: 1px solid #ddd; overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
                             <thead>

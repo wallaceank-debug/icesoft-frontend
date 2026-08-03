@@ -669,9 +669,14 @@ async function executarTransferencia() {
 
         if (res.ok) {
             alert("✅ Auditoria realizada! Dinheiro transferido e taxas computadas no DRE.");
-            fecharModalTransferencia();
-            await carregarResumoFinanceiro(); // Atualiza os cards principais
-            await carregarLancamentos(); // Atualiza a tabela de lançamentos
+            
+            // 👇 MÁGICA DE PRODUTIVIDADE: Mantém o modal aberto, limpa os valores e foca o cursor para o próximo recibo!
+            document.getElementById('trans-valor-bruto').value = '';
+            document.getElementById('trans-taxa').value = '0.00';
+            document.getElementById('trans-valor-bruto').focus();
+            
+            await carregarResumoFinanceiro(); // Atualiza os cards principais no fundo
+            await carregarLancamentos(); // Atualiza a tabela de lançamentos no fundo
         } else {
             alert("❌ Erro ao processar a transferência no servidor.");
         }

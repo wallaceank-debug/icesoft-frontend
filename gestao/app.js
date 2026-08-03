@@ -1588,10 +1588,16 @@ function alternarAbaInsumos(aba) {
 
 let perdasEmReais = {};
 
-function renderizarConferenciaEstoque() {
+// 👇 NOVO: Função que puxa o texto digitado e manda renderizar a conferência
+function filtrarConferenciaEstoque() {
+    const termo = document.getElementById('filtro-conferencia-gestao').value;
+    renderizarConferenciaEstoque(termo);
+}
+
+function renderizarConferenciaEstoque(filtro = '') {
     const tbody = document.getElementById('tabela-conferencia-estoque');
     tbody.innerHTML = '';
-    perdasEmReais = {}; // Zera o cálculo
+    perdasEmReais = {}; // Zera o cálculo da tela atual
     
     if(listaInsumos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #999;">Nenhuma matéria-prima cadastrada.</td></tr>';
@@ -1599,10 +1605,31 @@ function renderizarConferenciaEstoque() {
         return;
     }
 
-    // Ordena alfabeticamente igual aos grandes ERPs
-    const insumosOrdenados = [...listaInsumos].sort((a, b) => a.nome.localeCompare(b.nome));
+    // Limpa o texto da busca (ignora maiúsculas e acentos)
+    const termo = filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    insumosOrdenados.forEach(ins => {
+    // Ordena alfabeticamente e filtra pelo nome
+    let insumosFiltrados = [...listaInsumos]
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .filter(ins => {
+            const nome = ins.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return nome.includes(termo);
+        });
+
+    // Aplica a "tesoura" (limite) de itens na tela
+    const selectLimite = document.getElementById('limite-conferencia-gestao');
+    if (selectLimite && selectLimite.value !== 'todos') {
+        const quantidade = parseInt(selectLimite.value);
+        insumosFiltrados = insumosFiltrados.slice(0, quantidade);
+    }
+
+    if(insumosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #999;">Nenhum item encontrado na busca.</td></tr>';
+        document.getElementById('total-perda-conferencia').innerText = 'R$ 0,00';
+        return;
+    }
+
+    insumosFiltrados.forEach(ins => {
         const estoqueSistema = Number(ins.estoque || 0);
         tbody.innerHTML += `
             <tr style="border-bottom: 1px solid #eee; transition: background 0.2s;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='transparent'">
