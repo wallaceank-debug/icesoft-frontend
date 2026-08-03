@@ -219,9 +219,13 @@
                     </div>
 
                     <!-- 👇 NOVA BARRA DE PESQUISA E LIMITE DE INSUMOS -->
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <input type="search" id="filtro-insumos-gestao" oninput="filtrarInsumosCadastro()" placeholder="🔍 Buscar matéria-prima pelo nome..." class="input-padrao" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.95rem; font-family: 'Poppins', sans-serif; background: #f9f9f9;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <input type="search" id="filtro-insumos-gestao" oninput="filtrarInsumosCadastro()" placeholder="🔍 Buscar matéria-prima pelo nome..." class="input-padrao" style="flex: 1; min-width: 200px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.95rem; font-family: 'Poppins', sans-serif; background: #f9f9f9;">
                         
+                        <button onclick="abrirModalLancamentoCompra()" style="background: #4CAF50; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2); transition: 0.2s;">
+                            <span class="material-symbols-outlined" style="font-size: 1.2rem;">receipt_long</span> Lançar Compra
+                        </button>
+
                         <select id="limite-insumos-gestao" onchange="filtrarInsumosCadastro()" class="input-padrao" style="padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9; font-family: 'Poppins', sans-serif; font-weight: bold; color: #555; cursor: pointer;">
                             <option value="20">Mostrar 20</option>
                             <option value="50">Mostrar 50</option>
@@ -690,5 +694,45 @@
         </div>
 
     <script src="app.js"></script>
+
+    <!-- ==========================================
+             MODAL 3: LANÇAR COMPRA DE ESTOQUE (ENTRADA DE NOTA)
+             ========================================== -->
+        <div id="modal-lancamento-compra" class="modal-fundo" style="display:none; z-index:5000;">
+            <div class="modal-conteudo" style="max-width: 450px; width: 95%;">
+                <h2 style="color: #4CAF50; margin-top: 0; display:flex; align-items:center; gap:8px;">
+                    <span class="material-symbols-outlined">receipt_long</span> Entrada de Nota
+                </h2>
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Lançamento de mercadoria recém-comprada para abastecer o estoque e atualizar o custo financeiro.</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="font-weight: bold; color: #555; font-size: 0.9rem;">1. Selecione o Ingrediente/Embalagem</label>
+                        <select id="compra-insumo-select" class="input-padrao" onchange="atualizarUnidadeCompra()" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; margin-top: 5px; outline: none; cursor: pointer;">
+                            <option value="" disabled selected>Escolha um item...</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #555; font-size: 0.9rem;">2. Quantidade <span id="compra-unidade-label" style="color:#00bcd4;"></span></label>
+                            <input type="number" id="compra-qtd" class="input-padrao" placeholder="Ex: 5000" step="0.01" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; font-family: 'Poppins', sans-serif;">
+                            <span style="font-size: 0.75rem; color: #999;">Ex: 5 Kg = 5000 g</span>
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold; color: #555; font-size: 0.9rem;">3. Valor Total (R$)</label>
+                            <input type="number" id="compra-valor" class="input-padrao" placeholder="Ex: 150.50" step="0.01" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; font-family: 'Poppins', sans-serif;">
+                            <span style="font-size: 0.75rem; color: #999;">Valor pago na nota</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-botoes" style="margin-top: 25px;">
+                    <button type="button" onclick="fecharModalLancamentoCompra()" class="btn-cancelar">Cancelar</button>
+                    <button type="button" onclick="confirmarLancamentoCompra()" class="btn-salvar" style="background: #4CAF50;">💾 Lançar no Estoque</button>
+                </div>
+            </div>
+        </div>
+
 </body>
 </html>

@@ -233,6 +233,17 @@
                 </div>
             </div>
 
+            <!-- 👇 NOVO: Origem do Pedido -->
+            <div style="background:#fff3e0; padding:12px; border-radius:8px; margin-bottom:10px; border: 1px solid #ffb300;">
+                <label style="color:#e65100; font-weight:600; font-size:0.9rem;">📍 Origem do Pedido</label>
+                <select id="checkout-origem" class="input-padrao" style="width:100%; margin-top:5px; font-size:1rem; padding:8px; cursor:pointer; border: 1px solid #ffb300; border-radius: 8px; background: white;">
+                    <option value="Balcão">🏪 Balcão</option>
+                    <option value="WhatsApp / Telefone">📱 WhatsApp / Telefone</option>
+                    <option value="iFood">🔴 iFood</option>
+                    <option value="Aiqfome">🟣 Aiqfome</option>
+                </select>
+            </div>
+
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #eee;">
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 1</label>
                 <select id="checkout-metodo-1" class="input-padrao" style="width:100%; margin-top:5px; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoPagamento()">
@@ -240,6 +251,8 @@
                     <option value="PIX">💠 PIX</option>
                     <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
                     <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                    <option value="Venda iFood">🔴 Venda iFood</option>
+                    <option value="Venda Aiqfome">🟣 Venda Aiqfome</option>
                 </select>
                 <label style="color:#555; font-weight:600; font-size:0.8rem;">Valor a cobrar aqui (R$)</label>
                 <input type="number" id="checkout-valor-1" class="input-padrao" style="width:100%; margin-top:5px; font-size:1.2rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px;" onkeyup="calcularTroco()">
@@ -259,6 +272,8 @@
                     <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
                     <option value="Cartão de Débito">💳 Cartão de Débito</option>
                     <option value="Dinheiro">💵 Dinheiro</option>
+                    <option value="Venda iFood">🔴 Venda iFood</option>
+                    <option value="Venda Aiqfome">🟣 Venda Aiqfome</option>
                 </select>
                 <label style="color:#555; font-weight:600; font-size:0.8rem;">Restante cobrado aqui (R$)</label>
                 <input type="number" id="checkout-valor-2" class="input-padrao" readonly style="width:100%; margin-top:5px; font-size:1.2rem; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background:#e0e0e0; color:#555;">
@@ -333,6 +348,16 @@
                 <button onclick="fecharModalDeliveryPDV()" style="background:none; border:none; font-size:1.8rem; cursor:pointer; color:#999;">&times;</button>
             </div>
 
+            <!-- 👇 NOVO: Origem do Pedido Delivery -->
+            <div style="margin-bottom: 15px; background: #fff3e0; padding: 10px; border-radius: 8px; border: 1px solid #ffb300;">
+                <label style="font-weight: bold; color: #e65100; font-size: 0.9rem;">📍 Origem do Pedido</label>
+                <select id="pdv-origem-delivery" class="input-padrao" style="width:100%; padding:8px; border:1px solid #ffb300; border-radius:8px; font-size: 0.95rem; margin-top: 5px; outline: none; background: white;">
+                    <option value="WhatsApp / Telefone">📱 WhatsApp / Telefone</option>
+                    <option value="iFood">🔴 iFood</option>
+                    <option value="Aiqfome">🟣 Aiqfome</option>
+                </select>
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <label style="font-weight: bold; color: #555; font-size: 0.9rem;">📱 WhatsApp Cliente</label>
                 <span id="badge-crm-pdv" style="display: none; background: #25D366; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">✅ Encontrado</span>
@@ -362,6 +387,8 @@
                         <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
                         <option value="Cartão de Débito">💳 Cartão de Débito</option>
                         <option value="Alimentação Pluxee">💠 Alimentação Pluxee</option>
+                        <option value="Venda iFood">🔴 Venda iFood</option>
+                        <option value="Venda Aiqfome">🟣 Venda Aiqfome</option>
                     </select>
                 </div>
                 <div style="flex: 1;">

@@ -1786,7 +1786,6 @@ function renderizarInsumosAdmin(filtro = '') {
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap: 10px;">
-                    <button onclick="abastecerInsumo(${ins.id}, '${ins.nome}', '${ins.unidade}')" style="background:#e8f5e9; color:#2e7d32; border:1px solid #4CAF50; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size: 0.85rem; transition: 0.2s;">📦 Lançar Compra</button>
                     <button onclick="excluirInsumo(${ins.id})" style="border:none; background:none; color:#f44336; cursor:pointer; font-size: 1.3rem; padding: 5px;" title="Excluir">🗑️</button>
                 </div>
             </div>
@@ -1821,36 +1820,84 @@ async function excluirInsumo(id) {
     } catch(e) { alert("Erro ao excluir insumo."); }
 }
 
-// 👇 NOVO: Função que chama o servidor para lançar a compra e atualizar custo/estoque
-async function abastecerInsumo(id, nome, unidade) {
-    const qtdStr = prompt(`📦 ENTRADA DE NOTA: ${nome}\n\nQuantos(as) [${unidade}] você comprou ao todo?\n\n💡 Dica: Se a unidade for gramas (g) e você comprou 5 Kg, digite 5000.`);
-    if (!qtdStr) return;
+// ==========================================
+// 🛒 MOTOR DO MODAL DE COMPRAS DE ESTOQUE
+// ==========================================
+function abrirModalLancamentoCompra() {
+    const select = document.getElementById('compra-insumo-select');
+    select.innerHTML = '<option value="" disabled selected>Escolha um item...</option>';
+    
+    // Lista os itens em ordem alfabética na caixinha de seleção
+    const insumosOrdenados = [...listaInsumos].sort((a, b) => a.nome.localeCompare(b.nome));
+    insumosOrdenados.forEach(ins => {
+        select.innerHTML += `<option value="${ins.id}" data-unidade="${ins.unidade}">${ins.nome}</option>`;
+    });
+
+    // Limpa os campos da última vez que foi aberto
+    document.getElementById('compra-qtd').value = '';
+    document.getElementById('compra-valor').value = '';
+    document.getElementById('compra-unidade-label').innerText = '';
+    
+    document.getElementById('modal-lancamento-compra').style.display = 'flex';
+}
+
+function fecharModalLancamentoCompra() {
+    document.getElementById('modal-lancamento-compra').style.display = 'none';
+}
+
+// Mágica de UX: Atualiza o texto (g), (ml) ou (un) conforme a pessoa seleciona
+function atualizarUnidadeCompra() {
+    const select = document.getElementById('compra-insumo-select');
+    const opcaoSelecionada = select.options[select.selectedIndex];
+    const unidade = opcaoSelecionada.getAttribute('data-unidade');
+    
+    if (unidade) {
+        document.getElementById('compra-unidade-label').innerText = `(em ${unidade})`;
+    }
+}
+
+async function confirmarLancamentoCompra() {
+    const select = document.getElementById('compra-insumo-select');
+    const idInsumo = select.value;
+    const qtdStr = document.getElementById('compra-qtd').value;
+    const valorStr = document.getElementById('compra-valor').value;
+
+    if (!idInsumo) return alert("⚠️ Selecione qual ingrediente você está comprando.");
     
     const qtd = parseFloat(qtdStr.replace(',', '.'));
-    if (isNaN(qtd) || qtd <= 0) return alert("⚠️ Quantidade inválida! A operação foi cancelada.");
+    if (isNaN(qtd) || qtd <= 0) return alert("⚠️ Preencha uma quantidade válida maior que zero.");
 
-    const valorStr = prompt(`💰 CUSTO DA NOTA: ${nome}\n\nQual foi o valor TOTAL PAGO por essa quantidade de ${qtd} ${unidade}?\nExemplo: 150.50\n\n💡 O sistema calculará o novo custo por unidade automaticamente.`);
-    if (!valorStr) return;
-    
     const valorTotal = parseFloat(valorStr.replace(',', '.'));
-    if (isNaN(valorTotal) || valorTotal < 0) return alert("⚠️ Valor inválido! A operação foi cancelada.");
+    if (isNaN(valorTotal) || valorTotal < 0) return alert("⚠️ Preencha o valor total pago na nota fiscal.");
+
+    const btn = document.querySelector('#modal-lancamento-compra .btn-salvar');
+    const txtOriginal = btn.innerText;
+    btn.innerText = '⏳ Lançando...';
+    btn.disabled = true;
 
     try {
-        const res = await fetch(`${API_URL}/insumos/${id}/abastecer`, {
+        const res = await fetch(`${API_URL}/insumos/${idInsumo}/abastecer`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ quantidade: qtd, valor_total: valorTotal })
         });
         
         if (res.ok) {
-            alert(`✅ Sucesso! Estoque e custo de ${nome} atualizados na base de dados.`);
+            alert(`✅ Nota Lançada! Estoque e custo atualizados na base de dados.`);
+            fecharModalLancamentoCompra();
             await carregarInsumos();
-            renderizarInsumosAdmin();
+            
+            // Atualiza a tela de trás respeitando os filtros ativos
+            const termo = document.getElementById('filtro-insumos-gestao') ? document.getElementById('filtro-insumos-gestao').value : '';
+            renderizarInsumosAdmin(termo);
         } else {
             alert("❌ Erro ao atualizar o estoque no servidor.");
         }
     } catch(e) {
         alert("🔌 Erro de conexão com o banco de dados.");
+    } finally {
+        btn.innerText = txtOriginal;
+        btn.disabled = false;
     }
 }
 

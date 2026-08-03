@@ -697,7 +697,7 @@ async function finalizarVendaPDV() {
         total: totalFinalGlobal,
         forma_pagamento: metodoFinalTexto, 
         status: "Concluída",
-        origem: "Balcão",
+        origem: document.getElementById('checkout-origem').value,
         cliente_nome: clienteNome,
         cliente_telefone: clienteTelefone
     };
@@ -1271,7 +1271,7 @@ async function finalizarDeliveryPDV() {
                 cliente_nome: nome,
                 cliente_telefone: telefone,
                 cliente_endereco: enderecoCompleto,
-                origem: "WhatsApp / Telefone",
+                origem: document.getElementById('pdv-origem-delivery').value,
                 observacoes: "Lançado internamente pelo PDV"
             })
         });
