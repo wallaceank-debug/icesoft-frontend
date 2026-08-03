@@ -1717,14 +1717,31 @@ async function salvarConferenciaEstoque() {
     }
 }
 
-function renderizarInsumosAdmin() {
+// 👇 NOVO: Função que puxa o texto digitado e manda renderizar
+function filtrarInsumosCadastro() {
+    const termo = document.getElementById('filtro-insumos-gestao').value;
+    renderizarInsumosAdmin(termo);
+}
+
+function renderizarInsumosAdmin(filtro = '') {
     const container = document.getElementById('lista-insumos-gerenciador');
     container.innerHTML = '';
-    if(listaInsumos.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma matéria-prima cadastrada.</p>';
+    
+    // Limpa o texto da busca (ignora maiúsculas e acentos)
+    const termo = filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // Filtra a lista original
+    const insumosFiltrados = listaInsumos.filter(ins => {
+        const nome = ins.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return nome.includes(termo);
+    });
+
+    if(insumosFiltrados.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; padding: 15px;">Nenhuma matéria-prima encontrada com esse nome.</p>';
         return;
     }
-    listaInsumos.forEach(ins => {
+    
+    insumosFiltrados.forEach(ins => {
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; padding:12px 10px; border-bottom:1px solid #eee; align-items: center;">
                 <div style="flex: 1;">

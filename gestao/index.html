@@ -218,6 +218,11 @@
                         <button type="button" onclick="salvarNovoInsumo()" style="background:#ff9800; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">+ Cadastrar Base</button>
                     </div>
 
+                    <!-- 👇 NOVA BARRA DE PESQUISA DE INSUMOS -->
+                    <div style="margin-bottom: 15px;">
+                        <input type="search" id="filtro-insumos-gestao" oninput="filtrarInsumosCadastro()" placeholder="🔍 Buscar matéria-prima pelo nome..." class="input-padrao" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.95rem; font-family: 'Poppins', sans-serif; background: #f9f9f9;">
+                    </div>
+
                     <div id="lista-insumos-gerenciador" style="background: white; border-radius: 8px; border: 1px solid #ddd; padding: 10px;">
                         <p style="text-align:center; color:#999;">Carregando...</p>
                     </div>
