@@ -189,6 +189,17 @@ function verificarAdicao(id) {
     const produto = produtosDaNuvem.find(p => p.id === id);
     const precoBaseCalculado = calcularPrecoComDesconto(produto);
 
+    // 🧠 MOTOR DO CMV: Compila a Ficha Técnica Base
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+    try {
+        let insumosBase = typeof produto.insumos_json === 'string' ? JSON.parse(produto.insumos_json || '[]') : (produto.insumos_json || []);
+        insumosBase.forEach(ins => {
+            insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+            custoTotalFicha += (ins.qtd * ins.custo_unitario);
+        });
+    } catch(e) {}
+
     // ⚖️ CÉREBRO DA BALANÇA
     if (produto.venda_por_peso === true || produto.venda_por_peso === 'true') {
         let pesoDigitado = prompt(`⚖️ BALANÇA\n\nDigite o peso de ${produto.nome} na balança.\n(Pode digitar em gramas ex: 290 ou em quilos ex: 0,290):`);
@@ -197,22 +208,25 @@ function verificarAdicao(id) {
         let pesoReal = parseFloat(pesoDigitado.replace(',', '.').replace(/[^\d.]/g, ''));
 
         if (isNaN(pesoReal) || pesoReal <= 0) return alert("⚠️ Por favor, digite um peso válido maior que zero.");
-
         if (pesoReal < 20) pesoReal = pesoReal * 1000;
 
-        // O cálculo do KG agora usa o preço de promoção!
         const precoPorGrama = precoBaseCalculado / 1000;
         const precoCalculado = precoPorGrama * pesoReal;
         
+        // 👇 CMV PROPORCIONAL AO PESO! Se o cliente colocou meia taça, consome meio insumo
+        const fatorPeso = pesoReal / 1000;
+        let custoPeso = custoTotalFicha * fatorPeso;
+        let insumosPeso = insumosConsolidados.map(ins => ({...ins, qtd: ins.qtd * fatorPeso}));
+
         const pesoFormatado = Math.round(pesoReal);
         const nomeComPeso = `${produto.nome} (${pesoFormatado}g)`;
 
-        adicionarAoCarrinho(nomeComPeso, [], precoCalculado);
+        adicionarAoCarrinho(nomeComPeso, [], precoCalculado, custoPeso, insumosPeso);
         return;
     }
 
     if (!produto.grupos_ids || produto.grupos_ids.length === 0) {
-        adicionarAoCarrinho(produto.nome, [], precoBaseCalculado);
+        adicionarAoCarrinho(produto.nome, [], precoBaseCalculado, custoTotalFicha, insumosConsolidados);
         return;
     }
     abrirModalEscolha(produto);
@@ -350,7 +364,35 @@ function confirmarEscolhasEAdicionar() {
     const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
     const precoFinal = precoBaseCalculado + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
     
-    adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal);
+    // 🧠 MOTOR DO CMV: Compila Base + Complementos Escolhidos
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+
+    try {
+        let insumosBase = typeof produtoEmSelecao.insumos_json === 'string' ? JSON.parse(produtoEmSelecao.insumos_json || '[]') : (produtoEmSelecao.insumos_json || []);
+        insumosBase.forEach(ins => {
+            insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+            custoTotalFicha += (ins.qtd * ins.custo_unitario);
+        });
+    } catch(e) {}
+
+    escolhasAtuais.forEach(escolha => {
+        const grupo = gruposGlobais.find(g => g.id === escolha.grupoId);
+        if (grupo) {
+            const itemBanco = grupo.itens.find(i => i.nome === escolha.nome);
+            if (itemBanco && itemBanco.insumos_json) {
+                try {
+                    let insumosAdic = typeof itemBanco.insumos_json === 'string' ? JSON.parse(itemBanco.insumos_json || '[]') : (itemBanco.insumos_json || []);
+                    insumosAdic.forEach(ins => {
+                        insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+                        custoTotalFicha += (ins.qtd * ins.custo_unitario);
+                    });
+                } catch(e) {}
+            }
+        }
+    });
+
+    adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal, custoTotalFicha, insumosConsolidados);
     fecharModalOpcoes();
 }
 
@@ -394,7 +436,7 @@ function atualizarTotais() {
 // ==========================================
 // GESTÃO DO CARRINHO (COM EDIÇÃO DE QUANTIDADE E AUTO-AGRUPAMENTO)
 // ==========================================
-function adicionarAoCarrinho(nomeBase, adicionais, preco) {
+function adicionarAoCarrinho(nomeBase, adicionais, preco, custoUnitario = 0, insumosUsados = []) {
     // 🧠 MÁGICA: Verifica se já existe um item exato no carrinho para agrupar!
     const itemExistente = carrinho.find(item => 
         item.nomeBase === nomeBase && 
@@ -405,7 +447,7 @@ function adicionarAoCarrinho(nomeBase, adicionais, preco) {
     if (itemExistente) {
         itemExistente.qtd += 1;
     } else {
-        carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1 });
+        carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1, custo_unitario: custoUnitario, insumos: insumosUsados });
     }
     renderizarCarrinho();
 }
@@ -630,11 +672,17 @@ async function finalizarVendaPDV() {
     }
 
     const itensFormatados = carrinho.map(item => {
-        let nomeCompleto = "Balcão: " + item.nomeBase;
+        let nomeCompleto = "Delivery: " + item.nomeBase; // Deixe "Balcão" se for na função finalizarVendaPDV!
         if (item.adicionais && item.adicionais.length > 0) {
             nomeCompleto += " (" + item.adicionais.join(', ') + ")";
         }
-        return { nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
+        return { 
+            nome: nomeCompleto, 
+            preco: item.preco, 
+            quantidade: item.qtd,
+            custo_unitario: item.custo_unitario || 0,
+            insumos: item.insumos || []
+        };
     });
     
     // Puxa o telefone e nome (Se não tiver, vai vazio)
@@ -1117,7 +1165,10 @@ async function buscarDadosClientePDV(telefoneFormatado) {
     badge.style.display = 'inline-block';
 
     try {
-        const res = await fetch(`${API_URL}/vendas`);
+        const cracha = localStorage.getItem('icesoft_token');
+        const res = await fetch(`${API_URL}/vendas`, {
+            headers: { 'Authorization': `Bearer ${cracha}` }
+        });
         const vendas = await res.json();
         const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
 
@@ -1185,11 +1236,17 @@ async function finalizarDeliveryPDV() {
     let totalCobranca = totalFinalGlobal + taxaEntrega;
     
     const itensFormatados = carrinho.map(item => {
-        let nomeCompleto = "Delivery: " + item.nomeBase;
+        let nomeCompleto = "Delivery: " + item.nomeBase; // Deixe "Balcão" se for na função finalizarVendaPDV!
         if (item.adicionais && item.adicionais.length > 0) {
             nomeCompleto += " (" + item.adicionais.join(', ') + ")";
         }
-        return { nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
+        return { 
+            nome: nomeCompleto, 
+            preco: item.preco, 
+            quantidade: item.qtd,
+            custo_unitario: item.custo_unitario || 0,
+            insumos: item.insumos || []
+        };
     });
 
     // 👇 NOVO: Inserindo a taxa de entrega como um item para aparecer na cozinha e no Kanban
@@ -1321,7 +1378,10 @@ if(inputTelCheckout) {
 
 async function buscarNomeClienteCheckout(telefoneFormatado) {
     try {
-        const res = await fetch(`${API_URL}/vendas`);
+        const cracha = localStorage.getItem('icesoft_token');
+        const res = await fetch(`${API_URL}/vendas`, {
+            headers: { 'Authorization': `Bearer ${cracha}` }
+        });
         const vendas = await res.json();
         const compras = vendas.filter(v => v.cliente_telefone === telefoneFormatado);
 

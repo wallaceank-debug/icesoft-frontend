@@ -666,14 +666,10 @@ function atualizarPrecoDinamico() {
 }
 
 function confirmarEscolhasEAdicionar() {
-
-    // SENSOR 3: Cliente tem intenção de compra!
     registrarEventoFunil('Adicionou ao Carrinho', produtoEmSelecao.nome);
 
-    // 1. Validação de Grupos Obrigatórios
     if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
         const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
-
         for (let grupo of gruposDoProduto) {
             const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
             if (isObrigatorio) {
@@ -686,7 +682,6 @@ function confirmarEscolhasEAdicionar() {
         }
     }
 
-    // 2. Montagem do Nome Final com Adicionais
     let nomeFinal = produtoEmSelecao.nome;
     if (escolhasAtuais.length > 0) {
         let stringComplementos = escolhasAtuais.map(e => {
@@ -696,7 +691,6 @@ function confirmarEscolhasEAdicionar() {
         nomeFinal += ` (${stringComplementos})`;
     }
 
-    // 3. 💰 MATEMÁTICA DO PREÇO BASE (Aplicando a Promoção se existir)
     let precoBase = Number(produtoEmSelecao.preco);
     if (isPromocaoAtivaAgora(produtoEmSelecao)) {
         if (produtoEmSelecao.tipo_promocao === 'porcentagem') {
@@ -704,33 +698,55 @@ function confirmarEscolhasEAdicionar() {
         } else if (produtoEmSelecao.tipo_promocao === 'fixo') {
             precoBase -= Number(produtoEmSelecao.valor_promocao);
         }
-        if (precoBase < 0) precoBase = 0; // Evita que o produto fique com valor negativo
+        if (precoBase < 0) precoBase = 0; 
     }
 
-    // 4. Soma Final (Preço Base com Desconto + Valor dos Complementos)
+    // 👇 NOVO: MOTOR DO CMV (Ficha Técnica Master)
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+
+    try {
+        let insumosBase = typeof produtoEmSelecao.insumos_json === 'string' ? JSON.parse(produtoEmSelecao.insumos_json || '[]') : (produtoEmSelecao.insumos_json || []);
+        insumosBase.forEach(ins => {
+            insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+            custoTotalFicha += (ins.qtd * ins.custo_unitario);
+        });
+    } catch(e) {}
+
+    escolhasAtuais.forEach(escolha => {
+        const grupo = gruposGlobais.find(g => g.id === escolha.grupoId);
+        if (grupo) {
+            const itemBanco = grupo.itens.find(i => i.nome === escolha.nome);
+            if (itemBanco && itemBanco.insumos_json) {
+                try {
+                    let insumosAdic = typeof itemBanco.insumos_json === 'string' ? JSON.parse(itemBanco.insumos_json || '[]') : (itemBanco.insumos_json || []);
+                    insumosAdic.forEach(ins => {
+                        let qtdMultiplicada = ins.qtd * (escolha.quantidade || 1);
+                        insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: qtdMultiplicada, custo: ins.custo_unitario });
+                        custoTotalFicha += (qtdMultiplicada * ins.custo_unitario);
+                    });
+                } catch(e) {}
+            }
+        }
+    });
+
     const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
     const precoFinal = precoBase + valorComplementos;
     
-    // 5. Dispara para o Carrinho
+    // Dispara pro carrinho com as porções abatidas
     for (let i = 0; i < quantidadeModal; i++) {
-        adicionarAoCarrinho(nomeFinal, precoFinal);
+        adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados);
     }
     
     fecharModalOpcoes();
 }
 
-function fecharModalOpcoes() { 
-    document.getElementById('modal-opcoes').style.display = 'none'; 
-    document.body.style.overflow = 'auto'; 
-}
-
-function adicionarAoCarrinho(nome, preco) { 
-    carrinho.push({ nome, preco: Number(preco) }); 
+function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = []) { 
+    carrinho.push({ nome, preco: Number(preco), custo_unitario: custoUnitario, insumos: insumosUsados }); 
     atualizarBarraCarrinho();
     
-    // 🛡️ TRAVA DE SEGURANÇA (Evita que o botão quebre se o HTML sumir)
+    // 🛡️ TRAVA DE SEGURANÇA
     const modalCheckout = document.getElementById('modal-checkout');
-    
     if (modalCheckout && modalCheckout.style.display === 'flex') {
         renderizarResumoCarrinho(); 
     }
@@ -1203,7 +1219,13 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
         observacao = observacao ? `${observacao} | [Cupom: ${cupomAtivo.codigo}]` : `[Cupom: ${cupomAtivo.codigo}]`;
     }
 
-    const itensFormatados = carrinho.map(item => ({ nome: "Delivery: " + item.nome, preco: item.preco }));
+    const itensFormatados = carrinho.map(item => ({ 
+        nome: "Delivery: " + item.nome, 
+        preco: item.preco,
+        quantidade: 1,
+        custo_unitario: item.custo_unitario || 0,
+        insumos: item.insumos || []
+    }));
     
     try {
             const res = await fetch(`${API_URL}/vendas`, {
@@ -1603,15 +1625,28 @@ function renderizarUpsellCheckout() {
                     <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</div>
                 </div>
                 
-                <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoComDesconto})" style="margin-top: 8px; background: #e91e63; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Adicionar</button>
+                <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoComDesconto}, ${p.id})" style="margin-top: 8px; background: #e91e63; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Adicionar</button>
             </div>
         `;
     });
 }
 
-function adicionarOfertaAoCarrinho(nome, precoDesconto) {
-    adicionarAoCarrinho("🔥 Oferta: " + nome, precoDesconto);
-    // 🚀 Atualiza a tela do carrinho instantaneamente para o cliente ver!
+function adicionarOfertaAoCarrinho(nome, precoDesconto, prodId) {
+    let custoFicha = 0;
+    let insumos = [];
+    if (prodId) {
+        const prod = produtosDaNuvem.find(p => p.id === prodId);
+        if (prod) {
+            try {
+                let insBase = typeof prod.insumos_json === 'string' ? JSON.parse(prod.insumos_json || '[]') : (prod.insumos_json || []);
+                insBase.forEach(ins => {
+                    insumos.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+                    custoFicha += (ins.qtd * ins.custo_unitario);
+                });
+            } catch(e) {}
+        }
+    }
+    adicionarAoCarrinho("🔥 Oferta: " + nome, precoDesconto, custoFicha, insumos);
     renderizarListaCarrinhoCliente();
 }
 

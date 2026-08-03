@@ -189,12 +189,32 @@
                     </button>
                 </div>
                 
+                ${(() => {
+                    const diff = (dreGlobal.cmv_financeiro || 0) - dreGlobal.cmv;
+                    if (diff === 0 && dreGlobal.cmv === 0) return '';
+                    const cor = diff > 0 ? '#ff9800' : '#4CAF50';
+                    const bg = diff > 0 ? '#fff3e0' : '#e8f5e9';
+                    const icon = diff > 0 ? 'warning' : 'check_circle';
+                    return `
+                    <div style="background: ${bg}; padding: 15px; border-left: 5px solid ${cor}; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <span class="material-symbols-outlined" style="color: ${cor}; font-size: 2rem;">${icon}</span>
+                        <div>
+                            <h4 style="margin: 0 0 5px 0; color: ${cor}; font-size: 1rem;">Radar de Estoque e Desperdício</h4>
+                            <p style="margin: 0; color: #555; font-size: 0.9rem; line-height: 1.4;">
+                                Pago a Fornecedores no mês (Compras): <strong>${fMoeda(dreGlobal.cmv_financeiro || 0)}</strong><br>
+                                Custo consumido nas vendas (Receitas): <strong>${fMoeda(dreGlobal.cmv)}</strong><br>
+                                A diferença de <strong style="color: ${cor}; font-size: 1.05rem;">${fMoeda(diff)}</strong> representa o seu estoque parado nas geladeiras ou perda/desperdício.
+                            </p>
+                        </div>
+                    </div>`;
+                })()}
+
                 ${renderLinha('1. Receita Bruta Operacional', dreGlobal.receita_bruta, 'receita_bruta', 'receita')}
                 ${renderLinha('(-) Deduções (Impostos, Taxas de Cartão)', dreGlobal.deducoes, 'deducoes', 'despesa')}
                 
                 ${renderLinha('(=) RECEITA LÍQUIDA', dreGlobal.receita_liquida, null, 'dre-subtotal')}
                 
-                ${renderLinha('(-) CMV (Insumos, Embalagens, Revenda)', dreGlobal.cmv, 'cmv', 'despesa')}
+                ${renderLinha('(-) CMV REAL (Insumos Consumidos)', dreGlobal.cmv, 'cmv', 'despesa')}
                 
                 ${renderLinha('(=) LUCRO BRUTO (Margem de Contribuição)', dreGlobal.lucro_bruto, null, 'dre-subtotal')}
                 

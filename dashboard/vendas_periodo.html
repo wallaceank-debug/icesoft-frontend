@@ -421,7 +421,7 @@
 
         if (!isCancelado) {
             botoesAcao += `
-                <button onclick="cancelarPedido(${venda.id})" style="background: #f44336; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; box-shadow: 0 4px 6px rgba(244,67,54,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <button id="btn-canc-${venda.id}" onclick="cancelarPedido(${venda.id})" style="background: #f44336; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; box-shadow: 0 4px 6px rgba(244,67,54,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span class="material-symbols-outlined">cancel</span> Cancelar Este Pedido
                 </button>
             `;
@@ -630,14 +630,19 @@
     // 🚀 FUNÇÃO QUE FAZ O CANCELAMENTO NO SERVIDOR
     async function cancelarPedido(idPedido) {
         const confirmar = confirm("Tem certeza que deseja marcar este pedido como CANCELADO?\n\nO valor dele será automaticamente removido do faturamento do seu painel.");
-        
         if (!confirmar) return;
 
+        // 🧠 A NOVA PERGUNTA DO ESTOQUE
+        const retornarEstoque = confirm("📦 DEVOLVER INSUMOS?\n\nO pedido chegou a ser preparado na cozinha?\n\nClique em [OK] para DEVOLVER as embalagens e ingredientes ao estoque (Não foi montado).\n\nClique em [CANCELAR] se o pedido foi preparado e desperdiçado (Os itens não voltam para o estoque).");
+
         try {
+            const btn = document.getElementById(`btn-canc-${idPedido}`);
+            if (btn) { btn.innerHTML = "⏳ Cancelando..."; btn.disabled = true; }
+
             const resposta = await fetch(`${API_URL}/vendas/${idPedido}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'Cancelada' })
+                body: JSON.stringify({ status: 'Cancelada', retornar_estoque: retornarEstoque })
             });
 
             if (resposta.ok) {

@@ -123,6 +123,10 @@
                 <button onclick="abrirConfigPagamentos()" class="btn-topo-clean">
                     <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #555;">payments</span> Pix (MP)
                 </button>
+
+                <button onclick="abrirGerenciadorInsumos()" class="btn-topo-clean" style="border-color: #ff9800; color: #e65100; background: #fff3e0;">
+                    <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #ff9800;">kitchen</span> Matérias-Primas
+                </button>
                 
                 <button onclick="abrirModalProduto()" class="btn-topo-clean">
                     <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #00bcd4;">add_circle</span> Produto
@@ -226,6 +230,18 @@
                             <label for="prod-venda-peso" style="font-weight: 600; color: #f57f17; cursor: pointer; font-size: 0.9rem;">
                                 ⚖️ Produto vendido por peso (O preço acima é o valor de 1 KG)
                             </label>
+                        </div>
+
+                        <!-- 👇 NOVO: FICHA TÉCNICA BASE -->
+                        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #f3e5f5; border-radius: 8px; border: 1px dashed #ab47bc; margin-top: 5px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: #6a1b9a; font-size: 0.9rem;">🥣 Ficha Técnica Fixa (Receita)</span>
+                                <button type="button" onclick="abrirFichaTecnicaProduto()" style="background:#ab47bc; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">Modificar Receita</button>
+                            </div>
+                            <div id="prod-resumo-insumos" style="font-size: 0.8rem; color: #555;">Nenhum insumo fixo atrelado.</div>
+                            <!-- Variáveis invisíveis que o sistema vai ler para salvar no banco -->
+                            <input type="hidden" id="prod-insumos-json" value="[]">
+                            <input type="hidden" id="prod-custo" value="0">
                         </div>
                         
                         <!-- 📦 NOVOS CAMPOS: ESTOQUE INTELIGENTE -->
@@ -528,6 +544,16 @@
                 <label style="font-weight: bold; color: #555; font-size: 0.85rem;">Preço (+R$):</label>
                 <input type="number" id="adic-preco" class="input-padrao" placeholder="0.00" step="0.01" style="margin-bottom: 10px;">
                 
+                <!-- 👇 NOVO: FICHA TÉCNICA DO ADICIONAL -->
+                <div style="margin-top: 5px; margin-bottom: 10px; background: #fff8e1; padding: 12px; border-radius: 8px; border: 1px dashed #ffc107;">
+                    <label style="font-size: 0.85rem; color: #f57f17; font-weight: bold; display:flex; justify-content: space-between; align-items:center;">
+                        Ficha Técnica (Abater do Estoque)
+                        <button type="button" onclick="abrirFichaTecnicaAdicional()" style="background:#ffc107; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer; font-weight:bold;">+ Editar</button>
+                    </label>
+                    <div id="adic-resumo-insumos" style="font-size: 0.75rem; color: #666; margin-top: 5px;">Nenhum insumo atrelado.</div>
+                    <input type="hidden" id="adic-insumos-json" value="[]">
+                </div>
+
                 <div style="margin-top: 5px; margin-bottom: 15px; background: #f0f8ff; padding: 12px; border-radius: 8px; border: 1px dashed #00bcd4;">
                     <label style="font-size: 0.85rem; color: #00bcd4; font-weight: bold;">📸 Foto (Opcional):</label>
                     <input type="file" id="adic-arquivo-foto" accept="image/*" style="width: 100%; margin-top: 5px; cursor: pointer; font-family: 'Poppins', sans-serif;">
@@ -541,6 +567,69 @@
             </div>
         </div>
         
+        <!-- ==========================================
+             MODAL 1: GERENCIADOR DE MATÉRIAS-PRIMAS
+             ========================================== -->
+        <div id="modal-insumos" class="modal-fundo" style="display:none; z-index:4000;">
+            <div class="modal-conteudo" style="max-width: 600px; width: 95%;">
+                <h2 style="color: #ff9800; margin-top: 0; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <span class="material-symbols-outlined">kitchen</span> Matérias-Primas
+                </h2>
+                <p style="font-size: 0.85rem; color: #666; text-align: center;">Cadastre os ingredientes e embalagens (Estoque Base).</p>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="text" id="novo-insumo-nome" class="input-padrao" placeholder="Nome (Ex: Nutella)" style="flex: 2; min-width: 150px;">
+                    <select id="novo-insumo-unidade" class="input-padrao" style="flex: 1; min-width: 100px;">
+                        <option value="g">Gramas (g)</option>
+                        <option value="ml">Mililitros (ml)</option>
+                        <option value="un">Unidade (un)</option>
+                    </select>
+                    <input type="number" id="novo-insumo-custo" class="input-padrao" placeholder="Custo p/ und (R$)" step="0.001" style="flex: 1; min-width: 120px;">
+                    <button type="button" onclick="salvarNovoInsumo()" style="background:#ff9800; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Adicionar</button>
+                </div>
+
+                <div id="lista-insumos-gerenciador" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                    <p style="text-align:center; color:#999;">Carregando...</p>
+                </div>
+
+                <button type="button" onclick="fecharGerenciadorInsumos()" class="btn-cancelar" style="width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">Fechar Estoque</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             MODAL 2: EDITOR DE FICHA TÉCNICA
+             ========================================== -->
+        <div id="modal-ficha-tecnica" class="modal-fundo" style="display:none; z-index:4500;">
+            <div class="modal-conteudo" style="max-width: 500px; width: 95%;">
+                <h2 style="color: #ab47bc; margin-top: 0; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <span class="material-symbols-outlined">receipt_long</span> Editar Receita
+                </h2>
+                
+                <input type="hidden" id="ficha-origem"> <!-- Guarda se foi Produto ou Adicional que abriu o modal -->
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <select id="ficha-select-insumo" class="input-padrao" style="flex: 2;">
+                        <option value="">Carregando insumos...</option>
+                    </select>
+                    <input type="number" id="ficha-qtd-insumo" class="input-padrao" placeholder="Qtd" style="flex: 1;" step="0.01">
+                    <button type="button" onclick="adicionarInsumoNaFicha()" style="background:#ab47bc; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">+</button>
+                </div>
+
+                <div id="lista-ficha-tecnica" style="background:#f9f9f9; min-height: 150px; max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px;">
+                </div>
+                
+                <div style="text-align: right; margin-bottom: 15px;">
+                    <strong style="color: #333; font-size: 0.9rem;">Custo Total deste item: </strong>
+                    <strong style="color: #f44336; font-size: 1.1rem;">R$ <span id="ficha-custo-total">0,00</span></strong>
+                </div>
+
+                <div class="modal-botoes">
+                    <button type="button" onclick="fecharFichaTecnica()" class="btn-cancelar">Cancelar</button>
+                    <button type="button" onclick="salvarFichaTecnica()" class="btn-salvar" style="background: #ab47bc;">Confirmar Receita</button>
+                </div>
+            </div>
+        </div>
+
     <script src="app.js"></script>
 </body>
 </html>

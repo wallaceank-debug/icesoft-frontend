@@ -385,12 +385,19 @@ function abrirModalAdicional(idGrupo, indexItem = null) {
         document.getElementById('adic-nome').value = item.nome;
         document.getElementById('adic-preco').value = item.preco;
         document.getElementById('adic-imagem-url').value = item.imagem_url || '';
+        
+        const insJsonAdic = typeof item.insumos_json === 'string' ? item.insumos_json : JSON.stringify(item.insumos_json || []);
+        document.getElementById('adic-insumos-json').value = insJsonAdic;
+        if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('adic-resumo-insumos', insJsonAdic);
     } else {
         titulo.innerText = "Novo Adicional";
         document.getElementById('adic-index').value = '';
         document.getElementById('adic-nome').value = '';
         document.getElementById('adic-preco').value = '';
         document.getElementById('adic-imagem-url').value = '';
+        
+        document.getElementById('adic-insumos-json').value = '[]';
+        if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('adic-resumo-insumos', '[]');
     }
     
     if (!gruposAbertos.includes(idGrupo)) gruposAbertos.push(idGrupo);
@@ -438,14 +445,17 @@ async function salvarAdicional() {
     const grupo = listaGrupos.find(g => g.id === idGrupo);
     grupo.itens = grupo.itens || [];
 
+    const insumos_json = document.getElementById('adic-insumos-json').value || '[]';
+
     if (indexItem !== '') {
         // Editando existente
         grupo.itens[indexItem].nome = nome;
         grupo.itens[indexItem].preco = preco;
         grupo.itens[indexItem].imagem_url = imagemUrl;
+        grupo.itens[indexItem].insumos_json = insumos_json; // NOVO: Salva a receita do adicional
     } else {
         // Criando novo
-        grupo.itens.push({ nome, preco, imagem_url: imagemUrl, ativo: true });
+        grupo.itens.push({ nome, preco, imagem_url: imagemUrl, ativo: true, insumos_json: insumos_json });
     }
 
     try {
@@ -552,6 +562,12 @@ function abrirModalProduto(id = null) {
         checarSeguro('produto-promo-pdv', p.promo_pdv === true);
         checarSeguro('prod-controlar-estoque', p.controlar_estoque === true); // NOVO
         checarSeguro('prod-mostrar-estoque', p.mostrar_estoque === true); // NOVO
+        
+        // 👇 NOVO: Carrega a Ficha Técnica
+        preencherSeguro('prod-custo', p.custo || 0);
+        const insJsonProd = typeof p.insumos_json === 'string' ? p.insumos_json : JSON.stringify(p.insumos_json || []);
+        preencherSeguro('prod-insumos-json', insJsonProd);
+        if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('prod-resumo-insumos', insJsonProd);
 
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
 
@@ -592,6 +608,11 @@ function abrirModalProduto(id = null) {
         checarSeguro('produto-promo-pdv', false);
         checarSeguro('prod-controlar-estoque', false); // NOVO
         checarSeguro('prod-mostrar-estoque', false); // NOVO
+        
+        // 👇 NOVO: Limpa Ficha Técnica
+        preencherSeguro('prod-custo', 0);
+        preencherSeguro('prod-insumos-json', '[]');
+        if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('prod-resumo-insumos', '[]');
 
         const radioNenhuma = document.querySelector('input[name="tipo_promocao"][value="nenhuma"]');
         if(radioNenhuma) radioNenhuma.checked = true;
@@ -764,7 +785,9 @@ async function salvarProduto() {
         promo_fim: lerSeguro('produto-promo-fim'),
         promo_pdv: lerCheckSeguro('produto-promo-pdv'),
         grupos_ids: gruposSelecionados,
-        categorias_adicionais: categoriasExtras
+        categorias_adicionais: categoriasExtras,
+        custo: parseFloat(lerSeguro('prod-custo')) || 0,
+        insumos_json: lerSeguro('prod-insumos-json', '[]')
     };
 
     try {
@@ -1520,5 +1543,229 @@ async function atualizarBadgeMesasGlobal() {
         }
     } catch (e) {
         console.log("Aviso: Não foi possível checar as mesas abertas para o menu.", e);
+    }
+}
+
+// ==========================================
+// 🥣 MÓDULO DE MATÉRIAS-PRIMAS E FICHA TÉCNICA
+// ==========================================
+let listaInsumos = [];
+let fichaTecnicaTemp = [];
+
+// Carrega os insumos em segundo plano quando abrir a tela
+document.addEventListener("DOMContentLoaded", () => {
+    carregarInsumos();
+});
+
+async function carregarInsumos() {
+    try {
+        const res = await fetch(`${API_URL}/insumos`);
+        listaInsumos = await res.json();
+    } catch(e) { console.error("Erro Insumos"); }
+}
+
+function abrirGerenciadorInsumos() {
+    document.getElementById('modal-insumos').style.display = 'flex';
+    renderizarInsumosAdmin();
+}
+
+function fecharGerenciadorInsumos() {
+    document.getElementById('modal-insumos').style.display = 'none';
+}
+
+function renderizarInsumosAdmin() {
+    const container = document.getElementById('lista-insumos-gerenciador');
+    container.innerHTML = '';
+    if(listaInsumos.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma matéria-prima cadastrada.</p>';
+        return;
+    }
+    listaInsumos.forEach(ins => {
+        container.innerHTML += `
+            <div style="display:flex; justify-content:space-between; padding:12px 10px; border-bottom:1px solid #eee; align-items: center;">
+                <div style="flex: 1;">
+                    <strong style="color: #333; font-size: 1.05rem;">${ins.nome}</strong>
+                    <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
+                        Em Estoque: <strong style="color: #00bcd4; font-size: 0.95rem;">${Number(ins.estoque || 0).toFixed(1)} ${ins.unidade}</strong><br>
+                        Custo: R$ ${Number(ins.custo).toFixed(4)} por ${ins.unidade}
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <button onclick="abastecerInsumo(${ins.id}, '${ins.nome}', '${ins.unidade}')" style="background:#e8f5e9; color:#2e7d32; border:1px solid #4CAF50; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size: 0.85rem; transition: 0.2s;">📦 Lançar Compra</button>
+                    <button onclick="excluirInsumo(${ins.id})" style="border:none; background:none; color:#f44336; cursor:pointer; font-size: 1.3rem; padding: 5px;" title="Excluir">🗑️</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function salvarNovoInsumo() {
+    const nome = document.getElementById('novo-insumo-nome').value.trim();
+    const unidade = document.getElementById('novo-insumo-unidade').value;
+    const custo = parseFloat(document.getElementById('novo-insumo-custo').value.replace(',', '.')) || 0;
+    
+    if(!nome) return alert("Preencha o nome do ingrediente!");
+    try {
+        await fetch(`${API_URL}/insumos`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome, unidade, custo })
+        });
+        document.getElementById('novo-insumo-nome').value = '';
+        document.getElementById('novo-insumo-custo').value = '';
+        await carregarInsumos();
+        renderizarInsumosAdmin();
+    } catch(e) { alert("Erro ao salvar insumo."); }
+}
+
+async function excluirInsumo(id) {
+    if(!confirm("Tem certeza que deseja excluir esta matéria-prima?")) return;
+    try {
+        await fetch(`${API_URL}/insumos/${id}`, { method: 'DELETE' });
+        await carregarInsumos();
+        renderizarInsumosAdmin();
+    } catch(e) { alert("Erro ao excluir insumo."); }
+}
+
+// 👇 NOVO: Função que chama o servidor para lançar a compra e atualizar custo/estoque
+async function abastecerInsumo(id, nome, unidade) {
+    const qtdStr = prompt(`📦 ENTRADA DE NOTA: ${nome}\n\nQuantos(as) [${unidade}] você comprou ao todo?\n\n💡 Dica: Se a unidade for gramas (g) e você comprou 5 Kg, digite 5000.`);
+    if (!qtdStr) return;
+    
+    const qtd = parseFloat(qtdStr.replace(',', '.'));
+    if (isNaN(qtd) || qtd <= 0) return alert("⚠️ Quantidade inválida! A operação foi cancelada.");
+
+    const valorStr = prompt(`💰 CUSTO DA NOTA: ${nome}\n\nQual foi o valor TOTAL PAGO por essa quantidade de ${qtd} ${unidade}?\nExemplo: 150.50\n\n💡 O sistema calculará o novo custo por unidade automaticamente.`);
+    if (!valorStr) return;
+    
+    const valorTotal = parseFloat(valorStr.replace(',', '.'));
+    if (isNaN(valorTotal) || valorTotal < 0) return alert("⚠️ Valor inválido! A operação foi cancelada.");
+
+    try {
+        const res = await fetch(`${API_URL}/insumos/${id}/abastecer`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ quantidade: qtd, valor_total: valorTotal })
+        });
+        
+        if (res.ok) {
+            alert(`✅ Sucesso! Estoque e custo de ${nome} atualizados na base de dados.`);
+            await carregarInsumos();
+            renderizarInsumosAdmin();
+        } else {
+            alert("❌ Erro ao atualizar o estoque no servidor.");
+        }
+    } catch(e) {
+        alert("🔌 Erro de conexão com o banco de dados.");
+    }
+}
+
+// ----------------------------------------------------
+// LÓGICA DE MONTAGEM DA FICHA TÉCNICA DINÂMICA
+// ----------------------------------------------------
+function abrirFichaTecnicaProduto() {
+    abrirModalFichaGeral('produto', 'prod-insumos-json');
+}
+
+function abrirFichaTecnicaAdicional() {
+    abrirModalFichaGeral('adicional', 'adic-insumos-json');
+}
+
+function abrirModalFichaGeral(origem, idInputJson) {
+    document.getElementById('ficha-origem').value = origem;
+    const jsonStr = document.getElementById(idInputJson).value || '[]';
+    try { fichaTecnicaTemp = JSON.parse(jsonStr); } catch(e) { fichaTecnicaTemp = []; }
+    
+    const select = document.getElementById('ficha-select-insumo');
+    select.innerHTML = '<option value="" disabled selected>Escolha o ingrediente...</option>';
+    listaInsumos.forEach(ins => {
+        select.innerHTML += `<option value="${ins.id}" data-custo="${ins.custo}" data-unid="${ins.unidade}">${ins.nome} (R$ ${Number(ins.custo).toFixed(4)} / ${ins.unidade})</option>`;
+    });
+    
+    document.getElementById('modal-ficha-tecnica').style.display = 'flex';
+    renderizarFichaTecnica();
+}
+
+function fecharFichaTecnica() {
+    document.getElementById('modal-ficha-tecnica').style.display = 'none';
+}
+
+function adicionarInsumoNaFicha() {
+    const select = document.getElementById('ficha-select-insumo');
+    const qtdInput = document.getElementById('ficha-qtd-insumo');
+    
+    if(!select.value || !qtdInput.value) return alert("Selecione o insumo e digite a quantidade!");
+    
+    const idInsumo = parseInt(select.value);
+    const qtd = parseFloat(qtdInput.value.replace(',', '.'));
+    const nome = select.options[select.selectedIndex].text.split(' (')[0];
+    const custoUn = parseFloat(select.options[select.selectedIndex].getAttribute('data-custo'));
+    const unid = select.options[select.selectedIndex].getAttribute('data-unid');
+    
+    fichaTecnicaTemp.push({ id_insumo: idInsumo, nome, qtd, custo_unitario: custoUn, unidade: unid });
+    qtdInput.value = '';
+    renderizarFichaTecnica();
+}
+
+function removerInsumoFicha(index) {
+    fichaTecnicaTemp.splice(index, 1);
+    renderizarFichaTecnica();
+}
+
+function renderizarFichaTecnica() {
+    const container = document.getElementById('lista-ficha-tecnica');
+    container.innerHTML = '';
+    let custoTotal = 0;
+    
+    if(fichaTecnicaTemp.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; font-size: 0.9rem; margin-top: 15px;">Receita vazia. Adicione os itens necessários acima.</p>';
+    } else {
+        fichaTecnicaTemp.forEach((item, index) => {
+            const custoLinha = item.qtd * item.custo_unitario;
+            custoTotal += custoLinha;
+            container.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #ddd; background:#fff; margin-bottom:5px; border-radius:5px;">
+                    <div style="font-size:0.95rem; color:#333;"><strong>${item.qtd}${item.unidade}</strong> de ${item.nome}</div>
+                    <div style="color:#ab47bc; font-size:0.95rem; font-weight:bold;">R$ ${custoLinha.toFixed(2)} 
+                        <button onclick="removerInsumoFicha(${index})" style="border:none; background:none; cursor:pointer; font-size:1rem; margin-left:10px;">❌</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('ficha-custo-total').innerText = custoTotal.toFixed(2).replace('.', ',');
+}
+
+function salvarFichaTecnica() {
+    const origem = document.getElementById('ficha-origem').value;
+    const jsonStr = JSON.stringify(fichaTecnicaTemp);
+    
+    let custoTotal = 0;
+    fichaTecnicaTemp.forEach(i => custoTotal += (i.qtd * i.custo_unitario));
+    
+    if (origem === 'produto') {
+        document.getElementById('prod-insumos-json').value = jsonStr;
+        document.getElementById('prod-custo').value = custoTotal.toFixed(2);
+        atualizarResumoInsumos('prod-resumo-insumos', jsonStr);
+    } else {
+        document.getElementById('adic-insumos-json').value = jsonStr;
+        atualizarResumoInsumos('adic-resumo-insumos', jsonStr);
+    }
+    
+    fecharFichaTecnica();
+}
+
+function atualizarResumoInsumos(idContainer, jsonStr) {
+    const container = document.getElementById(idContainer);
+    if(!container) return;
+    try {
+        const itens = JSON.parse(jsonStr);
+        if(itens.length === 0) {
+            container.innerHTML = 'Nenhum insumo atrelado.';
+        } else {
+            const nomes = itens.map(i => `${i.qtd}${i.unidade} ${i.nome}`).join(', ');
+            container.innerHTML = `<strong style="color:#333;">Insumos:</strong> ${nomes}`;
+        }
+    } catch(e) {
+        container.innerHTML = 'Nenhum insumo atrelado.';
     }
 }
