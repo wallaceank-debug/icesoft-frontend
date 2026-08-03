@@ -1730,11 +1730,18 @@ function renderizarInsumosAdmin(filtro = '') {
     // Limpa o texto da busca (ignora maiúsculas e acentos)
     const termo = filtro.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Filtra a lista original
-    const insumosFiltrados = listaInsumos.filter(ins => {
+    // Filtra a lista original pelo nome digitado
+    let insumosFiltrados = listaInsumos.filter(ins => {
         const nome = ins.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         return nome.includes(termo);
     });
+
+    // 👇 NOVO: Aplica a "tesoura" (limite) de itens na tela para manter a performance
+    const selectLimite = document.getElementById('limite-insumos-gestao');
+    if (selectLimite && selectLimite.value !== 'todos') {
+        const quantidade = parseInt(selectLimite.value);
+        insumosFiltrados = insumosFiltrados.slice(0, quantidade);
+    }
 
     if(insumosFiltrados.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#999; padding: 15px;">Nenhuma matéria-prima encontrada com esse nome.</p>';

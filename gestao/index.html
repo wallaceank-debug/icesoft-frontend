@@ -218,9 +218,16 @@
                         <button type="button" onclick="salvarNovoInsumo()" style="background:#ff9800; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">+ Cadastrar Base</button>
                     </div>
 
-                    <!-- 👇 NOVA BARRA DE PESQUISA DE INSUMOS -->
-                    <div style="margin-bottom: 15px;">
-                        <input type="search" id="filtro-insumos-gestao" oninput="filtrarInsumosCadastro()" placeholder="🔍 Buscar matéria-prima pelo nome..." class="input-padrao" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.95rem; font-family: 'Poppins', sans-serif; background: #f9f9f9;">
+                    <!-- 👇 NOVA BARRA DE PESQUISA E LIMITE DE INSUMOS -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="search" id="filtro-insumos-gestao" oninput="filtrarInsumosCadastro()" placeholder="🔍 Buscar matéria-prima pelo nome..." class="input-padrao" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.95rem; font-family: 'Poppins', sans-serif; background: #f9f9f9;">
+                        
+                        <select id="limite-insumos-gestao" onchange="filtrarInsumosCadastro()" class="input-padrao" style="padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; background: #f9f9f9; font-family: 'Poppins', sans-serif; font-weight: bold; color: #555; cursor: pointer;">
+                            <option value="20">Mostrar 20</option>
+                            <option value="50">Mostrar 50</option>
+                            <option value="100">Mostrar 100</option>
+                            <option value="todos">Mostrar Todos</option>
+                        </select>
                     </div>
 
                     <div id="lista-insumos-gerenciador" style="background: white; border-radius: 8px; border: 1px solid #ddd; padding: 10px;">
