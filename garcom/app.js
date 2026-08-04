@@ -131,7 +131,26 @@ function abrirMesaExistenteMobile(id, numero) {
     document.getElementById('titulo-header').innerText = `Add à Mesa ${numero}`;
 }
 
+// 👇 NOVA VARIÁVEL GLOBAL
+let modoComandaRapida = false;
+
+// 👇 NOVA FUNÇÃO: Entrar no modo de Comanda Rápida (Sem pedir mesa)
+function abrirComandaRapida() {
+    modoComandaRapida = true;
+    idMesaAtual = null;
+    numeroMesaAtual = null;
+    carrinho = [];
+    atualizarBarraCarrinho();
+    
+    document.getElementById('tela-mesas').style.display = 'none';
+    document.getElementById('tela-produtos').style.display = 'block';
+    document.getElementById('btn-voltar-header').style.display = 'block';
+    document.getElementById('icone-header').style.display = 'none';
+    document.getElementById('titulo-header').innerText = `Lançar Comanda`;
+}
+
 function voltarParaMesas() {
+    modoComandaRapida = false; // 👇 NOVO: Reseta o modo de comanda ao voltar
     document.getElementById('tela-mesas').style.display = 'flex';
     document.getElementById('tela-produtos').style.display = 'none';
     document.getElementById('btn-voltar-header').style.display = 'none';
@@ -264,6 +283,32 @@ function abrirResumoPedido() {
     const container = document.getElementById('lista-resumo');
     container.innerHTML = '';
 
+    // 👇 MUDA O TÍTULO E O BOTÃO SE FOR COMANDA RÁPIDA
+    const footerContainer = document.querySelector('#modal-resumo .sheet-footer');
+    
+    if (modoComandaRapida) {
+        // Modo Montagem: Mostra o botão de Imprimir e o de Enviar lado a lado
+        footerContainer.innerHTML = `
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="btn-primario" onclick="imprimirComandaGarcom()" style="flex: 1; background: #607d8b; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">print</span> Imprimir
+                </button>
+                <button class="btn-primario" onclick="enviarComanda()" id="btn-enviar-comanda" style="flex: 2; background: #e91e63; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">receipt_long</span> Enviar p/ Caixa
+                </button>
+            </div>
+        `;
+        document.querySelector('#modal-resumo .sheet-header h3').innerHTML = '🍦 Resumo para Montagem';
+    } else {
+        // Modo Mesas: Mostra só o botão de enviar original
+        footerContainer.innerHTML = `
+            <button class="btn-primario" onclick="enviarComanda()" id="btn-enviar-comanda" style="width: 100%; background: #25D366; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined">send</span> Enviar para Cozinha
+            </button>
+        `;
+        document.querySelector('#modal-resumo .sheet-header h3').innerHTML = '🛒 Enviar para Mesa';
+    }
+
     carrinho.forEach((item, index) => {
         let nomePrincipal = item.nome;
         let adicionaisHtml = '';
@@ -276,7 +321,8 @@ function abrirResumoPedido() {
             const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
             
             listaAdicionais.forEach(adic => {
-                adicionaisHtml += `<div style="font-size: 0.9rem; color: #666; margin-left: 20px; margin-top: 4px; display: flex; align-items: center; gap: 6px;"><span style="color: #00bcd4; font-weight: bold;">+</span> ${adic}</div>`;
+                // 👇 UX OTIMIZADA: Adicionais gigantes e coloridos como "Etiquetas" para facilitar a montagem
+                adicionaisHtml += `<div style="font-size: 1rem; color: #e65100; background: #fff3e0; padding: 6px 10px; border-radius: 8px; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #ffcc80; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 1.2rem;">add_circle</span> ${adic}</div>`;
             });
         }
 
@@ -285,11 +331,11 @@ function abrirResumoPedido() {
         const btnEditarHtml = podeEditar ? `<span class="material-symbols-outlined" style="color: #00bcd4; cursor: pointer; padding: 10px; background: #e0f7fa; border-radius: 12px; transition: 0.2s;" title="Editar" onclick="editarItem(${index})">edit</span>` : '';
 
         container.innerHTML += `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px dashed #eee; padding: 15px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px dashed #ddd; padding: 15px 0;">
                 <div style="flex: 1; padding-right: 15px;">
-                    <div style="font-weight: 800; font-size: 1.05rem; color: #333;">1x ${nomePrincipal}</div>
-                    ${adicionaisHtml}
-                    <div style="color: #e91e63; font-weight: 900; font-size: 1rem; margin-top: 10px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
+                    <div style="font-weight: 900; font-size: 1.25rem; color: #333; background: #f0f2f5; padding: 8px 12px; border-radius: 8px; display: inline-block;">1x ${nomePrincipal}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">${adicionaisHtml}</div>
+                    <div style="color: #e91e63; font-weight: 900; font-size: 1.1rem; margin-top: 12px;">R$ ${item.preco.toFixed(2).replace('.', ',')}</div>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 5px;">
                     ${btnEditarHtml}
@@ -347,6 +393,13 @@ function fecharResumo() { document.getElementById('modal-resumo').style.display 
 // ==========================================
 async function enviarComanda() {
     if (carrinho.length === 0) return alert("Adicione produtos antes de enviar!");
+
+    // 👇 NOVO: Se for comanda rápida, ele pede o nome do cliente AGORA, no final da montagem!
+    if (modoComandaRapida) {
+        const ident = prompt("🍦 Montagem concluída!\nDigite o Nome do Cliente ou o Número da Comanda de papel para enviar ao Caixa cobrar:");
+        if (!ident || ident.trim() === '') return;
+        numeroMesaAtual = ident.trim();
+    }
 
     const btn = document.getElementById('btn-enviar-comanda');
     btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
@@ -549,4 +602,60 @@ async function finalizarPagamentoMobile() {
     } finally {
         btn.innerText = "Confirmar Pagamento"; btn.disabled = false;
     }
+}
+
+// ==========================================
+// 🖨️ MOTOR DE IMPRESSÃO (COMANDA RÁPIDA)
+// ==========================================
+function imprimirComandaGarcom() {
+    if (carrinho.length === 0) return alert("O carrinho está vazio!");
+
+    const cupom = document.getElementById('cupom-impressao');
+    const dataHora = new Date().toLocaleString('pt-BR');
+
+    let itensHtml = '';
+    
+    carrinho.forEach(item => {
+        let nomePrincipal = item.nome;
+        let textoAdicionais = '';
+        
+        // Pega os adicionais que estão entre parênteses para formatar bonitinho no papel
+        if (item.nome.includes('(') && item.nome.includes(')')) {
+            const primeiroParenteses = item.nome.indexOf('(');
+            nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
+            const adicionaisString = item.nome.substring(primeiroParenteses + 1, item.nome.lastIndexOf(')'));
+            const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
+            
+            // Desenha um [+] na frente de cada adicional
+            textoAdicionais = listaAdicionais.map(adc => `<div style="font-size: 14px; padding-left: 12px; margin-top: 2px;">+ ${adc}</div>`).join('');
+        }
+
+        itensHtml += `
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 16px; font-weight: bold;">1x ${nomePrincipal}</div>
+                ${textoAdicionais}
+            </div>
+        `;
+    });
+
+    // Monta o layout 80mm de papel
+    cupom.innerHTML = `
+        <div style="text-align: center; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">COMANDA - MONTAGEM</h2>
+            <p style="margin: 4px 0 0 0; font-size: 14px;">${dataHora}</p>
+        </div>
+        
+        <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 12px 0; margin-bottom: 10px;">
+            ${itensHtml}
+        </div>
+        
+        <div style="text-align: center; font-size: 12px; margin-top: 15px;">
+            -- Icesoft App Operacional --
+        </div>
+    `;
+
+    // Aciona a impressora
+    cupom.style.display = 'block';
+    window.print();
+    cupom.style.display = 'none';
 }

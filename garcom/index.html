@@ -7,7 +7,7 @@
     <title>Comanda Mobile - Icesoft</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <link rel="stylesheet" href="/garcom/style.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -21,6 +21,12 @@
     </header>
 
     <div id="tela-mesas" class="tela-mesas">
+        
+        <!-- 👇 NOVO: Botão de Comanda Rápida -->
+        <button class="btn-nova-mesa-mobile" style="background: #e91e63; margin-bottom: 10px; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(233, 30, 99, 0.3);" onclick="abrirComandaRapida()">
+            <span class="material-symbols-outlined">receipt_long</span> Lançar Comanda (Balcão)
+        </button>
+
         <button class="btn-nova-mesa-mobile" onclick="abrirModalNovaMesaMobile()">
             <span class="material-symbols-outlined">add</span> Abrir Nova Mesa Livre
         </button>
@@ -117,6 +123,18 @@
         </div>
     </div>
 
-    <script src="/garcom/app.js"></script>
+    <!-- 👇 NOVO: Área Invisível para Impressão da Comanda -->
+    <div id="cupom-impressao" style="display: none; padding: 10px; font-family: monospace; color: black; background: white;"></div>
+
+    <!-- 👇 NOVO: Estilo CSS que esconde o sistema inteiro e mostra só o papel na hora de imprimir -->
+    <style>
+        @media print {
+            body * { display: none !important; }
+            #cupom-impressao, #cupom-impressao * { display: block !important; }
+            #cupom-impressao { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
+        }
+    </style>
+
+    <script src="./app.js"></script>
 </body>
 </html>
