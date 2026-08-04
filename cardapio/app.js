@@ -741,6 +741,12 @@ function confirmarEscolhasEAdicionar() {
     fecharModalOpcoes();
 }
 
+// 👇 NOVA FUNÇÃO RESTAURADA: Ensina o navegador a esconder a tela e liberar o scroll do celular
+function fecharModalOpcoes() {
+    document.getElementById('modal-opcoes').style.display = 'none';
+    document.body.style.overflow = 'auto'; 
+}
+
 function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = []) { 
     carrinho.push({ nome, preco: Number(preco), custo_unitario: custoUnitario, insumos: insumosUsados }); 
     atualizarBarraCarrinho();
