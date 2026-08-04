@@ -12,6 +12,10 @@
 </head>
 
 <link rel="stylesheet" href="style.css">
+
+<!-- 👇 NOVO: A antena do Rádio para receber comandos do Garçom -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
     <style>
         /* Estilos da Tabela e Modal de Vendas */
         table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; margin-top: 10px; }
@@ -671,6 +675,62 @@
         configurarDatasPadrao();
         buscarVendas(); 
     };
+
+    // ==========================================
+    // 🖨️ RECEPTOR DE IMPRESSÃO REMOTA (VEM DO GARÇOM)
+    // ==========================================
+    try {
+        const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+        socket.on('imprimir_pedido_pc', (dados) => {
+            console.log("🖨️ Comando de impressão recebido do garçom!", dados);
+            imprimirComandaRemota(dados);
+        });
+    } catch(e) { console.log("Erro ao conectar no rádio da impressora.", e); }
+
+    function imprimirComandaRemota(dados) {
+        let areaImpressao = document.getElementById('cupom-vendas');
+        if (!areaImpressao) {
+            areaImpressao = document.createElement('div');
+            areaImpressao.id = 'cupom-vendas';
+            areaImpressao.style.display = 'none';
+            document.body.appendChild(areaImpressao);
+        }
+
+        let htmlItens = '';
+        dados.itens.forEach(item => {
+            let nomePrincipal = item.nome;
+            let textoAdicionais = '';
+            if (item.nome.includes('(') && item.nome.includes(')')) {
+                const primeiroParenteses = item.nome.indexOf('(');
+                nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
+                const adicionaisString = item.nome.substring(primeiroParenteses + 1, item.nome.lastIndexOf(')'));
+                const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
+                textoAdicionais = listaAdicionais.map(adc => `<div style="font-size: 14px; padding-left: 12px; margin-top: 2px;">+ ${adc}</div>`).join('');
+            }
+            htmlItens += `<div style="margin-bottom: 12px;"><div style="font-size: 16px; font-weight: bold;">1x ${nomePrincipal}</div>${textoAdicionais}</div>`;
+        });
+
+        areaImpressao.innerHTML = `
+            <div style="text-align: center; margin-bottom: 15px; border-bottom: 2px dashed #000; padding-bottom: 10px;">
+                <h2 style="margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">COMANDA - MONTAGEM</h2>
+                <p style="margin: 4px 0 0 0; font-size: 14px;">${dados.dataHora}</p>
+            </div>
+            <div style="font-size: 18px; margin-bottom: 10px; text-align: center; font-weight: bold;">
+                CLIENTE: ${dados.identificador}
+            </div>
+            <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 12px 0; margin-bottom: 10px;">
+                ${htmlItens}
+            </div>
+            <div style="text-align: center; font-size: 12px; margin-top: 15px;">
+                -- Impressão Remota (Icesoft Garçom) --
+            </div>
+        `;
+
+        // Puxa o gatilho da impressora local conectada ao PC!
+        areaImpressao.style.display = 'block';
+        window.print();
+        areaImpressao.style.display = 'none';
+    }
 </script>
 
 <style>

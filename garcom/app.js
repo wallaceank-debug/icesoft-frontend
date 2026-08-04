@@ -389,25 +389,55 @@ function removerItem(index) { carrinho.splice(index, 1); atualizarBarraCarrinho(
 function fecharResumo() { document.getElementById('modal-resumo').style.display = 'none'; }
 
 // ==========================================
-// 4. ENVIAR PARA A COZINHA (Salva na mesa certa)
+// 4. ENVIAR PARA A COZINHA E CAIXA
 // ==========================================
 async function enviarComanda() {
     if (carrinho.length === 0) return alert("Adicione produtos antes de enviar!");
 
-    // 👇 NOVO: Se for comanda rápida, ele pede o nome do cliente AGORA, no final da montagem!
-    if (modoComandaRapida) {
-        const ident = prompt("🍦 Montagem concluída!\nDigite o Nome do Cliente ou o Número da Comanda de papel para enviar ao Caixa cobrar:");
-        if (!ident || ident.trim() === '') return;
-        numeroMesaAtual = ident.trim();
-    }
-
     const btn = document.getElementById('btn-enviar-comanda');
+    const txtBtn = btn.innerHTML;
     btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
 
     const cracha = localStorage.getItem('icesoft_token');
 
     try {
-        if (idMesaAtual) {
+        // 👇 LÓGICA CORRIGIDA: Vai direto para VENDAS (Caixa/Kanban)
+        if (modoComandaRapida) {
+            const ident = prompt("🍦 Montagem concluída!\nDigite o Nome do Cliente ou o Número da Comanda para enviar ao Caixa:");
+            if (!ident || ident.trim() === '') {
+                btn.innerHTML = txtBtn; btn.disabled = false;
+                return;
+            }
+
+            let totalCobrado = carrinho.reduce((acc, item) => acc + item.preco, 0);
+            const nomesApenas = carrinho.map(item => item.nome).join(' + ');
+            const nomeCurto = nomesApenas.length > 250 ? nomesApenas.substring(0, 247) + '...' : nomesApenas;
+
+            const vendaPayload = {
+                itens: carrinho,
+                produto_nome: nomeCurto, 
+                valor_total: totalCobrado, 
+                total: totalCobrado,
+                forma_pagamento: "A Cobrar (Comanda Rápida)", 
+                status: "A Preparar", // Vai pro Kanban da Cozinha e fica na tela de Vendas!
+                origem: "Balcão",
+                cliente_nome: ident.trim()
+            };
+
+            const resVenda = await fetch(`${API_URL}/vendas`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(vendaPayload)
+            });
+
+            if (resVenda.ok) { 
+                alert("✅ Comanda enviada direto para o Caixa e Cozinha!"); 
+                voltarParaMesas(); 
+                fecharResumo(); 
+            } else {
+                alert("Erro ao enviar comanda.");
+            }
+
+        // 👇 LÓGICA ORIGINAL DAS MESAS MANTIDA
+        } else if (idMesaAtual) {
             const mesa = mesasAbertas.find(m => m.id === idMesaAtual);
             const itensCombinados = (mesa.itens || []).concat(carrinho);
 
@@ -430,7 +460,7 @@ async function enviarComanda() {
     } catch (e) {
         alert("Erro de conexão.");
     } finally {
-        btn.innerHTML = `<span class="material-symbols-outlined">send</span> Enviar para Cozinha`; btn.disabled = false;
+        btn.innerHTML = txtBtn; btn.disabled = false;
     }
 }
 
@@ -605,57 +635,45 @@ async function finalizarPagamentoMobile() {
 }
 
 // ==========================================
-// 🖨️ MOTOR DE IMPRESSÃO (COMANDA RÁPIDA)
+// 🖨️ MOTOR DE IMPRESSÃO REMOTA (COMANDA RÁPIDA)
 // ==========================================
-function imprimirComandaGarcom() {
+async function imprimirComandaGarcom() {
     if (carrinho.length === 0) return alert("O carrinho está vazio!");
 
-    const cupom = document.getElementById('cupom-impressao');
-    const dataHora = new Date().toLocaleString('pt-BR');
+    const btn = document.querySelector('button[onclick="imprimirComandaGarcom()"]');
+    const txtOriginal = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined">wifi</span> Enviando p/ PC...'; 
+    btn.disabled = true;
 
-    let itensHtml = '';
-    
-    carrinho.forEach(item => {
-        let nomePrincipal = item.nome;
-        let textoAdicionais = '';
-        
-        // Pega os adicionais que estão entre parênteses para formatar bonitinho no papel
-        if (item.nome.includes('(') && item.nome.includes(')')) {
-            const primeiroParenteses = item.nome.indexOf('(');
-            nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
-            const adicionaisString = item.nome.substring(primeiroParenteses + 1, item.nome.lastIndexOf(')'));
-            const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
-            
-            // Desenha um [+] na frente de cada adicional
-            textoAdicionais = listaAdicionais.map(adc => `<div style="font-size: 14px; padding-left: 12px; margin-top: 2px;">+ ${adc}</div>`).join('');
+    try {
+        let identificador = modoComandaRapida ? prompt("Digite o nome ou número da comanda para sair na impressão:") : (numeroMesaAtual || 'Mesa');
+        if (!identificador || identificador.trim() === '') {
+            btn.innerHTML = txtOriginal; btn.disabled = false;
+            return;
         }
 
-        itensHtml += `
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 16px; font-weight: bold;">1x ${nomePrincipal}</div>
-                ${textoAdicionais}
-            </div>
-        `;
-    });
-
-    // Monta o layout 80mm de papel
-    cupom.innerHTML = `
-        <div style="text-align: center; margin-bottom: 15px;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">COMANDA - MONTAGEM</h2>
-            <p style="margin: 4px 0 0 0; font-size: 14px;">${dataHora}</p>
-        </div>
+        // 📡 O celular dispara o comando invisível para a nuvem
+        await fetch(`${API_URL}/imprimir/comanda`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                itens: carrinho, 
+                dataHora: new Date().toLocaleString('pt-BR'),
+                identificador: identificador.trim() 
+            })
+        });
         
-        <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 12px 0; margin-bottom: 10px;">
-            ${itensHtml}
-        </div>
+        btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Impresso no Caixa!';
+        btn.style.background = '#4CAF50';
+        setTimeout(() => {
+            btn.innerHTML = txtOriginal;
+            btn.style.background = '#607d8b';
+            btn.disabled = false;
+        }, 3000);
         
-        <div style="text-align: center; font-size: 12px; margin-top: 15px;">
-            -- Icesoft App Operacional --
-        </div>
-    `;
-
-    // Aciona a impressora
-    cupom.style.display = 'block';
-    window.print();
-    cupom.style.display = 'none';
+    } catch(e) {
+        alert("❌ Falha ao enviar comando para o PC. Verifique a internet.");
+        btn.innerHTML = txtOriginal; 
+        btn.disabled = false;
+    }
 }

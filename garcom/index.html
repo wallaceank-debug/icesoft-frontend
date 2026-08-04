@@ -123,18 +123,6 @@
         </div>
     </div>
 
-    <!-- 👇 NOVO: Área Invisível para Impressão da Comanda -->
-    <div id="cupom-impressao" style="display: none; padding: 10px; font-family: monospace; color: black; background: white;"></div>
-
-    <!-- 👇 NOVO: Estilo CSS que esconde o sistema inteiro e mostra só o papel na hora de imprimir -->
-    <style>
-        @media print {
-            body * { display: none !important; }
-            #cupom-impressao, #cupom-impressao * { display: block !important; }
-            #cupom-impressao { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
-        }
-    </style>
-
     <script src="/garcom/app.js"></script>
 </body>
 </html>
