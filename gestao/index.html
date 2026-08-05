@@ -672,12 +672,12 @@
                 
                 <input type="hidden" id="ficha-origem"> <!-- Guarda se foi Produto ou Adicional que abriu o modal -->
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <select id="ficha-select-insumo" class="input-padrao" style="flex: 2;">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <select id="ficha-select-insumo" class="input-padrao" style="flex: 2; min-width: 150px; box-sizing: border-box;">
                         <option value="">Carregando insumos...</option>
                     </select>
-                    <input type="number" id="ficha-qtd-insumo" class="input-padrao" placeholder="Qtd" style="flex: 1;" step="0.01">
-                    <button type="button" onclick="adicionarInsumoNaFicha()" style="background:#ab47bc; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">+</button>
+                    <input type="number" id="ficha-qtd-insumo" class="input-padrao" placeholder="Qtd" style="flex: 1; min-width: 80px; box-sizing: border-box;" step="0.01">
+                    <button type="button" onclick="adicionarInsumoNaFicha()" style="background:#ab47bc; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer; flex-shrink: 0;">+</button>
                 </div>
 
                 <div id="lista-ficha-tecnica" style="background:#f9f9f9; min-height: 150px; max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px;">
