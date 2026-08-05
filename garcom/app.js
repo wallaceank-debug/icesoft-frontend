@@ -394,21 +394,16 @@ function fecharResumo() { document.getElementById('modal-resumo').style.display 
 async function enviarComanda() {
     if (carrinho.length === 0) return alert("Adicione produtos antes de enviar!");
 
-    const btn = document.getElementById('btn-enviar-comanda');
-    const txtBtn = btn.innerHTML;
-    btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
+    // 👇 LÓGICA CORRIGIDA: Vai direto para VENDAS (Caixa/Kanban) e PULA as mesas!
+    if (modoComandaRapida) {
+        const ident = prompt("🍦 Montagem concluída!\nDigite o Nome do Cliente ou o Número da Comanda para enviar ao Caixa:");
+        if (!ident || ident.trim() === '') return;
 
-    const cracha = localStorage.getItem('icesoft_token');
+        const btn = document.getElementById('btn-enviar-comanda');
+        const txtOriginal = btn.innerHTML;
+        btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
 
-    try {
-        // 👇 LÓGICA CORRIGIDA: Vai direto para VENDAS (Caixa/Kanban)
-        if (modoComandaRapida) {
-            const ident = prompt("🍦 Montagem concluída!\nDigite o Nome do Cliente ou o Número da Comanda para enviar ao Caixa:");
-            if (!ident || ident.trim() === '') {
-                btn.innerHTML = txtBtn; btn.disabled = false;
-                return;
-            }
-
+        try {
             let totalCobrado = carrinho.reduce((acc, item) => acc + item.preco, 0);
             const nomesApenas = carrinho.map(item => item.nome).join(' + ');
             const nomeCurto = nomesApenas.length > 250 ? nomesApenas.substring(0, 247) + '...' : nomesApenas;
@@ -419,7 +414,7 @@ async function enviarComanda() {
                 valor_total: totalCobrado, 
                 total: totalCobrado,
                 forma_pagamento: "A Cobrar (Comanda Rápida)", 
-                status: "A Preparar", // Vai pro Kanban da Cozinha e fica na tela de Vendas!
+                status: "A Preparar", // Vai pro Kanban da Cozinha e pra tela de Vendas!
                 origem: "Balcão",
                 cliente_nome: ident.trim()
             };
@@ -435,9 +430,22 @@ async function enviarComanda() {
             } else {
                 alert("Erro ao enviar comanda.");
             }
+        } catch (e) {
+            alert("Erro de conexão.");
+        } finally {
+            btn.innerHTML = txtOriginal; btn.disabled = false;
+        }
+        return; // 🛑 CORTA AQUI! Impede que o código debaixo (das mesas) rode.
+    }
 
-        // 👇 LÓGICA ORIGINAL DAS MESAS MANTIDA
-        } else if (idMesaAtual) {
+    // --- LÓGICA ORIGINAL DAS MESAS ABAIXO ---
+    const btn = document.getElementById('btn-enviar-comanda');
+    btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
+
+    const cracha = localStorage.getItem('icesoft_token');
+
+    try {
+        if (idMesaAtual) {
             const mesa = mesasAbertas.find(m => m.id === idMesaAtual);
             const itensCombinados = (mesa.itens || []).concat(carrinho);
 
@@ -460,7 +468,7 @@ async function enviarComanda() {
     } catch (e) {
         alert("Erro de conexão.");
     } finally {
-        btn.innerHTML = txtBtn; btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-outlined">send</span> Enviar para Cozinha`; btn.disabled = false;
     }
 }
 
@@ -663,7 +671,7 @@ async function imprimirComandaGarcom() {
             })
         });
         
-        btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Impresso no Caixa!';
+        btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Impresso no PC!';
         btn.style.background = '#4CAF50';
         setTimeout(() => {
             btn.innerHTML = txtOriginal;
