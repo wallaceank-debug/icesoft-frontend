@@ -190,10 +190,12 @@
                 // Métricas de Ouro
                 document.getElementById('met-conversao').innerText = `${calcularPerc(d.vendas, d.visitantes)}%`;
                 
-                const abandono = d.checkout > 0 ? (100 - (d.vendas / d.checkout * 100)).toFixed(1) : 0;
+                let abandono = d.checkout > 0 ? (100 - (d.vendas / d.checkout * 100)).toFixed(1) : 0;
+                if (abandono < 0) abandono = 0; // 🛡️ Trava: Impede negativo se um cliente fizer 2 compras na mesma sessão
                 document.getElementById('met-abandono').innerText = `${abandono}%`;
 
-                const eficiencia = d.visualizacoes > 0 ? (d.carrinho / d.visualizacoes * 100).toFixed(1) : 0;
+                let eficiencia = d.visualizacoes > 0 ? (d.carrinho / d.visualizacoes * 100).toFixed(1) : 0;
+                if (eficiencia > 100) eficiencia = 100; // 🛡️ Trava de segurança
                 document.getElementById('met-eficiencia').innerText = `${eficiencia}%`;
 
             } catch (e) { alert("Erro ao carregar o funil."); }
