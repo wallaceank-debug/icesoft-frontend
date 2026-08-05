@@ -208,14 +208,15 @@
                 <!-- MÓDULO 1: CADASTRO E COMPRAS -->
                 <div id="conteudo-insumos-cadastro">
                     <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px dashed #ff9800;">
-                        <input type="text" id="novo-insumo-nome" class="input-padrao" placeholder="Nome do Ingrediente (Ex: Nutella, Copo 300ml)" style="flex: 2; min-width: 150px;">
+                        <input type="text" id="novo-insumo-nome" class="input-padrao" placeholder="Nome (Ex: Chocoboll)" style="flex: 2; min-width: 150px;">
                         <select id="novo-insumo-unidade" class="input-padrao" style="flex: 1; min-width: 100px;">
                             <option value="g">Gramas (g)</option>
                             <option value="ml">Mililitros (ml)</option>
                             <option value="un">Unidades (un)</option>
                         </select>
-                        <input type="number" id="novo-insumo-custo" class="input-padrao" placeholder="Custo Inicial p/ und (R$)" step="0.001" style="flex: 1; min-width: 120px;">
-                        <button type="button" onclick="salvarNovoInsumo()" style="background:#ff9800; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">+ Cadastrar Base</button>
+                        <input type="number" id="novo-insumo-qtd" class="input-padrao" placeholder="Qtd do Pacote (Ex: 500)" step="0.01" style="flex: 1; min-width: 120px;" title="Quanto vem no pacote/caixa?">
+                        <input type="number" id="novo-insumo-valor" class="input-padrao" placeholder="Valor Pago (Ex: 16.90)" step="0.01" style="flex: 1; min-width: 120px;" title="Preço total pago">
+                        <button type="button" onclick="salvarNovoInsumo()" style="background:#ff9800; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">+ Cadastrar</button>
                     </div>
 
                     <!-- 👇 NOVA BARRA DE PESQUISA E LIMITE DE INSUMOS -->

@@ -1796,16 +1796,27 @@ function renderizarInsumosAdmin(filtro = '') {
 async function salvarNovoInsumo() {
     const nome = document.getElementById('novo-insumo-nome').value.trim();
     const unidade = document.getElementById('novo-insumo-unidade').value;
-    const custo = parseFloat(document.getElementById('novo-insumo-custo').value.replace(',', '.')) || 0;
+    const qtd = parseFloat(document.getElementById('novo-insumo-qtd').value.replace(',', '.'));
+    const valorTotal = parseFloat(document.getElementById('novo-insumo-valor').value.replace(',', '.'));
     
-    if(!nome) return alert("Preencha o nome do ingrediente!");
+    if(!nome) return alert("⚠️ Preencha o nome do ingrediente!");
+    if(isNaN(qtd) || qtd <= 0) return alert("⚠️ Preencha a quantidade que vem no pacote/embalagem!");
+    if(isNaN(valorTotal) || valorTotal < 0) return alert("⚠️ Preencha o valor pago no pacote!");
+
+    // 🧠 MÁGICA FINANCEIRA: Calcula o custo exato por grama/ml/unidade
+    const custoUnitario = valorTotal / qtd;
+
     try {
+        // Envia para o banco o custo unitário já calculado e a quantidade inicial para o estoque!
         await fetch(`${API_URL}/insumos`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ nome, unidade, custo })
+            body: JSON.stringify({ nome: nome, unidade: unidade, custo: custoUnitario, estoque: qtd })
         });
+        
         document.getElementById('novo-insumo-nome').value = '';
-        document.getElementById('novo-insumo-custo').value = '';
+        document.getElementById('novo-insumo-qtd').value = '';
+        document.getElementById('novo-insumo-valor').value = '';
+        
         await carregarInsumos();
         renderizarInsumosAdmin();
     } catch(e) { alert("Erro ao salvar insumo."); }
