@@ -22,14 +22,22 @@
 
     <div id="tela-mesas" class="tela-mesas">
         
-        <!-- 👇 NOVO: Botão de Comanda Rápida -->
-        <button class="btn-nova-mesa-mobile" style="background: #e91e63; margin-bottom: 10px; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(233, 30, 99, 0.3);" onclick="abrirComandaRapida()">
+        <!-- Botão de Comanda agora cria uma Ficha Digital -->
+        <button class="btn-nova-mesa-mobile" style="background: #e91e63; margin-bottom: 10px; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(233, 30, 99, 0.3);" onclick="abrirNovaComandaVirtual()">
             <span class="material-symbols-outlined">receipt_long</span> Lançar Comanda (Balcão)
         </button>
 
-        <button class="btn-nova-mesa-mobile" onclick="abrirModalNovaMesaMobile()">
-            <span class="material-symbols-outlined">add</span> Abrir Nova Mesa Livre
-        </button>
+        <!-- SEÇÃO 1: Comandas Virtuais -->
+        <h3 style="margin-top: 15px; margin-bottom: 10px; color: #333; font-size: 1.1rem;">📋 Comandas Abertas (Balcão/Fila)</h3>
+        <div id="lista-comandas-mobile" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
+            <p style="text-align: center; color: #888; font-size: 0.9rem;">Nenhuma comanda aberta.</p>
+        </div>
+
+        <!-- SEÇÃO 2: Mesas Físicas -->
+        <h3 style="margin-top: 10px; margin-bottom: 10px; color: #333; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
+            🪑 Mesas do Salão
+            <button onclick="abrirModalNovaMesaMobile()" style="background: #00bcd4; color: white; border: none; padding: 5px 10px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Abrir Extra</button>
+        </h3>
         <div id="lista-mesas-mobile" style="display: flex; flex-direction: column; gap: 10px;">
             <p style="text-align: center; color: #888;">Carregando mesas...</p>
         </div>

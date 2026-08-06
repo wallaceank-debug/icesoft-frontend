@@ -94,10 +94,15 @@ async function carregarDadosBasicos() {
 // 1. TELA DE MAPA DE MESAS (Início)
 // ==========================================
 function renderizarMesasMobile() {
-    const container = document.getElementById('lista-mesas-mobile');
-    container.innerHTML = '';
+    const containerMesas = document.getElementById('lista-mesas-mobile');
+    const containerComandas = document.getElementById('lista-comandas-mobile');
     
-    // Mostra as 15 mesas configuradas no seu sistema
+    if (containerMesas) containerMesas.innerHTML = '';
+    if (containerComandas) containerComandas.innerHTML = '';
+    
+    let comandasExistem = false;
+
+    // 1. Renderiza as 15 Mesas Físicas
     for (let i = 1; i <= 15; i++) {
         const numeroStr = String(i).padStart(2, '0');
         const mesaOcupada = mesasAbertas.find(m => m.numero === numeroStr);
@@ -106,7 +111,7 @@ function renderizarMesasMobile() {
             let totalMesa = 0;
             (mesaOcupada.itens || []).forEach(item => totalMesa += Number(item.preco));
             
-            container.innerHTML += `
+            containerMesas.innerHTML += `
                 <div class="mesa-mobile-card mesa-ocupada" onclick="abrirMesaExistenteMobile(${mesaOcupada.id}, '${numeroStr}')">
                     <div>
                         <div style="font-weight: 800; font-size: 1.2rem; color: #333;">Mesa ${numeroStr}</div>
@@ -119,7 +124,7 @@ function renderizarMesasMobile() {
                 </div>
             `;
         } else {
-            container.innerHTML += `
+            containerMesas.innerHTML += `
                 <div class="mesa-mobile-card mesa-livre" onclick="abrirNovaMesaMobile('${numeroStr}')">
                     <div style="font-weight: 800; font-size: 1.2rem; color: #333;">Mesa ${numeroStr}</div>
                     <div style="color: #25D366; font-weight: bold;">Liberada</div>
@@ -127,6 +132,53 @@ function renderizarMesasMobile() {
             `;
         }
     }
+
+    // 2. Inteligência: Renderiza Comandas Virtuais (Qualquer nome/número que não seja de 01 a 15)
+    const comandasVirtuais = mesasAbertas.filter(m => {
+        const num = parseInt(m.numero);
+        return isNaN(num) || num > 15 || num < 1 || String(num).padStart(2, '0') !== m.numero;
+    });
+
+    comandasVirtuais.forEach(comanda => {
+        comandasExistem = true;
+        let totalComanda = 0;
+        (comanda.itens || []).forEach(item => totalComanda += Number(item.preco));
+        
+        containerComandas.innerHTML += `
+            <div class="mesa-mobile-card mesa-ocupada" style="border-left-color: #e91e63;" onclick="abrirMesaExistenteMobile(${comanda.id}, '${comanda.numero}')">
+                <div>
+                    <div style="font-weight: 800; font-size: 1.2rem; color: #333;"><span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle;">person</span> ${comanda.numero}</div>
+                    <div style="font-size: 0.85rem; color: #666;">${(comanda.itens || []).length} itens na comanda</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="color: #e91e63; font-weight: 900; font-size: 1.1rem;">R$ ${totalComanda.toFixed(2).replace('.', ',')}</div>
+                    <button onclick="event.stopPropagation(); abrirPagamentoMobile(${comanda.id})" style="background: #4CAF50; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; margin-top: 5px; cursor: pointer;">Pagar</button>
+                </div>
+            </div>
+        `;
+    });
+
+    if (!comandasExistem && containerComandas) {
+        containerComandas.innerHTML = '<p style="text-align: center; color: #888; font-size: 0.9rem; padding: 10px;">Nenhuma comanda aberta.</p>';
+    }
+}
+
+// NOVA FUNÇÃO: Cria a Ficha Digital usando o nome do cliente
+function abrirNovaComandaVirtual() {
+    const nomeCliente = prompt("Digite o Nome do Cliente ou Identificação da Comanda:\n(Ex: João, Camisa Azul, Ficha 42)");
+    if (!nomeCliente || nomeCliente.trim() === '') return;
+    
+    modoComandaRapida = false; // Desativa fluxos de pagamento imediatos
+    idMesaAtual = null;
+    numeroMesaAtual = nomeCliente.trim();
+    carrinho = [];
+    atualizarBarraCarrinho();
+    
+    document.getElementById('tela-mesas').style.display = 'none';
+    document.getElementById('tela-produtos').style.display = 'block';
+    document.getElementById('btn-voltar-header').style.display = 'block';
+    document.getElementById('icone-header').style.display = 'none';
+    document.getElementById('titulo-header').innerText = `Comanda: ${numeroMesaAtual}`;
 }
 
 // ==========================================
@@ -347,36 +399,19 @@ function abrirResumoPedido() {
     container.innerHTML = '';
 
     const footerContainer = document.querySelector('#modal-resumo .sheet-footer');
-    
-    if (modoComandaRapida) {
-        footerContainer.innerHTML = `
-            <div style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn-primario" onclick="imprimirComandaGarcom()" style="flex: 1; background: #607d8b; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined">print</span> Imprimir
-                </button>
-                <button class="btn-primario" onclick="enviarComanda()" id="btn-enviar-comanda" style="flex: 2; background: #e91e63; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined">receipt_long</span> Enviar p/ Caixa
-                </button>
-            </div>
-        `;
-        document.querySelector('#modal-resumo .sheet-header h3').innerHTML = '🍦 Resumo para Montagem';
-    } else {
-        footerContainer.innerHTML = `
-            <button class="btn-primario" onclick="enviarComanda()" id="btn-enviar-comanda" style="width: 100%; background: #25D366; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined">send</span> Enviar para Cozinha
-            </button>
-        `;
-        document.querySelector('#modal-resumo .sheet-header h3').innerHTML = '🛒 Enviar para Mesa';
-    }
+    footerContainer.innerHTML = `
+        <button class="btn-primario" onclick="enviarComanda()" id="btn-enviar-comanda" style="width: 100%; background: #25D366; display: flex; justify-content: center; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined">send</span> Enviar p/ Preparo
+        </button>
+    `;
+    document.querySelector('#modal-resumo .sheet-header h3').innerHTML = `🛒 Confirmação`;
 
     carrinho.forEach((item, index) => {
         let nomePrincipal = item.nome;
         let adicionaisHtml = '';
 
-        // Renderiza a Etiqueta Visual de Observação / Cliente
         if (item.observacao) {
             adicionaisHtml += `<div style="font-size: 1rem; color: #d32f2f; background: #ffebee; padding: 6px 10px; border-radius: 8px; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #ffcdd2; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 1.2rem;">person</span> ${item.observacao}</div>`;
-            // Remove a observação do nome principal só para não poluir a tela do resumo
             nomePrincipal = nomePrincipal.replace(` - Obs: ${item.observacao}`, ''); 
         }
 
@@ -385,7 +420,6 @@ function abrirResumoPedido() {
             const ultimoParenteses = nomePrincipal.lastIndexOf(')');
             const adicionaisString = nomePrincipal.substring(primeiroParenteses + 1, ultimoParenteses);
             nomePrincipal = nomePrincipal.substring(0, primeiroParenteses).trim();
-            
             const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
             
             listaAdicionais.forEach(adic => {
@@ -393,7 +427,6 @@ function abrirResumoPedido() {
             });
         }
 
-        // O botão editar agora aparece para TODOS os produtos, permitindo editar a observação de qualquer um
         const btnEditarHtml = `<span class="material-symbols-outlined" style="color: #00bcd4; cursor: pointer; padding: 10px; background: #e0f7fa; border-radius: 12px; transition: 0.2s;" title="Editar" onclick="editarItem(${index})">edit</span>`;
 
         container.innerHTML += `
@@ -410,48 +443,6 @@ function abrirResumoPedido() {
             </div>
         `;
     });
-
-    // 👇 INÍCIO DA ÁREA DE PAGAMENTO
-    isDivisaoComandaAtiva = false; 
-
-    if (modoComandaRapida) {
-        let totalCarrinho = carrinho.reduce((acc, item) => acc + item.preco, 0);
-        container.innerHTML += `
-            <div style="background: #e0f7fa; padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid #00bcd4; padding-bottom: 25px;">
-                <h4 style="margin: 0 0 12px 0; color: #00838f; display: flex; align-items: center; gap: 5px;">
-                    <span class="material-symbols-outlined">payments</span> Pagamento e Finalização
-                </h4>
-                
-                <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Nome ou Identificação do Cliente:</label>
-                <input type="text" id="comanda-identificacao" class="input-garcom" placeholder="Ex: João - Camisa Azul" style="margin-bottom: 15px; border: 1px solid #ccc; background: white; padding: 12px;">
-
-                <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Forma de Pagamento 1:</label>
-                <select id="comanda-metodo-1" class="input-garcom" style="margin-bottom: 5px; border: 1px solid #ccc; background: white; padding: 12px;">
-                    <option value="Dinheiro">💵 Dinheiro</option>
-                    <option value="PIX">💠 PIX</option>
-                    <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-                    <option value="Cartão de Débito">💳 Cartão de Débito</option>
-                </select>
-                <input type="number" id="comanda-valor-1" class="input-garcom" value="${totalCarrinho.toFixed(2)}" readonly style="margin-bottom: 10px; background: #eee; padding: 12px; font-weight: bold; color: #333;">
-                
-                <button id="btn-dividir-comanda" onclick="toggleDivisaoComanda()" style="width:100%; padding:12px; border:1px dashed #00bcd4; color:#00bcd4; background:none; border-radius:8px; font-weight:bold; cursor: pointer; transition: 0.2s;">+ Dividir Pagamento</button>
-                
-                <div id="area-comanda-divisao" style="display:none; margin-top:10px; padding-top:15px; border-top:1px dashed #00bcd4;">
-                    <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Forma de Pagamento 2:</label>
-                    <select id="comanda-metodo-2" class="input-garcom" style="margin-bottom: 5px; border: 1px solid #ccc; background: white; padding: 12px;">
-                        <option value="PIX">💠 PIX</option>
-                        <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-                        <option value="Cartão de Débito">💳 Cartão de Débito</option>
-                        <option value="Dinheiro">💵 Dinheiro</option>
-                    </select>
-                    <label style="font-size: 0.8rem; font-weight: bold; color: #888;">Restante (R$):</label>
-                    <input type="number" id="comanda-valor-2" class="input-garcom" readonly style="background:#eee; padding: 12px; font-weight: bold; color: #333;">
-                </div>
-            </div>
-        `;
-    }
-    // 👆 FIM DA ÁREA DE PAGAMENTO
-
     document.getElementById('modal-resumo').style.display = 'flex';
 }
 
@@ -512,70 +503,8 @@ function fecharResumo() { document.getElementById('modal-resumo').style.display 
 async function enviarComanda() {
     if (carrinho.length === 0) return alert("Adicione produtos antes de enviar!");
 
-    // 👇 NOVA LÓGICA DE CHECKOUT PARA O APP DO GARÇOM
-    if (modoComandaRapida) {
-        const identInput = document.getElementById('comanda-identificacao');
-        const ident = identInput ? identInput.value.trim() : '';
-        if (!ident || ident === '') return alert("⚠️ Digite a identificação do cliente (Nome ou Roupa) no fim da tela!");
-
-        let totalCobrado = carrinho.reduce((acc, item) => acc + item.preco, 0);
-        
-        const m1 = document.getElementById('comanda-metodo-1').value;
-        let metodoFinalTexto = m1;
-
-        if (isDivisaoComandaAtiva) {
-            const m2 = document.getElementById('comanda-metodo-2').value;
-            const v1 = parseFloat(document.getElementById('comanda-valor-1').value) || 0;
-            const v2 = parseFloat(document.getElementById('comanda-valor-2').value) || 0;
-            
-            if (v1 <= 0 || v2 <= 0) return alert("⚠️ Valores de divisão inválidos.");
-            if (m1 === m2) return alert("⚠️ As duas formas de pagamento não podem ser iguais na divisão.");
-            metodoFinalTexto = `${m1} e ${m2}`;
-        }
-
-        const btn = document.getElementById('btn-enviar-comanda');
-        const txtOriginal = btn.innerHTML;
-        btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
-
-        try {
-            const nomesApenas = carrinho.map(item => item.nome).join(' + ');
-            const nomeCurto = nomesApenas.length > 250 ? nomesApenas.substring(0, 247) + '...' : nomesApenas;
-
-            const vendaPayload = {
-                itens: carrinho,
-                produto_nome: nomeCurto, 
-                valor_total: totalCobrado, 
-                total: totalCobrado,
-                forma_pagamento: metodoFinalTexto, 
-                status: "Concluída", // 👈 CAI NO SISTEMA COMO PAGO! (Vai direto pro DRE e pro Kanban da Cozinha)
-                origem: "Balcão (App Garçom)",
-                cliente_nome: ident
-            };
-
-            const resVenda = await fetch(`${API_URL}/vendas`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(vendaPayload)
-            });
-
-            if (resVenda.ok) { 
-                alert(`✅ Venda Concluída em ${metodoFinalTexto} e enviada à cozinha!`); 
-                localStorage.removeItem('icesoft_estado_pedido'); // Limpa a proteção contra F5
-                voltarParaMesas(); 
-                fecharResumo(); 
-            } else {
-                alert("Erro ao enviar comanda para o Caixa.");
-            }
-        } catch (e) {
-            alert("Erro de conexão com o servidor.");
-        } finally {
-            btn.innerHTML = txtOriginal; btn.disabled = false;
-        }
-        return; // 🛑 CORTA AQUI! Impede que o código debaixo (das mesas) rode.
-    }
-
-    // --- LÓGICA ORIGINAL DAS MESAS ABAIXO ---
     const btn = document.getElementById('btn-enviar-comanda');
     btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
-
     const cracha = localStorage.getItem('icesoft_token');
 
     try {
@@ -588,21 +517,21 @@ async function enviarComanda() {
                 body: JSON.stringify({ itens: itensCombinados })
             });
 
-            if (res.ok) { alert("✅ Itens adicionados com sucesso!"); voltarParaMesas(); fecharResumo(); } 
-            else alert("Erro ao adicionar na mesa.");
+            if (res.ok) { alert("✅ Itens adicionados à comanda!"); localStorage.removeItem('icesoft_estado_pedido'); voltarParaMesas(); fecharResumo(); } 
+            else alert("Erro ao adicionar.");
         } else {
             const res = await fetch(`${API_URL}/mesas`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cracha}` },
                 body: JSON.stringify({ numero: numeroMesaAtual, itens: carrinho })
             });
 
-            if (res.ok) { alert("✅ Mesa aberta com sucesso!"); voltarParaMesas(); fecharResumo(); } 
-            else alert("Erro ao abrir a mesa.");
+            if (res.ok) { alert("✅ Nova Comanda aberta!"); localStorage.removeItem('icesoft_estado_pedido'); voltarParaMesas(); fecharResumo(); } 
+            else alert("Erro ao abrir.");
         }
     } catch (e) {
         alert("Erro de conexão.");
     } finally {
-        btn.innerHTML = `<span class="material-symbols-outlined">send</span> Enviar para Cozinha`; btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-outlined">send</span> Enviar p/ Preparo`; btn.disabled = false;
     }
 }
 
