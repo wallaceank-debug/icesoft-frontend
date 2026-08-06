@@ -22,7 +22,39 @@ let itemEmEdicaoIndex = null;
 
 window.onload = async () => {
     await carregarDadosBasicos();
+    recuperarEstadoPedido(); // 👇 NOVO: Tenta recuperar o pedido caso a página tenha recarregado
 };
+
+// 👇 NOVA FUNÇÃO: Puxa da memória o carrinho que estava sendo montado
+function recuperarEstadoPedido() {
+    const memoria = localStorage.getItem('icesoft_estado_pedido');
+    if (memoria) {
+        const estadoSalvo = JSON.parse(memoria);
+        
+        // Se havia itens no carrinho, nós restauramos a tela de produtos
+        if (estadoSalvo.carrinho && estadoSalvo.carrinho.length > 0) {
+            carrinho = estadoSalvo.carrinho;
+            idMesaAtual = estadoSalvo.idMesaAtual;
+            numeroMesaAtual = estadoSalvo.numeroMesaAtual;
+            modoComandaRapida = estadoSalvo.modoComandaRapida;
+
+            // Esconde o mapa de mesas e mostra a lista de produtos
+            document.getElementById('tela-mesas').style.display = 'none';
+            document.getElementById('tela-produtos').style.display = 'block';
+            document.getElementById('btn-voltar-header').style.display = 'block';
+            document.getElementById('icone-header').style.display = 'none';
+            
+            // Corrige o título do topo para refletir a mesa ou comanda
+            if (modoComandaRapida) {
+                document.getElementById('titulo-header').innerText = `Lançar Comanda`;
+            } else {
+                document.getElementById('titulo-header').innerText = idMesaAtual ? `Add à Mesa ${numeroMesaAtual}` : `Lançando na Mesa ${numeroMesaAtual}`;
+            }
+
+            atualizarBarraCarrinho(); // Recalcula e mostra a barrinha de preço embaixo
+        }
+    }
+}
 
 async function carregarDadosBasicos() {
     try {
@@ -277,6 +309,15 @@ function atualizarBarraCarrinho() {
         let total = carrinho.reduce((acc, item) => acc + item.preco, 0);
         document.getElementById('carrinho-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
     } else { barra.style.display = 'none'; }
+
+    // 👇 NOVO: Salva os dados do pedido atual no celular (Prevenção contra reload)
+    const estadoApp = {
+        carrinho: carrinho,
+        idMesaAtual: idMesaAtual,
+        numeroMesaAtual: numeroMesaAtual,
+        modoComandaRapida: modoComandaRapida
+    };
+    localStorage.setItem('icesoft_estado_pedido', JSON.stringify(estadoApp));
 }
 
 function abrirResumoPedido() {
