@@ -233,35 +233,43 @@ function abrirProduto(id) {
     produtoEmSelecao = listaProdutos.find(p => p.id === id);
     adicionaisSelecionados = [];
     itemEmEdicaoIndex = null; 
-    
-    if (!produtoEmSelecao.grupos_ids || produtoEmSelecao.grupos_ids.length === 0) {
-        confirmarItem(); return;
-    }
 
+    // O modal agora sempre abre (mesmo sem adicionais) para permitir digitar a observação
     document.getElementById('modal-prod-nome').innerText = produtoEmSelecao.nome;
+    
     const btnFooter = document.querySelector('#modal-adicionais .sheet-footer');
-    if(btnFooter) btnFooter.innerHTML = `<button class="btn-primario" onclick="confirmarItem()">Adicionar <span id="modal-prod-preco">R$ 0,00</span></button>`;
+    if(btnFooter) {
+        btnFooter.style.flexDirection = 'column'; // Empilha a caixa de texto sobre o botão
+        btnFooter.innerHTML = `
+            <input type="text" id="obs-item" class="input-garcom" placeholder="Nome do cliente ou observação (Opcional)" style="margin-bottom: 12px; border: 1px solid #ccc; background: #fff;">
+            <button class="btn-primario" onclick="confirmarItem()">Adicionar <span id="modal-prod-preco">R$ 0,00</span></button>
+        `;
+    }
     
     atualizarPrecoModal();
     const containerAdc = document.getElementById('modal-prod-adicionais');
     containerAdc.innerHTML = '';
 
-    produtoEmSelecao.grupos_ids.forEach(grupoId => {
-        const grupo = gruposGlobais.find(g => g.id === grupoId);
-        if (!grupo || !grupo.itens) return;
-        let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
-        grupo.itens.forEach(item => {
-            const precoAdc = Number(item.preco) > 0 ? `(+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')})` : '';
-            htmlGrupo += `
-                <label class="item-adc">
-                    <span>${item.nome} <small style="color:#888;">${precoAdc}</small></span>
-                    <input type="checkbox" value='${JSON.stringify(item)}' onchange="toggleAdicional(this)">
-                </label>
-            `;
+    if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
+        produtoEmSelecao.grupos_ids.forEach(grupoId => {
+            const grupo = gruposGlobais.find(g => g.id === grupoId);
+            if (!grupo || !grupo.itens) return;
+            let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
+            grupo.itens.forEach(item => {
+                const precoAdc = Number(item.preco) > 0 ? `(+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')})` : '';
+                htmlGrupo += `
+                    <label class="item-adc">
+                        <span>${item.nome} <small style="color:#888;">${precoAdc}</small></span>
+                        <input type="checkbox" value='${JSON.stringify(item)}' onchange="toggleAdicional(this)">
+                    </label>
+                `;
+            });
+            htmlGrupo += `</div>`;
+            containerAdc.innerHTML += htmlGrupo;
         });
-        htmlGrupo += `</div>`;
-        containerAdc.innerHTML += htmlGrupo;
-    });
+    } else {
+        containerAdc.innerHTML = '<p style="color: #888; text-align: center; margin-top: 10px; font-style: italic;">Adicione uma observação abaixo se necessário.</p>';
+    }
 
     document.getElementById('modal-adicionais').style.display = 'flex';
 }
@@ -284,9 +292,23 @@ function confirmarItem() {
     let strAdicionais = adicionaisSelecionados.length > 0 ? ` (${adicionaisSelecionados.map(a => a.nome).join(', ')})` : '';
     adicionaisSelecionados.forEach(adc => precoItemFinal += Number(adc.preco));
 
+    // Captura a observação digitada
+    const inputObs = document.getElementById('obs-item');
+    const observacaoText = inputObs ? inputObs.value.trim() : '';
+    
+    // Monta o nome final que vai para o banco de dados e impressora
+    let nomeFinal = produtoEmSelecao.nome + strAdicionais;
+    if (observacaoText !== '') {
+        nomeFinal += ` - Obs: ${observacaoText}`;
+    }
+
     const itemMontado = {
-        id: produtoEmSelecao.id, nome: produtoEmSelecao.nome + strAdicionais,
-        preco: precoItemFinal, quantidade: 1, adicionaisSelecionados: [...adicionaisSelecionados]
+        id: produtoEmSelecao.id, 
+        nome: nomeFinal,
+        preco: precoItemFinal, 
+        quantidade: 1, 
+        adicionaisSelecionados: [...adicionaisSelecionados],
+        observacao: observacaoText // Guarda a observação isolada para mostrar na tela
     };
 
     if (itemEmEdicaoIndex !== null) {
@@ -324,11 +346,9 @@ function abrirResumoPedido() {
     const container = document.getElementById('lista-resumo');
     container.innerHTML = '';
 
-    // 👇 MUDA O TÍTULO E O BOTÃO SE FOR COMANDA RÁPIDA
     const footerContainer = document.querySelector('#modal-resumo .sheet-footer');
     
     if (modoComandaRapida) {
-        // Modo Montagem: Mostra o botão de Imprimir e o de Enviar lado a lado
         footerContainer.innerHTML = `
             <div style="display: flex; gap: 10px; width: 100%;">
                 <button class="btn-primario" onclick="imprimirComandaGarcom()" style="flex: 1; background: #607d8b; display: flex; justify-content: center; align-items: center; gap: 8px;">
@@ -341,7 +361,6 @@ function abrirResumoPedido() {
         `;
         document.querySelector('#modal-resumo .sheet-header h3').innerHTML = '🍦 Resumo para Montagem';
     } else {
-        // Modo Mesas: Mostra só o botão de enviar original
         footerContainer.innerHTML = `
             <button class="btn-primario" onclick="enviarComanda()" id="btn-enviar-comanda" style="width: 100%; background: #25D366; display: flex; justify-content: center; align-items: center; gap: 8px;">
                 <span class="material-symbols-outlined">send</span> Enviar para Cozinha
@@ -354,22 +373,28 @@ function abrirResumoPedido() {
         let nomePrincipal = item.nome;
         let adicionaisHtml = '';
 
-        if (item.nome.includes('(') && item.nome.includes(')')) {
-            const primeiroParenteses = item.nome.indexOf('(');
-            const ultimoParenteses = item.nome.lastIndexOf(')');
-            nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
-            const adicionaisString = item.nome.substring(primeiroParenteses + 1, ultimoParenteses);
+        // Renderiza a Etiqueta Visual de Observação / Cliente
+        if (item.observacao) {
+            adicionaisHtml += `<div style="font-size: 1rem; color: #d32f2f; background: #ffebee; padding: 6px 10px; border-radius: 8px; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #ffcdd2; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 1.2rem;">person</span> ${item.observacao}</div>`;
+            // Remove a observação do nome principal só para não poluir a tela do resumo
+            nomePrincipal = nomePrincipal.replace(` - Obs: ${item.observacao}`, ''); 
+        }
+
+        if (nomePrincipal.includes('(') && nomePrincipal.includes(')')) {
+            const primeiroParenteses = nomePrincipal.indexOf('(');
+            const ultimoParenteses = nomePrincipal.lastIndexOf(')');
+            const adicionaisString = nomePrincipal.substring(primeiroParenteses + 1, ultimoParenteses);
+            nomePrincipal = nomePrincipal.substring(0, primeiroParenteses).trim();
+            
             const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
             
             listaAdicionais.forEach(adic => {
-                // 👇 UX OTIMIZADA: Adicionais gigantes e coloridos como "Etiquetas" para facilitar a montagem
                 adicionaisHtml += `<div style="font-size: 1rem; color: #e65100; background: #fff3e0; padding: 6px 10px; border-radius: 8px; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #ffcc80; font-weight: bold;"><span class="material-symbols-outlined" style="font-size: 1.2rem;">add_circle</span> ${adic}</div>`;
             });
         }
 
-        const prodRef = listaProdutos.find(p => p.id === item.id);
-        const podeEditar = prodRef && prodRef.grupos_ids && prodRef.grupos_ids.length > 0;
-        const btnEditarHtml = podeEditar ? `<span class="material-symbols-outlined" style="color: #00bcd4; cursor: pointer; padding: 10px; background: #e0f7fa; border-radius: 12px; transition: 0.2s;" title="Editar" onclick="editarItem(${index})">edit</span>` : '';
+        // O botão editar agora aparece para TODOS os produtos, permitindo editar a observação de qualquer um
+        const btnEditarHtml = `<span class="material-symbols-outlined" style="color: #00bcd4; cursor: pointer; padding: 10px; background: #e0f7fa; border-radius: 12px; transition: 0.2s;" title="Editar" onclick="editarItem(${index})">edit</span>`;
 
         container.innerHTML += `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px dashed #ddd; padding: 15px 0;">
@@ -398,29 +423,40 @@ window.editarItem = function(index) {
     document.getElementById('modal-prod-nome').innerText = produtoEmSelecao.nome + " (Edição)";
     
     const btnFooter = document.querySelector('#modal-adicionais .sheet-footer');
-    if(btnFooter) btnFooter.innerHTML = `<button class="btn-primario" style="background: #00bcd4;" onclick="confirmarItem()">Atualizar <span id="modal-prod-preco"></span></button>`;
+    if(btnFooter) {
+        btnFooter.style.flexDirection = 'column';
+        const obsAtual = itemCarrinho.observacao || '';
+        btnFooter.innerHTML = `
+            <input type="text" id="obs-item" class="input-garcom" placeholder="Nome do cliente ou observação (Opcional)" style="margin-bottom: 12px; border: 1px solid #ccc; background: #fff;" value="${obsAtual}">
+            <button class="btn-primario" style="background: #00bcd4;" onclick="confirmarItem()">Atualizar <span id="modal-prod-preco"></span></button>
+        `;
+    }
     
     atualizarPrecoModal();
     const containerAdc = document.getElementById('modal-prod-adicionais');
     containerAdc.innerHTML = '';
 
-    produtoEmSelecao.grupos_ids.forEach(grupoId => {
-        const grupo = gruposGlobais.find(g => g.id === grupoId);
-        if (!grupo || !grupo.itens) return;
-        let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
-        grupo.itens.forEach(itemGrupo => {
-            const precoAdc = Number(itemGrupo.preco) > 0 ? `(+ R$ ${Number(itemGrupo.preco).toFixed(2).replace('.', ',')})` : '';
-            const isChecked = adicionaisSelecionados.some(a => a.nome === itemGrupo.nome) ? 'checked' : '';
-            htmlGrupo += `
-                <label class="item-adc">
-                    <span>${itemGrupo.nome} <small style="color:#888;">${precoAdc}</small></span>
-                    <input type="checkbox" value='${JSON.stringify(itemGrupo)}' onchange="toggleAdicional(this)" ${isChecked}>
-                </label>
-            `;
+    if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
+        produtoEmSelecao.grupos_ids.forEach(grupoId => {
+            const grupo = gruposGlobais.find(g => g.id === grupoId);
+            if (!grupo || !grupo.itens) return;
+            let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
+            grupo.itens.forEach(itemGrupo => {
+                const precoAdc = Number(itemGrupo.preco) > 0 ? `(+ R$ ${Number(itemGrupo.preco).toFixed(2).replace('.', ',')})` : '';
+                const isChecked = adicionaisSelecionados.some(a => a.nome === itemGrupo.nome) ? 'checked' : '';
+                htmlGrupo += `
+                    <label class="item-adc">
+                        <span>${itemGrupo.nome} <small style="color:#888;">${precoAdc}</small></span>
+                        <input type="checkbox" value='${JSON.stringify(itemGrupo)}' onchange="toggleAdicional(this)" ${isChecked}>
+                    </label>
+                `;
+            });
+            htmlGrupo += `</div>`;
+            containerAdc.innerHTML += htmlGrupo;
         });
-        htmlGrupo += `</div>`;
-        containerAdc.innerHTML += htmlGrupo;
-    });
+    } else {
+        containerAdc.innerHTML = '<p style="color: #888; text-align: center; margin-top: 10px; font-style: italic;">Adicione uma observação abaixo se necessário.</p>';
+    }
 
     fecharResumo();
     document.getElementById('modal-adicionais').style.display = 'flex';
