@@ -411,6 +411,47 @@ function abrirResumoPedido() {
         `;
     });
 
+    // 👇 INÍCIO DA ÁREA DE PAGAMENTO
+    isDivisaoComandaAtiva = false; 
+
+    if (modoComandaRapida) {
+        let totalCarrinho = carrinho.reduce((acc, item) => acc + item.preco, 0);
+        container.innerHTML += `
+            <div style="background: #e0f7fa; padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid #00bcd4; padding-bottom: 25px;">
+                <h4 style="margin: 0 0 12px 0; color: #00838f; display: flex; align-items: center; gap: 5px;">
+                    <span class="material-symbols-outlined">payments</span> Pagamento e Finalização
+                </h4>
+                
+                <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Nome ou Identificação do Cliente:</label>
+                <input type="text" id="comanda-identificacao" class="input-garcom" placeholder="Ex: João - Camisa Azul" style="margin-bottom: 15px; border: 1px solid #ccc; background: white; padding: 12px;">
+
+                <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Forma de Pagamento 1:</label>
+                <select id="comanda-metodo-1" class="input-garcom" style="margin-bottom: 5px; border: 1px solid #ccc; background: white; padding: 12px;">
+                    <option value="Dinheiro">💵 Dinheiro</option>
+                    <option value="PIX">💠 PIX</option>
+                    <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                    <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                </select>
+                <input type="number" id="comanda-valor-1" class="input-garcom" value="${totalCarrinho.toFixed(2)}" readonly style="margin-bottom: 10px; background: #eee; padding: 12px; font-weight: bold; color: #333;">
+                
+                <button id="btn-dividir-comanda" onclick="toggleDivisaoComanda()" style="width:100%; padding:12px; border:1px dashed #00bcd4; color:#00bcd4; background:none; border-radius:8px; font-weight:bold; cursor: pointer; transition: 0.2s;">+ Dividir Pagamento</button>
+                
+                <div id="area-comanda-divisao" style="display:none; margin-top:10px; padding-top:15px; border-top:1px dashed #00bcd4;">
+                    <label style="font-size: 0.9rem; font-weight: bold; color: #555;">Forma de Pagamento 2:</label>
+                    <select id="comanda-metodo-2" class="input-garcom" style="margin-bottom: 5px; border: 1px solid #ccc; background: white; padding: 12px;">
+                        <option value="PIX">💠 PIX</option>
+                        <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                        <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                        <option value="Dinheiro">💵 Dinheiro</option>
+                    </select>
+                    <label style="font-size: 0.8rem; font-weight: bold; color: #888;">Restante (R$):</label>
+                    <input type="number" id="comanda-valor-2" class="input-garcom" readonly style="background:#eee; padding: 12px; font-weight: bold; color: #333;">
+                </div>
+            </div>
+        `;
+    }
+    // 👆 FIM DA ÁREA DE PAGAMENTO
+
     document.getElementById('modal-resumo').style.display = 'flex';
 }
 
@@ -471,17 +512,32 @@ function fecharResumo() { document.getElementById('modal-resumo').style.display 
 async function enviarComanda() {
     if (carrinho.length === 0) return alert("Adicione produtos antes de enviar!");
 
-    // 👇 LÓGICA CORRIGIDA: Vai direto para VENDAS (Caixa/Kanban) e PULA as mesas!
+    // 👇 NOVA LÓGICA DE CHECKOUT PARA O APP DO GARÇOM
     if (modoComandaRapida) {
-        const ident = prompt("🍦 Montagem concluída!\nDigite o Nome do Cliente ou o Número da Comanda para enviar ao Caixa:");
-        if (!ident || ident.trim() === '') return;
+        const identInput = document.getElementById('comanda-identificacao');
+        const ident = identInput ? identInput.value.trim() : '';
+        if (!ident || ident === '') return alert("⚠️ Digite a identificação do cliente (Nome ou Roupa) no fim da tela!");
+
+        let totalCobrado = carrinho.reduce((acc, item) => acc + item.preco, 0);
+        
+        const m1 = document.getElementById('comanda-metodo-1').value;
+        let metodoFinalTexto = m1;
+
+        if (isDivisaoComandaAtiva) {
+            const m2 = document.getElementById('comanda-metodo-2').value;
+            const v1 = parseFloat(document.getElementById('comanda-valor-1').value) || 0;
+            const v2 = parseFloat(document.getElementById('comanda-valor-2').value) || 0;
+            
+            if (v1 <= 0 || v2 <= 0) return alert("⚠️ Valores de divisão inválidos.");
+            if (m1 === m2) return alert("⚠️ As duas formas de pagamento não podem ser iguais na divisão.");
+            metodoFinalTexto = `${m1} e ${m2}`;
+        }
 
         const btn = document.getElementById('btn-enviar-comanda');
         const txtOriginal = btn.innerHTML;
         btn.innerHTML = "Enviando... ⏳"; btn.disabled = true;
 
         try {
-            let totalCobrado = carrinho.reduce((acc, item) => acc + item.preco, 0);
             const nomesApenas = carrinho.map(item => item.nome).join(' + ');
             const nomeCurto = nomesApenas.length > 250 ? nomesApenas.substring(0, 247) + '...' : nomesApenas;
 
@@ -490,10 +546,10 @@ async function enviarComanda() {
                 produto_nome: nomeCurto, 
                 valor_total: totalCobrado, 
                 total: totalCobrado,
-                forma_pagamento: "A Cobrar (Comanda Rápida)", 
-                status: "A Preparar", // Vai pro Kanban da Cozinha e pra tela de Vendas!
-                origem: "Balcão",
-                cliente_nome: ident.trim()
+                forma_pagamento: metodoFinalTexto, 
+                status: "Concluída", // 👈 CAI NO SISTEMA COMO PAGO! (Vai direto pro DRE e pro Kanban da Cozinha)
+                origem: "Balcão (App Garçom)",
+                cliente_nome: ident
             };
 
             const resVenda = await fetch(`${API_URL}/vendas`, {
@@ -501,14 +557,15 @@ async function enviarComanda() {
             });
 
             if (resVenda.ok) { 
-                alert("✅ Comanda enviada direto para o Caixa e Cozinha!"); 
+                alert(`✅ Venda Concluída em ${metodoFinalTexto} e enviada à cozinha!`); 
+                localStorage.removeItem('icesoft_estado_pedido'); // Limpa a proteção contra F5
                 voltarParaMesas(); 
                 fecharResumo(); 
             } else {
-                alert("Erro ao enviar comanda.");
+                alert("Erro ao enviar comanda para o Caixa.");
             }
         } catch (e) {
-            alert("Erro de conexão.");
+            alert("Erro de conexão com o servidor.");
         } finally {
             btn.innerHTML = txtOriginal; btn.disabled = false;
         }
@@ -731,20 +788,26 @@ async function imprimirComandaGarcom() {
     btn.disabled = true;
 
     try {
-        let identificador = modoComandaRapida ? prompt("Digite o nome ou número da comanda para sair na impressão:") : (numeroMesaAtual || 'Mesa');
-        if (!identificador || identificador.trim() === '') {
-            btn.innerHTML = txtOriginal; btn.disabled = false;
-            return;
+        let identificador = numeroMesaAtual || 'Mesa';
+        
+        // 👇 Lê a identificação direto da nova caixa de texto
+        if (modoComandaRapida) {
+            const inputIdent = document.getElementById('comanda-identificacao');
+            if (!inputIdent || inputIdent.value.trim() === '') {
+                alert("⚠️ Preencha o Nome ou Identificação no painel de Pagamento antes de imprimir!");
+                btn.innerHTML = txtOriginal; btn.disabled = false;
+                return;
+            }
+            identificador = inputIdent.value.trim();
         }
 
-        // 📡 O celular dispara o comando invisível para a nuvem
         await fetch(`${API_URL}/imprimir/comanda`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 itens: carrinho, 
                 dataHora: new Date().toLocaleString('pt-BR'),
-                identificador: identificador.trim() 
+                identificador: identificador
             })
         });
         
@@ -761,4 +824,52 @@ async function imprimirComandaGarcom() {
         btn.innerHTML = txtOriginal; 
         btn.disabled = false;
     }
+}
+
+// ==========================================
+// MOTOR DE PAGAMENTO DIVIDIDO (COMANDA RÁPIDA)
+// ==========================================
+let isDivisaoComandaAtiva = false;
+
+window.toggleDivisaoComanda = function() {
+    isDivisaoComandaAtiva = !isDivisaoComandaAtiva;
+    const areaDivisao = document.getElementById('area-comanda-divisao');
+    const btnDividir = document.getElementById('btn-dividir-comanda');
+    const inputValor1 = document.getElementById('comanda-valor-1');
+    let totalCarrinho = carrinho.reduce((acc, item) => acc + item.preco, 0);
+
+    if (isDivisaoComandaAtiva) {
+        areaDivisao.style.display = 'block';
+        btnDividir.innerText = '- Remover Divisão';
+        btnDividir.style.color = '#f44336';
+        btnDividir.style.borderColor = '#f44336';
+        
+        inputValor1.readOnly = false;
+        inputValor1.style.background = 'white';
+        inputValor1.addEventListener('keyup', window.calcularDivisaoComanda);
+    } else {
+        areaDivisao.style.display = 'none';
+        btnDividir.innerText = '+ Dividir Pagamento';
+        btnDividir.style.color = '#00bcd4';
+        btnDividir.style.borderColor = '#00bcd4';
+        
+        inputValor1.readOnly = true;
+        inputValor1.style.background = '#eee';
+        inputValor1.value = totalCarrinho.toFixed(2);
+        inputValor1.removeEventListener('keyup', window.calcularDivisaoComanda);
+    }
+}
+
+window.calcularDivisaoComanda = function() {
+    let total = carrinho.reduce((acc, item) => acc + item.preco, 0);
+    let v1 = parseFloat(document.getElementById('comanda-valor-1').value) || 0;
+    
+    // Trava matemática: O valor 1 não pode ser maior que o total da comanda
+    if (v1 > total) {
+        v1 = total;
+        document.getElementById('comanda-valor-1').value = v1.toFixed(2);
+    }
+    
+    let v2 = total - v1;
+    document.getElementById('comanda-valor-2').value = v2.toFixed(2);
 }
