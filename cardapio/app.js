@@ -16,6 +16,8 @@ let topAdicionaisGlobais = []; // 🏆 Memória dos Adicionais Favoritos
 let cuponsGlobais = [];
 let cupomAtivo = null;
 let bairrosGlobais = []; // 🗺️ NOVA VARIÁVEL GLOBAL
+let tipoFidelidadeGlobal = 'fixo'; // 🎁 Memória do Prêmio
+let valorPremioFidelidadeGlobal = 0; // 🎁 Memória do Prêmio
 
 // ==========================================
 // 📊 SENSORES DO FUNIL DE VENDAS
@@ -1440,6 +1442,10 @@ async function carregarConfiguracoesLoja() {
         if (configs.banner_loja && document.getElementById('img-banner-loja')) document.getElementById('img-banner-loja').src = configs.banner_loja;
         if (configs.logo_loja && document.getElementById('img-logo-loja')) document.getElementById('img-logo-loja').src = configs.logo_loja;
         if (configs.pedido_minimo_delivery) pedidoMinimoDeliveryGlobal = parseFloat(configs.pedido_minimo_delivery) || 0;
+        
+        // 👇 Lendo as regras do CRM para a Barrinha Expansível
+        if (configs.fidelidade_tipo) tipoFidelidadeGlobal = configs.fidelidade_tipo;
+        if (configs.fidelidade_valor) valorPremioFidelidadeGlobal = Number(configs.fidelidade_valor) || 0;
 
         if (configs.endereco_loja) {
             if(document.getElementById('loja-endereco-texto')) document.getElementById('loja-endereco-texto').innerText = configs.endereco_loja;
@@ -2328,6 +2334,24 @@ function ativarBarrinhaFidelidade(comprasValidas) {
         mensagem = `Cartela nova! Ganhe o <strong>1º ponto</strong> desta rodada ao finalizar! 🎉`;
     }
 
+    // 👇 Traduz a linguagem do Painel CRM para o Cardápio
+    let tipoTexto = (tipoFidelidadeGlobal === 'Desconto em %' || tipoFidelidadeGlobal === 'porcentagem' || tipoFidelidadeGlobal === '%') ? 'porcentagem' : 'fixo';
+    let textoPremios = tipoTexto === 'porcentagem' ? `${valorPremioFidelidadeGlobal}% OFF` : `R$ ${valorPremioFidelidadeGlobal.toFixed(2).replace('.', ',')} de Desconto`;
+
+    let htmlExpansivelPremio = ``;
+    if (valorPremioFidelidadeGlobal > 0) {
+        htmlExpansivelPremio = `
+            <div style="text-align: center; margin-top: 8px;">
+                <span onclick="document.getElementById('detalhe-premio-fidelidade').style.display='block'; this.style.display='none';" style="cursor: pointer; color: var(--cor-primaria, #e91e63); font-size: 0.85rem; font-weight: bold; text-decoration: underline;">
+                    Ver meu prêmio
+                </span>
+                <div id="detalhe-premio-fidelidade" style="display: none; background: #fffdf5; border: 1px dashed #ffe082; padding: 10px; border-radius: 8px; margin-top: 8px; animation: fadeIn 0.3s;">
+                    <strong style="color: #f57f17; font-size: 0.9rem;">🎁 Ao completar ${metaPontos} pontos, você ganha ${textoPremios}!</strong>
+                </div>
+            </div>
+        `;
+    }
+
     areaFidelidade.innerHTML = `
         ${htmlPremio}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -2341,6 +2365,7 @@ function ativarBarrinhaFidelidade(comprasValidas) {
         <p style="font-size: 0.85rem; color: #666; margin-top: 10px; margin-bottom: 0; text-align: center;">
             ${mensagem}
         </p>
+        ${htmlExpansivelPremio}
     `;
 }
 
