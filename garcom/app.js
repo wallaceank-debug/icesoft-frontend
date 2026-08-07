@@ -344,11 +344,9 @@ function confirmarItem() {
     let strAdicionais = adicionaisSelecionados.length > 0 ? ` (${adicionaisSelecionados.map(a => a.nome).join(', ')})` : '';
     adicionaisSelecionados.forEach(adc => precoItemFinal += Number(adc.preco));
 
-    // Captura a observação digitada
     const inputObs = document.getElementById('obs-item');
     const observacaoText = inputObs ? inputObs.value.trim() : '';
     
-    // Monta o nome final que vai para o banco de dados e impressora
     let nomeFinal = produtoEmSelecao.nome + strAdicionais;
     if (observacaoText !== '') {
         nomeFinal += ` - Obs: ${observacaoText}`;
@@ -360,8 +358,17 @@ function confirmarItem() {
         preco: precoItemFinal, 
         quantidade: 1, 
         adicionaisSelecionados: [...adicionaisSelecionados],
-        observacao: observacaoText // Guarda a observação isolada para mostrar na tela
+        observacao: observacaoText
     };
+
+    // 👇 FLUXO NOVO: Se está editando direto da tela de pagamento
+    if (itemEmEdicaoMesaIndex !== null) {
+        itensRestantesNaMesa[itemEmEdicaoMesaIndex] = itemMontado;
+        itemEmEdicaoMesaIndex = null;
+        fecharModalAdicionais();
+        salvarAlteracaoMesaAPI(); // Dispara o salvamento no banco de dados e volta pro pagamento
+        return;
+    }
 
     if (itemEmEdicaoIndex !== null) {
         carrinho[itemEmEdicaoIndex] = itemMontado; 
@@ -373,7 +380,14 @@ function confirmarItem() {
     }
 }
 
-function fecharModalAdicionais() { document.getElementById('modal-adicionais').style.display = 'none'; }
+function fecharModalAdicionais() { 
+    document.getElementById('modal-adicionais').style.display = 'none'; 
+    // 👇 Garante que se o garçom fechar o modal no "X", a tela de pagamento reabre
+    if (itemEmEdicaoMesaIndex !== null) {
+        itemEmEdicaoMesaIndex = null;
+        document.getElementById('modal-pagamento-mobile').style.display = 'flex';
+    }
+}
 
 function atualizarBarraCarrinho() {
     const barra = document.getElementById('carrinho-flutuante');
@@ -567,15 +581,33 @@ function renderizarTelaPagamentoMobile() {
     let subtotalPag = 0;
 
     itensRestantesNaMesa.forEach((item, index) => {
+        // 💡 LÓGICA DE EXTRAÇÃO DE ADICIONAIS/OBSERVAÇÕES
+        let nomePrincipal = item.nomeBase || item.nome.split('(')[0].split(' - Obs:')[0].trim();
+        let detalhesTexto = item.nome.replace(nomePrincipal, '').trim();
+        
+        let btnVerAdicionais = '';
+        let divDetalhes = '';
+        
+        if (detalhesTexto.length > 0) {
+            // Limpa parênteses soltos e formata a exibição
+            let textoLimpo = detalhesTexto.replace(/^\(|\)$/g, '').trim(); 
+            btnVerAdicionais = `<span onclick="document.getElementById('detalhes-item-${index}').style.display = document.getElementById('detalhes-item-${index}').style.display === 'none' ? 'block' : 'none'" style="color: #00bcd4; font-size: 0.8rem; text-decoration: underline; cursor: pointer; margin-left: 8px;">Ver Detalhes</span>`;
+            divDetalhes = `<div id="detalhes-item-${index}" style="display: none; font-size: 0.85rem; color: #e65100; background: #fff3e0; padding: 8px; border-radius: 6px; margin-top: 5px; border: 1px dashed #ffcc80;">${textoLimpo}</div>`;
+        }
+
         listaMesa.innerHTML += `
-            <div style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; color: #333;">1x ${item.nomeBase || item.nome.split('(')[0].trim()}</div>
-                    <div style="color: #e91e63; font-weight: bold; font-size: 0.9rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+            <div style="background: white; border: 1px solid #ddd; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div style="flex: 1; padding-right: 10px;">
+                    <div style="font-weight: bold; color: #333; display: flex; align-items: center; flex-wrap: wrap;">
+                        1x ${nomePrincipal} ${btnVerAdicionais}
+                    </div>
+                    ${divDetalhes}
+                    <div style="color: #e91e63; font-weight: bold; font-size: 0.9rem; margin-top: 4px;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="cancelarItemMesaMobile(${index})" style="background: #fff0f4; color: #f44336; border: none; padding: 8px; border-radius: 8px;">🗑️</button>
-                    <button onclick="moverParaPagamentoMobile(${index})" style="background: #e91e63; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold;">Pagar ⬇</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                    <button onclick="editarItemMesaMobile(${index})" style="background: #e0f7fa; color: #00bcd4; border: none; padding: 8px; border-radius: 8px; cursor: pointer;" title="Editar Pedido">✏️</button>
+                    <button onclick="cancelarItemMesaMobile(${index})" style="background: #fff0f4; color: #f44336; border: none; padding: 8px; border-radius: 8px; cursor: pointer;" title="Cancelar Item">🗑️</button>
+                    <button onclick="moverParaPagamentoMobile(${index})" style="background: #e91e63; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">Pagar ⬇</button>
                 </div>
             </div>
         `;
@@ -583,13 +615,15 @@ function renderizarTelaPagamentoMobile() {
 
     itensSendoPagos.forEach((item, index) => {
         subtotalPag += Number(item.preco);
+        let nomePrincipal = item.nomeBase || item.nome.split('(')[0].split(' - Obs:')[0].trim();
+        
         listaPag.innerHTML += `
-            <div style="background: white; border: 1px solid #00bcd4; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: white; border: 1px solid #00bcd4; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="flex: 1;">
-                    <div style="font-weight: bold; color: #00838f;">1x ${item.nomeBase || item.nome.split('(')[0].trim()}</div>
+                    <div style="font-weight: bold; color: #00838f;">1x ${nomePrincipal}</div>
                     <div style="color: #00bcd4; font-weight: bold; font-size: 0.9rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                 </div>
-                <button onclick="voltarParaMesaMobile(${index})" style="background: none; border: none; color: #f44336; font-size: 1.2rem;">⬆</button>
+                <button onclick="voltarParaMesaMobile(${index})" style="background: none; border: none; color: #f44336; font-size: 1.2rem; cursor: pointer;">⬆</button>
             </div>
         `;
     });
@@ -801,4 +835,85 @@ window.calcularDivisaoComanda = function() {
     
     let v2 = total - v1;
     document.getElementById('comanda-valor-2').value = v2.toFixed(2);
+}
+
+// ==========================================
+// 6. MOTOR DE EDIÇÃO PÓS-LANÇAMENTO (TELA DE PAGAMENTO)
+// ==========================================
+let itemEmEdicaoMesaIndex = null; 
+
+window.editarItemMesaMobile = function(index) {
+    const itemMesa = itensRestantesNaMesa[index];
+    produtoEmSelecao = listaProdutos.find(p => p.id === itemMesa.id);
+    
+    if (!produtoEmSelecao) {
+        alert("Não é possível editar este produto (referência original não encontrada). Cancele o item e lance novamente.");
+        return;
+    }
+
+    itemEmEdicaoMesaIndex = index;
+    itemEmEdicaoIndex = null; // Evita conflito com o carrinho padrão
+    adicionaisSelecionados = [...(itemMesa.adicionaisSelecionados || [])];
+    
+    document.getElementById('modal-prod-nome').innerText = produtoEmSelecao.nome + " (Edição)";
+    
+    const btnFooter = document.querySelector('#modal-adicionais .sheet-footer');
+    if(btnFooter) {
+        btnFooter.style.flexDirection = 'column';
+        const obsAtual = itemMesa.observacao || '';
+        btnFooter.innerHTML = `
+            <input type="text" id="obs-item" class="input-garcom" placeholder="Nome do cliente ou observação (Opcional)" style="margin-bottom: 12px; border: 1px solid #ccc; background: #fff;" value="${obsAtual}">
+            <button class="btn-primario" style="background: #FF9800;" onclick="confirmarItem()">Salvar Alteração <span id="modal-prod-preco"></span></button>
+        `;
+    }
+    
+    atualizarPrecoModal();
+    const containerAdc = document.getElementById('modal-prod-adicionais');
+    containerAdc.innerHTML = '';
+
+    if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
+        produtoEmSelecao.grupos_ids.forEach(grupoId => {
+            const grupo = gruposGlobais.find(g => g.id === grupoId);
+            if (!grupo || !grupo.itens) return;
+            let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
+            grupo.itens.forEach(itemGrupo => {
+                const precoAdc = Number(itemGrupo.preco) > 0 ? `(+ R$ ${Number(itemGrupo.preco).toFixed(2).replace('.', ',')})` : '';
+                const isChecked = adicionaisSelecionados.some(a => a.nome === itemGrupo.nome) ? 'checked' : '';
+                htmlGrupo += `
+                    <label class="item-adc">
+                        <span>${itemGrupo.nome} <small style="color:#888;">${precoAdc}</small></span>
+                        <input type="checkbox" value='${JSON.stringify(itemGrupo)}' onchange="toggleAdicional(this)" ${isChecked}>
+                    </label>
+                `;
+            });
+            htmlGrupo += `</div>`;
+            containerAdc.innerHTML += htmlGrupo;
+        });
+    } else {
+        containerAdc.innerHTML = '<p style="color: #888; text-align: center; margin-top: 10px; font-style: italic;">Adicione uma observação abaixo se necessário.</p>';
+    }
+
+    // Esconde a tela de pagamento e invoca o modal de edição de produtos
+    document.getElementById('modal-pagamento-mobile').style.display = 'none';
+    document.getElementById('modal-adicionais').style.display = 'flex';
+}
+
+async function salvarAlteracaoMesaAPI() {
+    const todosItens = itensRestantesNaMesa.concat(itensSendoPagos);
+    const cracha = localStorage.getItem('icesoft_token');
+    
+    try {
+        // Envia a comanda atualizada para o servidor
+        await fetch(`${API_URL}/mesas/${idMesaAtual}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cracha}` },
+            body: JSON.stringify({ itens: todosItens })
+        });
+        
+        await carregarDadosBasicos(); // Atualiza a memória global
+        renderizarTelaPagamentoMobile(); // Recalcula a conta total e re-renderiza
+        document.getElementById('modal-pagamento-mobile').style.display = 'flex'; // Traz a tela de pagamento de volta
+        
+    } catch(e) {
+        alert("Erro ao sincronizar a alteração com o servidor.");
+    }
 }
