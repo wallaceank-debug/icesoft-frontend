@@ -261,10 +261,17 @@ function abrirModalEscolha(produto) {
 
         let itensHtml = itensAtivos.map((item, idx) => {
             const chkId = `pdv-chk-${grupo.id}-${idx}`;
-            const precoAdc = Number(item.preco) > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</span>` : '';
+            
+            // 👇 LÓGICA DE PREÇO PDV: Se o gestor cadastrou um preço exclusivo para loja, usamos ele. Senão, usamos o normal.
+            let precoReal = Number(item.preco);
+            if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") {
+                precoReal = Number(item.preco_pdv);
+            }
+
+            const precoAdc = precoReal > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${precoReal.toFixed(2).replace('.', ',')}</span>` : '';
             
             return `
-            <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${item.nome}', ${item.preco}, '${chkId}')" 
+            <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${item.nome}', ${precoReal}, '${chkId}')" 
                  style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">

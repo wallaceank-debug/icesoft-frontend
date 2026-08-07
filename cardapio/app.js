@@ -454,7 +454,8 @@ function abrirModalEscolha(produto) {
             if (itensAtivos.length === 0) return;
 
             let itensHtml = itensAtivos.map((item, idx) => {
-                let precoSeguro = Number(item.preco) || 0;
+                // 👇 BLINDAGEM DELIVERY: Garante que o Delivery SEMPRE use o 'preco' (preço cheio) e ignore o 'preco_pdv'
+                let precoSeguro = Number(item.preco) || 0; 
                 let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
                 let identificador = `opc-${grupo.id}-${idx}`;
 

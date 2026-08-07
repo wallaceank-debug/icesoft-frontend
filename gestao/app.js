@@ -295,6 +295,13 @@ function renderizarGrupos(filtro = '') {
                     ? `<img src="${item.imagem_url}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid #ddd; flex-shrink: 0;">`
                     : `<div style="width: 45px; height: 45px; border-radius: 8px; border: 1px dashed #ccc; background: #fafafa; flex-shrink: 0; display: flex; justify-content: center; align-items: center; color: #ccc; font-size: 0.7rem;">sem foto</div>`;
 
+                // Ajuste inteligente para mostrar se os preços de PDV e Delivery são diferentes
+                let textoPreco = item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2).replace('.', ',') : 'Grátis';
+                if (item.preco_pdv !== undefined && item.preco_pdv !== item.preco) {
+                    let textoPrecoPdv = item.preco_pdv > 0 ? 'R$ ' + Number(item.preco_pdv).toFixed(2).replace('.', ',') : 'Grátis';
+                    textoPreco = `Delivery: ${textoPreco} | PDV: <span style="color: #00bcd4;">${textoPrecoPdv}</span>`;
+                }
+
                 // Forçando o layout horizontal limpo
                 itensHtml += `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; background: white; border-radius: 8px; margin-bottom: 5px; ${highlight}">
@@ -302,7 +309,7 @@ function renderizarGrupos(filtro = '') {
                             ${imgThumb}
                             <div style="display: flex; flex-direction: column; text-align: left;">
                                 <span style="font-weight: 600; color: #333; font-size: 1rem;">${item.nome}</span>
-                                <span style="color: #25D366; font-size: 0.85rem; font-weight: bold;">${item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                                <span style="color: #25D366; font-size: 0.85rem; font-weight: bold;">${textoPreco}</span>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 12px;">
@@ -384,6 +391,8 @@ function abrirModalAdicional(idGrupo, indexItem = null) {
         document.getElementById('adic-index').value = indexItem;
         document.getElementById('adic-nome').value = item.nome;
         document.getElementById('adic-preco').value = item.preco;
+        // Se o preço do PDV não existir no banco antigo, ele copia o preço normal para não dar erro
+        document.getElementById('adic-preco-pdv').value = item.preco_pdv !== undefined ? item.preco_pdv : item.preco;
         document.getElementById('adic-imagem-url').value = item.imagem_url || '';
         
         const insJsonAdic = typeof item.insumos_json === 'string' ? item.insumos_json : JSON.stringify(item.insumos_json || []);
@@ -394,6 +403,7 @@ function abrirModalAdicional(idGrupo, indexItem = null) {
         document.getElementById('adic-index').value = '';
         document.getElementById('adic-nome').value = '';
         document.getElementById('adic-preco').value = '';
+        document.getElementById('adic-preco-pdv').value = '';
         document.getElementById('adic-imagem-url').value = '';
         
         document.getElementById('adic-insumos-json').value = '[]';
@@ -413,6 +423,7 @@ async function salvarAdicional() {
     const indexItem = document.getElementById('adic-index').value;
     const nome = document.getElementById('adic-nome').value.trim();
     const preco = parseFloat(document.getElementById('adic-preco').value.replace(',', '.')) || 0;
+    const precoPdv = parseFloat(document.getElementById('adic-preco-pdv').value.replace(',', '.')) || 0;
     let imagemUrl = document.getElementById('adic-imagem-url').value;
 
     if (!nome) return alert("⚠️ Preencha o nome do adicional!");
@@ -451,11 +462,12 @@ async function salvarAdicional() {
         // Editando existente
         grupo.itens[indexItem].nome = nome;
         grupo.itens[indexItem].preco = preco;
+        grupo.itens[indexItem].preco_pdv = precoPdv; // Atualiza o preço da loja
         grupo.itens[indexItem].imagem_url = imagemUrl;
-        grupo.itens[indexItem].insumos_json = insumos_json; // NOVO: Salva a receita do adicional
+        grupo.itens[indexItem].insumos_json = insumos_json;
     } else {
         // Criando novo
-        grupo.itens.push({ nome, preco, imagem_url: imagemUrl, ativo: true, insumos_json: insumos_json });
+        grupo.itens.push({ nome, preco, preco_pdv: precoPdv, imagem_url: imagemUrl, ativo: true, insumos_json: insumos_json });
     }
 
     try {
