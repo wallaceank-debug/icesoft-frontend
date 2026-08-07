@@ -308,11 +308,20 @@ function abrirProduto(id) {
             if (!grupo || !grupo.itens) return;
             let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
             grupo.itens.forEach(item => {
-                const precoAdc = Number(item.preco) > 0 ? `(+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')})` : '';
+                // 👇 LÓGICA DE PREÇO PDV (Garçom Salão): Se o gestor cadastrou um preço de loja, usa ele!
+                let precoReal = Number(item.preco);
+                if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") {
+                    precoReal = Number(item.preco_pdv);
+                }
+
+                // Cria um item "falso" só com o preço correto para mandar pro carrinho sem alterar o banco global
+                const itemParaO_Carrinho = { ...item, preco: precoReal };
+
+                const precoAdc = precoReal > 0 ? `(+ R$ ${precoReal.toFixed(2).replace('.', ',')})` : '';
                 htmlGrupo += `
                     <label class="item-adc">
                         <span>${item.nome} <small style="color:#888;">${precoAdc}</small></span>
-                        <input type="checkbox" value='${JSON.stringify(item)}' onchange="toggleAdicional(this)">
+                        <input type="checkbox" value='${JSON.stringify(itemParaO_Carrinho)}' onchange="toggleAdicional(this)">
                     </label>
                 `;
             });
@@ -488,12 +497,20 @@ window.editarItem = function(index) {
             if (!grupo || !grupo.itens) return;
             let htmlGrupo = `<div class="grupo-adc"><div class="grupo-adc-titulo">${grupo.nome}</div>`;
             grupo.itens.forEach(itemGrupo => {
-                const precoAdc = Number(itemGrupo.preco) > 0 ? `(+ R$ ${Number(itemGrupo.preco).toFixed(2).replace('.', ',')})` : '';
+                // 👇 LÓGICA DE PREÇO PDV (Edição na Mesa): Mesma blindagem de cima!
+                let precoReal = Number(itemGrupo.preco);
+                if (itemGrupo.preco_pdv !== undefined && itemGrupo.preco_pdv !== null && itemGrupo.preco_pdv !== "") {
+                    precoReal = Number(itemGrupo.preco_pdv);
+                }
+
+                const itemParaO_Carrinho = { ...itemGrupo, preco: precoReal };
+                const precoAdc = precoReal > 0 ? `(+ R$ ${precoReal.toFixed(2).replace('.', ',')})` : '';
                 const isChecked = adicionaisSelecionados.some(a => a.nome === itemGrupo.nome) ? 'checked' : '';
+                
                 htmlGrupo += `
                     <label class="item-adc">
                         <span>${itemGrupo.nome} <small style="color:#888;">${precoAdc}</small></span>
-                        <input type="checkbox" value='${JSON.stringify(itemGrupo)}' onchange="toggleAdicional(this)" ${isChecked}>
+                        <input type="checkbox" value='${JSON.stringify(itemParaO_Carrinho)}' onchange="toggleAdicional(this)" ${isChecked}>
                     </label>
                 `;
             });
