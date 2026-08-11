@@ -1908,6 +1908,7 @@ async function confirmarLancamentoCompra() {
         if (res.ok) {
             alert(`✅ Nota Lançada! Estoque e custo atualizados na base de dados.`);
             fecharModalLancamentoCompra();
+            await carregarTudo(); // 👇 NOVO: Puxa o cardápio novamente para a tela atualizar os custos
             await carregarInsumos();
             
             // Atualiza a tela de trás respeitando os filtros ativos
