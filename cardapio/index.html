@@ -486,17 +486,20 @@
                                 <option value="Pagamento via Pix Online">Pix Online (Pagar Agora)</option>
                                 <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
                                 <option value="Cartão de Débito">Cartão de Débito (Na Entrega)</option>
-                                <option value="Alimentação Pluxee">Alimentação Pluxee (Na Entrega)</option>
+                                <option value="Pluxee Alimentação">Pluxee Alimentação (Na Entrega)</option>
+                                <option value="VR Alimentação">VR Alimentação (Na Entrega)</option>
+                                <option value="Ticket Alimentação">Ticket Alimentação (Na Entrega)</option>
                                 <option value="Dinheiro">Dinheiro</option>
                             </select>
                             <input type="number" id="pag-div-1-valor" class="input-clean" placeholder="Qual valor passar aqui? (Ex: 25,00)" oninput="calcularRestanteDividido()" step="0.01">
 
                             <label style="font-size: 0.85rem; font-weight: bold; color: #555; margin-top: 10px; display: block;">RESTANTE DO VALOR</label>
                             <select id="pag-div-2-metodo" class="input-clean select-clean" style="margin-bottom: 10px;" onchange="atualizarBotaoCTA()">
-                                <!-- Limitamos para não ter 2 códigos PIX simultâneos gerando confusão -->
                                 <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
                                 <option value="Cartão de Débito">Cartão de Débito (Na Entrega)</option>
-                                <option value="Alimentação Pluxee">Alimentação Pluxee (Na Entrega)</option>
+                                <option value="Pluxee Alimentação">Pluxee Alimentação (Na Entrega)</option>
+                                <option value="VR Alimentação">VR Alimentação (Na Entrega)</option>
+                                <option value="Ticket Alimentação">Ticket Alimentação (Na Entrega)</option>
                                 <option value="Dinheiro">Dinheiro</option>
                             </select>
                             <div style="display: flex; align-items: center; justify-content: space-between; background: #f4f7f6; padding: 15px; border-radius: 10px; border: 1px solid #ddd;">
@@ -535,12 +538,36 @@
                             <div class="radio-customizado"></div>
                         </label>
 
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Alimentação Pluxee')">
-                            <input type="radio" name="forma_pag" value="Alimentação Pluxee" style="display: none;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><circle cx="12" cy="14" r="2"></circle></svg>
-                            <span style="flex: 1; font-weight: 600; color: #444;">Alimentação Pluxee</span>
-                            <div class="radio-customizado"></div>
-                        </label>
+                        <!-- Menu Expansível de Vouchers -->
+                        <div style="background: white; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
+                            <div onclick="toggleVouchers()" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; transition: background 0.2s;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><circle cx="12" cy="14" r="2"></circle></svg>
+                                    <span style="font-weight: 600; color: #444;">Voucher Alimentação</span>
+                                </div>
+                                <span id="seta-vouchers" style="transition: transform 0.3s; color: #666; font-size: 1.2rem;">▼</span>
+                            </div>
+                            
+                            <div id="lista-vouchers" style="display: none; flex-direction: column; padding: 10px; gap: 5px; border-top: 1px solid #eee; background: #fafafa;">
+                                <label class="card-selecao" onclick="selecionarPagamento(this, 'Pluxee Alimentação')" style="margin-bottom: 0; box-shadow: none; border-color: #ddd;">
+                                    <input type="radio" name="forma_pag" value="Pluxee Alimentação" style="display: none;">
+                                    <span style="flex: 1; font-weight: 600; color: #444;">Pluxee Alimentação</span>
+                                    <div class="radio-customizado"></div>
+                                </label>
+                                
+                                <label class="card-selecao" onclick="selecionarPagamento(this, 'VR Alimentação')" style="margin-bottom: 0; box-shadow: none; border-color: #ddd;">
+                                    <input type="radio" name="forma_pag" value="VR Alimentação" style="display: none;">
+                                    <span style="flex: 1; font-weight: 600; color: #444;">VR Alimentação</span>
+                                    <div class="radio-customizado"></div>
+                                </label>
+                                
+                                <label class="card-selecao" onclick="selecionarPagamento(this, 'Ticket Alimentação')" style="margin-bottom: 0; box-shadow: none; border-color: #ddd;">
+                                    <input type="radio" name="forma_pag" value="Ticket Alimentação" style="display: none;">
+                                    <span style="flex: 1; font-weight: 600; color: #444;">Ticket Alimentação</span>
+                                    <div class="radio-customizado"></div>
+                                </label>
+                            </div>
+                        </div>
                         
                         <label class="card-selecao" onclick="selecionarPagamento(this, 'Dinheiro')">
                             <input type="radio" name="forma_pag" value="Dinheiro" style="display: none;">

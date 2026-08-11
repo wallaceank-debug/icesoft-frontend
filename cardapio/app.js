@@ -2849,3 +2849,21 @@ function obterFormaPagamentoFinal() {
         return pagamento;
     }
 }
+
+// ==========================================
+// 💳 UX: MENU EXPANSÍVEL DE VOUCHERS
+// ==========================================
+window.toggleVouchers = function() {
+    const lista = document.getElementById('lista-vouchers');
+    const seta = document.getElementById('seta-vouchers');
+    
+    // Desmarca qualquer opção de rádio se o menu for fechado
+    if (lista.style.display === 'none' || lista.style.display === '') {
+        lista.style.display = 'flex';
+        lista.style.animation = 'slideUp 0.3s ease-out';
+        if(seta) seta.style.transform = 'rotate(180deg)';
+    } else {
+        lista.style.display = 'none';
+        if(seta) seta.style.transform = 'rotate(0deg)';
+    }
+};

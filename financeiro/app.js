@@ -73,10 +73,10 @@ async function carregarResumoFinanceiro() {
         // Assegura que temos os saldos de bancos mais atualizados na memória
         await carregarBancos();
 
-        // 👇 1. Pega o crachá no bolso do navegador
+        // 1. Pega o crachá no bolso do navegador
         const cracha = localStorage.getItem('icesoft_token');
         
-        // 👇 2. Mostra o crachá para o servidor
+        // 2. Mostra o crachá para o servidor
         const res = await fetch(`${API_URL}/financeiro/resumo`, {
             method: 'GET',
             headers: {
@@ -84,7 +84,7 @@ async function carregarResumoFinanceiro() {
             }
         });
         
-        // 👇 3. Se for barrado, joga para a tela de login
+        // 3. Se for barrado, joga para a tela de login
         if (res.status === 401 || res.status === 403) {
              window.location.href = '../login/index.html';
              return;
@@ -92,13 +92,19 @@ async function carregarResumoFinanceiro() {
 
         const dados = await res.json();
         
-        // Pinta os valores nos cards tradicionais (Saldo Geral foi removido)
-        document.getElementById('fin-receber').innerText = `R$ ${dados.receber.toFixed(2).replace('.', ',')}`;
+        // 👇 MUDANÇA 1: Identifica o saldo retido na Conta de Transição
+        const contaTransicao = contasBancariasGlobais.find(b => b.nome.toLowerCase().includes('transição'));
+        const saldoTransicao = contaTransicao ? contaTransicao.saldo_atual : 0;
+
+        // 👇 MUDANÇA 2: Aloca o valor em trânsito no card "A Receber" somado a possíveis pendências já enviadas pelo servidor
+        const totalAReceber = dados.receber + saldoTransicao;
+        document.getElementById('fin-receber').innerText = `R$ ${totalAReceber.toFixed(2).replace('.', ',')}`;
+        
         document.getElementById('fin-pagar').innerText = `R$ ${dados.pagar.toFixed(2).replace('.', ',')}`;
         
-        // 🧠 MÁGICA: Filtra e soma o saldo atual de todas as contas, IGNORANDO o Caixa Físico / Gaveta
+        // 👇 MUDANÇA 3: Exclui a Conta de Transição do cálculo do Saldo Líquido Bancário
         const saldoApenasBancos = contasBancariasGlobais
-            .filter(b => !b.nome.toLowerCase().includes('caixa físico') && !b.nome.toLowerCase().includes('gaveta'))
+            .filter(b => !b.nome.toLowerCase().includes('caixa físico') && !b.nome.toLowerCase().includes('gaveta') && !b.nome.toLowerCase().includes('transição'))
             .reduce((soma, b) => soma + b.saldo_atual, 0);
 
         // Alimenta o card de Saldo de Bancos
@@ -111,7 +117,7 @@ async function carregarResumoFinanceiro() {
             document.getElementById('fin-saldo-bancos').style.color = '#333';
         }
 
-        // 👇 NOVA MÁGICA: Renderiza os pequenos cards de bancos dinamicamente
+        // Renderiza os pequenos cards de bancos dinamicamente
         const containerBancos = document.getElementById('container-saldos-bancos');
         if (containerBancos) {
             containerBancos.innerHTML = '';
