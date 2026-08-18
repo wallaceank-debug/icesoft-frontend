@@ -679,15 +679,25 @@
     };
 
     // ==========================================
-    // 🖨️ RECEPTOR DE IMPRESSÃO REMOTA (VEM DO GARÇOM)
+    // 🖨️ RECEPTOR DE SINAIS DO SERVIDOR (IMPRESSÃO E ATUALIZAÇÃO AO VIVO)
     // ==========================================
     try {
         const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+        
+        // 1. Ouve os pedidos de impressão do Garçom
         socket.on('imprimir_pedido_pc', (dados) => {
             console.log("🖨️ Comando de impressão recebido do celular!", dados);
             imprimirComandaRemota(dados);
         });
-    } catch(e) { console.log("Erro ao conectar no rádio da impressora.", e); }
+
+        // 2. 👇 NOVO: Ouve as atualizações do sistema (Como o Faxineiro de Pix e Novos Pedidos)
+        socket.on('novo_pedido_kanban', (dados) => {
+            // Se o servidor avisar que algo mudou, recarrega a tabela e os valores financeiros silenciosamente
+            console.log("🔄 Sistema detectou mudança no pedido. Atualizando tela...");
+            buscarVendas();
+        });
+
+    } catch(e) { console.log("Erro ao conectar no rádio do servidor.", e); }
 
     function imprimirComandaRemota(dados) {
         let areaImpressao = document.getElementById('cupom-vendas');
