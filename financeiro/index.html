@@ -106,6 +106,7 @@
         </header>
 
         <main class="fin-container">
+
             <div style="display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px; white-space: nowrap; -webkit-overflow-scrolling: touch;">
                     <button onclick="abrirModalBancos()" class="btn-topo-clean">
                         <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #2196F3;">account_balance</span> Bancos
@@ -139,6 +140,42 @@
             <div id="central-alertas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px;">
                 </div>
             
+            <!-- 👇 NOVA SEÇÃO: MÉTRICAS DE ESTOQUE INTELIGENTE (REPOSICIONADA) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                
+                <div class="grafico-card" style="display: flex; align-items: center; gap: 15px; border-left: 5px solid #ff9800;">
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center;">
+                        <span class="material-symbols-outlined" style="color: #ff9800; font-size: 2rem;">inventory</span>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem; font-weight: 600;">Capital Parado (Investido)</p>
+                        <h2 id="kpi-estoque-investido" style="margin: 5px 0 0 0; color: #333; font-size: 1.5rem;">R$ 0,00</h2>
+                    </div>
+                </div>
+
+                <div class="grafico-card" style="display: flex; align-items: center; gap: 15px; border-left: 5px solid #2196F3;">
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center;">
+                        <span class="material-symbols-outlined" style="color: #2196F3; font-size: 2rem;">point_of_sale</span>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem; font-weight: 600;">Potencial de Venda Futura</p>
+                        <h2 id="kpi-estoque-potencial" style="margin: 5px 0 0 0; color: #333; font-size: 1.5rem;">R$ 0,00</h2>
+                    </div>
+                </div>
+
+                <div class="grafico-card" style="display: flex; align-items: center; gap: 15px; border-left: 5px solid #4CAF50;">
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 12px; display: flex; justify-content: center; align-items: center;">
+                        <span class="material-symbols-outlined" style="color: #4CAF50; font-size: 2rem;">trending_up</span>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: #666; font-size: 0.9rem; font-weight: 600;">Lucro Bruto Projetado</p>
+                        <h2 id="kpi-estoque-lucro" style="margin: 5px 0 0 0; color: #333; font-size: 1.5rem;">R$ 0,00</h2>
+                    </div>
+                </div>
+
+            </div>
+            <!-- 👆 FIM DA NOVA SEÇÃO -->
+
             <div class="fin-cards-grid">
                 <div class="fin-card bancos" onclick="filtrarLancamentos('todos')" style="cursor: pointer;" title="Clique para ver todos os lançamentos">
                     <h3>Saldo Apenas em Bancos</h3>

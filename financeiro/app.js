@@ -118,26 +118,47 @@ async function carregarResumoFinanceiro() {
         }
 
         // Renderiza os pequenos cards de bancos dinamicamente
-        const containerBancos = document.getElementById('container-saldos-bancos');
-        if (containerBancos) {
-            containerBancos.innerHTML = '';
-            contasBancariasGlobais.forEach(b => {
-                const corSaldo = b.saldo_atual >= 0 ? '#4CAF50' : '#f44336';
-                containerBancos.innerHTML += `
-                    <div style="background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 160px; flex-shrink: 0; border-left: 4px solid #2196F3;">
-                        <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${b.nome}">${b.nome}</div>
-                        <div style="font-size: 1.1rem; font-weight: bold; color: ${corSaldo};">
-                            R$ ${parseFloat(b.saldo_atual).toFixed(2).replace('.', ',')}
+            const containerBancos = document.getElementById('container-saldos-bancos');
+            if (containerBancos) {
+                containerBancos.innerHTML = '';
+                contasBancariasGlobais.forEach(b => {
+                    const corSaldo = b.saldo_atual >= 0 ? '#4CAF50' : '#f44336';
+                    containerBancos.innerHTML += `
+                        <div style="background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 160px; flex-shrink: 0; border-left: 4px solid #2196F3;">
+                            <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${b.nome}">${b.nome}</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: ${corSaldo};">
+                                R$ ${parseFloat(b.saldo_atual).toFixed(2).replace('.', ',')}
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
-        }
+                    `;
+                });
+            }
 
-    } catch (e) {
-        console.error("Erro ao carregar resumo:", e);
+            // 👇 PASSO 3: INJEÇÃO DOS DADOS DE ESTOQUE NA TELA
+            try {
+                // Como criamos a inteligência no endpoint de gráficos (Passo 1), chamamos ele aqui
+                const resGraficos = await fetch(`${API_URL}/financeiro/graficos`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${cracha}` }
+                });
+                if (resGraficos.ok) {
+                    const dadosGraficos = await resGraficos.json();
+                    if (dadosGraficos.estoque_metrics) {
+                        const formataMoeda = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                        document.getElementById('kpi-estoque-investido').innerText = formataMoeda(dadosGraficos.estoque_metrics.investido);
+                        document.getElementById('kpi-estoque-potencial').innerText = formataMoeda(dadosGraficos.estoque_metrics.potencial);
+                        document.getElementById('kpi-estoque-lucro').innerText = formataMoeda(dadosGraficos.estoque_metrics.lucro);
+                    }
+                }
+            } catch (errEstoque) {
+                console.error("Erro ao carregar métricas de estoque:", errEstoque);
+            }
+            // 👆 FIM DA INJEÇÃO DO ESTOQUE
+
+        } catch (e) {
+            console.error("Erro ao carregar resumo:", e);
+        }
     }
-}
 
 // 👇 NOVA FUNÇÃO: Acionada quando você clica num dos cards
 function filtrarLancamentos(tipo) {
