@@ -1196,64 +1196,134 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 🗺️ SISTEMA DE BAIRROS E TAXAS DE ENTREGA
+// 🗺️ SISTEMA UNIFICADO DE ÁREAS DE ENTREGA (CIDADES E BAIRROS)
 // ==========================================
-let listaBairros = [];
+let listaCidadesLocais = [];
+let listaBairrosLocais = [];
 
-async function abrirGerenciadorBairros() {
-    document.getElementById('modal-bairros').style.display = 'flex';
-    
+async function abrirGerenciadorLocais() {
+    document.getElementById('modal-locais-entrega').style.display = 'flex';
+    await carregarLocaisAdmin();
+}
+
+function fecharGerenciadorLocais() {
+    document.getElementById('modal-locais-entrega').style.display = 'none';
+}
+
+async function carregarLocaisAdmin() {
     try {
-        const resCid = await fetch(`${API_URL}/cidades`);
-        if (resCid.ok) {
-            const cidades = await resCid.json();
-            const select = document.getElementById('novo-bairro-cidade');
-            if (select) {
-                select.innerHTML = '<option value="" disabled selected>Selecione a Cidade primeiro...</option>';
-                cidades.forEach(c => {
-                    select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
-                });
-            }
+        const [resCid, resBairros] = await Promise.all([
+            fetch(`${API_URL}/cidades`),
+            fetch(`${API_URL}/bairros`)
+        ]);
+        
+        listaCidadesLocais = resCid.ok ? await resCid.json() : [];
+        listaBairrosLocais = resBairros.ok ? await resBairros.json() : [];
+        
+        // Atualiza a caixinha de seleção de cidades na hora de cadastrar um bairro
+        const select = document.getElementById('novo-bairro-cidade');
+        if (select) {
+            select.innerHTML = '<option value="" disabled selected>Escolha a Cidade...</option>';
+            listaCidadesLocais.forEach(c => {
+                select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
+            });
         }
-    } catch(e) {}
-
-    carregarBairrosAdmin();
+        
+        renderizarLocaisAdmin();
+    } catch (e) { console.error("Erro ao carregar os locais de entrega", e); }
 }
 
-function fecharGerenciadorBairros() {
-    document.getElementById('modal-bairros').style.display = 'none';
-}
-
-async function carregarBairrosAdmin() {
-    try {
-        const res = await fetch(`${API_URL}/bairros`);
-        listaBairros = await res.json();
-        renderizarListaBairrosAdmin();
-    } catch (e) { console.error("Erro ao carregar bairros"); }
-}
-
-function renderizarListaBairrosAdmin() {
-    const container = document.getElementById('lista-bairros-gerenciador');
+function renderizarLocaisAdmin() {
+    const container = document.getElementById('lista-locais-gerenciador');
     if(!container) return;
     container.innerHTML = '';
 
-    if (listaBairros.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhum bairro cadastrado.</p>';
+    if (listaCidadesLocais.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; margin-top: 10px;">Nenhuma cidade cadastrada ainda.</p>';
         return;
     }
 
-    listaBairros.forEach(b => {
-        const nomeCidade = b.cidade || 'Quatis'; 
+    listaCidadesLocais.forEach(cidade => {
+        const bairrosDaCidade = listaBairrosLocais.filter(b => b.cidade === cidade.nome);
+        
+        let htmlBairros = '';
+        if (bairrosDaCidade.length > 0) {
+            bairrosDaCidade.forEach(b => {
+                htmlBairros += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 15px; border-bottom: 1px dashed #ddd; background: #fff; transition: 0.2s;" onmouseover="this.style.background='#f0fcfd'" onmouseout="this.style.background='#fff'">
+                        <strong style="color:#555; font-size: 0.95rem;">${b.nome}</strong>
+                        
+                        <div style="display:flex; align-items:center; gap: 12px;">
+                            <div style="background: #e0f7fa; padding: 6px 10px; border-radius: 8px; border: 1px solid #b2ebf2; display: flex; align-items: center; gap: 5px;">
+                                <span style="color: #00838f; font-weight: bold; font-size: 0.85rem;">R$</span>
+                                <input type="number" id="taxa-bairro-${b.id}" value="${Number(b.taxa).toFixed(2)}" step="0.01" style="width: 70px; border: none; background: transparent; color: #00838f; font-weight: bold; outline: none; font-family: inherit; text-align: center;">
+                                <button onclick="salvarEdicaoTaxa(${b.id})" style="background: none; border: none; cursor: pointer; color: #00bcd4; font-size: 1.3rem; padding: 0;" title="Salvar Nova Taxa">💾</button>
+                            </div>
+                            <button onclick="excluirBairro(${b.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.3rem;" title="Excluir Bairro">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            htmlBairros = '<p style="color:#999; font-size:0.85rem; padding: 12px 15px; margin: 0; background: #fff;">Nenhum bairro cadastrado nesta cidade.</p>';
+        }
+
         container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px; border: 1px solid #eee;">
-                <div>
-                    <strong style="color:#333;">${b.nome} <span style="font-size:0.75rem; color:#999; font-weight:normal;">(${nomeCidade})</span></strong> 
-                    <span style="display:block; font-size:0.85rem; color:#00bcd4; font-weight:bold;">Taxa: R$ ${Number(b.taxa).toFixed(2).replace('.', ',')}</span>
+            <div style="background:#f9f9f9; border-radius:8px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div style="background: #f1f5f9; padding: 12px 15px; border-bottom: 2px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color:#334155; font-size:1.1rem; display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 1.3rem; color: #9C27B0;">location_city</span> ${cidade.nome}</strong>
+                    <button onclick="excluirCidade(${cidade.id})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:1.2rem;" title="Excluir Cidade Inteira">🗑️</button>
                 </div>
-                <button onclick="excluirBairro(${b.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;">🗑️</button>
+                <div style="display: flex; flex-direction: column;">
+                    ${htmlBairros}
+                </div>
             </div>
         `;
     });
+}
+
+// 👉 A Mágica de Salvar a Edição da Taxa inline
+async function salvarEdicaoTaxa(idBairro) {
+    const input = document.getElementById(`taxa-bairro-${idBairro}`);
+    const novaTaxa = parseFloat(input.value.replace(',', '.'));
+    
+    if (isNaN(novaTaxa) || novaTaxa < 0) return alert("⚠️ Digite um valor válido e positivo para a taxa.");
+
+    try {
+        const res = await fetch(`${API_URL}/bairros/${idBairro}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taxa: novaTaxa })
+        });
+
+        if (res.ok) {
+            alert("✅ Taxa de entrega atualizada com sucesso!");
+            await carregarLocaisAdmin(); // Recarrega os dados do banco para garantir que a tela ficou exata
+        } else {
+            alert("❌ Erro ao atualizar a taxa no banco de dados.");
+        }
+    } catch (e) {
+        alert("🔌 Falha de rede. Verifique sua conexão.");
+    }
+}
+
+async function salvarNovaCidade() {
+    const nome = document.getElementById('nova-cidade-nome').value.trim();
+    if (!nome) return alert("Preencha o nome da cidade!");
+
+    try {
+        await fetch(`${API_URL}/cidades`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome }) });
+        document.getElementById('nova-cidade-nome').value = '';
+        await carregarLocaisAdmin(); 
+    } catch (e) { alert("Erro ao salvar cidade."); }
+}
+
+async function excluirCidade(id) {
+    if(!confirm("⚠️ CUIDADO! Tem certeza que deseja excluir esta cidade? Todos os bairros ligados a ela podem ficar sem referência no delivery.")) return;
+    try {
+        await fetch(`${API_URL}/cidades/${id}`, { method: 'DELETE' });
+        await carregarLocaisAdmin();
+    } catch (e) { alert("Erro ao excluir cidade."); }
 }
 
 async function salvarNovoBairro() {
@@ -1267,99 +1337,21 @@ async function salvarNovoBairro() {
 
     try {
         await fetch(`${API_URL}/bairros`, { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
+            method: 'POST', headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({ nome, taxa: parseFloat(taxa) || 0, cidade }) 
         });
-        
         document.getElementById('novo-bairro-nome').value = '';
         document.getElementById('novo-bairro-taxa').value = '';
-        await carregarBairrosAdmin(); 
-    } catch (e) {
-        alert("Erro ao salvar bairro.");
-    }
+        await carregarLocaisAdmin(); 
+    } catch (e) { alert("Erro ao salvar bairro."); }
 }
 
 async function excluirBairro(id) {
-    if(!confirm("Tem certeza que deseja excluir este bairro?")) return;
+    if(!confirm("Tem certeza que deseja excluir este bairro definitivamente?")) return;
     try {
         await fetch(`${API_URL}/bairros/${id}`, { method: 'DELETE' });
-        await carregarBairrosAdmin();
-    } catch (e) {
-        alert("Erro ao excluir bairro.");
-    }
-}
-
-// ==========================================
-// 🏙️ SISTEMA DE CIDADES 
-// ==========================================
-let listaCidades = [];
-
-function abrirGerenciadorCidades() {
-    document.getElementById('modal-cidades').style.display = 'flex';
-    carregarCidadesAdmin();
-}
-
-function fecharGerenciadorCidades() {
-    document.getElementById('modal-cidades').style.display = 'none';
-}
-
-async function carregarCidadesAdmin() {
-    try {
-        const res = await fetch(`${API_URL}/cidades`);
-        if (!res.ok) throw new Error("Rota ausente");
-        listaCidades = await res.json();
-    } catch (e) { 
-        listaCidades = []; 
-    }
-    renderizarListaCidadesAdmin();
-}
-
-function renderizarListaCidadesAdmin() {
-    const container = document.getElementById('lista-cidades-gerenciador');
-    if(!container) return;
-    container.innerHTML = '';
-
-    if (listaCidades.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#999;">Nenhuma cidade cadastrada.</p>';
-        return;
-    }
-
-    listaCidades.forEach(c => {
-        container.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:8px; border: 1px solid #eee;">
-                <strong style="color:#333; font-size:1.1rem;">${c.nome}</strong> 
-                <button onclick="excluirCidade(${c.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;" title="Excluir">🗑️</button>
-            </div>
-        `;
-    });
-}
-
-async function salvarNovaCidade() {
-    const nome = document.getElementById('nova-cidade-nome').value.trim();
-    if (!nome) return alert("Preencha o nome da cidade!");
-
-    try {
-        await fetch(`${API_URL}/cidades`, { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ nome }) 
-        });
-        document.getElementById('nova-cidade-nome').value = '';
-        await carregarCidadesAdmin(); 
-    } catch (e) {
-        alert("Erro ao salvar cidade.");
-    }
-}
-
-async function excluirCidade(id) {
-    if(!confirm("⚠️ Tem certeza que deseja excluir esta cidade? Todos os bairros ligados a ela podem ficar sem referência.")) return;
-    try {
-        await fetch(`${API_URL}/cidades/${id}`, { method: 'DELETE' });
-        await carregarCidadesAdmin();
-    } catch (e) {
-        alert("Erro ao excluir cidade.");
-    }
+        await carregarLocaisAdmin();
+    } catch (e) { alert("Erro ao excluir bairro."); }
 }
 
 // ==========================================
