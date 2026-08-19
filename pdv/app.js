@@ -548,7 +548,7 @@ function abrirModalCheckout() {
     document.getElementById('area-pagamento-2').style.display = 'none';
     document.getElementById('btn-add-pagamento').style.display = 'block';
     
-    document.getElementById('checkout-metodo-1').value = 'Dinheiro';
+    document.getElementById('checkout-metodo-1').value = '';
     document.getElementById('checkout-valor-1').value = totalFinalGlobal.toFixed(2);
     document.getElementById('checkout-valor-1').readOnly = true; 
     
@@ -582,6 +582,7 @@ function togglePagamentoDividido() {
         inputValor1.readOnly = false; 
         inputValor1.focus();
         inputValor1.select();
+        document.getElementById('checkout-metodo-2').value = ''; // 👈 TRAVA DE SEGURANÇA
     } else {
         areaPag2.style.display = 'none';
         btnAdd.style.display = 'block';
@@ -651,11 +652,14 @@ async function finalizarVendaPDV() {
     if (carrinho.length === 0) return alert("Carrinho vazio!");
 
     const m1 = document.getElementById('checkout-metodo-1').value;
+    if (!m1) return alert("⚠️ Selecione a forma de pagamento principal!"); // 👈 TRAVA DE SEGURANÇA
+    
     const v1 = parseFloat(document.getElementById('checkout-valor-1').value) || 0;
     let metodoFinalTexto = m1;
     
     if (isPagamentoDividido) {
         const m2 = document.getElementById('checkout-metodo-2').value;
+        if (!m2) return alert("⚠️ Selecione a segunda forma de pagamento!"); // 👈 TRAVA DE SEGURANÇA
         const v2 = parseFloat(document.getElementById('checkout-valor-2').value) || 0;
         if (v1 <= 0 || v2 <= 0) return alert("⚠️ Ambos os valores devem ser maiores que zero na divisão.");
         if (m1 === m2) return alert("⚠️ As duas formas de pagamento não podem ser iguais.");
@@ -697,16 +701,35 @@ async function finalizarVendaPDV() {
     const clienteTelefone = telefoneBruto ? padronizarTelefonePDV(telefoneBruto) : '';
     const clienteNome = document.getElementById('checkout-nome').value.trim() || 'Cliente Balcão';
 
+    // 🧠 MÁGICA FINANCEIRA: Separa os valores exatos de cada método
+    let pagamentosObj = { dinheiro: 0, pix: 0, cartao: 0, outros: 0 };
+    function classificarMetodo(metodo, valor) {
+        if (!metodo) return;
+        let m = metodo.toLowerCase();
+        if (m.includes('dinheiro')) pagamentosObj.dinheiro += valor;
+        else if (m.includes('pix')) pagamentosObj.pix += valor;
+        else if (m.includes('cartão') || m.includes('cartao')) pagamentosObj.cartao += valor;
+        else pagamentosObj.outros += valor;
+    }
+    
+    classificarMetodo(m1, v1);
+    if (isPagamentoDividido) {
+        const m2 = document.getElementById('checkout-metodo-2').value;
+        const v2 = parseFloat(document.getElementById('checkout-valor-2').value) || 0;
+        classificarMetodo(m2, v2);
+    }
+
     const dadosDaVenda = {
         itens: JSON.stringify(itensFormatados), 
-        produto_nome: "Venda Balcão", // 👈 CORREÇÃO: Título curto para não estourar o limite (varchar 255)
+        produto_nome: "Venda Balcão", 
         valor_total: totalFinalGlobal,
         total: totalFinalGlobal,
         forma_pagamento: metodoFinalTexto, 
         status: "Concluída",
         origem: document.getElementById('checkout-origem').value,
         cliente_nome: clienteNome,
-        cliente_telefone: clienteTelefone
+        cliente_telefone: clienteTelefone,
+        pagamentos_detalhes: pagamentosObj // 👈 NOVO: Envia os valores destrinchados pro servidor
     };
 
     try {
@@ -1232,6 +1255,8 @@ async function finalizarDeliveryPDV() {
     if (rua && numero && bairro) enderecoCompleto = `${rua}, ${numero} ${complemento ? '- ' + complemento : ''} - ${bairro}`;
 
     let pagamento = document.getElementById('pdv-forma-pagamento').value;
+    if (!pagamento) return alert("⚠️ Selecione a forma de pagamento do Delivery!"); // 👈 TRAVA DE SEGURANÇA
+    
     const troco = document.getElementById('pdv-cliente-troco').value.trim();
     if (pagamento === 'Dinheiro' && troco) pagamento += ` (Troco para ${troco})`;
 

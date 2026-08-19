@@ -247,6 +247,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:10px; border: 1px solid #eee;">
                 <label style="color:#555; font-weight:600; font-size:0.9rem;">Forma de Pagamento 1</label>
                 <select id="checkout-metodo-1" class="input-padrao" style="width:100%; margin-top:5px; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoPagamento()">
+                    <option value="" disabled selected>Selecione...</option>
                     <option value="Dinheiro">💵 Dinheiro</option>
                     <option value="PIX">💠 PIX</option>
                     <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
@@ -271,6 +272,7 @@
                     <button onclick="togglePagamentoDividido()" style="background:none; border:none; color:#f44336; font-size:0.8rem; cursor:pointer; font-weight:bold;">Remover Divisão</button>
                 </div>
                 <select id="checkout-metodo-2" class="input-padrao" style="width:100%; margin-bottom:10px; font-size:1.1rem; padding:10px; cursor:pointer; border: 1px solid #ccc; border-radius: 8px;" onchange="verificarMetodoPagamento()">
+                    <option value="" disabled selected>Selecione o 2º Pagamento...</option>
                     <option value="PIX">💠 PIX</option>
                     <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
                     <option value="Cartão de Débito">💳 Cartão de Débito</option>
@@ -388,6 +390,7 @@
                 <div style="flex: 1.2;">
                     <label style="font-weight: bold; color: #555; font-size: 0.9rem;">💳 Pagamento</label>
                     <select id="pdv-forma-pagamento" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size: 0.95rem; margin-top: 5px;">
+                        <option value="" disabled selected>Selecione...</option>
                         <option value="Dinheiro">💵 Dinheiro</option>
                         <option value="Pix">💠 Pix</option>
                         <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
