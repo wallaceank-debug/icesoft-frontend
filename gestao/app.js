@@ -548,6 +548,7 @@ function abrirModalProduto(id = null) {
     };
 
     gruposSelecionadosTemporarios = []; 
+    window.limitesGruposTemporarios = {}; // NOVO: Armazena os limites personalizados
 
     if (id) { 
         const p = listaProdutos.find(x => x.id === id);
@@ -582,6 +583,8 @@ function abrirModalProduto(id = null) {
         if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('prod-resumo-insumos', insJsonProd);
 
         gruposSelecionadosTemporarios = p.grupos_ids ? [...p.grupos_ids] : [];
+        // 👇 NOVO: Carrega os limites salvos do banco
+        window.limitesGruposTemporarios = (typeof p.limites_grupos === 'string' ? JSON.parse(p.limites_grupos) : p.limites_grupos) || {};
 
         // Promoções
         const tipoPromo = p.tipo_promocao || 'nenhuma';
@@ -625,6 +628,7 @@ function abrirModalProduto(id = null) {
         preencherSeguro('prod-custo', 0);
         preencherSeguro('prod-insumos-json', '[]');
         if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('prod-resumo-insumos', '[]');
+        window.limitesGruposTemporarios = {}; // 👇 NOVO: Zera para produto novo
 
         const radioNenhuma = document.querySelector('input[name="tipo_promocao"][value="nenhuma"]');
         if(radioNenhuma) radioNenhuma.checked = true;
@@ -657,6 +661,9 @@ function renderizarSelecaoGrupos() {
     const gruposDesmarcados = listaGrupos.filter(g => !gruposSelecionadosTemporarios.includes(g.id));
 
     gruposMarcados.forEach((g, index) => {
+        // 👇 NOVO: Descobre se tem limite personalizado ou usa o padrão do grupo
+        const limiteAtual = window.limitesGruposTemporarios[g.id] !== undefined ? window.limitesGruposTemporarios[g.id] : g.limite;
+
         container.innerHTML += `
             <div draggable="true"
                  ondragstart="dragStartGrupo(${index})"
@@ -668,6 +675,10 @@ function renderizarSelecaoGrupos() {
                     <input type="checkbox" value="${g.id}" checked onchange="toggleGrupoNoProduto(${g.id})" style="width: 18px; height: 18px; accent-color: #00bcd4;">
                     <strong style="color: #00838f;">${g.nome}</strong>
                 </label>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span style="font-size: 0.75rem; color: #00838f; font-weight: bold;">Qtd Máx:</span>
+                    <input type="number" class="input-limite-custom" data-grupo-id="${g.id}" value="${limiteAtual}" min="1" style="width: 50px; padding: 5px; border: 1px solid #00bcd4; border-radius: 4px; text-align: center; outline: none; font-weight: bold;">
+                </div>
             </div>
         `;
     });
@@ -779,6 +790,13 @@ async function salvarProduto() {
     const gruposSelecionados = gruposSelecionadosTemporarios;
     const categoriasExtras = Array.from(document.querySelectorAll('.check-cat-adicional:checked')).map(cb => cb.value);
 
+    // 👇 NOVO: Captura os limites personalizados digitados na tela
+    const limitesPersonalizados = {};
+    document.querySelectorAll('.input-limite-custom').forEach(input => {
+        const gId = input.getAttribute('data-grupo-id');
+        limitesPersonalizados[gId] = parseInt(input.value) || 1;
+    });
+
     const dados = {
         nome: nome,
         descricao: lerSeguro('prod-descricao').trim(),
@@ -799,7 +817,8 @@ async function salvarProduto() {
         grupos_ids: gruposSelecionados,
         categorias_adicionais: categoriasExtras,
         custo: parseFloat(lerSeguro('prod-custo')) || 0,
-        insumos_json: lerSeguro('prod-insumos-json', '[]')
+        insumos_json: lerSeguro('prod-insumos-json', '[]'),
+        limites_grupos: limitesPersonalizados // 👇 NOVO: Envia os limites pro servidor
     };
 
     try {

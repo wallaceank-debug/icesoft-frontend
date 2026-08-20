@@ -386,10 +386,32 @@ function rolarParaCategoria(id) {
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
 }
+
 // ==========================================
 // SISTEMA DE ADIÇÃO E MODAL DE PRODUTO
 // ==========================================
 let quantidadeModal = 1; 
+
+// 👇 NOVO: Função Mágica que decide qual limite usar (Personalizado ou Padrão)
+function obterLimiteDoGrupoNoProduto(grupoId) {
+    if (!produtoEmSelecao) return 1;
+    
+    let limitesCustomizados = {};
+    try {
+        limitesCustomizados = typeof produtoEmSelecao.limites_grupos === 'string' 
+            ? JSON.parse(produtoEmSelecao.limites_grupos) 
+            : (produtoEmSelecao.limites_grupos || {});
+    } catch(e) {}
+
+    // Se existe um limite personalizado salvo lá na gestão para este produto, usamos ele
+    if (limitesCustomizados[grupoId] !== undefined && limitesCustomizados[grupoId] !== null) {
+        return Number(limitesCustomizados[grupoId]);
+    }
+    
+    // Se não existir, caímos para o limite padrão do grupo
+    const grupo = gruposGlobais.find(g => g.id === grupoId);
+    return grupo ? Number(grupo.limite) : 1;
+}
 
 function verificarAdicao(id) {
     if (!lojaAberta) {
@@ -453,6 +475,9 @@ function abrirModalEscolha(produto) {
             const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
             if (itensAtivos.length === 0) return;
 
+            // 👇 NOVO: Descobre o limite correto para este grupo NESTE produto
+            const limiteAtual = obterLimiteDoGrupoNoProduto(grupo.id);
+
             let itensHtml = itensAtivos.map((item, idx) => {
                 // 👇 BLINDAGEM DELIVERY: Garante que o Delivery SEMPRE use o 'preco' (preço cheio) e ignore o 'preco_pdv'
                 let precoSeguro = Number(item.preco) || 0; 
@@ -490,7 +515,7 @@ function abrirModalEscolha(produto) {
                     </div>
                 `;
 
-                if (grupo.limite === 1) {
+                if (limiteAtual === 1) { // 👇 NOVO: Usando a variável limiteAtual
                     return `
                     <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
@@ -530,7 +555,8 @@ function abrirModalEscolha(produto) {
                 ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
                 : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
 
-            container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${grupo.limite}</span></div>${itensHtml}</div>`;
+            // 👇 NOVO: Trocamos o `grupo.limite` por `limiteAtual` aqui na etiqueta visual!
+            container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
         });
     }
     
@@ -542,6 +568,7 @@ function abrirModalEscolha(produto) {
 
 function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
+    const limiteAtual = obterLimiteDoGrupoNoProduto(grupoId); // 👇 NOVO: Puxa o limite inteligente
     const chk = document.getElementById(chkId);
     const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
 
@@ -553,7 +580,7 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
         // O cliente quer marcar uma nova opção
         const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
         
-        if (grupo.limite === 1) {
+        if (limiteAtual === 1) { // 👇 NOVO: Avalia com o limite personalizado
             // Comportamento de "Radio Button": Se o limite é 1, remove a escolha anterior
             if (escolhasNoGrupo.length > 0) {
                 const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
@@ -564,8 +591,8 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
             }
         } else {
             // Trava de segurança extra (para limites maiores que 1)
-            if (escolhasNoGrupo.length >= grupo.limite) {
-                alert(`⚠️ Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}.`);
+            if (escolhasNoGrupo.length >= limiteAtual) { // 👇 NOVO: Avalia com o limite personalizado
+                alert(`⚠️ Você só pode escolher até ${limiteAtual} opção(ões) em ${grupo.nome}.`);
                 return; // Corta a função aqui, não deixa marcar
             }
         }
@@ -579,6 +606,7 @@ function toggleOpcional(grupoId, nomeItem, preco, chkId) {
 
 function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
+    const limiteAtual = obterLimiteDoGrupoNoProduto(grupoId); // 👇 NOVO: Puxa o limite inteligente
     
     let totalSelecionadoNoGrupo = 0;
     escolhasAtuais.forEach(e => {
@@ -590,8 +618,8 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     let qtdAtual = itemAtual ? itemAtual.quantidade : 0;
 
     if (delta > 0) { 
-        if (totalSelecionadoNoGrupo >= grupo.limite) {
-            return alert(`Você só pode escolher até ${grupo.limite} opção(ões) em ${grupo.nome}`);
+        if (totalSelecionadoNoGrupo >= limiteAtual) { // 👇 NOVO: Avalia com o limite personalizado
+            return alert(`Você só pode escolher até ${limiteAtual} opção(ões) em ${grupo.nome}`);
         }
         qtdAtual++;
         if (itemAtual) {
