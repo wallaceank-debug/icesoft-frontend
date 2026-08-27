@@ -3163,13 +3163,30 @@ function renderizarBanners(listaBanners) {
         return;
     }
 
+    // 👇 A MÁGICA: O filtro de Inteligência que respeita a chavinha de "Ativo/Inativo"
+    const bannersAtivos = listaBanners.filter(banner => {
+        // Se for do jeito antigo (só o link), considera ativo para não sumir o que já existia
+        if (typeof banner === 'string') return true; 
+        // Se for do jeito novo (objeto), verifica se a chavinha "ativo" está ligada lá no painel
+        return banner.ativo === true; 
+    }).map(banner => {
+        // Extrai apenas o link da imagem para desenhar na tela
+        return typeof banner === 'string' ? banner : banner.url;
+    });
+
+    // Se depois de filtrar não sobrar nenhum banner ligado, esconde a seção para não ficar um buraco vazio
+    if (bannersAtivos.length === 0) {
+        secao.style.display = 'none';
+        return;
+    }
+
     secao.style.display = 'block';
     carrossel.innerHTML = '';
     
     // CSS Embutido só para os banners
     carrossel.style.cssText = "display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; scroll-snap-type: x mandatory;";
 
-    listaBanners.forEach(url => {
+    bannersAtivos.forEach(url => {
         carrossel.innerHTML += `
             <div style="flex: 0 0 85%; scroll-snap-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                 <img src="${url}" style="width: 100%; height: 160px; object-fit: cover; display: block;">

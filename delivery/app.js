@@ -64,8 +64,13 @@ async function carregarConfiguracoes() {
 
         // 👇 NOVO: Carrega Banners e Recompensas
         if (configs.banners_promocionais) {
-            try { bannersSalvos = JSON.parse(configs.banners_promocionais); } catch(e) {}
+            try { 
+                let parsed = JSON.parse(configs.banners_promocionais); 
+                // Proteção: Transforma os banners antigos em formato inteligente (com botão ativo/inativo)
+                bannersSalvos = parsed.map(b => typeof b === 'string' ? { url: b, ativo: true } : b);
+            } catch(e) {}
         }
+
         renderizarListaBanners();
 
         let recompensasSalvas = [];
@@ -583,14 +588,39 @@ function renderizarListaBanners() {
         return;
     }
     
-    bannersSalvos.forEach((url, index) => {
+    bannersSalvos.forEach((banner, index) => {
+        // Lê os dados novos ou antigos sem quebrar
+        const url = typeof banner === 'string' ? banner : banner.url;
+        const isAtivo = typeof banner === 'string' ? true : banner.ativo;
+        
+        // Estilos para mostrar quando está inativo
+        const opacidade = isAtivo ? '1' : '0.5';
+        const textoStatus = isAtivo ? '🟢 Ativo no Cardápio' : '🔴 Oculto';
+        const borda = isAtivo ? '#b2ebf2' : '#ccc';
+
         container.innerHTML += `
-            <div style="position:relative; border-radius:8px; overflow:hidden; border:2px solid #b2ebf2; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div style="position:relative; border-radius:8px; overflow:hidden; border:2px solid ${borda}; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px; opacity: ${opacidade}; transition: 0.3s;">
                 <img src="${url}" style="width:100%; height:110px; object-fit:cover; display:block;">
-                <button onclick="removerBanner(${index})" style="position:absolute; top:8px; right:8px; background:#f44336; color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">X</button>
+                
+                <div style="position:absolute; bottom:8px; left:8px; background:rgba(255,255,255,0.95); padding:5px 10px; border-radius:5px; display:flex; align-items:center; gap:8px; border: 1px solid #eee;">
+                    <input type="checkbox" ${isAtivo ? 'checked' : ''} onchange="toggleBannerAtivo(${index}, this.checked)" style="width:18px; height:18px; cursor:pointer; accent-color:#00bcd4;">
+                    <span style="font-weight:bold; font-size:0.85rem; color:#333;">${textoStatus}</span>
+                </div>
+
+                <button onclick="removerBanner(${index})" style="position:absolute; top:8px; right:8px; background:#f44336; color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);" title="Excluir Definitivamente">X</button>
             </div>
         `;
     });
+}
+
+// 👇 Função para alternar entre mostrar/esconder
+function toggleBannerAtivo(index, isAtivo) {
+    if (typeof bannersSalvos[index] === 'string') {
+        bannersSalvos[index] = { url: bannersSalvos[index], ativo: isAtivo };
+    } else {
+        bannersSalvos[index].ativo = isAtivo;
+    }
+    renderizarListaBanners();
 }
 
 function removerBanner(index) {
@@ -617,7 +647,8 @@ async function adicionarBannerPromocional() {
         const data = await res.json();
         
         if (data.sucesso) {
-            bannersSalvos.push(baseUrl + data.url);
+            // Agora salva com o status 'ativo' embutido
+            bannersSalvos.push({ url: baseUrl + data.url, ativo: true });
             renderizarListaBanners();
             inputBanner.value = ''; // Limpa o campo
         } else {
