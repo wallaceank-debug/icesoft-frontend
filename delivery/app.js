@@ -1,6 +1,7 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 let produtosGlobais = []; 
 let cuponsSalvos = []; 
+let bannersSalvos = [];
 
 window.onload = async () => {
     await carregarProdutos(); 
@@ -60,6 +61,18 @@ async function carregarConfiguracoes() {
             try { upsellSalvos = JSON.parse(configs.carrossel_upsell); } catch(e) {}
         }
         renderizarListaUpsell(upsellSalvos);
+
+        // 👇 NOVO: Carrega Banners e Recompensas
+        if (configs.banners_promocionais) {
+            try { bannersSalvos = JSON.parse(configs.banners_promocionais); } catch(e) {}
+        }
+        renderizarListaBanners();
+
+        let recompensasSalvas = [];
+        if (configs.carrossel_recompensas) {
+            try { recompensasSalvas = JSON.parse(configs.carrossel_recompensas); } catch(e) {}
+        }
+        renderizarListaRecompensas(recompensasSalvas);
 
         // Puxa a escala de horários salva (AGORA DENTRO DO TRY)
         if (configs.horarios_funcionamento_auto) {
@@ -555,4 +568,111 @@ async function atualizarBadgeMesasGlobal() {
     } catch (e) {
         console.log("Aviso: Não foi possível checar as mesas abertas para o menu.", e);
     }
+}
+
+// ==========================================
+// 🖼️ MOTOR DOS BANNERS PROMOCIONAIS
+// ==========================================
+function renderizarListaBanners() {
+    const container = document.getElementById('lista-banners-ativos');
+    if(!container) return;
+    container.innerHTML = '';
+    
+    if(bannersSalvos.length === 0) {
+        container.innerHTML = '<p style="color:#888; text-align:center; font-size:0.9rem;">Nenhum banner ativo no momento.</p>';
+        return;
+    }
+    
+    bannersSalvos.forEach((url, index) => {
+        container.innerHTML += `
+            <div style="position:relative; border-radius:8px; overflow:hidden; border:2px solid #b2ebf2; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <img src="${url}" style="width:100%; height:110px; object-fit:cover; display:block;">
+                <button onclick="removerBanner(${index})" style="position:absolute; top:8px; right:8px; background:#f44336; color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">X</button>
+            </div>
+        `;
+    });
+}
+
+function removerBanner(index) {
+    if(confirm("Remover este banner?")) {
+        bannersSalvos.splice(index, 1);
+        renderizarListaBanners();
+    }
+}
+
+async function adicionarBannerPromocional() {
+    const inputBanner = document.getElementById('arquivo-novo-banner');
+    if (!inputBanner.files || inputBanner.files.length === 0) return alert("Selecione uma imagem primeiro!");
+    
+    const btn = document.querySelector('button[onclick="adicionarBannerPromocional()"]');
+    const textoAntigo = btn.innerText;
+    btn.innerText = "⏳ Enviando Foto..."; btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('imagem', inputBanner.files[0]);
+
+    try {
+        const baseUrl = API_URL.replace('/api', '');
+        const res = await fetch(`${API_URL}/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if (data.sucesso) {
+            bannersSalvos.push(baseUrl + data.url);
+            renderizarListaBanners();
+            inputBanner.value = ''; // Limpa o campo
+        } else {
+            alert("Erro no upload do Banner.");
+        }
+    } catch(e) {
+        alert("Erro de conexão ao enviar imagem.");
+    } finally {
+        btn.innerText = textoAntigo; btn.disabled = false;
+    }
+}
+
+async function salvarBannersPromocionais() {
+    const btn = document.getElementById('btn-salvar-banners');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Salvando..."; btn.style.backgroundColor = "#888";
+    enviarParaNuvem({ banners_promocionais: JSON.stringify(bannersSalvos) }, btn, textoOriginal, "#00838f");
+}
+
+// ==========================================
+// 🎁 MOTOR DO CARROSSEL DE RECOMPENSAS
+// ==========================================
+function renderizarListaRecompensas(recompensasSalvas) {
+    const container = document.getElementById('lista-produtos-recompensas');
+    if(!container) return;
+    container.innerHTML = '';
+    
+    // Só mostra produtos que tenham pontos configurados para resgate!
+    const produtosComPontos = produtosGlobais.filter(p => p.pontos_resgate > 0);
+    
+    if (produtosComPontos.length === 0) {
+        return container.innerHTML = '<p style="color:#888; text-align:center; font-size: 0.9rem;">Nenhum produto configurado para resgate. Vá em "Gestão de Cardápio" e configure os pontos nos produtos primeiro.</p>';
+    }
+
+    produtosComPontos.forEach(p => {
+        const isChecked = recompensasSalvas.includes(Number(p.id)) ? 'checked' : '';
+        let txtExtra = p.resgate_dinheiro > 0 ? ` + R$ ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : '';
+        
+        container.innerHTML += `
+            <label style="display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:5px; border:1px solid #ddd; cursor:pointer; flex-shrink: 0;">
+                <input type="checkbox" class="chk-recompensa" value="${p.id}" ${isChecked} style="width:20px; height:20px; accent-color:#f57f17; cursor: pointer;">
+                <span style="font-weight:600; color:#333; flex: 1;">${p.nome}</span>
+                <span style="color:#f57f17; font-weight:bold; font-size: 0.9rem;">${p.pontos_resgate} pts${txtExtra}</span>
+            </label>
+        `;
+    });
+}
+
+async function salvarRecompensas() {
+    const btn = document.getElementById('btn-salvar-recompensas');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Salvando..."; btn.style.backgroundColor = "#888";
+    
+    const checkboxes = document.querySelectorAll('.chk-recompensa:checked');
+    const idsSelecionados = Array.from(checkboxes).map(chk => Number(chk.value));
+
+    enviarParaNuvem({ carrossel_recompensas: JSON.stringify(idsSelecionados) }, btn, textoOriginal, "#f57f17");
 }

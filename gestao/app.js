@@ -575,6 +575,10 @@ function abrirModalProduto(id = null) {
         checarSeguro('produto-promo-pdv', p.promo_pdv === true);
         checarSeguro('prod-controlar-estoque', p.controlar_estoque === true); // NOVO
         checarSeguro('prod-mostrar-estoque', p.mostrar_estoque === true); // NOVO
+        // 👇 NOVO: Carrega os Pontos de Fidelidade
+        preencherSeguro('prod-pontos-ganhos', p.pontos_ganhos || 0);
+        preencherSeguro('prod-pontos-resgate', p.pontos_resgate || 0);
+        preencherSeguro('prod-resgate-dinheiro', p.resgate_dinheiro || 0);
         
         // 👇 NOVO: Carrega a Ficha Técnica
         preencherSeguro('prod-custo', p.custo || 0);
@@ -623,6 +627,10 @@ function abrirModalProduto(id = null) {
         checarSeguro('produto-promo-pdv', false);
         checarSeguro('prod-controlar-estoque', false); // NOVO
         checarSeguro('prod-mostrar-estoque', false); // NOVO
+        // 👇 NOVO: Limpa Pontos de Fidelidade
+        preencherSeguro('prod-pontos-ganhos', 0);
+        preencherSeguro('prod-pontos-resgate', 0);
+        preencherSeguro('prod-resgate-dinheiro', 0);
         
         // 👇 NOVO: Limpa Ficha Técnica
         preencherSeguro('prod-custo', 0);
@@ -803,10 +811,10 @@ async function salvarProduto() {
         preco: preco,
         emoji: lerSeguro('prod-emoji').trim(),
         categoria: lerSeguro('prod-categoria', 'Outros'),
-        imagem_url: imagemFinalUrl, // <-- AGORA ELE USA O LINK CERTO (Nuvem ou Antigo)
+        imagem_url: imagemFinalUrl, 
         venda_por_peso: lerCheckSeguro('prod-venda-peso'),
-        controlar_estoque: lerCheckSeguro('prod-controlar-estoque'), // NOVO
-        mostrar_estoque: lerCheckSeguro('prod-mostrar-estoque'), // NOVO
+        controlar_estoque: lerCheckSeguro('prod-controlar-estoque'), 
+        mostrar_estoque: lerCheckSeguro('prod-mostrar-estoque'), 
         tag: lerSeguro('produto-tag'),
         tipo_promocao: tipoPromocao,
         valor_promocao: parseFloat(lerSeguro('prod-valor-promocao')) || 0,
@@ -818,7 +826,11 @@ async function salvarProduto() {
         categorias_adicionais: categoriasExtras,
         custo: parseFloat(lerSeguro('prod-custo')) || 0,
         insumos_json: lerSeguro('prod-insumos-json', '[]'),
-        limites_grupos: limitesPersonalizados // 👇 NOVO: Envia os limites pro servidor
+        limites_grupos: limitesPersonalizados,
+        // 👇 NOVO: Disparando a configuração do Clube Icesoft
+        pontos_ganhos: parseInt(lerSeguro('prod-pontos-ganhos')) || 0,
+        pontos_resgate: parseInt(lerSeguro('prod-pontos-resgate')) || 0,
+        resgate_dinheiro: parseFloat(lerSeguro('prod-resgate-dinheiro')) || 0
     };
 
     try {

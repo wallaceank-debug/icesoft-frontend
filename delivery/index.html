@@ -255,6 +255,40 @@
                     </button>
                 </div>
 
+                <!-- 👇 NOVO: CARD BANNERS PROMOCIONAIS -->
+                <div class="card-config">
+                    <h3>🖼️ Banners Promocionais</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Adicione imagens promocionais que ficarão passando no topo do app do cliente.</p>
+
+                    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border: 1px dashed #00bcd4; margin-bottom: 15px;">
+                        <label style="display:block; font-weight:bold; color:#00838f; font-size: 0.9rem; margin-bottom: 5px;">Enviar novo Banner:</label>
+                        <input type="file" id="arquivo-novo-banner" accept="image/*" style="width:100%; padding:8px; border:1px solid #b2ebf2; border-radius:8px; background:#fff; font-family:'Poppins'; margin-bottom: 10px;">
+                        <button onclick="adicionarBannerPromocional()" style="width:100%; padding:10px; background:#00bcd4; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">+ Fazer Upload do Banner</button>
+                    </div>
+
+                    <div id="lista-banners-ativos" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
+                        <p style="color: #888; text-align: center; font-size: 0.9rem;">Carregando banners...</p>
+                    </div>
+
+                    <button id="btn-salvar-banners" onclick="salvarBannersPromocionais()" style="width:100%; padding:15px; background:#00838f; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        💾 Salvar Ordem dos Banners
+                    </button>
+                </div>
+
+                <!-- 👇 NOVO: CARD RECOMPENSAS DO CLUBE -->
+                <div class="card-config">
+                    <h3>🎁 Carrossel de Recompensas</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0; margin-bottom: 15px;">Selecione os produtos que vão aparecer para o cliente trocar por pontos no Início.</p>
+
+                    <div id="lista-produtos-recompensas" style="max-height: 250px; overflow-y: auto; background: #fffde7; padding: 10px; border-radius: 8px; border: 1px dashed #ffb300; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
+                        <p style="color: #888; text-align: center;">Carregando produtos...</p>
+                    </div>
+
+                    <button id="btn-salvar-recompensas" onclick="salvarRecompensas()" style="width:100%; padding:15px; background:#f57f17; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        ⭐ Salvar Recompensas
+                    </button>
+                </div>
+
                 <div class="card-config">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3 style="margin: 0;">🎟️ Cupons Avançados</h3>

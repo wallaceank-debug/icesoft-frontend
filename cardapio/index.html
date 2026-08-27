@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
     <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     
     <style>
         /* A Variável Mágica */
@@ -235,68 +236,138 @@
         <p style="color: #ccc; font-family: 'Poppins', sans-serif; font-size: 1.1rem; max-width: 400px;">Nosso delivery está suspenso no momento. Retornaremos em breve durante nosso horário de funcionamento!</p>
     </div>  
 
-    <div class="header-loja">
-        <div class="banner-loja">
-            <img id="img-banner-loja" src="" alt="Banner da Loja">
-        </div>
-        
-        <div class="info-loja-container">
-            <div class="logo-loja">
-                <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" alt="Logo da Loja">
-            </div>
-            
-            <div class="texto-loja">
-                <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
-                <p style="font-size: 0.85rem; color: #666; margin: 2px 0;">
-                    <span id="loja-endereco-texto">Endereço não informado</span> • 
-                    <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
-                </p>
-                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                    <span id="indicador-status-loja" style="color: #25D366; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
-                        🟢 Recebendo pedidos
-                    </span>
-                    <span id="indicador-tempo-entrega" style="background: #fff3e0; color: #ff9800; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: none; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(255,152,0,0.1);">
-                        ⏱️ ~ 45 min
-                    </span>
+    <!-- ==========================================
+         ABA 1: INÍCIO (Vitrine e Clube)
+         ========================================== -->
+    <div id="aba-inicio" class="aba-conteudo ativa" style="padding-bottom: 160px;">
+        <!-- Topo: Login e Nome -->
+        <div style="background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+            <div id="area-login-cliente" onclick="iniciarLoginCliente()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <div style="background: #f0f2f5; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--cor-primaria, #e91e63); font-size: 1.2rem;">
+                    <span class="material-symbols-outlined">person</span>
+                </div>
+                <div>
+                    <span style="font-size: 0.75rem; color: #888; display: block; line-height: 1;">Bem-vindo(a)</span>
+                    <strong id="nome-cliente-topo" style="color: #333; font-size: 1rem;">Fazer Login</strong>
                 </div>
             </div>
+        </div>
+
+        <div class="header-loja">
+            <div class="banner-loja">
+                <img id="img-banner-loja" src="" alt="Banner da Loja">
+            </div>
+            
+            <div class="info-loja-container">
+                <div class="logo-loja">
+                    <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" alt="Logo da Loja">
+                </div>
+                
+                <div class="texto-loja">
+                    <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
+                    <p style="font-size: 0.85rem; color: #666; margin: 2px 0;">
+                        <span id="loja-endereco-texto">Endereço não informado</span> • 
+                        <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
+                    </p>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                        <span id="indicador-status-loja" style="color: #25D366; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                            🟢 Recebendo pedidos
+                        </span>
+                        <span id="indicador-tempo-entrega" style="background: #fff3e0; color: #ff9800; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: none; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(255,152,0,0.1);">
+                            ⏱️ ~ 45 min
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="max-width: 600px; margin: 20px auto 15px auto; padding: 0 20px; box-sizing: border-box;">
+            <div id="loja-mensagem-exibicao" style="background: white; border-radius: 12px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center; border: 1px solid #f0f0f0; color: var(--cor-primaria, #00bcd4); font-size: 0.9rem; font-weight: 600; line-height: 1.4; transition: transform 0.3s ease;">
+            </div>
+        </div>
+
+        <!-- 1. CARROSSEL DE BANNERS -->
+        <section class="area-destaques" id="secao-banners-promo" style="display: none; padding-top: 5px;">
+            <div class="carrossel-banners" id="carrossel-imagens-promocionais"></div>
+        </section>
+
+        <!-- 2. RANKING MAIS VENDIDOS -->
+        <section class="area-destaques" id="secao-mais-vendidos" style="display: none; padding-top: 5px;">
+            <h3 style="font-size: 1.15rem; color: #333; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="color: #ff9800;">local_fire_department</span> Mais Pedidos (Top 6)
+            </h3>
+            <div class="carrossel" id="carrossel-produtos-ranking"></div>
+        </section>
+
+        <!-- 3. DESTAQUES DA CASA -->
+        <section class="area-destaques" id="secao-destaques" style="display: none; padding-top: 5px;">
+            <h3 id="titulo-ui-destaques" style="font-size: 1.15rem; color: #333; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="color: #e91e63;">star</span> Destaques da Casa
+            </h3>
+            <div class="carrossel" id="carrossel-produtos"></div>
+        </section>
+
+        <!-- 4. CARROSSEL DE RECOMPENSAS (CLUBE ICESOFT) -->
+        <section class="area-destaques" id="secao-recompensas" style="display: none; padding-top: 5px; margin-bottom: 20px;">
+            <h3 style="font-size: 1.15rem; color: #333; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="color: #00bcd4;">redeem</span> Troque seus pontos!
+            </h3>
+            <div class="carrossel" id="carrossel-produtos-recompensas"></div>
+        </section>
+
+    </div>
+
+    <!-- ==========================================
+         ABA 2: CARDÁPIO
+         ========================================== -->
+    <div id="aba-cardapio" class="aba-conteudo" style="padding-bottom: 160px;">
+        <div class="area-busca-flutuante" style="margin-top: 15px;">
+            <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
+        </div>
+
+        <div class="faixa-sticky" style="margin-top: 15px;">
+            <div id="menu-categorias-dinamico" class="menu-categorias-scroll"></div>
+        </div>
+
+        <main id="lista-produtos" style="padding: 10px 20px; max-width: 600px; margin: 0 auto;">
+            <!-- Os produtos serão desenhados aqui -->
+        </main>
+    </div>
+
+    <!-- ==========================================
+         ABA 3: CLUBE ICESOFT (PONTOS)
+         ========================================== -->
+    <div id="aba-clube" class="aba-conteudo" style="padding-bottom: 160px; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-top: 40px;" id="tela-login-clube">
+            <span class="material-symbols-outlined" style="font-size: 4rem; color: #ccc;">card_membership</span>
+            <h2 style="color: #333; margin-top: 10px;">Meu Clube Icesoft</h2>
+            <p style="color: #666; font-size: 0.95rem; margin-top: 5px;">Faça login para ver seus pontos e resgatar prêmios exclusivos!</p>
+            <button onclick="iniciarLoginCliente()" style="background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 12px 25px; border-radius: 30px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">Fazer Login agora</button>
+        </div>
+        
+        <div id="area-clube-logado" style="display: none;">
+            <!-- Será injetado via JS na próxima etapa -->
         </div>
     </div>
 
     <!-- ==========================================
-         CARD FLUTUANTE DA MENSAGEM
+         BOTTOM NAVIGATION (MENU DO APP)
          ========================================== -->
-    <style>
-        /* Truque Mágico: Se não tiver texto, o card some e não ocupa espaço! */
-        #loja-mensagem-exibicao:empty { display: none !important; }
-    </style>
-    
-    <!-- 👇 Mudamos a margem aqui (de 0 para 20px no topo) para dar o respiro visual -->
-    <div style="max-width: 600px; margin: 20px auto 15px auto; padding: 0 20px; box-sizing: border-box;">
-        <div id="loja-mensagem-exibicao" style="background: white; border-radius: 12px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center; border: 1px solid #f0f0f0; color: var(--cor-primaria, #00bcd4); font-size: 0.9rem; font-weight: 600; line-height: 1.4; transition: transform 0.3s ease;">
+    <nav class="bottom-nav" id="menu-inferior">
+        <div class="nav-item ativa" onclick="mudarAba('aba-inicio', this)">
+            <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">home</span>
+            Início
         </div>
-    </div>
+        <div class="nav-item" onclick="mudarAba('aba-cardapio', this)">
+            <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">restaurant_menu</span>
+            Cardápio
+        </div>
+        <div class="nav-item" onclick="mudarAba('aba-clube', this)">
+            <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">loyalty</span>
+            Clube
+        </div>
+    </nav>
     
-    <div class="area-busca-flutuante">
-        <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
-    </div>
-
-    <section class="area-destaques" id="secao-destaques" style="display: none;">
-        <h3 id="titulo-ui-destaques">Destaques da Casa</h3>
-        <div class="carrossel" id="carrossel-produtos"></div>
-    </section>
-
-    
-    <div class="faixa-sticky">
-        <div id="menu-categorias-dinamico" class="menu-categorias-scroll"></div>
-    </div>
-    
-
-    <main id="lista-produtos" style="padding: 20px; padding-bottom: 100px; max-width: 600px; margin: 0 auto;">
-        <h2>Cardápio Completo</h2>
-        <p>Carregando os melhores sorvetes da região...</p>
-    </main>
-
     <div id="barra-cupom-flutuante" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <strong id="texto-cupom-chamada" style="font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 5px;">
@@ -340,13 +411,19 @@
                         <button onclick="alterarQuantidadeModal(1)" style="background: none; border: none; font-size: 1.5rem; color: var(--cor-primaria, #e91e63); cursor: pointer; display: flex; justify-content: center; align-items: center;">+</button>
                     </div>
 
-                    <!-- BOTÃO ADICIONAR COM PREÇO EMBUTIDO (Na Direita) -->
-                    <button onclick="confirmarEscolhasEAdicionar()" style="flex: 1; color:white; border:none; padding:16px 20px; border-radius:30px; cursor:pointer; background: var(--cor-primaria, #e91e63); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
-                        <span style="font-weight: 600; font-size: 1.05rem;">Adicionar</span>
+                    <!-- BOTÃO ADICIONAR E RESGATAR (Na Direita) -->
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                        <button id="btn-adicionar-normal" onclick="confirmarEscolhasEAdicionar(false)" style="width: 100%; color:white; border:none; padding:16px 20px; border-radius:30px; cursor:pointer; background: var(--cor-primaria, #e91e63); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
+                            <span style="font-weight: 600; font-size: 1.05rem;">Adicionar</span>
+                            <strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>
+                        </button>
                         
-                        <!-- AQUI ESTÁ A ETIQUETA QUE O JAVASCRIPT PROCURA -->
-                        <strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>
-                    </button>
+                        <!-- 👇 NOVO: BOTÃO DE RESGATE DO CLUBE (Oculto por padrão) -->
+                        <button id="btn-resgatar-pontos" onclick="confirmarEscolhasEAdicionar(true)" style="display: none; width: 100%; color:#00838f; border: 2px solid #00bcd4; padding:12px 20px; border-radius:30px; cursor:pointer; background: #e0f7fa; justify-content: center; align-items: center; gap: 8px; font-weight: bold; transition: 0.2s ease;">
+                            <span class="material-symbols-outlined" style="font-size: 1.2rem;">redeem</span>
+                            <span id="texto-resgate-dinamico">Resgatar por X pts</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <button onclick="fecharModalOpcoes()" style="width:100%; background:none; border:none; color:#999; padding:10px 15px 0 15px; margin-top:8px; cursor:pointer; font-weight: 600;">Voltar ao cardápio</button>

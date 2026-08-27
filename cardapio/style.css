@@ -278,26 +278,34 @@ main#lista-produtos h2 {
 
 #carrinho-flutuante {
     position: fixed;
-    bottom: 0;
-    left: 50%; /* Mantém cravado no centro do PC */
-    width: 100%;
-    max-width: 480px; /* Respeita a largura do celular */
+    bottom: 85px; /* 👈 Flutuando acima do menu inferior */
+    left: 50%;
+    width: 92%; /* 👈 Mais estreito ("slim") */
+    max-width: 400px;
     background-color: #fff;
-    padding: 15px 20px;
+    padding: 10px 20px; /* 👈 Mais fino na altura */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease-in-out;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000;
     box-sizing: border-box;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    border-radius: 30px; /* 👈 Formato de pílula */
+    border: 1px solid #f0f0f0;
 }
 
-/* Forçamos o -50% para a animação não jogar a barra para os lados */
-.carrinho-oculto { transform: translate(-50%, 100%) !important; }
-.carrinho-visivel { transform: translate(-50%, 0) !important; }
+/* Animação suave sumindo para baixo */
+.carrinho-oculto { 
+    transform: translate(-50%, 100px) !important; 
+    opacity: 0;
+    pointer-events: none;
+}
+.carrinho-visivel { 
+    transform: translate(-50%, 0) !important; 
+    opacity: 1;
+    pointer-events: auto;
+}
 
 .carrinho-info {
     display: flex;
@@ -577,3 +585,48 @@ main#lista-produtos h2 {
 .animar-sanfona {
     animation: descerSuave 0.3s ease-out forwards;
 }
+
+/* =========================================
+   BOTTOM NAVIGATION & ABAS DO APP
+   ========================================= */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: rgba(255, 255, 255, 0.95); /* Fundo levemente transparente */
+    backdrop-filter: blur(10px); /* Efeito de vidro moderno */
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0 15px 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: 999;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-top: 1px solid #f5f5f5;
+}
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 33%;
+    transition: 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.nav-item.ativa {
+    color: var(--cor-primaria, #e91e63);
+}
+.nav-item.ativa .material-symbols-outlined {
+    font-variation-settings: 'FILL' 1; 
+    transform: scale(1.1);
+    transition: 0.2s;
+}
+.aba-conteudo { display: none; animation: fadeIn 0.3s ease; }
+.aba-conteudo.ativa { display: block; }

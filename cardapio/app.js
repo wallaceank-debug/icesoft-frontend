@@ -104,21 +104,28 @@ function isCategoriaAtivaAgora(cat) {
 
 async function carregarTudo() {
     try {
-        // 🌐 O "motor" agora busca as configurações no mesmo pacote!
-        const [resProd, resGrupos, resBairros, resCat, resConfig, resRankingAdic] = await Promise.all([
+        // 🌐 O "motor" agora busca as configurações e os DOIS rankings!
+        const [resProd, resGrupos, resBairros, resCat, resConfig, resRankingAdic, resRankingVendas] = await Promise.all([
             fetch(`${API_URL}/produtos`),
             fetch(`${API_URL}/grupos`),
             fetch(`${API_URL}/bairros`),
             fetch(`${API_URL}/categorias`),
-            fetch(`${API_URL}/configuracoes`), // 👈 Pedimos a gaveta de configs
-            fetch(`${API_URL}/ranking/adicionais`) // 🏆 Pede o Top 3 Adicionais
+            fetch(`${API_URL}/configuracoes`), 
+            fetch(`${API_URL}/ranking/adicionais`),
+            fetch(`${API_URL}/ranking`) // 👈 AQUI: Buscando o Ranking Verdadeiro do Servidor
         ]);
 
         try { topAdicionaisGlobais = await resRankingAdic.json(); } catch(e) { topAdicionaisGlobais = []; }
+        
+        let topProdutosGlobais = [];
+        try { topProdutosGlobais = await resRankingVendas.json(); } catch(e) { topProdutosGlobais = []; }
+
+        // 👈 AQUI: Lemos as configurações ANTES de tentar desenhar os banners
+        const configs = await resConfig.json(); 
 
         let produtosBrutos = await resProd.json();
         
-        // 📸 O NOVO FILTRO BLINDADO (Corrige a foto quebrada ignorando a sujeira do banco)
+        // 📸 O NOVO FILTRO BLINDADO
         produtosDaNuvem = produtosBrutos.map(p => {
             if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
                 const nomeArquivo = p.imagem_url.split('/').pop(); 
@@ -127,7 +134,6 @@ async function carregarTudo() {
             return p;
         }).filter(p => p.ativo !== false);
 
-        // 📸 O NOVO FILTRO BLINDADO DAS FOTOS DOS ADICIONAIS
         let gruposBrutos = await resGrupos.json();
         gruposGlobais = gruposBrutos.filter(g => g.ativo !== false).map(g => {
             if (g.itens) {
@@ -141,34 +147,45 @@ async function carregarTudo() {
             }
             return g;
         });
+        
         bairrosGlobais = await resBairros.json(); 
         
-        // 🛡️ O FILTRO MÁGICO DAS CATEGORIAS (Visíveis no App E no horário agendado)
         const todasCategorias = await resCat.json();
-        categoriasCompletasDoBanco = todasCategorias.map(c => c.nome); // 👈 Memória fotográfica do banco
+        categoriasCompletasDoBanco = todasCategorias.map(c => c.nome); 
 
         categoriasGlobaisDelivery = todasCategorias.filter(c => 
             c.ativo !== false && 
             c.mostrar_cardapio !== false &&
-            isCategoriaAtivaAgora(c) // 👈 A mágica acontece aqui!
+            isCategoriaAtivaAgora(c)
         );
 
         renderizarCardapio(produtosDaNuvem);
         renderizarMenuCategorias(produtosDaNuvem);
-        renderizarCarrossel(produtosDaNuvem);
-        renderizarCidades(); // Desenha a caixa de cidades
-        renderizarBairros(); // Desenha a caixa de bairros vazia e travada
+        renderizarCidades(); 
+        renderizarBairros(); 
+
+        // 👇 NOVAS RENDERIZAÇÕES DOS 4 CARROSSÉIS
+        let banners = [];
+        try { banners = JSON.parse(configs.banners_promocionais); } catch(e) {}
+        renderizarBanners(banners);
+
+        let recompensas = [];
+        try { recompensas = JSON.parse(configs.carrossel_recompensas); } catch(e) {}
+        
+        // 🏆 Passamos o ranking de produtos principais em vez dos adicionais!
+        renderizarRankingMaisVendidos(topProdutosGlobais); 
+        renderizarCarrossel(produtosDaNuvem); // Destaques normais
+        renderizarRecompensas(produtosDaNuvem, recompensas);
 
         // ==========================================
-        // 🚀 MÁGICA DO TÍTULO DINÂMICO
+        // 🚀 MÁGICA DO TÍTULO DINÂMICO PROTEGIDO
         // ==========================================
-        const configs = await resConfig.json();
         const tituloDestaque = configs.titulo_carrossel_destaques || 'Destaques da Casa';
         const elementoTitulo = document.getElementById('titulo-ui-destaques');
         
         if (elementoTitulo) {
-            // Mantém a estrelinha charmosa e injeta o texto que você digitou lá no painel!
-            elementoTitulo.innerHTML = `${tituloDestaque}`;
+            // Injeta o texto mantendo o ícone rosa do material design
+            elementoTitulo.innerHTML = `<span class="material-symbols-outlined" style="color: #e91e63;">star</span> ${tituloDestaque}`;
         }
 
     } catch (e) { 
@@ -327,6 +344,19 @@ function renderizarCardapio(lista) {
                         <strong style="color: #25D366; font-size: 1.1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
                     </div>
                 `;
+            }
+
+            // 👇 NOVO: EXIBIÇÃO DOS PONTOS DO CLUBE ICESOFT
+            let badgePontos = '';
+            if (p.pontos_ganhos > 0) {
+                badgePontos += `<span style="background: #fff8e1; color: #f57f17; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #ffe082;">🎁 +${p.pontos_ganhos} pts</span>`;
+            }
+            if (p.pontos_resgate > 0) {
+                let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate} pts + R$ ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate} pts`;
+                badgePontos += `<span style="background: #e0f7fa; color: #00838f; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #b2ebf2;">⭐ Resgate: ${txtResgate}</span>`;
+            }
+            if (badgePontos !== '') {
+                precoHtml += `<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;">${badgePontos}</div>`;
             }
 
             // Visual do Produto
@@ -561,6 +591,24 @@ function abrirModalEscolha(produto) {
     }
     
     atualizarPrecoDinamico();
+
+    // 👇 Lógica do botão de Resgate do Clube Icesoft
+    const btnResgate = document.getElementById('btn-resgatar-pontos');
+    const clienteSalvo = localStorage.getItem('icesoft_cliente');
+    let clienteLogado = null;
+    try { if (clienteSalvo) clienteLogado = JSON.parse(clienteSalvo); } catch(e) {}
+
+    if (btnResgate) {
+        // Se o cliente tem pontos suficientes E o produto permite resgate
+        if (clienteLogado && produto.pontos_resgate > 0 && clienteLogado.pontos_acumulados >= produto.pontos_resgate) {
+            btnResgate.style.display = 'flex';
+            let txtResgate = produto.resgate_dinheiro > 0 ? `${produto.pontos_resgate} pts + R$ ${Number(produto.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `Resgatar de Graça (${produto.pontos_resgate} pts)`;
+            document.getElementById('texto-resgate-dinamico').innerText = txtResgate;
+        } else {
+            btnResgate.style.display = 'none';
+        }
+    }
+
     document.getElementById('modal-opcoes').style.display = 'flex';
     document.body.style.overflow = 'hidden'; 
     aplicarGestoSwipe();
@@ -696,7 +744,7 @@ function atualizarPrecoDinamico() {
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
 }
 
-function confirmarEscolhasEAdicionar() {
+function confirmarEscolhasEAdicionar(isResgate = false) {
     registrarEventoFunil('Adicionou ao Carrinho', produtoEmSelecao.nome);
 
     if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
@@ -732,7 +780,7 @@ function confirmarEscolhasEAdicionar() {
         if (precoBase < 0) precoBase = 0; 
     }
 
-    // 👇 NOVO: MOTOR DO CMV (Ficha Técnica Master)
+    // MOTOR DO CMV (Ficha Técnica Master)
     let custoTotalFicha = 0;
     let insumosConsolidados = [];
 
@@ -762,11 +810,24 @@ function confirmarEscolhasEAdicionar() {
     });
 
     const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
-    const precoFinal = precoBase + valorComplementos;
+    let precoFinal = precoBase + valorComplementos;
+
+    // 👇 LÓGICA DO CLUBE ICESOFT (RESGATE E GANHO DE PONTOS)
+    let pontosUsados = 0;
+    let pontosGanhos = 0;
+
+    if (isResgate) {
+        precoFinal = Number(produtoEmSelecao.resgate_dinheiro) || 0; // O preço base zera ou fica o valor da taxa configurada
+        precoFinal += valorComplementos; // Os complementos ainda são cobrados em dinheiro normalmente
+        pontosUsados = Number(produtoEmSelecao.pontos_resgate) || 0;
+        nomeFinal = "🎁 [RESGATE] " + nomeFinal;
+    } else {
+        pontosGanhos = Number(produtoEmSelecao.pontos_ganhos) || 0;
+    }
     
-    // Dispara pro carrinho com as porções abatidas
+    // Dispara pro carrinho com as novas propriedades matemáticas
     for (let i = 0; i < quantidadeModal; i++) {
-        adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados);
+        adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados, isResgate, pontosUsados, pontosGanhos);
     }
     
     fecharModalOpcoes();
@@ -778,11 +839,11 @@ function fecharModalOpcoes() {
     document.body.style.overflow = 'auto'; 
 }
 
-function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = []) { 
-    carrinho.push({ nome, preco: Number(preco), custo_unitario: custoUnitario, insumos: insumosUsados }); 
+function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = [], isResgate = false, pontosUsados = 0, pontosGanhos = 0) { 
+    // 👇 Guardando o DNA do Clube no item do carrinho
+    carrinho.push({ nome, preco: Number(preco), custo_unitario: custoUnitario, insumos: insumosUsados, isResgate, pontosUsados, pontosGanhos }); 
     atualizarBarraCarrinho();
     
-    // 🛡️ TRAVA DE SEGURANÇA
     const modalCheckout = document.getElementById('modal-checkout');
     if (modalCheckout && modalCheckout.style.display === 'flex') {
         renderizarResumoCarrinho(); 
@@ -1261,34 +1322,56 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
         preco: item.preco,
         quantidade: 1,
         custo_unitario: item.custo_unitario || 0,
-        insumos: item.insumos || []
+        insumos: item.insumos || [],
+        // 👇 A MÁGICA: Empacotando os pontos para enviar ao servidor
+        pontosGanhos: item.pontosGanhos || 0,
+        pontosUsados: item.pontosUsados || 0
     }));
     
     try {
-            const res = await fetch(`${API_URL}/vendas`, {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    itens: JSON.stringify(itensFormatados), 
-                    produto_nome: "Pedido App Delivery", 
-                    valor_total: totalFinal, 
-                    total: totalFinal, 
-                    forma_pagamento: pagamento, 
-                    status: statusForcado,
-                    cliente_nome: nome,
-                    cliente_telefone: telefone,
-                    cliente_endereco: endereco,
-                    origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
-                    observacoes: observacao,
-                    transacao_id: transacaoId,
-                    // 👇 A MÁGICA: Agora o Cardápio despacha as gavetas separadas para o motor do sistema!
-                    taxa_entrega: taxaEntrega,
-                    desconto: desconto,
-                    cupom_usado: cupomAtivo ? cupomAtivo.codigo : null // 🎟️ ENVIA O NOME DO CUPOM PARA GRAVAÇÃO!
-                })
-            });
+        const res = await fetch(`${API_URL}/vendas`, {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                itens: JSON.stringify(itensFormatados), 
+                produto_nome: "Pedido App Delivery", 
+                valor_total: totalFinal, 
+                total: totalFinal, 
+                forma_pagamento: pagamento, 
+                status: statusForcado,
+                cliente_nome: nome,
+                cliente_telefone: telefone,
+                cliente_endereco: endereco,
+                origem: tipoEntrega === 'delivery' ? "Delivery" : "Balcão (App)",
+                observacoes: observacao,
+                transacao_id: transacaoId,
+                taxa_entrega: taxaEntrega,
+                desconto: desconto,
+                cupom_usado: cupomAtivo ? cupomAtivo.codigo : null 
+            })
+        });
 
-        if (!res.ok) console.log("Aviso: Falha ao registrar na nuvem.");
+        if (!res.ok) {
+            console.log("Aviso: Falha ao registrar na nuvem.");
+        } else {
+            // 👇 A MÁGICA DA ATUALIZAÇÃO EM TEMPO REAL:
+            // Atualizamos a "carteirinha" salva na memória do celular do cliente imediatamente
+            let clienteSalvo = localStorage.getItem('icesoft_cliente');
+            if (clienteSalvo) {
+                let cliente = JSON.parse(clienteSalvo);
+                
+                // Soma os pontos de tudo que estava no carrinho
+                let pontosGanhosPedido = carrinho.reduce((soma, item) => soma + (Number(item.pontosGanhos) || 0), 0);
+                let pontosUsadosPedido = carrinho.reduce((soma, item) => soma + (Number(item.pontosUsados) || 0), 0);
+                
+                // Faz a matemática e salva
+                cliente.pontos_acumulados = (Number(cliente.pontos_acumulados) || 0) + pontosGanhosPedido - pontosUsadosPedido;
+                localStorage.setItem('icesoft_cliente', JSON.stringify(cliente));
+                
+                // Pede para o layout repintar o Cartão VIP na aba Clube
+                atualizarInterfaceLogin(cliente); 
+            }
+        }
     } catch (e) { 
         console.log("Aviso: Falha de rede ao registrar.");
     }
@@ -1599,6 +1682,18 @@ function renderizarCarrossel(produtos) {
                     <strong class="preco" style="color: #25D366; font-size: 1.1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
                 </div>
             `;
+        }
+
+        // 👇 NOVO: EXIBIÇÃO DOS PONTOS DO CLUBE ICESOFT (CARROSSEL)
+        let badgePontosCarrossel = '';
+        if (p.pontos_ganhos > 0) {
+            badgePontosCarrossel += `<span style="background: #fff8e1; color: #f57f17; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #ffe082;">🎁 +${p.pontos_ganhos} pts</span>`;
+        }
+        if (p.pontos_resgate > 0) {
+            badgePontosCarrossel += `<span style="background: #e0f7fa; color: #00838f; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #b2ebf2;">⭐ Resgate</span>`;
+        }
+        if (badgePontosCarrossel !== '') {
+            precoHtml += `<div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">${badgePontosCarrossel}</div>`;
         }
 
         const visualProduto = p.imagem_url 
@@ -2713,11 +2808,11 @@ function atualizarBarraCupom() {
 
     barraProgresso.style.width = `${porcentagem}%`;
 
-    // Empurra a barra do cupom para cima se o botão do carrinho flutuante aparecer
+    // Empurra a barra do cupom para cima dependendo do que está na tela
     if (carrinho.length > 0) {
-        barraCupom.style.bottom = '85px'; // Sobe para ficar acima do "Ver Carrinho"
+        barraCupom.style.bottom = '150px'; // Sobe para ficar acima do Carrinho Flutuante (Slim)
     } else {
-        barraCupom.style.bottom = '0px'; // Fica colada embaixo
+        barraCupom.style.bottom = '75px'; // Fica logo acima do Menu Inferior
     }
     
     // Atualiza a matemática do checkout
@@ -2895,3 +2990,278 @@ window.toggleVouchers = function() {
         if(seta) seta.style.transform = 'rotate(0deg)';
     }
 };
+
+// ==========================================
+// NAVEGAÇÃO DO APP (ABAS)
+// ==========================================
+window.mudarAba = function(abaId, elementoClicado) {
+    // Esconde todas as abas
+    document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.remove('ativa'));
+    // Remove a cor ativa de todos os botões do menu
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => btn.classList.remove('ativa'));
+    
+    // Mostra a aba escolhida e pinta o botão correspondente
+    document.getElementById(abaId).classList.add('ativa');
+    if(elementoClicado) elementoClicado.classList.add('ativa');
+    
+    // Rola suavemente pro topo para o cliente não ficar perdido
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ==========================================
+// 🎁 SISTEMA DO CLUBE ICESOFT (LOGIN E PERFIL)
+// ==========================================
+async function iniciarLoginCliente() {
+    const clienteSalvo = localStorage.getItem('icesoft_cliente');
+    
+    // Se o cliente já está logado, damos a opção de sair da conta
+    if (clienteSalvo) {
+        if (confirm("Você já está logado! Deseja sair da sua conta?")) {
+            localStorage.removeItem('icesoft_cliente');
+            atualizarInterfaceLogin(null);
+        }
+        return;
+    }
+
+    // Pede o WhatsApp
+    const telefoneBruto = prompt("📱 Digite seu WhatsApp com DDD para entrar no Clube Icesoft:");
+    if (!telefoneBruto) return;
+
+    // Usa a sua função que já existe para deixar o número perfeito
+    const telefoneFormatado = padronizarTelefone(telefoneBruto);
+
+    try {
+        // Avisa visualmente que está carregando
+        const nomeTopo = document.getElementById('nome-cliente-topo');
+        if (nomeTopo) nomeTopo.innerText = 'Buscando...';
+
+        // 1. Tenta logar SÓ com o telefone primeiro (deixa o servidor procurar o histórico)
+        let res = await fetch(`${API_URL}/clientes/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telefone: telefoneFormatado, nome: "" })
+        });
+
+        let data = await res.json();
+
+        if (data.sucesso) {
+            // 2. Se o servidor não encontrou histórico e devolveu o padrão 'Cliente VIP',
+            // significa que o cliente é 100% novo. Então nós OBRIGAMOS a digitar um nome.
+            if (data.cliente.nome === 'Cliente VIP' || data.cliente.nome.trim() === '') {
+                const nomeDigitado = prompt("👤 É a sua primeira vez aqui!\nPor favor, digite seu nome completo:");
+                
+                // Se ele cancelar ou deixar em branco, bloqueia o login na hora
+                if (!nomeDigitado || nomeDigitado.trim() === '') {
+                    alert("⚠️ O nome é obrigatório para criar a sua carteirinha de pontos.");
+                    if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
+                    return;
+                }
+
+                // 3. Manda o nome de volta pro servidor atualizar a ficha do cliente
+                res = await fetch(`${API_URL}/clientes/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telefone: telefoneFormatado, nome: nomeDigitado })
+                });
+                data = await res.json();
+            }
+
+            // MÁGICA: Guarda a "carteirinha" do cliente no navegador (Memória)
+            localStorage.setItem('icesoft_cliente', JSON.stringify(data.cliente));
+            alert(`🎉 Bem-vindo(a) ao Clube, ${data.cliente.nome}!`);
+            atualizarInterfaceLogin(data.cliente);
+        } else {
+            alert("⚠️ Erro ao entrar no Clube. Tente novamente.");
+            if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
+        }
+    } catch (e) {
+        alert("🔌 Erro de conexão ao tentar fazer login.");
+        const nomeTopo = document.getElementById('nome-cliente-topo');
+        if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
+    }
+}
+
+// Essa função troca as peças da tela dependendo se o cliente está logado ou não
+function atualizarInterfaceLogin(cliente) {
+    const nomeTopo = document.getElementById('nome-cliente-topo');
+    const telaLoginClube = document.getElementById('tela-login-clube');
+    const areaClubeLogado = document.getElementById('area-clube-logado');
+
+    if (cliente) {
+        // 1. Atualiza o Topo da Aba Início (Coloca o nome dele)
+        if (nomeTopo) nomeTopo.innerText = cliente.nome;
+
+        // 2. Esconde o botão de login da Aba Clube e mostra o Cartão VIP
+        if (telaLoginClube) telaLoginClube.style.display = 'none';
+        if (areaClubeLogado) {
+            areaClubeLogado.style.display = 'block';
+            areaClubeLogado.innerHTML = `
+                <div style="background: linear-gradient(135deg, #022344, #0d4a82); padding: 25px 20px; border-radius: 15px; color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 2px solid #00bcd4;">
+                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 400;">Seu Saldo de Pontos</h3>
+                    <div style="font-size: 4rem; font-weight: 800; margin: 10px 0; color: #00bcd4;">${cliente.pontos_acumulados || 0}</div>
+                    <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">Continue comprando para juntar mais!</p>
+                </div>
+                
+                <div style="margin-top: 25px; padding: 20px; background: white; border-radius: 15px; border: 1px dashed #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                    <h4 style="color: #333; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">redeem</span> Como resgatar?</h4>
+                    <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 0;">Navegue pela aba <strong>Cardápio</strong> e adicione produtos ao carrinho. Se o item permitir troca por pontos e você tiver saldo suficiente, a opção de resgate aparecerá automaticamente no momento do pagamento.</p>
+                </div>
+
+                <button onclick="iniciarLoginCliente()" style="width: 100%; background: #fff0f4; color: #e91e63; border: 1px solid #ffb3c6; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; transition: 0.2s;">Sair da Conta</button>
+            `;
+        }
+
+        // 3. Preenche automaticamente o Checkout para o cliente não precisar digitar os dados de novo
+        const inputNomeCheckout = document.getElementById('cliente-nome');
+        const inputTelCheckout = document.getElementById('cliente-telefone');
+        if (inputNomeCheckout) inputNomeCheckout.value = cliente.nome;
+        if (inputTelCheckout) inputTelCheckout.value = cliente.telefone;
+
+    } else {
+        // Se o usuário clicou em Sair da Conta (Limpa tudo)
+        if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
+        if (telaLoginClube) telaLoginClube.style.display = 'block';
+        if (areaClubeLogado) areaClubeLogado.style.display = 'none';
+        
+        // Limpa o checkout
+        const inputNomeCheckout = document.getElementById('cliente-nome');
+        const inputTelCheckout = document.getElementById('cliente-telefone');
+        if (inputNomeCheckout) inputNomeCheckout.value = '';
+        if (inputTelCheckout) inputTelCheckout.value = '';
+    }
+}
+
+// ==========================================
+// INICIALIZADOR: VERIFICA SE JÁ ESTÁ LOGADO
+// ==========================================
+// Isso roda automaticamente quando a página carrega
+window.addEventListener('DOMContentLoaded', () => {
+    const clienteSalvo = localStorage.getItem('icesoft_cliente');
+    if (clienteSalvo) {
+        try {
+            const cliente = JSON.parse(clienteSalvo);
+            atualizarInterfaceLogin(cliente);
+        } catch(e) {}
+    }
+});
+
+// ==========================================
+// 🚀 HUB DE PROMOÇÕES (CARROSSÉIS DA ABA INÍCIO)
+// ==========================================
+
+// 1. CARROSSEL DE BANNERS PROMOCIONAIS
+function renderizarBanners(listaBanners) {
+    const secao = document.getElementById('secao-banners-promo');
+    const carrossel = document.getElementById('carrossel-imagens-promocionais');
+    if (!secao || !carrossel) return;
+
+    if (!listaBanners || listaBanners.length === 0) {
+        secao.style.display = 'none';
+        return;
+    }
+
+    secao.style.display = 'block';
+    carrossel.innerHTML = '';
+    
+    // CSS Embutido só para os banners
+    carrossel.style.cssText = "display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; scroll-snap-type: x mandatory;";
+
+    listaBanners.forEach(url => {
+        carrossel.innerHTML += `
+            <div style="flex: 0 0 85%; scroll-snap-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <img src="${url}" style="width: 100%; height: 160px; object-fit: cover; display: block;">
+            </div>
+        `;
+    });
+}
+
+// 2. CARROSSEL DE MAIS VENDIDOS (RANKING TOP 6)
+function renderizarRankingMaisVendidos(nomesDoRanking) {
+    const secao = document.getElementById('secao-mais-vendidos');
+    const carrossel = document.getElementById('carrossel-produtos-ranking');
+    if (!secao || !carrossel) return;
+
+    if (!nomesDoRanking || nomesDoRanking.length === 0) {
+        secao.style.display = 'none';
+        return;
+    }
+
+    // Procura os produtos reais batendo o nome com o ranking que veio do banco
+    let produtosTop = [];
+    nomesDoRanking.forEach(itemRanking => {
+        // Verifica se o item existe e tem um nome válido antes de comparar
+        if (itemRanking && itemRanking.nome) {
+            const prod = produtosDaNuvem.find(p => p.nome.toLowerCase() === itemRanking.nome.toLowerCase());
+            if (prod && produtosTop.length < 6) produtosTop.push(prod); // Pega só os 6 primeiros
+        }
+    });
+
+    if (produtosTop.length === 0) {
+        secao.style.display = 'none';
+        return;
+    }
+
+    secao.style.display = 'block';
+    carrossel.innerHTML = '';
+
+    produtosTop.forEach((p, index) => {
+        const badgeTop = `<div style="position: absolute; top: -8px; left: -8px; background: #ff9800; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; box-shadow: 0 2px 5px rgba(255,152,0,0.4); z-index: 10;">#${index + 1}</div>`;
+        const visualProduto = p.imagem_url 
+            ? `<div style="position: relative;">${badgeTop}<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>`
+            : `<div style="position: relative;">${badgeTop}<div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 10px;">${p.emoji || '🍦'}</div></div>`;
+
+        carrossel.innerHTML += `
+            <div class="card-destaque" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between;">
+                ${visualProduto}
+                <div>
+                    <h4 style="margin: 0 0 5px 0; font-size: 0.95rem;">${p.nome}</h4>
+                    <div class="preco" style="color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button class="btn-add-destaque" style="background: #ff9800; border-radius: 30px;">+ Quero esse</button>
+            </div>
+        `;
+    });
+}
+
+// 3. CARROSSEL DE RECOMPENSAS EXCLUSIVO (AZUL)
+function renderizarRecompensas(produtos, idsRecompensas) {
+    const secao = document.getElementById('secao-recompensas');
+    const carrossel = document.getElementById('carrossel-produtos-recompensas');
+    if (!secao || !carrossel) return;
+
+    if (!idsRecompensas || idsRecompensas.length === 0) {
+        secao.style.display = 'none';
+        return;
+    }
+
+    const idsSeguros = idsRecompensas.map(id => Number(id));
+    const produtosRecompensa = produtos.filter(p => idsSeguros.includes(Number(p.id)) && p.pontos_resgate > 0);
+
+    if (produtosRecompensa.length === 0) {
+        secao.style.display = 'none';
+        return;
+    }
+
+    secao.style.display = 'block';
+    carrossel.innerHTML = '';
+
+    produtosRecompensa.forEach(p => {
+        let txtExtra = p.resgate_dinheiro > 0 ? ` + R$ ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : '';
+        
+        const visualProduto = p.imagem_url 
+            ? `<div><img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 90px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>`
+            : `<div><div style="font-size: 3rem; text-align: center; margin-bottom: 8px; height: 90px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px;">${p.emoji || '🍦'}</div></div>`;
+
+        carrossel.innerHTML += `
+            <div onclick="verificarAdicao(${p.id})" style="flex: 0 0 140px; background: #e0f7fa; border-radius: 12px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #b2ebf2; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; scroll-snap-align: start;">
+                ${visualProduto}
+                <div>
+                    <h4 style="margin: 0 0 5px 0; font-size: 0.85rem; color: #00838f; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;">${p.nome}</h4>
+                    <div style="color: #00acc1; font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 1rem;">stars</span> ${p.pontos_resgate} pts${txtExtra}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
