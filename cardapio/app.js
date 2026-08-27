@@ -371,8 +371,8 @@ function renderizarCardapio(lista) {
                    </div>`;
 
             produtosHtml += `
-                <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: center; background: white; margin-top: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
-                    <div style="flex: 1; padding-right: 15px;">
+            <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; background: white; margin-top: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
+                <div style="flex: 1; min-width: 0;">
                         <h3 style="margin: 0; color: #333; font-size: 1.05rem; font-weight: 600;">${p.nome}</h3>
                         ${htmlDescricao}
                         ${precoHtml}

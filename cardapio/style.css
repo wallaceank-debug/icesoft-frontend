@@ -658,3 +658,17 @@ main#lista-produtos h2 {
     50% { transform: scale(1.08) translateY(-3px); box-shadow: 0 6px 15px rgba(0, 188, 212, 0.35); }
     100% { transform: scale(1) translateY(0); box-shadow: 0 2px 5px rgba(0, 188, 212, 0.2); }
 }
+
+/* =========================================
+   ACESSIBILIDADE E TELAS PEQUENAS (NOVO)
+   ========================================= */
+/* Garante que qualquer botão ou área de clique tenha o tamanho seguro para o dedo (Regra de UX Apple/Google) */
+button, input, select, .card-selecao, .produto-card {
+    min-height: 44px;
+}
+
+/* Evita que textos imensos com zoom ativado quebrem o layout horizontal (Scroll chato para os lados) */
+p, h1, h2, h3, h4, h5, span, div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
