@@ -630,3 +630,31 @@ main#lista-produtos h2 {
 }
 .aba-conteudo { display: none; animation: fadeIn 0.3s ease; }
 .aba-conteudo.ativa { display: block; }
+
+/* =========================================
+   DESTAQUE DO BOTÃO CARDÁPIO NO MENU INFERIOR
+   ========================================= */
+.nav-item-destaque {
+    background: #e0f7fa; /* Azul bem suave e frio */
+    border-radius: 18px;
+    padding: 6px 15px;
+    color: #00838f !important; /* Azul escuro para leitura */
+    animation: pulseMenuCardapio 2s infinite ease-in-out;
+    margin-top: -8px; /* Dá uma leve erguidinha no botão para destacá-lo */
+    box-shadow: 0 4px 10px rgba(0, 188, 212, 0.15);
+}
+
+/* Quando o cliente já está na aba, a animação para e ele assume a cor da marca */
+.nav-item-destaque.ativa {
+    color: var(--cor-primaria, #e91e63) !important; 
+    animation: none; 
+    background: #f0f2f5;
+    box-shadow: none;
+    margin-top: 0;
+}
+
+@keyframes pulseMenuCardapio {
+    0% { transform: scale(1) translateY(0); box-shadow: 0 2px 5px rgba(0, 188, 212, 0.2); }
+    50% { transform: scale(1.08) translateY(-3px); box-shadow: 0 6px 15px rgba(0, 188, 212, 0.35); }
+    100% { transform: scale(1) translateY(0); box-shadow: 0 2px 5px rgba(0, 188, 212, 0.2); }
+}
