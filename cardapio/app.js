@@ -1632,9 +1632,7 @@ async function carregarConfiguracoesLoja() {
     } catch (e) { console.error("Erro configurações:", e); }
 }
 
-// ==========================================
-// RENDERIZAR O CARROSSEL SEGUINDO A ORDEM DO PAINEL
-// ==========================================
+// 3. DESTAQUES DA CASA (ESCOLHIDOS NA GESTÃO)
 function renderizarCarrossel(produtos) {
     const secao = document.getElementById('secao-destaques');
     const carrossel = document.getElementById('carrossel-produtos');
@@ -1687,16 +1685,17 @@ function renderizarCarrossel(produtos) {
             `;
         }
 
-        // 👇 NOVO: EXIBIÇÃO DOS PONTOS DO CLUBE ICESOFT (CARROSSEL)
-        let badgePontosCarrossel = '';
+        // 👇 A MÁGICA: Exibição dos pontos do Clube exatamente igual ao Cardápio
+        let badgePontos = '';
         if (p.pontos_ganhos > 0) {
-            badgePontosCarrossel += `<span style="background: #fff8e1; color: #f57f17; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #ffe082;">🎁 +${p.pontos_ganhos} pts</span>`;
+            badgePontos += `<span style="background: #fff8e1; color: #f57f17; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #ffe082;">🎁 +${p.pontos_ganhos} pts</span>`;
         }
         if (p.pontos_resgate > 0) {
-            badgePontosCarrossel += `<span style="background: #e0f7fa; color: #00838f; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #b2ebf2;">⭐ Resgate</span>`;
+            let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate} pts + R$ ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate} pts`;
+            badgePontos += `<span style="background: #e0f7fa; color: #00838f; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #b2ebf2;">⭐ Resgate: ${txtResgate}</span>`;
         }
-        if (badgePontosCarrossel !== '') {
-            precoHtml += `<div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">${badgePontosCarrossel}</div>`;
+        if (badgePontos !== '') {
+            precoHtml += `<div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">${badgePontos}</div>`;
         }
 
         const visualProduto = p.imagem_url 
@@ -3230,12 +3229,45 @@ function renderizarRankingMaisVendidos(nomesDoRanking) {
             ? `<div style="position: relative;">${badgeTop}<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 110px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>`
             : `<div style="position: relative;">${badgeTop}<div style="font-size: 3.5rem; text-align: center; margin-bottom: 10px; height: 110px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 10px;">${p.emoji || '🍦'}</div></div>`;
 
+        // 👇 A MÁGICA: Promoções de Preço Riscado no Top 6
+        let precoHtml = `<div class="preco" style="color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
+        
+        if (isPromocaoAtivaAgora(p)) {
+            let precoComDesconto = Number(p.preco);
+            if (p.tipo_promocao === 'porcentagem') {
+                precoComDesconto -= precoComDesconto * (Number(p.valor_promocao) / 100);
+            } else if (p.tipo_promocao === 'fixo') {
+                precoComDesconto -= Number(p.valor_promocao);
+            }
+            if (precoComDesconto < 0) precoComDesconto = 0;
+            
+            precoHtml = `
+                <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px;">
+                    <span style="text-decoration: line-through; color: #999; font-size: 0.8rem; margin-bottom: -2px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
+                    <strong class="preco" style="color: #25D366; font-size: 1.1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
+                </div>
+            `;
+        }
+
+        // 👇 A MÁGICA: Exibição dos pontos do Clube exatamente igual ao Cardápio
+        let badgePontos = '';
+        if (p.pontos_ganhos > 0) {
+            badgePontos += `<span style="background: #fff8e1; color: #f57f17; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #ffe082;">🎁 +${p.pontos_ganhos} pts</span>`;
+        }
+        if (p.pontos_resgate > 0) {
+            let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate} pts + R$ ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate} pts`;
+            badgePontos += `<span style="background: #e0f7fa; color: #00838f; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 12px; border: 1px solid #b2ebf2;">⭐ Resgate: ${txtResgate}</span>`;
+        }
+        if (badgePontos !== '') {
+            precoHtml += `<div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">${badgePontos}</div>`;
+        }
+
         carrossel.innerHTML += `
             <div class="card-destaque" onclick="verificarAdicao(${p.id})" style="display: flex; flex-direction: column; justify-content: space-between;">
                 ${visualProduto}
                 <div>
                     <h4 style="margin: 0 0 5px 0; font-size: 0.95rem;">${p.nome}</h4>
-                    <div class="preco" style="color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>
+                    ${precoHtml}
                 </div>
                 <button class="btn-add-destaque" style="background: #ff9800; border-radius: 30px;">+ Quero esse</button>
             </div>
