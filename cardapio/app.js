@@ -1031,14 +1031,17 @@ function atualizarBotaoCTA() {
 let passoCheckoutAtual = 1;
 
 function finalizarPedidoWhatsApp() {
-    // 🛑 Removemos as linhas que anulavam o cupomAtivo aqui!
-    
     irParaPasso(1);
-    
     renderizarResumoCarrinho();
-    // 🚀 O Carrossel saiu daqui para não distrair no checkout!
     document.getElementById('modal-checkout').style.display = 'flex';
     document.body.style.overflow = 'hidden';
+
+    // 👇 NOVO: Restaura a Barrinha de Fidelidade!
+    // Se o telefone já estiver preenchido pelo Login Inteligente, força a busca no CRM na mesma hora.
+    const telInput = document.getElementById('cliente-telefone');
+    if (telInput && telInput.value.length === 15) {
+        buscarDadosClienteCRM(telInput.value);
+    }
 }
 
 function fecharModalCheckout() { 
