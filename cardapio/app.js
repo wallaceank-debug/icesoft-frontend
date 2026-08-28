@@ -5,6 +5,7 @@ let produtosDaNuvem = [];
 let gruposGlobais = [];
 let produtoEmSelecao = null;
 let escolhasAtuais = [];
+let editandoIndex = -1; // ✏️ Memória de qual item estamos editando
 let idsDestaquesGlobais = [];
 let lojaAberta = true; // Impede adicionar se estiver fechada
 let idsUpsellGlobais = [];
@@ -453,13 +454,28 @@ function verificarAdicao(id) {
     abrirModalEscolha(produto);
 }
 
-function abrirModalEscolha(produto) {
+function abrirModalEscolha(produto, isEditing = false) {
     produtoEmSelecao = produto;
-    escolhasAtuais = [];
-    quantidadeModal = 1; 
+    
+    if (isEditing) {
+        // Se estamos editando, puxa as escolhas que estavam salvas no carrinho
+        escolhasAtuais = JSON.parse(JSON.stringify(carrinho[editandoIndex].escolhas || []));
+        quantidadeModal = 1; // Na edição, sempre alteramos 1 unidade por vez
+        
+        // Esconde a barrinha de [+ e -] para não bagunçar o item editado
+        const seletorQtd = document.getElementById('seletor-quantidade-modal');
+        if(seletorQtd) seletorQtd.style.display = 'none';
+    } else {
+        escolhasAtuais = [];
+        quantidadeModal = 1; 
+        editandoIndex = -1; // Garante que não é edição
+        
+        const seletorQtd = document.getElementById('seletor-quantidade-modal');
+        if(seletorQtd) seletorQtd.style.display = 'flex';
+    }
     
     // SENSOR 2: Cliente se interessou por um produto!
-    registrarEventoFunil('Visualizou Produto', produto.nome);
+    if(!isEditing) registrarEventoFunil('Visualizou Produto', produto.nome);
 
     if(document.getElementById('quantidade-modal-display')) {
         document.getElementById('quantidade-modal-display').innerText = quantidadeModal;
@@ -505,16 +521,18 @@ function abrirModalEscolha(produto) {
             const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
             if (itensAtivos.length === 0) return;
 
-            // 👇 NOVO: Descobre o limite correto para este grupo NESTE produto
             const limiteAtual = obterLimiteDoGrupoNoProduto(grupo.id);
 
             let itensHtml = itensAtivos.map((item, idx) => {
-                // 👇 BLINDAGEM DELIVERY: Garante que o Delivery SEMPRE use o 'preco' (preço cheio) e ignore o 'preco_pdv'
                 let precoSeguro = Number(item.preco) || 0; 
                 let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
                 let identificador = `opc-${grupo.id}-${idx}`;
 
-                // 🚀 O INTERCEPTADOR DE TAGS ENTRA EM AÇÃO AQUI
+                // ✏️ Verifica se essa opção já estava marcada antes (para o botão de Editar)
+                const escolhaExistente = escolhasAtuais.find(e => e.nome === nomeCompleto && e.grupoId === grupo.id);
+                const qtdExistente = escolhaExistente ? escolhaExistente.quantidade : 0;
+                const isChecked = qtdExistente > 0 ? 'checked' : '';
+
                 let tagHtml = '';
                 let nomeLimpoVisual = nomeCompleto;
                 const matchTag = nomeCompleto.match(/\[(.*?)\]/); 
@@ -524,17 +542,14 @@ function abrirModalEscolha(produto) {
                     nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); 
                 }
 
-                // 🏆 NOVO: Gatilho da Prova Social 
                 if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
                     tagHtml += `<span style="font-size: 0.65rem; background: #c4eed0; color: #0f5223; padding: 3px 8px; border-radius: 12px; font-weight: bold; border: 1px solid #8fcf9e; margin-left: 6px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🔥 Mais Pedido</span>`;
                 }
 
-                // 📸 FOTO DO ADICIONAL COM ZOOM
                 const imgThumb = item.imagem_url
                     ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid #eee; flex-shrink: 0; cursor: zoom-in; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`
                     : ``; 
 
-                // INFO (NOME E PREÇO) EMPILHADOS
                 const nomePrecoHtml = `
                     <div style="display: flex; flex-direction: column; gap: 3px; justify-content: center;">
                         <div style="display: flex; align-items: center; flex-wrap: wrap;">
@@ -545,7 +560,7 @@ function abrirModalEscolha(produto) {
                     </div>
                 `;
 
-                if (limiteAtual === 1) { // 👇 NOVO: Usando a variável limiteAtual
+                if (limiteAtual === 1) { 
                     return `
                     <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
@@ -553,11 +568,12 @@ function abrirModalEscolha(produto) {
                             ${nomePrecoHtml}
                         </div>
                         <div style="flex-shrink: 0; padding-left: 10px;">
-                            <!-- Caixinha de seleção movida para a Zona do Polegar (Direita) -->
-                            <input type="checkbox" id="${identificador}" style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none; flex-shrink: 0; width: 22px; height: 22px; margin: 0;">
+                            <input type="checkbox" id="${identificador}" ${isChecked} style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none; flex-shrink: 0; width: 22px; height: 22px; margin: 0;">
                         </div>
                     </div>`;
                 } else {
+                    const displayBtnIni = qtdExistente > 0 ? 'none' : 'flex';
+                    const displayControle = qtdExistente > 0 ? 'flex' : 'none';
                     return `
                     <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
@@ -565,14 +581,12 @@ function abrirModalEscolha(produto) {
                             ${nomePrecoHtml}
                         </div>
                         <div style="flex-shrink: 0; padding-left: 10px;">
-                            <!-- Botão Inicial [+] super limpo -->
-                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0; transition: 0.2s;">
+                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0; transition: 0.2s;">
                                 +
                             </div>
-                            <!-- Controle de Quantidade [- 1 +] -->
-                            <div id="controle-qtd-${identificador}" style="display: none; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
+                            <div id="controle-qtd-${identificador}" style="display: ${displayControle}; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
                                 <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
-                                <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">0</span>
+                                <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">${qtdExistente}</span>
                                 <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
                             </div>
                         </div>
@@ -585,22 +599,31 @@ function abrirModalEscolha(produto) {
                 ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
                 : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
 
-            // 👇 NOVO: Trocamos o `grupo.limite` por `limiteAtual` aqui na etiqueta visual!
             container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
         });
     }
     
     atualizarPrecoDinamico();
 
-    // 👇 Lógica do botão de Resgate do Clube Icesoft
+    // Lógica do botão de Resgate e Interface do Botão Normal
     const btnResgate = document.getElementById('btn-resgatar-pontos');
+    const btnAddNormal = document.getElementById('btn-adicionar-normal');
     const clienteSalvo = localStorage.getItem('icesoft_cliente');
     let clienteLogado = null;
     try { if (clienteSalvo) clienteLogado = JSON.parse(clienteSalvo); } catch(e) {}
 
+    if (btnAddNormal) {
+        if (isEditing) {
+            btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Salvar Edição</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
+            btnAddNormal.style.background = '#00bcd4'; // Fica azul indicando modo de edição
+        } else {
+            btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Adicionar</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
+            btnAddNormal.style.background = 'var(--cor-primaria, #e91e63)'; // Rosa padrão
+        }
+    }
+
     if (btnResgate) {
-        // Se o cliente tem pontos suficientes E o produto permite resgate
-        if (clienteLogado && produto.pontos_resgate > 0 && clienteLogado.pontos_acumulados >= produto.pontos_resgate) {
+        if (clienteLogado && produto.pontos_resgate > 0 && clienteLogado.pontos_acumulados >= produto.pontos_resgate && !isEditing) {
             btnResgate.style.display = 'flex';
             let txtResgate = produto.resgate_dinheiro > 0 ? `${produto.pontos_resgate} pts + R$ ${Number(produto.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `Resgatar de Graça (${produto.pontos_resgate} pts)`;
             document.getElementById('texto-resgate-dinamico').innerText = txtResgate;
@@ -825,9 +848,34 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
         pontosGanhos = Number(produtoEmSelecao.pontos_ganhos) || 0;
     }
     
-    // Dispara pro carrinho com as novas propriedades matemáticas
-    for (let i = 0; i < quantidadeModal; i++) {
-        adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados, isResgate, pontosUsados, pontosGanhos);
+    if (editandoIndex > -1) {
+        // ✏️ MODO EDIÇÃO: Atualiza o item existente no lugar de criar um novo
+        carrinho[editandoIndex] = {
+            nome: nomeFinal,
+            preco: precoFinal,
+            custo_unitario: custoTotalFicha,
+            insumos: insumosConsolidados,
+            isResgate: isResgate,
+            pontosUsados: pontosUsados,
+            pontosGanhos: pontosGanhos,
+            produtoId: produtoEmSelecao.id,
+            escolhas: JSON.parse(JSON.stringify(escolhasAtuais))
+        };
+        editandoIndex = -1; // Desliga o modo de edição
+        atualizarBarraCarrinho();
+        
+        // Atualiza a tela de onde o cliente veio (Carrinho ou Checkout)
+        if (document.getElementById('modal-checkout').style.display === 'flex') {
+            renderizarResumoCarrinho();
+        } else if (document.getElementById('modal-carrinho-cliente').style.display === 'flex') {
+            renderizarListaCarrinhoCliente();
+        }
+    } else {
+        // 🛒 MODO ADIÇÃO NORMAL: Dispara pro carrinho
+        for (let i = 0; i < quantidadeModal; i++) {
+            const escolhasClonadas = JSON.parse(JSON.stringify(escolhasAtuais));
+            adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados, isResgate, pontosUsados, pontosGanhos, produtoEmSelecao.id, escolhasClonadas);
+        }
     }
     
     fecharModalOpcoes();
@@ -835,13 +883,31 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
 
 // 👇 NOVA FUNÇÃO RESTAURADA: Ensina o navegador a esconder a tela e liberar o scroll do celular
 function fecharModalOpcoes() {
+    editandoIndex = -1; // ✏️ Reseta o modo de edição se o cliente desistir
     document.getElementById('modal-opcoes').style.display = 'none';
     document.body.style.overflow = 'auto'; 
 }
 
-function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = [], isResgate = false, pontosUsados = 0, pontosGanhos = 0) { 
-    // 👇 Guardando o DNA do Clube no item do carrinho
-    carrinho.push({ nome, preco: Number(preco), custo_unitario: custoUnitario, insumos: insumosUsados, isResgate, pontosUsados, pontosGanhos }); 
+// ✏️ O GATILHO DA EDIÇÃO
+function editarItemCarrinho(index) {
+    const item = carrinho[index];
+    if (!item.produtoId) {
+        alert("⚠️ Este item não pode ser editado. Por favor, remova-o e adicione novamente.");
+        return;
+    }
+    const produtoOriginal = produtosDaNuvem.find(p => p.id === item.produtoId);
+    if (!produtoOriginal) {
+        alert("⚠️ O produto original não foi encontrado no cardápio.");
+        return;
+    }
+    
+    editandoIndex = index;
+    abrirModalEscolha(produtoOriginal, true); // true = liga o modo edição
+}
+
+function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = [], isResgate = false, pontosUsados = 0, pontosGanhos = 0, produtoId = null, escolhas = []) { 
+    // 👇 Guardando o DNA completo do item, incluindo as escolhas e o ID
+    carrinho.push({ nome, preco: Number(preco), custo_unitario: custoUnitario, insumos: insumosUsados, isResgate, pontosUsados, pontosGanhos, produtoId, escolhas }); 
     atualizarBarraCarrinho();
     
     const modalCheckout = document.getElementById('modal-checkout');
@@ -898,8 +964,11 @@ function renderizarResumoCarrinho() {
     carrinho.forEach((item, index) => {
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; border-bottom:1px solid #eee; padding-bottom:5px;">
-                <div style="flex:1;"><strong>${item.nome}</strong><br><span style="color:var(--cor-primaria, #e91e63);">R$ ${item.preco.toFixed(2).replace('.', ',')}</span></div>
-                <button onclick="removerItemCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.1rem; padding:5px;">🗑️</button>
+                <div style="flex:1; padding-right: 10px;"><strong>${item.nome}</strong><br><span style="color:var(--cor-primaria, #e91e63); font-weight: bold;">R$ ${item.preco.toFixed(2).replace('.', ',')}</span></div>
+                <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                    <button onclick="editarItemCarrinho(${index})" style="background:none; border:none; color:#00bcd4; cursor:pointer; padding:5px; display: flex; align-items: center;" title="Editar"><span class="material-symbols-outlined" style="font-size: 1.4rem;">edit</span></button>
+                    <button onclick="removerItemCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; padding:5px; display: flex; align-items: center;" title="Remover"><span class="material-symbols-outlined" style="font-size: 1.4rem;">delete</span></button>
+                </div>
             </div>
         `;
     });
@@ -1784,7 +1853,7 @@ function adicionarOfertaAoCarrinho(nome, precoDesconto, prodId) {
             } catch(e) {}
         }
     }
-    adicionarAoCarrinho("🔥 Oferta: " + nome, precoDesconto, custoFicha, insumos);
+    adicionarAoCarrinho("🔥 Oferta: " + nome, precoDesconto, custoFicha, insumos, false, 0, 0, prodId, []);
     renderizarListaCarrinhoCliente();
 }
 
@@ -2195,7 +2264,10 @@ function renderizarListaCarrinhoCliente() {
                     ${desc}
                     <div style="color: var(--cor-primaria, #e91e63); font-weight: 800; margin-top: 6px; font-size: 1.1rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                 </div>
-                <button onclick="removerItemCarrinhoCliente(${index})" class="btn-remover-item" title="Remover item">🗑️</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="editarItemCarrinho(${index})" class="btn-editar-item" title="Editar item"><span class="material-symbols-outlined" style="font-size: 1.3rem;">edit</span></button>
+                    <button onclick="removerItemCarrinhoCliente(${index})" class="btn-remover-item" title="Remover item"><span class="material-symbols-outlined" style="font-size: 1.3rem;">delete</span></button>
+                </div>
             </div>
         `;
     });
