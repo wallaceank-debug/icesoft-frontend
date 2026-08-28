@@ -45,7 +45,7 @@ async function salvarConfigFidelidade() {
         });
         
         await carregarConfigs();
-        renderizarTabela(clientesGlobais); // Repinta a tabela para atualizar as barrinhas!
+        filtrarClientes(); // Repinta a tabela para atualizar as barrinhas!
         
         btn.innerText = 'Salvo! ✅';
         setTimeout(() => btn.innerText = 'Salvar Regras', 2000);
@@ -75,7 +75,7 @@ async function carregarClientes() {
  }
  
  clientesGlobais = await res.json();  
- renderizarTabela(clientesGlobais);  
+ filtrarClientes();  
  atualizarContadoresKPI();
  } catch (e) {
         document.getElementById('tabela-clientes').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Erro ao carregar clientes.</td></tr>';
@@ -180,6 +180,13 @@ function renderizarTabela(lista) {
 // SISTEMA DE FILTRO UNIFICADO (TEXTO + CARDS)
 // ==========================================
 let filtroStatusAtual = 'todos';
+let limiteClientesAtual = 50;
+
+function mudarLimite() {
+    const select = document.getElementById('limite-exibicao');
+    limiteClientesAtual = select.value === 'todos' ? 'todos' : Number(select.value);
+    filtrarClientes();
+}
 
 function filtrarPorStatus(status) {
     // 1. Efeito Toggle: Se clicar no mesmo cartão que já está ativo, desmarca
@@ -244,7 +251,13 @@ function filtrarClientes() {
         return passouTexto && passouStatus;
     });
 
-    renderizarTabela(filtrados);
+    // 👇 A MÁGICA: Corta a lista de acordo com o limite escolhido
+    let filtradosLimitados = filtrados;
+    if (limiteClientesAtual !== 'todos') {
+        filtradosLimitados = filtrados.slice(0, limiteClientesAtual);
+    }
+
+    renderizarTabela(filtradosLimitados); // Desenha só os cortados!
 }
 
 // ==========================================
@@ -332,7 +345,7 @@ function ordenarClientes(coluna) {
     });
 
     // IMPORTANTE: Se a sua função de desenhar a tabela tiver outro nome (como desenharTabela ou renderizarTabelaClientes), troque o nome abaixo:
-    renderizarTabela(clientesGlobais);
+    filtrarClientes();
 }
 
 // 2. Função que calcula as bolinhas baseadas na Última Compra

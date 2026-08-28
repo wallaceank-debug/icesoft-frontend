@@ -211,6 +211,20 @@
 <body>
     
     <!-- ==========================================
+         BANNER DE AVISO: NAVEGADOR DO INSTAGRAM
+         ========================================== -->
+    <div id="banner-instagram" style="display: none; background: var(--cor-primaria, #e91e63); color: white; text-align: center; padding: 18px 20px; font-size: 0.95rem; z-index: 10001; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.15); line-height: 1.4;">
+        <span style="display: block; margin-bottom: 8px; font-weight: 800; font-size: 1.1rem;">👋 Olá! Bem-vindo(a) à Icesoft</span>
+        Para uma experiência completa, mais rápida e com todos os recursos liberados, recomendamos usar o seu navegador principal.
+        
+        <div style="background: rgba(255,255,255,0.2); border: 1px dashed rgba(255,255,255,0.5); padding: 12px; border-radius: 10px; margin-top: 12px; font-size: 0.85rem; font-weight: 600;">
+            👉 Clique nos três pontinhos <strong style="font-size: 1.1rem;">(•••)</strong> no canto da tela e escolha <br><strong>"Abrir no navegador do sistema"</strong> 🌐
+        </div>
+        
+        <button onclick="document.getElementById('banner-instagram').style.display='none'" style="position: absolute; right: 15px; top: 15px; background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; font-weight: bold; line-height: 1;">&times;</button>
+    </div>
+
+    <!-- ==========================================
          BANNER DE LOJA FECHADA
          ========================================== -->
     <div id="banner-loja-fechada" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: #f44336; color: white; text-align: center; padding: 12px 20px; font-weight: bold; z-index: 10000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); box-sizing: border-box; font-size: 0.95rem;">

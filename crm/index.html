@@ -134,8 +134,18 @@
         </div>
 
         <div class="card-tabela">
-            <div class="busca-container">
-                <input type="text" id="busca-cliente" oninput="filtrarClientes()" placeholder="🔍 Buscar cliente por nome ou telefone...">
+            <div class="busca-container" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="busca-cliente" oninput="filtrarClientes()" placeholder="🔍 Buscar cliente por nome ou telefone..." style="flex: 1; min-width: 250px;">
+                
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.85rem; font-weight: bold; color: #555; white-space: nowrap;">Exibir:</label>
+                    <select id="limite-exibicao" onchange="mudarLimite()" style="padding: 12px 15px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-family: inherit; cursor: pointer; background: white; color: #333; font-weight: bold;">
+                        <option value="20">20 clientes</option>
+                        <option value="50" selected>50 clientes</option>
+                        <option value="100">100 clientes</option>
+                        <option value="todos">Todos (Pode pesar)</option>
+                    </select>
+                </div>
             </div>
             <table>
                 <thead>

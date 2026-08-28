@@ -1824,7 +1824,22 @@ async function verificarStatusLoja() {
     }
 }
 
+// ==========================================
+// 📸 SENSOR DE NAVEGADOR DO INSTAGRAM
+// ==========================================
+function verificarNavegadorInstagram() {
+    // Lê a "identidade" do navegador que o cliente está usando
+    const identidadeNavegador = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Se a palavra 'Instagram' estiver na identidade, ligamos o banner
+    if (identidadeNavegador.indexOf('Instagram') > -1) {
+        const bannerInsta = document.getElementById('banner-instagram');
+        if (bannerInsta) bannerInsta.style.display = 'block';
+    }
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
+    verificarNavegadorInstagram(); // 👈 NOVO: Dispara o sensor assim que a tela abre
     await carregarConfiguracoesLoja(); 
     await carregarTudo(); 
     verificarStatusLoja(); 
