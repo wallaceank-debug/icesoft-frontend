@@ -163,6 +163,10 @@ function renderizarTabela(lista) {
                         <span style="background: #fff3e0; color: #e65100; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #ffe0b2; display: inline-flex; align-items: center; gap: 4px;" title="Produto mais comprado por este cliente">
                             ❤️ ${cliente.produto_favorito || 'Diversos'}
                         </span>
+                        <!-- 👇 A MÁGICA: Badge de Pontos do Clube -->
+                        <span style="background: #e0f7fa; color: #00838f; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid #b2ebf2; display: inline-flex; align-items: center; gap: 4px;" title="Pontos atuais no Clube Icesoft">
+                            🎁 ${cliente.pontos_clube || 0} pts
+                        </span>
                         <button onclick="abrirModalZap('${cliente.telefone}', '${nomeLimpo}')" style="background: #25D366; color: white; border: none; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 700; box-shadow: 0 2px 4px rgba(37,211,102,0.3); transition: 0.2s;">
                             💬 Enviar Promoção
                         </button>

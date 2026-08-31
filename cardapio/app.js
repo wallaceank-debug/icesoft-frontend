@@ -1379,6 +1379,7 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
 
     // Chama o orquestrador inteligente
     let pagamento = obterFormaPagamentoFinal();
+    let detalhesPagamento = obterPagamentosDetalhes(); // 👇 NOVO: Captura os valores matemáticos exatos
 
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
@@ -1419,7 +1420,8 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
                 transacao_id: transacaoId,
                 taxa_entrega: taxaEntrega,
                 desconto: desconto,
-                cupom_usado: cupomAtivo ? cupomAtivo.codigo : null 
+                cupom_usado: cupomAtivo ? cupomAtivo.codigo : null,
+                pagamentos_detalhes: detalhesPagamento // 👇 NOVO: Envia o DNA exato das moedas para a nuvem
             })
         });
 
@@ -3060,6 +3062,38 @@ function obterFormaPagamentoFinal() {
         }
         return pagamento;
     }
+}
+
+// 👇 NOVA FUNÇÃO: Separa os valores em "gavetas" exatas para o Servidor Financeiro não errar a conta
+function obterPagamentosDetalhes() {
+    const chkDividido = document.getElementById('chk-pagamento-dividido');
+    const isDividido = chkDividido && chkDividido.checked;
+    let detalhes = { dinheiro: 0, pix: 0, cartao: 0, outros: 0 };
+    let total = getValorTotalCheckout();
+
+    const classificarPagamento = (metodo, valor) => {
+        let m = metodo.toLowerCase();
+        if (m.includes('dinheiro')) detalhes.dinheiro += valor;
+        else if (m.includes('pix')) detalhes.pix += valor;
+        else if (m.includes('cartão') || m.includes('cartao')) detalhes.cartao += valor;
+        else detalhes.outros += valor;
+    };
+
+    if (isDividido) {
+        const met1 = document.getElementById('pag-div-1-metodo').value;
+        const met2 = document.getElementById('pag-div-2-metodo').value;
+        let val1 = parseFloat(document.getElementById('pag-div-1-valor').value.replace(',', '.')) || 0;
+        let val2 = total - val1;
+        
+        classificarPagamento(met1, val1);
+        classificarPagamento(met2, val2);
+    } else {
+        let selecionado = document.querySelector('input[name="forma_pag"]:checked');
+        if (selecionado) {
+            classificarPagamento(selecionado.value, total);
+        }
+    }
+    return detalhes;
 }
 
 // ==========================================
