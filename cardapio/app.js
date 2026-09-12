@@ -3309,7 +3309,8 @@ function renderizarBanners(listaBanners) {
     bannersAtivos.forEach(url => {
         carrossel.innerHTML += `
             <div style="flex: 0 0 85%; scroll-snap-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <img src="${url}" style="width: 100%; height: 160px; object-fit: cover; display: block;">
+                <!-- 🚀 Correção aqui: Trocamos height: 160px; object-fit: cover; por height: auto; -->
+                <img src="${url}" style="width: 100%; height: auto; display: block;">
             </div>
         `;
     });
