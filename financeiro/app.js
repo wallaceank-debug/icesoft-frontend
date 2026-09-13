@@ -4,6 +4,14 @@ let contasBancariasGlobais = []; // 👇 NOVO: Guarda os bancos na memória
 let filtroLancamentosAtual = 'todos'; // 👇 NOVO: Guarda o filtro ativo
 
 window.onload = async () => {
+    // 👇 NOVO: Configura as datas para o primeiro e último dia do mês atual
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    if (document.getElementById('filtro-data-inicio')) document.getElementById('filtro-data-inicio').value = primeiroDia;
+    if (document.getElementById('filtro-data-fim')) document.getElementById('filtro-data-fim').value = ultimoDia;
+
     await carregarCategorias(); 
     await carregarBancos(); 
     popularFiltroBancos(); // 👇 Alimenta a nova caixinha de seleção de bancos
@@ -170,8 +178,15 @@ function limparFiltrosTabela() {
     document.getElementById('filtro-busca').value = '';
     document.getElementById('filtro-banco').value = '';
     document.getElementById('filtro-categoria').value = ''; // 👇 NOVO
-    document.getElementById('filtro-data-inicio').value = '';
-    document.getElementById('filtro-data-fim').value = '';
+    
+    // 👇 NOVO: Ao limpar, volta para o mês atual ao invés de deixar vazio
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+    
+    document.getElementById('filtro-data-inicio').value = primeiroDia;
+    document.getElementById('filtro-data-fim').value = ultimoDia;
+    
     filtroLancamentosAtual = 'todos';
     carregarLancamentos();
 }
@@ -217,6 +232,13 @@ async function carregarLancamentos() {
             return;
         }
 
+        // 👇 NOVO: Ordena a lista cronologicamente de forma DECRESCENTE (mais recentes no topo)
+        lista.sort((a, b) => {
+            if (!a.data_vencimento) return 1;
+            if (!b.data_vencimento) return -1;
+            return new Date(b.data_vencimento) - new Date(a.data_vencimento); // 🔄 MÁGICA: Invertemos o B pelo A aqui!
+        });
+
         let html = `<table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <tr style="border-bottom: 2px solid #eee; color: #666;">
                             <th style="padding: 10px;">Vencimento</th>
@@ -227,22 +249,40 @@ async function carregarLancamentos() {
                             <th style="padding: 10px; text-align: center;">Ações</th>
                         </tr>`;
         
+        let dataAtualGrupo = ''; // 👇 NOVO: Memória para saber em qual dia estamos desenhando
+
         lista.forEach(item => {
             const corValor = item.tipo === 'Receita' ? '#4CAF50' : '#f44336';
             const corStatus = item.status === 'Pago' ? '#4CAF50' : '#FF9800';
             
             let dataFormatada = 'Sem data';
+            let dataAgrupamento = 'Sem data'; // 👇 NOVO: Guarda o texto "13 de setembro"
+            
             if (item.data_vencimento) {
                 const d = new Date(item.data_vencimento);
                 d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
                 dataFormatada = d.toLocaleDateString('pt-BR');
+                
+                // 👇 NOVO: Traduz o número do mês para o nome por extenso
+                const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+                dataAgrupamento = `${d.getDate()} de ${meses[d.getMonth()]}`;
             }
             
+            // 👇 MÁGICA: Se o dia da conta atual for diferente do dia da conta anterior, desenha uma barra separadora!
+            if (dataAgrupamento !== dataAtualGrupo) {
+                html += `<tr style="background-color: #f8f9fa; border-top: 2px solid #eee; border-bottom: 1px solid #ddd;">
+                            <td colspan="6" style="padding: 12px 10px; font-weight: bold; color: #333; font-size: 0.95rem;">
+                                📅 ${dataAgrupamento}
+                            </td>
+                         </tr>`;
+                dataAtualGrupo = dataAgrupamento; // Atualiza a memória
+            }
+
             let iconeRepeticao = item.recorrente ? `<span class="material-symbols-outlined" style="font-size: 1rem; color: #9c27b0; vertical-align: middle; margin-left: 5px;" title="Conta de Repetição">repeat</span>` : '';
             const itemString = encodeURIComponent(JSON.stringify(item));
 
-            html += `<tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 10px;">${dataFormatada}</td>
+            html += `<tr style="border-bottom: 1px solid #eee; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#e3f2fd'" onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding: 10px; color: #666; font-size: 0.9rem;">${dataFormatada}</td>
                         <td style="padding: 10px; font-weight: 500;">${item.descricao} ${iconeRepeticao}</td>
                         <td style="padding: 10px;">${item.tipo}</td>
                         <td style="padding: 10px;">

@@ -2,6 +2,7 @@ const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/ap
 let chartAdicionais;
 let dadosTabelaGlobal = []; // NOVO: Guarda os dados para podermos ordenar na hora
 let ordenacaoAtual = { coluna: 'faturamento', direcao: 'desc' }; // NOVO: Estado da ordenação
+let estatisticasAdicionaisGlobal = []; // NOVO: Guarda a lista completa para o Modal
 
 window.onload = () => { carregarRaioX(); };
 
@@ -155,10 +156,23 @@ function processarRaioX(vendas, visitasDB) {
     let piorConversao = arrayProdutos.filter(p => p.visitas > 10).sort((a, b) => a.conversao - b.conversao)[0];
     document.getElementById('kpi-pior-conversao').innerText = piorConversao ? `${piorConversao.nome} (${piorConversao.conversao}%)` : '-';
 
-    // 5. Gráfico de Adicionais
-    let arrayAdicionais = Object.entries(adicionaisStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    document.getElementById('kpi-top-adicional').innerText = arrayAdicionais.length > 0 ? arrayAdicionais[0][0] : '-';
-    desenharGraficoAdicionais(arrayAdicionais);
+    // 5. Gráfico e Dados de Adicionais
+    // Pega TODOS os adicionais ordenados do maior para o menor
+    let arrayTodosAdicionais = Object.entries(adicionaisStats).sort((a, b) => b[1] - a[1]);
+    
+    // Calcula o total absoluto de adicionais vendidos para fazer a porcentagem
+    let totalAbsolutoAdicionais = arrayTodosAdicionais.reduce((sum, item) => sum + item[1], 0);
+    
+    // Salva na variável global para o Modal usar depois
+    estatisticasAdicionaisGlobal = arrayTodosAdicionais.map(item => {
+        let percentual = totalAbsolutoAdicionais > 0 ? ((item[1] / totalAbsolutoAdicionais) * 100).toFixed(1) : 0;
+        return { nome: item[0], qtd: item[1], percentual: percentual };
+    });
+
+    // Pega só os 5 primeiros para o Gráfico e o KPI
+    let arrayTop5 = arrayTodosAdicionais.slice(0, 5);
+    document.getElementById('kpi-top-adicional').innerText = arrayTop5.length > 0 ? arrayTop5[0][0] : '-';
+    desenharGraficoAdicionais(arrayTop5);
 }
 
 // ==========================================
@@ -238,4 +252,43 @@ function desenharGraficoAdicionais(dados) {
             plugins: { legend: { display: false } }
         }
     });
+}
+
+// ==========================================
+// 🧩 NOVO: CONTROLE DO MODAL DE ADICIONAIS
+// ==========================================
+window.abrirModalAdicionais = function() {
+    const tbody = document.getElementById('tabela-lista-adicionais');
+    tbody.innerHTML = ''; // Limpa a tabela
+
+    if (estatisticasAdicionaisGlobal.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">Nenhum adicional vendido neste período.</td></tr>';
+    } else {
+        estatisticasAdicionaisGlobal.forEach((add, index) => {
+            // Destaca os 3 primeiros com medalhas
+            let posicaoDisplay = index + 1;
+            if (index === 0) posicaoDisplay = '🥇 1º';
+            else if (index === 1) posicaoDisplay = '🥈 2º';
+            else if (index === 2) posicaoDisplay = '🥉 3º';
+
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #eee; transition: 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px 10px; font-weight: bold; color: #022344;">${posicaoDisplay}</td>
+                    <td style="padding: 12px 10px; font-weight: 600;">${add.nome}</td>
+                    <td style="padding: 12px 10px; text-align: center;">${add.qtd} un.</td>
+                    <td style="padding: 12px 10px; text-align: center;">
+                        <div style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 6px; display: inline-block; font-size: 0.85rem; font-weight: bold;">
+                            ${add.percentual}%
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    document.getElementById('modal-adicionais').style.display = 'flex';
+}
+
+window.fecharModalAdicionais = function() {
+    document.getElementById('modal-adicionais').style.display = 'none';
 }

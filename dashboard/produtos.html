@@ -143,9 +143,47 @@
                 <p style="font-size: 0.85rem; color: #666; margin-top: 10px; text-align: center;">
                     Use estes ingredientes para montar os seus novos "Açaís Prontos"!
                 </p>
+                <!-- NOVO: Botão para abrir o Modal -->
+                <button onclick="abrirModalAdicionais()" style="width: 100%; margin-top: 15px; background: #022344; color: white; border: none; padding: 10px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#033a70'" onmouseout="this.style.background='#022344'">
+                    <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">list_alt</span> Ver Relatório Completo
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- NOVO: Modal de Lista Completa de Adicionais -->
+    <div id="modal-adicionais" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px);">
+        <div style="background: white; width: 90%; max-width: 600px; max-height: 85vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            
+            <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-radius: 12px 12px 0 0;">
+                <h3 style="margin: 0; color: #022344; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">extension</span> Ranking Completo de Adicionais
+                </h3>
+                <span class="material-symbols-outlined" onclick="fecharModalAdicionais()" style="cursor: pointer; color: #999; transition: 0.2s;" onmouseover="this.style.color='#f44336'" onmouseout="this.style.color='#999'">close</span>
+            </div>
+
+            <div style="padding: 20px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 12px 10px; color: #555;">Posição</th>
+                            <th style="padding: 12px 10px; color: #555;">Adicional</th>
+                            <th style="padding: 12px 10px; text-align: center; color: #555;">Qtd. Vendida</th>
+                            <th style="padding: 12px 10px; text-align: center; color: #555;">Participação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-lista-adicionais">
+                        <!-- O JS vai injetar as linhas aqui -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="padding: 15px 20px; border-top: 1px solid #eee; text-align: right; background: #f8f9fa; border-radius: 0 0 12px 12px;">
+                <button onclick="fecharModalAdicionais()" style="background: #ccc; color: #333; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="produtos.js"></script>
 </body>
 </html>
