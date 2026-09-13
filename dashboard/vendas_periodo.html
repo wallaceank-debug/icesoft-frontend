@@ -100,6 +100,28 @@
             </div>
         </header>
 
+        <!-- 👇 NOVO: Barra de Filtros Rápidos (Origem e Ordem) 👇 -->
+        <div style="background: white; padding: 15px 25px; margin: 0 25px 20px 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <strong style="color: #333; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem;">filter_list</span> Filtros:
+            </strong>
+
+            <select id="filtroOrigem" onchange="aplicarFiltros()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; font-family: 'Poppins', sans-serif; cursor: pointer;">
+                <option value="TODAS">Todas as Origens</option>
+                <option value="Balcão">Balcão (PDV)</option>
+                <option value="Delivery">Delivery</option>
+                <option value="Mesas">Mesas/Comandas</option>
+            </select>
+
+            <select id="filtroOrdem" onchange="aplicarFiltros()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; font-family: 'Poppins', sans-serif; cursor: pointer;">
+                <option value="DATA_DESC">Mais Recentes primeiro</option>
+                <option value="DATA_ASC">Mais Antigas primeiro</option>
+                <option value="VALOR_DESC">Maior Valor primeiro (Vendas Altas)</option>
+                <option value="VALOR_ASC">Menor Valor primeiro</option>
+            </select>
+        </div>
+        <!-- 👆 FIM DA NOVA BARRA 👆 -->
+
         <!-- SUBMENU DE NAVEGAÇÃO DOS RELATÓRIOS -->
         <div style="display: flex; gap: 10px; margin: 0 25px 25px 25px; overflow-x: auto; padding: 25px 5px 30px 5px; align-items: center; white-space: nowrap; -webkit-overflow-scrolling: touch; border-bottom: 1px solid #eee;">
             <button onclick="window.location.href='index.html'" style="background: white; color: #555; border: 1px solid #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); flex-shrink: 0;" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='white'">
@@ -230,24 +252,55 @@
             }
 
             listaVendas = await resposta.json();
-            renderizarTela();
+            aplicarFiltros(); // 👈 NOVO: Passa a lista pelos filtros antes de mostrar na tela
         } catch (e) {
             console.error(e);
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Erro ao carregar vendas.</td></tr>';
         }
     }
 
-    function renderizarTela() {
+    // 👇 NOVO: Motor que aplica as regras de Origem e Ordem escolhidas por você
+    function aplicarFiltros() {
+        const filtroOrigem = document.getElementById('filtroOrigem').value;
+        const filtroOrdem = document.getElementById('filtroOrdem').value;
+
+        // 1. Filtra a origem
+        let vendasFiltradas = listaVendas.filter(venda => {
+            if (filtroOrigem !== 'TODAS') {
+                const origemVenda = venda.origem || 'Balcão';
+                return origemVenda === filtroOrigem;
+            }
+            return true; // Se for "TODAS", deixa passar
+        });
+
+        // 2. Ordena os dados conforme a regra de valor ou data
+        vendasFiltradas.sort((a, b) => {
+            if (filtroOrdem === 'DATA_DESC') return new Date(b.data_hora) - new Date(a.data_hora);
+            if (filtroOrdem === 'DATA_ASC') return new Date(a.data_hora) - new Date(b.data_hora);
+            if (filtroOrdem === 'VALOR_DESC') return parseFloat(b.valor_total || 0) - parseFloat(a.valor_total || 0);
+            if (filtroOrdem === 'VALOR_ASC') return parseFloat(a.valor_total || 0) - parseFloat(b.valor_total || 0);
+            return 0;
+        });
+
+        // 3. Manda a lista limpa para desenhar na tela
+        renderizarTela(vendasFiltradas);
+    }
+
+    // 👇 MODIFICADO: A tela agora recebe a lista mastigada e protege o índice do Modal
+    function renderizarTela(vendasVisiveis = listaVendas) {
         let faturamentoTotal = 0;
         let qtdPedidosValidos = 0;
         const tbody = document.getElementById('tabela-vendas');
         tbody.innerHTML = '';
 
-        if (listaVendas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhuma venda encontrada neste período.</td></tr>';
+        if (vendasVisiveis.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhuma venda encontrada com os filtros atuais.</td></tr>';
         }
 
-        listaVendas.forEach((venda, index) => {
+        vendasVisiveis.forEach((venda) => {
+            // Acha o índice real na memória matriz para o Modal/Cancelamento abrirem a comanda certa
+            const index = listaVendas.indexOf(venda);
+            
             const valorVenda = parseFloat(venda.valor_total) || 0;
             const isCancelado = venda.status && venda.status.toLowerCase().includes('cancelad');
 
