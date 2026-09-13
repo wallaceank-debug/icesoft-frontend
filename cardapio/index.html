@@ -757,7 +757,9 @@
                 </div>
             </div>
             
-            <button onclick="fecharTelaRastreio()" style="width: 100%; margin-top: 25px; padding: 15px; border-radius: 12px; border: 2px solid var(--cor-primaria); background: transparent; color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;">Fazer um Novo Pedido</button>
+            <button id="btn-avaliar-pedido" onclick="abrirModalAvaliacao()" style="display: none; width: 100%; margin-top: 20px; padding: 15px; border-radius: 12px; background: #FF9800; color: white; font-weight: bold; font-size: 1.1rem; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); transition: 0.2s;">⭐ Avaliar Experiência</button>
+
+            <button onclick="fecharTelaRastreio()" style="width: 100%; margin-top: 15px; padding: 15px; border-radius: 12px; border: 2px solid var(--cor-primaria); background: transparent; color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;">Fazer um Novo Pedido</button>
         </div>
     </div>
 
@@ -852,5 +854,57 @@
         <img id="lightbox-img" src="" style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 12px; transform: scale(0.8); transition: transform 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <div style="position: absolute; top: 20px; right: 25px; color: white; font-size: 2.5rem; font-weight: bold; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">&times;</div>
     </div>
+
+    <!-- ==========================================
+         MODAL DE AVALIAÇÃO DO PEDIDO (ESTILO IFOOD)
+         ========================================== -->
+    <div id="modal-avaliacao" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:10000; padding: 20px; box-sizing: border-box;">
+        <div style="background:white; width:100%; max-width:400px; border-radius:20px; padding:25px; text-align:center; animation: slideUp 0.3s ease-out; position: relative;">
+            <button onclick="fecharModalAvaliacao()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer;">&times;</button>
+            <h2 style="margin: 0 0 10px 0; color: #333; font-size: 1.4rem;">O que achou? ⭐</h2>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4;">Sua opinião é muito importante para a Icesoft melhorar sempre!</p>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee;">
+                <p style="font-weight: bold; margin: 0 0 10px 0; color: #444; font-size: 0.95rem;">1. O Cardápio Online foi fácil de usar?</p>
+                <div class="estrelas-avaliacao" id="estrelas-cardapio">
+                    <span onclick="marcarEstrela('cardapio', 1)">★</span>
+                    <span onclick="marcarEstrela('cardapio', 2)">★</span>
+                    <span onclick="marcarEstrela('cardapio', 3)">★</span>
+                    <span onclick="marcarEstrela('cardapio', 4)">★</span>
+                    <span onclick="marcarEstrela('cardapio', 5)">★</span>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee;">
+                <p style="font-weight: bold; margin: 0 0 10px 0; color: #444; font-size: 0.95rem;">2. Qualidade do Pedido e Entrega</p>
+                <div class="estrelas-avaliacao" id="estrelas-pedido">
+                    <span onclick="marcarEstrela('pedido', 1)">★</span>
+                    <span onclick="marcarEstrela('pedido', 2)">★</span>
+                    <span onclick="marcarEstrela('pedido', 3)">★</span>
+                    <span onclick="marcarEstrela('pedido', 4)">★</span>
+                    <span onclick="marcarEstrela('pedido', 5)">★</span>
+                </div>
+            </div>
+
+            <textarea id="obs-avaliacao" placeholder="Quer deixar algum comentário ou elogio? (Opcional)" style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; margin-top: 15px; font-family: 'Inter', sans-serif; resize: none; box-sizing: border-box; outline: none;"></textarea>
+
+            <button id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s;">Enviar Avaliação</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         BANNER FLUTUANTE DE AVALIAÇÃO PENDENTE
+         ========================================== -->
+    <div id="banner-avaliacao-pendente" style="display: none; position: fixed; bottom: 85px; right: 20px; background: white; padding: 12px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9997; border-left: 4px solid #FF9800; align-items: center; gap: 10px; animation: slideInRight 0.4s ease-out; max-width: 280px;">
+        <div onclick="abrirAvaliacaoPendente()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <div style="font-size: 1.8rem;">⭐</div>
+            <div style="line-height: 1.2;">
+                <strong style="color: #333; font-size: 0.9rem;">Avalie seu último pedido</strong><br>
+                <span style="color: #666; font-size: 0.75rem;">Leva só 10 segundos!</span>
+            </div>
+        </div>
+        <button onclick="ignorarAvaliacaoPendente()" style="background: none; border: none; color: #999; font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 5px;">&times;</button>
+    </div>
+
 </body>
 </html>

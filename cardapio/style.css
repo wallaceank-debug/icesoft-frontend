@@ -681,3 +681,36 @@ p, h1, h2, h3, h4, h5, span, div {
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
+
+/* =========================================
+   SISTEMA DE AVALIAÇÃO (ESTRELAS)
+   ========================================= */
+.estrelas-avaliacao {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    font-size: 2.2rem;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.estrelas-avaliacao span {
+    transition: color 0.2s, transform 0.1s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.estrelas-avaliacao span:active {
+    transform: scale(0.85);
+}
+
+.estrelas-avaliacao span.ativa {
+    color: #FFD700; /* Dourado Premium */
+    text-shadow: 0 2px 5px rgba(255, 215, 0, 0.4);
+}
+
+/* Animação do Banner de Avaliação Pendente */
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}

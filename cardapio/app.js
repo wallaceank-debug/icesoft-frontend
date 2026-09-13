@@ -1601,9 +1601,13 @@ function atualizarStatusVisualRastreio(statusKanban) {
     // Pinta de laranja piscante o passo atual
     document.getElementById(passos[nivelAtivo]).classList.add('ativo');
     
-    // Se foi entregue, desliga o radar para economizar internet do cliente
-    if (nivelAtivo === 3 && rastreioIntervalo) {
-        clearInterval(rastreioIntervalo);
+    // Se foi entregue, desliga o radar para economizar internet E MOSTRA botão de avaliar
+    const btnAvaliar = document.getElementById('btn-avaliar-pedido');
+    if (nivelAtivo === 3) {
+        if (rastreioIntervalo) clearInterval(rastreioIntervalo);
+        if (btnAvaliar) btnAvaliar.style.display = 'block';
+    } else {
+        if (btnAvaliar) btnAvaliar.style.display = 'none';
     }
 }
 
@@ -2159,6 +2163,9 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
             // Pega o pedido mais recente dele
             const ultimoPedido = compras.reduce((max, p) => p.id > max.id ? p : max, compras[0]);
             
+            // 👉 NOVA LÓGICA: VERIFICAR SE FICOU DEVENDO AVALIAÇÃO
+            verificarAvaliacaoPendente(ultimoPedido);
+
             // 🎯 Preenche o NOME
             if (ultimoPedido.cliente_nome) {
                 document.getElementById('cliente-nome').value = ultimoPedido.cliente_nome;
@@ -3240,6 +3247,10 @@ function atualizarInterfaceLogin(cliente) {
         if (inputNomeCheckout) inputNomeCheckout.value = cliente.nome;
         if (inputTelCheckout) inputTelCheckout.value = cliente.telefone;
 
+        // 👉 NOVA LÓGICA: Aciona o radar de histórico silenciosamente assim que o cliente abre o cardápio!
+        // Isso faz o banner de avaliação pendente aparecer logo na tela inicial (vitrine).
+        buscarDadosClienteCRM(cliente.telefone);
+
     } else {
         // Se o usuário clicou em Sair da Conta (Limpa tudo)
         if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
@@ -3438,4 +3449,152 @@ function renderizarRecompensas(produtos, idsRecompensas) {
             </div>
         `;
     });
+}
+
+// ==========================================
+// ⭐ SISTEMA DE AVALIAÇÕES E FEEDBACK
+// ==========================================
+let notaCardapio = 0;
+let notaPedido = 0;
+
+function abrirModalAvaliacao() {
+    document.getElementById('modal-avaliacao').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Reseta o modal sempre que abrir
+    notaCardapio = 0;
+    notaPedido = 0;
+    document.getElementById('obs-avaliacao').value = '';
+    marcarEstrela('cardapio', 0);
+    marcarEstrela('pedido', 0);
+    
+    // Sensor do funil (Opcional)
+    registrarEventoFunil('Abriu Avaliação');
+}
+
+function fecharModalAvaliacao() {
+    document.getElementById('modal-avaliacao').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function marcarEstrela(categoria, nota) {
+    if (categoria === 'cardapio') notaCardapio = nota;
+    if (categoria === 'pedido') notaPedido = nota;
+
+    const container = document.getElementById(`estrelas-${categoria}`);
+    const estrelas = container.querySelectorAll('span');
+
+    // Preenche de dourado até a estrela clicada
+    estrelas.forEach((estrela, index) => {
+        if (index < nota) {
+            estrela.classList.add('ativa');
+        } else {
+            estrela.classList.remove('ativa');
+        }
+    });
+}
+
+async function enviarAvaliacao() {
+    if (notaCardapio === 0 || notaPedido === 0) {
+        alert("⚠️ Por favor, dê uma nota de 1 a 5 estrelas em ambas as categorias para nos ajudar!");
+        return;
+    }
+
+    const obs = document.getElementById('obs-avaliacao').value.trim();
+    const btn = document.getElementById('btn-enviar-avaliacao');
+    btn.innerText = "⏳ Enviando Avaliação...";
+    btn.disabled = true;
+
+    try {
+        // Envia para o Backend (A API receberá e processará os dados)
+        await fetch(`${API_URL}/avaliacoes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pedido_id: rastreioPedidoId,
+                telefone: rastreioTelefoneCliente,
+                nota_cardapio: notaCardapio,
+                nota_pedido: notaPedido,
+                observacao: obs
+            })
+        });
+    } catch(e) {
+        console.log("Falha silenciosa ao enviar a avaliação, interface do cliente não trava.");
+    }
+
+    // 👉 NOVA LÓGICA: Salvar no celular que este pedido já foi avaliado
+    if (rastreioPedidoId) {
+        let avaliados = JSON.parse(localStorage.getItem('icesoft_pedidos_avaliados') || '[]');
+        if (!avaliados.includes(rastreioPedidoId)) {
+            avaliados.push(rastreioPedidoId);
+            localStorage.setItem('icesoft_pedidos_avaliados', JSON.stringify(avaliados));
+        }
+    }
+
+    // Sucesso Visual
+    btn.innerText = "✅ Muito Obrigado!";
+    btn.style.background = "#25D366";
+    
+    registrarEventoFunil('Enviou Avaliação', `C:${notaCardapio} P:${notaPedido}`);
+
+    setTimeout(() => {
+        fecharModalAvaliacao();
+        // Volta o botão para o estado original caso ele abra depois de novo
+        btn.innerText = "Enviar Avaliação";
+        btn.style.background = "var(--cor-primaria)";
+        btn.disabled = false;
+        
+        // Esconde o botão da tela de rastreio para não pedir duas vezes
+        const btnAvaliarExterno = document.getElementById('btn-avaliar-pedido');
+        if (btnAvaliarExterno) btnAvaliarExterno.style.display = 'none';
+    }, 2000);
+}
+
+// ==========================================
+// 💡 BANNER FLUTUANTE DE AVALIAÇÃO PENDENTE
+// ==========================================
+let idPedidoPendenteAvaliacao = null;
+
+function verificarAvaliacaoPendente(ultimoPedido) {
+    // Só cobramos avaliação se o último pedido chegou com sucesso (Entregue)
+    if (!ultimoPedido || ultimoPedido.status !== 'Entregue') return;
+
+    // Lê a memória do celular para ver se ele já avaliou ou ignorou este pedido
+    let avaliados = JSON.parse(localStorage.getItem('icesoft_pedidos_avaliados') || '[]');
+
+    // Se o pedido não está na lista de avaliados, a gente solta o banner!
+    if (!avaliados.includes(ultimoPedido.id)) {
+        idPedidoPendenteAvaliacao = ultimoPedido.id;
+        
+        // Garante que o sistema saiba de quem é o pedido caso ele decida avaliar
+        rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value || ultimoPedido.cliente_telefone || '');
+
+        const banner = document.getElementById('banner-avaliacao-pendente');
+        if (banner) banner.style.display = 'flex';
+    }
+}
+
+function abrirAvaliacaoPendente() {
+    // Informa pro sistema qual pedido antigo estamos avaliando agora
+    rastreioPedidoId = idPedidoPendenteAvaliacao;
+    
+    // Esconde o banner flutuante
+    document.getElementById('banner-avaliacao-pendente').style.display = 'none';
+    
+    // Abre as estrelinhas!
+    abrirModalAvaliacao();
+}
+
+function ignorarAvaliacaoPendente() {
+    // Pega a lista da memória do celular
+    let avaliados = JSON.parse(localStorage.getItem('icesoft_pedidos_avaliados') || '[]');
+    
+    // Coloca o ID lá dentro para o sistema pensar que já foi resolvido
+    if (idPedidoPendenteAvaliacao && !avaliados.includes(idPedidoPendenteAvaliacao)) {
+        avaliados.push(idPedidoPendenteAvaliacao);
+        localStorage.setItem('icesoft_pedidos_avaliados', JSON.stringify(avaliados));
+    }
+
+    // Fecha o banner e não enche mais o saco
+    document.getElementById('banner-avaliacao-pendente').style.display = 'none';
 }
