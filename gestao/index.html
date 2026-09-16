@@ -347,6 +347,31 @@
                             </label>
                         </div>
 
+                        <!-- 🍔 NOVO CAMPO: MÓDULO DE COMBOS -->
+                        <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #fff3e0; border-radius: 8px; border: 1px dashed #ff9800; margin-top: 5px; margin-bottom: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="prod-is-combo" onchange="toggleAreaCombo()" style="width: 20px; height: 20px; accent-color: #ff9800;">
+                                <span style="font-weight: 700; color: #e65100; font-size: 0.95rem;">🍔 Este produto é um Combo/Kit?</span>
+                            </label>
+                            
+                            <div id="area-montagem-combo" style="display: none; flex-direction: column; gap: 10px; margin-top: 10px; border-top: 1px solid #ffcc80; padding-top: 10px;">
+                                <p style="font-size: 0.8rem; color: #d84315; margin: 0;">Selecione os produtos que compõem este combo. O PDV e a Cozinha vão separar esses itens na hora de imprimir.</p>
+                                
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <select id="combo-select-produto" class="input-padrao" style="flex: 2; min-width: 150px; border-color: #ffb74d;">
+                                        <option value="">Carregando produtos...</option>
+                                    </select>
+                                    <input type="number" id="combo-qtd-produto" class="input-padrao" placeholder="Qtd" value="1" min="1" style="flex: 1; min-width: 70px; border-color: #ffb74d;">
+                                    <button type="button" onclick="adicionarItemCombo()" style="background:#ff9800; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">+ Inserir</button>
+                                </div>
+
+                                <div id="lista-itens-combo" style="background: white; border-radius: 8px; border: 1px solid #ffcc80; padding: 10px; min-height: 80px; max-height: 200px; overflow-y: auto;">
+                                    <p style="text-align:center; color:#999; font-size: 0.85rem; margin: 10px 0;">Nenhum produto no combo ainda.</p>
+                                </div>
+                                <input type="hidden" id="prod-combo-json" value="[]">
+                            </div>
+                        </div>
+
                         <!-- 🚀 CAMPO: TAGS DE DESTAQUE -->
                         <div style="margin-bottom: 5px;">
                             <label style="font-weight: bold; color: #555; font-size: 0.9rem; display: block; margin-bottom: 5px;">🏷️ Tag de Destaque (Opcional):</label>

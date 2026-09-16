@@ -573,8 +573,20 @@ function abrirModalProduto(id = null) {
         
         checarSeguro('prod-venda-peso', p.venda_por_peso === true);
         checarSeguro('produto-promo-pdv', p.promo_pdv === true);
-        checarSeguro('prod-controlar-estoque', p.controlar_estoque === true); // NOVO
-        checarSeguro('prod-mostrar-estoque', p.mostrar_estoque === true); // NOVO
+        checarSeguro('prod-controlar-estoque', p.controlar_estoque === true);
+        checarSeguro('prod-mostrar-estoque', p.mostrar_estoque === true);
+        
+        // 👇 NOVO: Carrega os dados do Combo
+        checarSeguro('prod-is-combo', p.is_combo === true);
+        comboItensTemporario = [];
+        if (p.is_combo && p.combo_itens) {
+            try {
+                comboItensTemporario = typeof p.combo_itens === 'string' ? JSON.parse(p.combo_itens) : p.combo_itens;
+            } catch(e) { comboItensTemporario = []; }
+        }
+        document.getElementById('prod-combo-json').value = JSON.stringify(comboItensTemporario);
+        toggleAreaCombo();
+        renderizarItensCombo();
         // 👇 NOVO: Carrega os Pontos de Fidelidade
         preencherSeguro('prod-pontos-ganhos', p.pontos_ganhos || 0);
         preencherSeguro('prod-pontos-resgate', p.pontos_resgate || 0);
@@ -625,8 +637,15 @@ function abrirModalProduto(id = null) {
         
         checarSeguro('prod-venda-peso', false);
         checarSeguro('produto-promo-pdv', false);
-        checarSeguro('prod-controlar-estoque', false); // NOVO
-        checarSeguro('prod-mostrar-estoque', false); // NOVO
+        checarSeguro('prod-controlar-estoque', false);
+        checarSeguro('prod-mostrar-estoque', false);
+        
+        // 👇 NOVO: Limpa os dados do Combo
+        checarSeguro('prod-is-combo', false);
+        comboItensTemporario = [];
+        document.getElementById('prod-combo-json').value = '[]';
+        toggleAreaCombo();
+        renderizarItensCombo();
         // 👇 NOVO: Limpa Pontos de Fidelidade
         preencherSeguro('prod-pontos-ganhos', 0);
         preencherSeguro('prod-pontos-resgate', 0);
@@ -830,7 +849,9 @@ async function salvarProduto() {
         // 👇 NOVO: Disparando a configuração do Clube Icesoft
         pontos_ganhos: parseInt(lerSeguro('prod-pontos-ganhos')) || 0,
         pontos_resgate: parseInt(lerSeguro('prod-pontos-resgate')) || 0,
-        resgate_dinheiro: parseFloat(lerSeguro('prod-resgate-dinheiro')) || 0
+        resgate_dinheiro: parseFloat(lerSeguro('prod-resgate-dinheiro')) || 0,
+        is_combo: lerCheckSeguro('prod-is-combo'),
+        combo_itens: lerSeguro('prod-combo-json', '[]'),
     };
 
     try {
@@ -2057,4 +2078,79 @@ function atualizarResumoInsumos(idContainer, jsonStr) {
     } catch(e) {
         container.innerHTML = 'Nenhum insumo atrelado.';
     }
+}
+
+// ==========================================
+// 🍔 MÓDULO DE COMBOS (MONTAGEM)
+// ==========================================
+let comboItensTemporario = [];
+
+function toggleAreaCombo() {
+    const isCombo = document.getElementById('prod-is-combo').checked;
+    const area = document.getElementById('area-montagem-combo');
+    area.style.display = isCombo ? 'flex' : 'none';
+    
+    if (isCombo) {
+        preencherSelectCombo();
+    }
+}
+
+function preencherSelectCombo() {
+    const select = document.getElementById('combo-select-produto');
+    select.innerHTML = '<option value="" disabled selected>Escolha o produto...</option>';
+    
+    // Lista os produtos em ordem alfabética
+    const produtosOrdenados = [...listaProdutos].sort((a, b) => a.nome.localeCompare(b.nome));
+    produtosOrdenados.forEach(p => {
+        // Evita que o produto adicione a si mesmo
+        if (p.id !== produtoEditandoId) {
+            select.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+        }
+    });
+}
+
+function adicionarItemCombo() {
+    const select = document.getElementById('combo-select-produto');
+    const qtdInput = document.getElementById('combo-qtd-produto');
+    
+    if (!select.value || !qtdInput.value) return alert("⚠️ Selecione um produto e a quantidade!");
+    
+    const produtoId = parseInt(select.value);
+    const qtd = parseInt(qtdInput.value);
+    const produtoSelecionado = listaProdutos.find(p => p.id === produtoId);
+    
+    if (!produtoSelecionado) return;
+
+    comboItensTemporario.push({
+        produto_id: produtoId,
+        nome: produtoSelecionado.nome,
+        quantidade: qtd
+    });
+    
+    qtdInput.value = '1'; // reseta a qtd
+    renderizarItensCombo();
+}
+
+function removerItemCombo(index) {
+    comboItensTemporario.splice(index, 1);
+    renderizarItensCombo();
+}
+
+function renderizarItensCombo() {
+    const container = document.getElementById('lista-itens-combo');
+    container.innerHTML = '';
+    
+    if (comboItensTemporario.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999; font-size: 0.85rem; margin: 10px 0;">Nenhum produto no combo ainda.</p>';
+    } else {
+        comboItensTemporario.forEach((item, index) => {
+            container.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px dashed #ffcc80; background:#fffaf0; margin-bottom:5px; border-radius:5px;">
+                    <div style="font-size:0.9rem; color:#333;"><strong>${item.quantidade}x</strong> ${item.nome}</div>
+                    <button type="button" onclick="removerItemCombo(${index})" style="border:none; background:none; cursor:pointer; font-size:1rem; color: #d32f2f;">❌</button>
+                </div>
+            `;
+        });
+    }
+    document.getElementById('prod-combo-json').value = JSON.stringify(comboItensTemporario);
 }
