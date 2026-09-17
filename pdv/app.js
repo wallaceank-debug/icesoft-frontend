@@ -200,6 +200,12 @@ function verificarAdicao(id) {
         });
     } catch(e) {}
 
+    // 🍔 CÉREBRO DOS COMBOS (NOVO)
+    if (produto.is_combo === true || produto.is_combo === 'true') {
+        abrirModalCombo(produto);
+        return;
+    }
+
     // ⚖️ CÉREBRO DA BALANÇA
     if (produto.venda_por_peso === true || produto.venda_por_peso === 'true') {
         let pesoDigitado = prompt(`⚖️ BALANÇA\n\nDigite o peso de ${produto.nome} na balança.\n(Pode digitar em gramas ex: 290 ou em quilos ex: 0,290):`);
@@ -237,7 +243,7 @@ function abrirModalEscolha(produto) {
     escolhasAtuais = [];
     
     // Volta o botão ao estado normal caso tenha sido editado
-    const btnConfirmar = document.querySelector('#modal-opcoes button[onclick^="salvarEdicao"]');
+    const btnConfirmar = document.getElementById('btn-confirmar-opcoes');
     if (btnConfirmar) {
         btnConfirmar.setAttribute('onclick', 'confirmarEscolhasEAdicionar()');
         btnConfirmar.innerText = "Confirmar e Inserir";
@@ -493,9 +499,16 @@ function renderizarCarrinho() {
         
         let htmlAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
-            htmlAdicionais = item.adicionais.map(adc => `
-                <div style="color: #666; font-size: 0.85rem; padding-left: 30px; margin-top: 3px;">+ ${adc}</div>
-            `).join('');
+            htmlAdicionais = item.adicionais.map(adc => {
+                if (adc.startsWith('▶️')) { // Cabeçalho do Item do Combo
+                    return `<div style="color: #e65100; font-size: 0.95rem; font-weight: 800; padding-left: 15px; margin-top: 6px; margin-bottom: 2px;">${adc}</div>`;
+                }
+                if (adc.startsWith('  (')) { // Mensagem de "(Sem adicionais)"
+                    return `<div style="color: #999; font-size: 0.8rem; padding-left: 30px; font-style: italic;">${adc}</div>`;
+                }
+                // Adicional normal
+                return `<div style="color: #666; font-size: 0.85rem; padding-left: 30px; margin-top: 3px;">${adc.startsWith('  +') ? adc : '+ ' + adc}</div>`;
+            }).join('');
         }
 
         container.innerHTML += `
@@ -782,7 +795,16 @@ function imprimirComanda(metodoPagamento, valorRecebido, troco) {
         const precoTotalItem = item.preco * item.qtd;
         let textoAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
-            textoAdicionais = item.adicionais.map(adc => `<div style="font-size: 13px; padding-left: 10px;">- ${adc}</div>`).join('');
+            textoAdicionais = item.adicionais.map(adc => {
+                if (adc.startsWith('▶️')) { // Destaca forte para a cozinha saber qual é o item!
+                    return `<div style="font-size: 14px; font-weight: bold; margin-top: 6px; padding-left: 5px;">${adc.replace('▶️ ', '')}</div>`;
+                }
+                if (adc.startsWith('  (')) { 
+                     return `<div style="font-size: 13px; padding-left: 15px; font-style: italic;">${adc}</div>`;
+                }
+                // Hífen pro adicional normal
+                return `<div style="font-size: 13px; padding-left: 15px;">${adc.startsWith('  +') ? adc.replace('  +', '-') : '- ' + adc}</div>`;
+            }).join('');
         }
 
         itensHtml += `
@@ -1444,7 +1466,7 @@ function editarItemCarrinho(index) {
     // 2. Aguarda o modal desenhar na tela (150ms)
     setTimeout(() => {
         // 3. Transforma o botão "Inserir" em "Salvar Alteração"
-        const btnConfirmar = document.querySelector('#modal-opcoes button[onclick*="confirmarEscolhas"]');
+        const btnConfirmar = document.getElementById('btn-confirmar-opcoes');
         if (btnConfirmar) {
             btnConfirmar.setAttribute('onclick', `salvarEdicaoCarrinho(${index})`);
             btnConfirmar.innerText = "💾 Salvar Alterações";
@@ -1467,12 +1489,37 @@ function editarItemCarrinho(index) {
 }
 
 function salvarEdicaoCarrinho(index) {
-    // 1. Usa a memória (escolhasAtuais) que o modal já atualizou pra gente
-    const novosAdicionais = escolhasAtuais.map(e => e.nome);
     const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
     const precoFinal = precoBaseCalculado + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
 
-    // 2. SUBSTITUI o item na mesma posição, mantendo a quantidade que ele já tinha
+    let novosAdicionais = [];
+    
+    // Verifica se o item editado é um Combo para reconstruir as divisórias
+    if (produtoEmSelecao.is_combo === true || produtoEmSelecao.is_combo === 'true') {
+        let comboItens = [];
+        try { comboItens = typeof produtoEmSelecao.combo_itens === 'string' ? JSON.parse(produtoEmSelecao.combo_itens) : produtoEmSelecao.combo_itens; } catch(e){}
+
+        comboItens.forEach((itemCombo, indexFilho) => {
+            const produtoFilho = produtosDaNuvem.find(p => p.id === itemCombo.produto_id);
+            if (!produtoFilho) return;
+
+            for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+                const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd}/${itemCombo.quantidade})` : produtoFilho.nome;
+                const prefixSecao = `${indexFilho}_${qtd}_`;
+                const escolhasDesteFilho = escolhasAtuais.filter(e => e.secaoId && e.secaoId.startsWith(prefixSecao));
+                
+                novosAdicionais.push(`▶️ [${tituloItem}]`);
+                if (escolhasDesteFilho.length > 0) {
+                    escolhasDesteFilho.forEach(e => novosAdicionais.push(`  + ${e.nome}`));
+                } else {
+                    novosAdicionais.push(`  (Sem adicionais)`);
+                }
+            }
+        });
+    } else {
+        novosAdicionais = escolhasAtuais.map(e => e.nome);
+    }
+
     carrinho[index].adicionais = novosAdicionais;
     carrinho[index].preco = precoFinal;
 
@@ -1501,4 +1548,201 @@ function limparCarrinhoCompleto() {
         // Atualiza o visual do carrinho para mostrar "Nenhum item adicionado" e recalcula os totais
         renderizarCarrinho();
     }
+}
+
+// ==========================================
+// 📦 MOTOR DE DESEMPACOTAMENTO DE COMBOS
+// ==========================================
+function abrirModalCombo(produtoCombo) {
+    produtoEmSelecao = produtoCombo;
+    escolhasAtuais = [];
+    
+    // Configura o botão verde para Salvar Combo
+    const btnConfirmar = document.getElementById('btn-confirmar-opcoes');
+    if (btnConfirmar) {
+        btnConfirmar.setAttribute('onclick', 'confirmarEscolhasCombo()');
+        btnConfirmar.innerText = "Confirmar Combo";
+        btnConfirmar.style.backgroundColor = "#00e676";
+    }
+
+    // Título do Modal
+    document.getElementById('detalhes-produto-topo').innerHTML = `
+        <h2 style="margin:0; color:#022344; font-size: 1.5rem; font-weight: 800;">📦 ${produtoCombo.nome}</h2>
+        <p style="color:#ff9800; font-size:0.85rem; margin:0; font-weight: bold;">Monte os itens do seu combo abaixo:</p>
+    `;
+
+    const container = document.getElementById('container-grupos-opcoes');
+    container.innerHTML = '';
+    
+    let comboItens = [];
+    try { comboItens = typeof produtoCombo.combo_itens === 'string' ? JSON.parse(produtoCombo.combo_itens || '[]') : (produtoCombo.combo_itens || []); } catch(e) {}
+
+    let indexGlobalGrupos = 0; 
+
+    // Lê a caixa do combo e puxa os filhos
+    comboItens.forEach((itemCombo, indexFilho) => {
+        const produtoFilho = produtosDaNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho) return;
+
+        // Se o combo tiver "2x Açaí", ele repete a tela de adicionais 2 vezes!
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd} de ${itemCombo.quantidade})` : produtoFilho.nome;
+            
+            // Cabeçalho Laranja dividindo os itens
+            container.innerHTML += `
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px 15px; margin: 15px 0 5px 0; font-weight: bold; color: #e65100; border-radius: 4px;">
+                    ▶️ ${tituloItem.toUpperCase()}
+                </div>
+            `;
+
+            if (!produtoFilho.grupos_ids || produtoFilho.grupos_ids.length === 0) {
+                container.innerHTML += `<p style="padding: 0 15px; color: #777; font-size: 0.85rem; font-style: italic;">(Nenhum adicional para este item)</p>`;
+                continue;
+            }
+
+            const gruposDoFilho = produtoFilho.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+
+            gruposDoFilho.forEach((grupo) => {
+                const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+                if (itensAtivos.length === 0) return;
+                
+                // Isolamos o limite de escolhas para não dar conflito (ex: Cobertura do açaí vs Cobertura do brownie)
+                const secaoId = `${indexFilho}_${qtd}_${grupo.id}`; 
+
+                let itensHtml = itensAtivos.map((item, idx) => {
+                    const chkId = `pdv-chk-${secaoId}-${idx}`;
+                    let precoReal = Number(item.preco);
+                    if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") precoReal = Number(item.preco_pdv);
+                    const precoAdc = precoReal > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${precoReal.toFixed(2).replace('.', ',')}</span>` : '';
+                    
+                    return `
+                    <div class="item-opcional-card" onclick="toggleOpcionalCombo('${secaoId}', '${item.nome}', ${precoReal}, '${chkId}', ${grupo.limite})" 
+                         style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">
+                            <span style="font-weight: 400; color: #022344; font-size: 1.1rem;">${item.nome}</span>
+                        </div>
+                        ${precoAdc}
+                    </div>`;
+                }).join('');
+
+                const isOpen = (indexGlobalGrupos === 0);
+                const displayBody = isOpen ? 'block' : 'none';
+                const bgHeader = isOpen ? '#0d4a82' : '#022344'; 
+                const iconHtml = isOpen ? `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${grupo.limite}</span>` : `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
+
+                container.innerHTML += `
+                    <div style="margin-bottom:10px; margin-left: 10px;">
+                        <div onclick="toggleAccordionPDV(this)" style="background:${bgHeader}; color:white; padding:12px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;">
+                            <strong style="font-size: 1.1rem; font-weight: 400;">${grupo.nome}:</strong>
+                            <div class="grupo-icon-area">${iconHtml}</div>
+                            <input type="hidden" class="grupo-limite-val" value="${grupo.limite}">
+                        </div>
+                        <div class="grupo-body-pdv" style="display:${displayBody}; padding: 5px 15px 10px 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px;">
+                            ${itensHtml}
+                        </div>
+                    </div>
+                `;
+                indexGlobalGrupos++;
+            });
+        }
+    });
+
+    atualizarPrecoDinamicoCombo();
+    document.getElementById('modal-opcoes').style.display = 'flex';
+}
+
+function toggleOpcionalCombo(secaoId, nomeItem, preco, chkId, limiteGrupo) {
+    const chk = document.getElementById(chkId);
+    const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.secaoId === secaoId);
+
+    if (index > -1) {
+        escolhasAtuais.splice(index, 1);
+        chk.checked = false;
+    } else {
+        const escolhasNoGrupo = escolhasAtuais.filter(e => e.secaoId === secaoId);
+        if (limiteGrupo === 1) {
+            if (escolhasNoGrupo.length > 0) {
+                const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
+                escolhasAtuais.splice(idxAnterior, 1);
+                document.querySelectorAll(`input[id^="pdv-chk-${secaoId}-"]`).forEach(c => c.checked = false);
+            }
+        } else if (escolhasNoGrupo.length >= limiteGrupo) {
+            alert(`Limite atingido para este grupo.`);
+            return;
+        }
+        escolhasAtuais.push({ secaoId, nome: nomeItem, preco: Number(preco) });
+        chk.checked = true;
+    }
+    atualizarPrecoDinamicoCombo();
+}
+
+function atualizarPrecoDinamicoCombo() {
+    const totalOpcionais = escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
+    const totalGeral = precoBaseCalculado + totalOpcionais;
+    document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+}
+
+function confirmarEscolhasCombo() {
+    const nomeBase = produtoEmSelecao.nome;
+    const precoBaseCalculado = calcularPrecoComDesconto(produtoEmSelecao);
+    const precoFinal = precoBaseCalculado + escolhasAtuais.reduce((soma, e) => soma + Number(e.preco), 0);
+    
+    let listaAdicionais = [];
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+
+    // Baixa o CMV do Combo Principal
+    try {
+        let insumosBase = typeof produtoEmSelecao.insumos_json === 'string' ? JSON.parse(produtoEmSelecao.insumos_json || '[]') : (produtoEmSelecao.insumos_json || []);
+        insumosBase.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+    } catch(e) {}
+
+    let comboItens = [];
+    try { comboItens = typeof produtoEmSelecao.combo_itens === 'string' ? JSON.parse(produtoEmSelecao.combo_itens) : produtoEmSelecao.combo_itens; } catch(e){}
+
+    comboItens.forEach((itemCombo, indexFilho) => {
+        const produtoFilho = produtosDaNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho) return;
+
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            // Baixa o CMV dos Filhos do Combo
+            try {
+                let insumosFilho = typeof produtoFilho.insumos_json === 'string' ? JSON.parse(produtoFilho.insumos_json || '[]') : (produtoFilho.insumos_json || []);
+                insumosFilho.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+            } catch(e) {}
+            
+            const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd}/${itemCombo.quantidade})` : produtoFilho.nome;
+            const prefixSecao = `${indexFilho}_${qtd}_`;
+            const escolhasDesteFilho = escolhasAtuais.filter(e => e.secaoId.startsWith(prefixSecao));
+            
+            // 📌 O PULO DO GATO: Cria as divisórias visuais para o Carrinho e Impressora!
+            listaAdicionais.push(`▶️ [${tituloItem}]`);
+            
+            if (escolhasDesteFilho.length > 0) {
+                escolhasDesteFilho.forEach(e => {
+                    listaAdicionais.push(`  + ${e.nome}`);
+                    
+                    // Baixa o CMV dos Adicionais Escolhidos
+                    const grupoIdOriginal = Number(e.secaoId.split('_')[2]);
+                    const grupo = gruposGlobais.find(g => g.id === grupoIdOriginal);
+                    if (grupo) {
+                        const itemBanco = grupo.itens.find(i => i.nome === e.nome);
+                        if (itemBanco && itemBanco.insumos_json) {
+                            try {
+                                let insumosAdic = typeof itemBanco.insumos_json === 'string' ? JSON.parse(itemBanco.insumos_json || '[]') : (itemBanco.insumos_json || []);
+                                insumosAdic.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+                            } catch(e) {}
+                        }
+                    }
+                });
+            } else {
+                listaAdicionais.push(`  (Sem adicionais)`);
+            }
+        }
+    });
+
+    adicionarAoCarrinho(nomeBase, listaAdicionais, precoFinal, custoTotalFicha, insumosConsolidados);
+    fecharModalOpcoes();
 }

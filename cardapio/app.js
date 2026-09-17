@@ -451,6 +451,13 @@ function verificarAdicao(id) {
     }
     
     const produto = produtosDaNuvem.find(p => p.id === id);
+    
+    // 🍔 CÉREBRO DOS COMBOS (NOVO)
+    if (produto.is_combo === true || produto.is_combo === 'true') {
+        abrirModalCombo(produto);
+        return;
+    }
+    
     abrirModalEscolha(produto);
 }
 
@@ -613,6 +620,9 @@ function abrirModalEscolha(produto, isEditing = false) {
     try { if (clienteSalvo) clienteLogado = JSON.parse(clienteSalvo); } catch(e) {}
 
     if (btnAddNormal) {
+        // 🧹 Limpa a memória para garantir que não vai disparar a função do Combo sem querer
+        btnAddNormal.setAttribute('onclick', 'confirmarEscolhasEAdicionar(false)');
+        
         if (isEditing) {
             btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Salvar Edição</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
             btnAddNormal.style.background = '#00bcd4'; // Fica azul indicando modo de edição
@@ -902,7 +912,13 @@ function editarItemCarrinho(index) {
     }
     
     editandoIndex = index;
-    abrirModalEscolha(produtoOriginal, true); // true = liga o modo edição
+    
+    // 🍔 Manda o cliente para a tela certa de edição
+    if (produtoOriginal.is_combo === true || produtoOriginal.is_combo === 'true') {
+        abrirModalCombo(produtoOriginal, true);
+    } else {
+        abrirModalEscolha(produtoOriginal, true); 
+    }
 }
 
 function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = [], isResgate = false, pontosUsados = 0, pontosGanhos = 0, produtoId = null, escolhas = []) { 
@@ -962,9 +978,15 @@ function renderizarResumoCarrinho() {
     }
     container.innerHTML = '';
     carrinho.forEach((item, index) => {
+        let nomePrincipal = item.nome;
+        if (nomePrincipal.includes('(')) {
+            nomePrincipal = nomePrincipal.substring(0, nomePrincipal.indexOf('(')).trim();
+            nomePrincipal += ` <span style="font-size: 0.75rem; color: #888; font-weight: normal; display: block; margin-top: 2px;">(Detalhes definidos no carrinho)</span>`;
+        }
+
         container.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.85rem; border-bottom:1px solid #eee; padding-bottom:5px;">
-                <div style="flex:1; padding-right: 10px;"><strong>${item.nome}</strong><br><span style="color:var(--cor-primaria, #e91e63); font-weight: bold;">R$ ${item.preco.toFixed(2).replace('.', ',')}</span></div>
+                <div style="flex:1; padding-right: 10px;"><strong>${nomePrincipal}</strong><br><span style="color:var(--cor-primaria, #e91e63); font-weight: bold;">R$ ${item.preco.toFixed(2).replace('.', ',')}</span></div>
                 <div style="display: flex; gap: 8px; flex-shrink: 0;">
                     <button onclick="editarItemCarrinho(${index})" style="background:none; border:none; color:#00bcd4; cursor:pointer; padding:5px; display: flex; align-items: center;" title="Editar"><span class="material-symbols-outlined" style="font-size: 1.4rem;">edit</span></button>
                     <button onclick="removerItemCarrinho(${index})" style="background:none; border:none; color:#f44336; cursor:pointer; padding:5px; display: flex; align-items: center;" title="Remover"><span class="material-symbols-outlined" style="font-size: 1.4rem;">delete</span></button>
@@ -2258,10 +2280,24 @@ function renderizarListaCarrinhoCliente() {
         if (item.nome.includes('(')) {
             const partes = item.nome.split('(');
             const nomePrincipal = partes[0].trim();
-            const adicionais = '(' + partes.slice(1).join('(');
+            const adicionaisString = partes.slice(1).join('(').replace(/\)$/, '');
+            
+            // 👇 A MÁGICA DA SACOLA: Organiza os adicionais e destaca os Combos
+            const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
+            let htmlAdic = listaAdicionais.map(adc => {
+                if (adc.startsWith('▶️')) {
+                    return `<div style="color: var(--cor-primaria, #e91e63); font-size: 0.9rem; font-weight: 800; margin-top: 8px; margin-bottom: 2px;">${adc.replace('▶️ ', '')}</div>`;
+                } else if (adc.startsWith('(') && adc.includes('Sem adicionais')) {
+                    return `<div style="color: #999; font-size: 0.8rem; padding-left: 10px; font-style: italic;">${adc}</div>`;
+                } else {
+                    let adicLimpo = adc.replace(/^\+\s*/, '');
+                    return `<div style="color: #666; font-size: 0.8rem; padding-left: 10px; margin-top: 2px;">+ ${adicLimpo}</div>`;
+                }
+            }).join('');
+
             desc = `
-                <div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${nomePrincipal.replace('Delivery: ', '')}</div>
-                <div style="color: #777; font-size: 0.85rem; margin-top: 4px; line-height: 1.3;">${adicionais}</div>
+                <div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${nomePrincipal.replace('Delivery: ', '').replace('🎁 [RESGATE] ', '🎁 ')}</div>
+                <div style="margin-top: 4px; line-height: 1.3;">${htmlAdic}</div>
             `;
         } else {
             desc = `<div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${item.nome.replace('Delivery: ', '')}</div>`;
@@ -3597,4 +3633,397 @@ function ignorarAvaliacaoPendente() {
 
     // Fecha o banner e não enche mais o saco
     document.getElementById('banner-avaliacao-pendente').style.display = 'none';
+}
+
+// ==========================================
+// 📦 MOTOR DE DESEMPACOTAMENTO DE COMBOS (CARDÁPIO DIGITAL MOBILE)
+// ==========================================
+function abrirModalCombo(produtoCombo, isEditing = false) {
+    produtoEmSelecao = produtoCombo;
+    
+    if (isEditing) {
+        escolhasAtuais = JSON.parse(JSON.stringify(carrinho[editandoIndex].escolhas || []));
+        quantidadeModal = 1; 
+        const seletorQtd = document.getElementById('seletor-quantidade-modal');
+        if(seletorQtd) seletorQtd.style.display = 'none';
+    } else {
+        escolhasAtuais = [];
+        quantidadeModal = 1; 
+        editandoIndex = -1;
+        const seletorQtd = document.getElementById('seletor-quantidade-modal');
+        if(seletorQtd) seletorQtd.style.display = 'flex';
+    }
+
+    if(!isEditing) registrarEventoFunil('Visualizou Produto', produtoCombo.nome);
+
+    if(document.getElementById('quantidade-modal-display')) {
+        document.getElementById('quantidade-modal-display').innerText = quantidadeModal;
+    }
+
+    const topo = document.getElementById('detalhes-produto-topo');
+    const visualTopo = produtoCombo.imagem_url
+        ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
+               <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 10px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+               <img src="${produtoCombo.imagem_url}" onclick="abrirFotoInteira(this.src)" style="width: 100%; height: 220px; object-fit: cover; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa; cursor: pointer;">
+           </div>`
+        : `<div id="area-arraste" style="position: relative; font-size: 4rem; padding-top: 20px; padding-bottom: 10px; text-align: center;">
+               <div style="position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: #ccc; border-radius: 10px; z-index: 10;"></div>
+               ${produtoCombo.emoji || '📦'}
+           </div>`;
+
+    topo.innerHTML = `
+        ${visualTopo}
+        <h2 style="margin: 0; color: #333; font-size: 1.4rem; text-align: left;">📦 ${produtoCombo.nome}</h2>
+        <p style="color: var(--cor-primaria, #e91e63); margin: 10px 0 0 0; font-weight: bold; font-size: 0.95rem; text-transform: uppercase;">Monte os itens do seu combo</p>
+    `;
+
+    const container = document.getElementById('container-grupos-opcoes');
+    container.innerHTML = '';
+    
+    let comboItens = [];
+    try { comboItens = typeof produtoCombo.combo_itens === 'string' ? JSON.parse(produtoCombo.combo_itens || '[]') : (produtoCombo.combo_itens || []); } catch(e) {}
+
+    let indexGlobalGrupos = 0;
+
+    comboItens.forEach((itemCombo, indexFilho) => {
+        const produtoFilho = produtosDaNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho) return;
+
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd} de${itemCombo.quantidade})` : produtoFilho.nome;
+            
+            container.innerHTML += `
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px 15px; margin: 20px -20px 5px -20px; font-weight: bold; color: #e65100;">
+                    ▶️ ${tituloItem.toUpperCase()}
+                </div>
+            `;
+
+            if (!produtoFilho.grupos_ids || produtoFilho.grupos_ids.length === 0) {
+                container.innerHTML += `<p style="color: #777; font-size: 0.85rem; font-style: italic; margin-top: 10px;">(Nenhum complemento para este item)</p>`;
+                continue;
+            }
+
+            const gruposDoFilho = produtoFilho.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+
+            gruposDoFilho.forEach((grupo) => {
+                const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+                if (itensAtivos.length === 0) return;
+                
+                const secaoId = `${indexFilho}_${qtd}_${grupo.id}`;
+                const limiteAtual = Number(grupo.limite) || 1;
+
+                let itensHtml = itensAtivos.map((item, idx) => {
+                    let precoSeguro = Number(item.preco) || 0; 
+                    let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
+                    let identificador = `opc-${secaoId}-${idx}`;
+
+                    const escolhaExistente = escolhasAtuais.find(e => e.nome === nomeCompleto && e.secaoId === secaoId);
+                    const qtdExistente = escolhaExistente ? escolhaExistente.quantidade : 0;
+                    const isChecked = qtdExistente > 0 ? 'checked' : '';
+
+                    let tagHtml = '';
+                    let nomeLimpoVisual = nomeCompleto;
+                    const matchTag = nomeCompleto.match(/\[(.*?)\]/); 
+                    if (matchTag) {
+                        tagHtml += `<span class="tag-recomendacao">${matchTag[1]}</span>`;
+                        nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); 
+                    }
+                    if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
+                        tagHtml += `<span style="font-size: 0.65rem; background: #c4eed0; color: #0f5223; padding: 3px 8px; border-radius: 12px; font-weight: bold; border: 1px solid #8fcf9e; margin-left: 6px; vertical-align: middle;">🔥 Mais Pedido</span>`;
+                    }
+
+                    const imgThumb = item.imagem_url ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid #eee; flex-shrink: 0;">` : ``; 
+
+                    const nomePrecoHtml = `
+                        <div style="display: flex; flex-direction: column; gap: 3px; justify-content: center;">
+                            <div style="display: flex; align-items: center; flex-wrap: wrap;"><span style="font-weight:600; color:#333;">${nomeLimpoVisual}</span>${tagHtml}</div>
+                            <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                        </div>
+                    `;
+
+                    if (limiteAtual === 1) { 
+                        return `
+                        <div class="item-opcional-card" onclick="toggleOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, '${identificador}', ${limiteAtual})" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                            <div style="display:flex; align-items:center; gap:12px; flex: 1;">${imgThumb}${nomePrecoHtml}</div>
+                            <div style="flex-shrink: 0; padding-left: 10px;"><input type="checkbox" id="${identificador}" ${isChecked} style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none; flex-shrink: 0; width: 22px; height: 22px; margin: 0;"></div>
+                        </div>`;
+                    } else {
+                        const displayBtnIni = qtdExistente > 0 ? 'none' : 'flex';
+                        const displayControle = qtdExistente > 0 ? 'flex' : 'none';
+                        return `
+                        <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                            <div style="display:flex; align-items:center; gap:12px; flex: 1;">${imgThumb}${nomePrecoHtml}</div>
+                            <div style="flex-shrink: 0; padding-left: 10px;">
+                                <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}', ${limiteAtual}, '${grupo.nome}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0;">+</div>
+                                <div id="controle-qtd-${identificador}" style="display: ${displayControle}; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
+                                    <button onclick="alterarQtdOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}', ${limiteAtual}, '${grupo.nome}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px;">-</button>
+                                    <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">${qtdExistente}</span>
+                                    <button onclick="alterarQtdOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}', ${limiteAtual}, '${grupo.nome}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px;">+</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+                }).join('');
+
+                const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+                const badgeObrigatorio = isObrigatorio ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>` : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
+
+                container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
+                indexGlobalGrupos++;
+            });
+        }
+    });
+
+    atualizarPrecoDinamico();
+
+    const btnAddNormal = document.getElementById('btn-adicionar-normal');
+    if (btnAddNormal) {
+        // Direciona o botão para salvar com a função do Combo!
+        btnAddNormal.setAttribute('onclick', 'confirmarEscolhasCombo(false)');
+        if (isEditing) {
+            btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Salvar Combo</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
+            btnAddNormal.style.background = '#00bcd4'; 
+        } else {
+            btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Adicionar Combo</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
+            btnAddNormal.style.background = 'var(--cor-primaria, #e91e63)'; 
+        }
+    }
+    
+    const btnResgate = document.getElementById('btn-resgatar-pontos');
+    const clienteSalvo = localStorage.getItem('icesoft_cliente');
+    let clienteLogado = null;
+    try { if (clienteSalvo) clienteLogado = JSON.parse(clienteSalvo); } catch(e) {}
+
+    if (btnResgate) {
+        if (clienteLogado && produtoCombo.pontos_resgate > 0 && clienteLogado.pontos_acumulados >= produtoCombo.pontos_resgate && !isEditing) {
+            btnResgate.setAttribute('onclick', 'confirmarEscolhasCombo(true)');
+            btnResgate.style.display = 'flex';
+            let txtResgate = produtoCombo.resgate_dinheiro > 0 ? `${produtoCombo.pontos_resgate} pts + R$ ${Number(produtoCombo.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `Resgatar de Graça (${produtoCombo.pontos_resgate} pts)`;
+            document.getElementById('texto-resgate-dinamico').innerText = txtResgate;
+        } else {
+            btnResgate.style.display = 'none';
+        }
+    }
+
+    document.getElementById('modal-opcoes').style.display = 'flex';
+    document.body.style.overflow = 'hidden'; 
+    aplicarGestoSwipe();
+}
+
+function toggleOpcionalCombo(secaoId, nomeItem, preco, chkId, limiteAtual) {
+    const chk = document.getElementById(chkId);
+    const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.secaoId === secaoId);
+
+    if (index > -1) { 
+        escolhasAtuais.splice(index, 1); 
+        chk.checked = false; 
+    } else {
+        const escolhasNoGrupo = escolhasAtuais.filter(e => e.secaoId === secaoId);
+        
+        if (limiteAtual === 1) {
+            if (escolhasNoGrupo.length > 0) {
+                const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
+                escolhasAtuais.splice(idxAnterior, 1);
+                document.querySelectorAll(`input[id^="opc-${secaoId}-"]`).forEach(c => c.checked = false);
+            }
+        } else {
+            if (escolhasNoGrupo.length >= limiteAtual) {
+                alert(`⚠️ Limite atingido para este complemento.`);
+                return; 
+            }
+        }
+        
+        escolhasAtuais.push({ secaoId, nome: nomeItem, preco: Number(preco), quantidade: 1 });
+        chk.checked = true;
+    }
+    atualizarPrecoDinamico();
+}
+
+function alterarQtdOpcionalCombo(secaoId, nomeItem, preco, delta, spanId, limiteAtual, nomeGrupo) {
+    let totalSelecionadoNoGrupo = 0;
+    escolhasAtuais.forEach(e => { if (e.secaoId === secaoId) totalSelecionadoNoGrupo += e.quantidade; });
+
+    const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.secaoId === secaoId);
+    let itemAtual = index > -1 ? escolhasAtuais[index] : null;
+    let qtdAtual = itemAtual ? itemAtual.quantidade : 0;
+
+    if (delta > 0) { 
+        if (totalSelecionadoNoGrupo >= limiteAtual) {
+            return alert(`Você só pode escolher até ${limiteAtual} opção(ões) em ${nomeGrupo}`);
+        }
+        qtdAtual++;
+        if (itemAtual) {
+            itemAtual.quantidade = qtdAtual;
+        } else {
+            escolhasAtuais.push({ secaoId, nome: nomeItem, preco: Number(preco), quantidade: qtdAtual });
+        }
+    } else if (delta < 0) { 
+        if (qtdAtual > 0) {
+            qtdAtual--;
+            if (qtdAtual === 0) {
+                escolhasAtuais.splice(index, 1); 
+            } else {
+                itemAtual.quantidade = qtdAtual;
+            }
+        }
+    }
+
+    document.getElementById(spanId).innerText = qtdAtual;
+    
+    const btnIni = document.getElementById(`btn-add-ini-${spanId}`);
+    const controleQtd = document.getElementById(`controle-qtd-${spanId}`);
+    if (btnIni && controleQtd) {
+        if (qtdAtual > 0) {
+            btnIni.style.display = 'none';
+            controleQtd.style.display = 'flex';
+        } else {
+            btnIni.style.display = 'flex';
+            controleQtd.style.display = 'none';
+        }
+    }
+    atualizarPrecoDinamico();
+}
+
+function confirmarEscolhasCombo(isResgate = false) {
+    registrarEventoFunil('Adicionou ao Carrinho', produtoEmSelecao.nome);
+
+    // Validação de Grupos Obrigatórios nos Itens do Combo
+    let comboItensValidacao = [];
+    try { comboItensValidacao = typeof produtoEmSelecao.combo_itens === 'string' ? JSON.parse(produtoEmSelecao.combo_itens || '[]') : (produtoEmSelecao.combo_itens || []); } catch(e) {}
+    
+    for (let itemCombo of comboItensValidacao) {
+        const produtoFilho = produtosDaNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho || !produtoFilho.grupos_ids) continue;
+
+        const gruposDoFilho = produtoFilho.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+        
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            const prefixSecao = `${comboItensValidacao.indexOf(itemCombo)}_${qtd}_`;
+            for (let grupo of gruposDoFilho) {
+                const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+                if (isObrigatorio) {
+                    const secaoExataId = prefixSecao + grupo.id;
+                    const escolhasNesteGrupo = escolhasAtuais.filter(e => e.secaoId === secaoExataId);
+                    if (escolhasNesteGrupo.length === 0) {
+                        alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO no item ${produtoFilho.nome}.\nPor favor, selecione pelo menos uma opção!`);
+                        return; 
+                    }
+                }
+            }
+        }
+    }
+
+    let nomeFinal = produtoEmSelecao.nome;
+    let precoBase = Number(produtoEmSelecao.preco);
+    if (isPromocaoAtivaAgora(produtoEmSelecao)) {
+        if (produtoEmSelecao.tipo_promocao === 'porcentagem') precoBase -= precoBase * (Number(produtoEmSelecao.valor_promocao) / 100);
+        else if (produtoEmSelecao.tipo_promocao === 'fixo') precoBase -= Number(produtoEmSelecao.valor_promocao);
+        if (precoBase < 0) precoBase = 0; 
+    }
+
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+    try {
+        let insumosBase = typeof produtoEmSelecao.insumos_json === 'string' ? JSON.parse(produtoEmSelecao.insumos_json || '[]') : (produtoEmSelecao.insumos_json || []);
+        insumosBase.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+    } catch(e) {}
+
+    let listaAdicionais = [];
+    let comboItens = [];
+    try { comboItens = typeof produtoEmSelecao.combo_itens === 'string' ? JSON.parse(produtoEmSelecao.combo_itens) : produtoEmSelecao.combo_itens; } catch(e){}
+
+    comboItens.forEach((itemCombo, indexFilho) => {
+        const produtoFilho = produtosDaNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho) return;
+
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            try {
+                let insumosFilho = typeof produtoFilho.insumos_json === 'string' ? JSON.parse(produtoFilho.insumos_json || '[]') : (produtoFilho.insumos_json || []);
+                insumosFilho.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+            } catch(e) {}
+            
+            const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd}/${itemCombo.quantidade})` : produtoFilho.nome;
+            const prefixSecao = `${indexFilho}_${qtd}_`;
+            const escolhasDesteFilho = escolhasAtuais.filter(e => e.secaoId.startsWith(prefixSecao));
+            
+            listaAdicionais.push(`▶️ ${tituloItem}`);
+            
+            if (escolhasDesteFilho.length > 0) {
+                escolhasDesteFilho.forEach(e => {
+                    const strQtd = e.quantidade > 1 ? `${e.quantidade}x ` : '';
+                    listaAdicionais.push(`  + ${strQtd}${e.nome}`);
+                    
+                    const grupoIdOriginal = Number(e.secaoId.split('_')[2]);
+                    const grupo = gruposGlobais.find(g => g.id === grupoIdOriginal);
+                    if (grupo) {
+                        const itemBanco = grupo.itens.find(i => i.nome === e.nome);
+                        if (itemBanco && itemBanco.insumos_json) {
+                            try {
+                                let insumosAdic = typeof itemBanco.insumos_json === 'string' ? JSON.parse(itemBanco.insumos_json || '[]') : (itemBanco.insumos_json || []);
+                                insumosAdic.forEach(ins => { 
+                                    let qtdM = ins.qtd * e.quantidade;
+                                    insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: qtdM, custo: ins.custo_unitario }); 
+                                    custoTotalFicha += (qtdM * ins.custo_unitario); 
+                                });
+                            } catch(e) {}
+                        }
+                    }
+                });
+            } else {
+                listaAdicionais.push(`  (Sem adicionais)`);
+            }
+        }
+    });
+
+    if (listaAdicionais.length > 0) {
+        nomeFinal += ` (${listaAdicionais.join(', ')})`;
+    }
+
+    const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
+    let precoFinal = precoBase + valorComplementos;
+
+    let pontosUsados = 0;
+    let pontosGanhos = 0;
+
+    if (isResgate) {
+        precoFinal = Number(produtoEmSelecao.resgate_dinheiro) || 0; 
+        precoFinal += valorComplementos; 
+        pontosUsados = Number(produtoEmSelecao.pontos_resgate) || 0;
+        nomeFinal = "🎁 [RESGATE] " + nomeFinal;
+    } else {
+        pontosGanhos = Number(produtoEmSelecao.pontos_ganhos) || 0;
+    }
+    
+    if (editandoIndex > -1) {
+        carrinho[editandoIndex] = {
+            nome: nomeFinal,
+            preco: precoFinal,
+            custo_unitario: custoTotalFicha,
+            insumos: insumosConsolidados,
+            isResgate: isResgate,
+            pontosUsados: pontosUsados,
+            pontosGanhos: pontosGanhos,
+            produtoId: produtoEmSelecao.id,
+            escolhas: JSON.parse(JSON.stringify(escolhasAtuais))
+        };
+        editandoIndex = -1; 
+        atualizarBarraCarrinho();
+        
+        if (document.getElementById('modal-checkout').style.display === 'flex') {
+            renderizarResumoCarrinho();
+        } else if (document.getElementById('modal-carrinho-cliente').style.display === 'flex') {
+            renderizarListaCarrinhoCliente();
+        }
+    } else {
+        for (let i = 0; i < quantidadeModal; i++) {
+            const escolhasClonadas = JSON.parse(JSON.stringify(escolhasAtuais));
+            adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados, isResgate, pontosUsados, pontosGanhos, produtoEmSelecao.id, escolhasClonadas);
+        }
+    }
+    
+    // Retorna o botão para Adicionar Normal ao fechar
+    const btnAddNormal = document.getElementById('btn-adicionar-normal');
+    if(btnAddNormal) btnAddNormal.setAttribute('onclick', 'confirmarEscolhasEAdicionar(false)');
+
+    fecharModalOpcoes();
 }

@@ -350,10 +350,38 @@ function abrirDetalhes(id) {
         const itensParse = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
         if (Array.isArray(itensParse) && itensParse.length > 0) {
             itensParse.forEach(item => {
-                const nomeLimpo = item.nome ? item.nome.replace('Delivery: ', '').replace('🔥 Oferta: ', '🔥 ') : 'Produto';
-                itensHtml += `<div style="font-size: 0.95rem; padding: 8px 0; border-bottom: 1px dashed #eee; color: #444; display: flex; justify-content: space-between;">
-                                <span>🛒 ${item.quantidade||1}x ${nomeLimpo}</span>
-                                <strong style="color: #e91e63;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</strong>
+                let nomeLimpo = item.nome ? item.nome.replace('Delivery: ', '').replace('🔥 Oferta: ', '🔥 ') : 'Produto';
+                let nomeBaseItem = nomeLimpo;
+                let adicionaisHtml = '';
+                
+                if (nomeLimpo.includes('(') && nomeLimpo.includes(')')) {
+                    const primeiroParentese = nomeLimpo.indexOf('(');
+                    const ultimoParentese = nomeLimpo.lastIndexOf(')');
+                    nomeBaseItem = nomeLimpo.substring(0, primeiroParentese).trim();
+                    const recheioAdicionais = nomeLimpo.substring(primeiroParentese + 1, ultimoParentese);
+                    const listaAdicionais = recheioAdicionais.split(',');
+                    
+                    listaAdicionais.forEach(adicional => {
+                        let adic = adicional.trim();
+                        if(adic !== '') {
+                            if (adic.startsWith('▶️')) {
+                                adicionaisHtml += `<div style="color: #e65100; font-size: 0.9rem; font-weight: bold; margin-left: 10px; margin-top: 6px;">${adic}</div>`;
+                            } else if (adic.startsWith('(') && adic.includes('Sem adicionais')) {
+                                adicionaisHtml += `<div style="color: #999; font-size: 0.85rem; margin-left: 20px; font-style: italic;">${adic}</div>`;
+                            } else {
+                                let adicLimpo = adic.replace(/^\+\s*/, '');
+                                adicionaisHtml += `<div style="color: #6c757d; font-size: 0.85rem; margin-left: 20px; margin-top: 2px;">+ ${adicLimpo}</div>`;
+                            }
+                        }
+                    });
+                }
+
+                itensHtml += `<div style="font-size: 0.95rem; padding: 12px 0; border-bottom: 1px dashed #eee; color: #444; flex-direction: column;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="font-weight: bold;">🛒 ${item.quantidade||1}x ${nomeBaseItem}</span>
+                                    <strong style="color: #e91e63;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</strong>
+                                </div>
+                                ${adicionaisHtml}
                               </div>`;
             });
         }
@@ -398,7 +426,20 @@ function imprimirComandaKanban(venda) {
             const recheioAdicionais = nomeLimpo.substring(primeiroParentese + 1, ultimoParentese);
             const listaAdicionais = recheioAdicionais.split(',');
             listaAdicionais.forEach(adicional => {
-                if(adicional.trim() !== '') adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
+                let adic = adicional.trim();
+                if(adic !== '') {
+                    if (adic.startsWith('▶️')) {
+                        // Negrito para o nome do item dentro do combo!
+                        adicionaisHtml += `<div style="font-size: 14px; font-weight: bold; margin-top: 6px; margin-left: 5px;">${adic.replace('▶️ ', '')}</div>`;
+                    } else if (adic.startsWith('(') && adic.includes('Sem adicionais')) {
+                        // Aviso de item vazio
+                        adicionaisHtml += `<div style="font-size: 13px; margin-left: 15px; font-style: italic;">${adic}</div>`;
+                    } else {
+                        // Itens normais com tracinho
+                        let adicLimpo = adic.replace(/^\+\s*/, '');
+                        adicionaisHtml += `<div style="font-size: 13px; margin-top: 3px; font-weight: normal; margin-left: 15px;">- ${adicLimpo}</div>`;
+                    }
+                }
             });
         }
         

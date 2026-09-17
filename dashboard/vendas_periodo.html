@@ -443,8 +443,21 @@
                     const adicionaisString = item.nome.substring(primeiroParenteses + 1, ultimoParenteses);
                     const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
                     
-                    listaAdicionais.forEach(adic => {
-                        adicionaisHtml += `<div style="color: #6c757d; font-size: 14px; margin-left: 28px; margin-top: 4px;">+ ${adic}</div>`;
+                    listaAdicionais.forEach(adicional => {
+                        let adic = adicional.trim();
+                        if (adic !== '') {
+                            if (adic.startsWith('▶️')) {
+                                // Título do produto de dentro do combo
+                                adicionaisHtml += `<div style="color: #e65100; font-size: 14px; font-weight: bold; margin-left: 15px; margin-top: 8px;">${adic}</div>`;
+                            } else if (adic.startsWith('(') && adic.includes('Sem adicionais')) {
+                                // Aviso de item vazio
+                                adicionaisHtml += `<div style="color: #999; font-size: 13px; margin-left: 30px; font-style: italic;">${adic}</div>`;
+                            } else {
+                                // Adicional normal (limpamos o '+' extra caso tenha)
+                                let adicLimpo = adic.replace(/^\+\s*/, '');
+                                adicionaisHtml += `<div style="color: #6c757d; font-size: 14px; margin-left: 30px; margin-top: 4px;">+ ${adicLimpo}</div>`;
+                            }
+                        }
                     });
                 }
 
@@ -607,7 +620,20 @@
                 const recheioAdicionais = nomeLimpo.substring(primeiroParentese + 1, ultimoParentese);
                 const listaAdicionais = recheioAdicionais.split(',');
                 listaAdicionais.forEach(adicional => {
-                    if(adicional.trim() !== '') adicionaisHtml += `<div style="font-size: 14px; margin-top: 3px; font-weight: normal; margin-left: 20px;">+ ${adicional.trim()}</div>`;
+                    let adic = adicional.trim();
+                    if(adic !== '') {
+                        if (adic.startsWith('▶️')) {
+                            // Título do item do combo (em negrito e sem recuo)
+                            adicionaisHtml += `<div style="font-size: 14px; font-weight: bold; margin-top: 6px; margin-left: 5px;">${adic.replace('▶️ ', '')}</div>`;
+                        } else if (adic.startsWith('(') && adic.includes('Sem adicionais')) {
+                            // Aviso de item vazio
+                            adicionaisHtml += `<div style="font-size: 13px; margin-left: 15px; font-style: italic;">${adic}</div>`;
+                        } else {
+                            // Adicional normal com o tracinho
+                            let adicLimpo = adic.replace(/^\+\s*/, '');
+                            adicionaisHtml += `<div style="font-size: 13px; margin-top: 3px; font-weight: normal; margin-left: 15px;">- ${adicLimpo}</div>`;
+                        }
+                    }
                 });
             }
             
@@ -770,7 +796,16 @@
                 nomePrincipal = item.nome.substring(0, primeiroParenteses).trim();
                 const adicionaisString = item.nome.substring(primeiroParenteses + 1, item.nome.lastIndexOf(')'));
                 const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
-                textoAdicionais = listaAdicionais.map(adc => `<div style="font-size: 14px; margin-left: 20px; margin-top: 3px;">+ ${adc}</div>`).join('');
+                textoAdicionais = listaAdicionais.map(adc => {
+                    if (adc.startsWith('▶️')) {
+                        return `<div style="font-size: 14px; font-weight: bold; margin-top: 6px; margin-left: 5px;">${adc.replace('▶️ ', '')}</div>`;
+                    } else if (adc.startsWith('(') && adc.includes('Sem adicionais')) {
+                        return `<div style="font-size: 13px; margin-left: 15px; font-style: italic;">${adc}</div>`;
+                    } else {
+                        let adicLimpo = adc.replace(/^\+\s*/, '');
+                        return `<div style="font-size: 13px; margin-top: 3px; font-weight: normal; margin-left: 15px;">- ${adicLimpo}</div>`;
+                    }
+                }).join('');
             }
             htmlItens += `<div style="margin-bottom: 8px;"><div style="font-weight: bold; font-size: 16px;">1x ${nomePrincipal}</div>${textoAdicionais}</div>`;
         });
