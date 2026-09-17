@@ -19,6 +19,7 @@ async function carregarConfiguracoes() {
         if (configs.msg_recebido) document.getElementById('msg-recebido').value = configs.msg_recebido;
         if (configs.msg_aceito) document.getElementById('msg-aceito').value = configs.msg_aceito;
         if (configs.msg_entrega) document.getElementById('msg-entrega').value = configs.msg_entrega;
+        if (configs.msg_retirada) document.getElementById('msg-retirada').value = configs.msg_retirada;
         if (configs.msg_concluido) document.getElementById('msg-concluido').value = configs.msg_concluido;
         if (configs.msg_balcao) document.getElementById('msg-balcao').value = configs.msg_balcao;
 
@@ -64,6 +65,7 @@ async function salvarMensagens() {
         msg_recebido: document.getElementById('msg-recebido').value,
         msg_aceito: document.getElementById('msg-aceito').value,
         msg_entrega: document.getElementById('msg-entrega').value,
+        msg_retirada: document.getElementById('msg-retirada').value,
         msg_concluido: document.getElementById('msg-concluido').value,
         msg_balcao: document.getElementById('msg-balcao').value
     };

@@ -5,6 +5,7 @@ const COLUNAS_ID = {
     'Pendente Delivery': 'corpo-analise',
     'A Preparar': 'corpo-preparar',
     'Saiu p/ Entrega': 'corpo-entrega',
+    'Pronto para Retirada': 'corpo-entrega', // 👈 MUDANÇA: Ambos caem na mesma coluna visual
     'Entregue': 'corpo-entregue',
     'Cancelado': 'corpo-cancelado'
 };
@@ -194,7 +195,14 @@ function renderizarKanban(pedidos) {
         if(badge) badge.innerText = '0';
     });
 
-    const contadores = { 'Pendente Delivery': 0, 'A Preparar': 0, 'Saiu p/ Entrega': 0, 'Entregue': 0, 'Cancelado': 0 };
+    // 👇 MUDANÇA AQUI: Contadores baseados na coluna da tela para evitar conflito de status
+    const contadoresColunas = {
+        'corpo-analise': 0,
+        'corpo-preparar': 0,
+        'corpo-entrega': 0,
+        'corpo-entregue': 0,
+        'corpo-cancelado': 0
+    };
 
     if (pedidos.length === 0) {
         const corpoAnalise = document.getElementById('corpo-analise');
@@ -206,7 +214,7 @@ function renderizarKanban(pedidos) {
         const colunaId = COLUNAS_ID[pedido.status];
         if (!colunaId) return;
 
-        contadores[pedido.status]++;
+        contadoresColunas[colunaId]++; // 👇 Soma na coluna correta visualmente
 
         // Formatações
         const horaVenda = pedido.data_hora ? new Date(pedido.data_hora).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Hoje';
@@ -218,26 +226,30 @@ function renderizarKanban(pedidos) {
         const estiloBtnAcao = "background: #2196F3; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;";
         const estiloBtnX = "background: #f44336; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; transition: 0.2s;";
 
+        // 👇 MUDANÇA AQUI: Identificamos primeiro se é retirada para desenhar o botão e o status certos!
+        let isRetirada = false;
+        if (!pedido.cliente_endereco || pedido.cliente_endereco.toLowerCase().includes('retirada')) isRetirada = true;
+        const tagEntregaTexto = isRetirada ? 'Retirada na Loja' : 'Delivery';
+
         if (pedido.status === 'Pendente Delivery') {
             botoesHtml = `
                 <button onclick="mudarStatus(${pedido.id}, 'A Preparar')" style="${estiloBtnAcao}">Avançar Pedido</button>
                 <button onclick="mudarStatus(${pedido.id}, 'Cancelado')" style="${estiloBtnX}" title="Cancelar Pedido">X</button>
             `;
         } else if (pedido.status === 'A Preparar') {
+            // Se for retirada, o botão e o status mudam automaticamente!
+            const textoBotao = isRetirada ? 'Avisar Retirada' : 'Enviar Pedido';
+            const statusDestino = isRetirada ? 'Pronto para Retirada' : 'Saiu p/ Entrega';
+            
             botoesHtml = `
-                <button onclick="mudarStatus(${pedido.id}, 'Saiu p/ Entrega')" style="background: #FF9800; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;">Enviar Pedido</button>
+                <button onclick="mudarStatus(${pedido.id}, '${statusDestino}')" style="background: #FF9800; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;">${textoBotao}</button>
                 <button onclick="mudarStatus(${pedido.id}, 'Cancelado')" style="${estiloBtnX}" title="Cancelar Pedido">X</button>
             `;
-        } else if (pedido.status === 'Saiu p/ Entrega') {
+        } else if (pedido.status === 'Saiu p/ Entrega' || pedido.status === 'Pronto para Retirada') {
             botoesHtml = `
                 <button onclick="mudarStatus(${pedido.id}, 'Entregue')" style="background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.05rem; flex-grow: 1; transition: 0.2s;">Concluir Pedido</button>
             `;
         }
-
-        // Identifica se é Delivery ou Retirada
-        let isRetirada = false;
-        if (!pedido.cliente_endereco || pedido.cliente_endereco.toLowerCase().includes('retirada')) isRetirada = true;
-        const tagEntregaTexto = isRetirada ? 'Retirada na Loja' : 'Delivery';
         
         // Pega apenas os dois primeiros nomes para não quebrar a tela
         const nomeCliente = (pedido.cliente_nome || "Anônimo").split(' ').slice(0, 2).join(' '); 
@@ -287,8 +299,9 @@ function renderizarKanban(pedidos) {
         document.getElementById(colunaId).innerHTML += cardHtml;
     });
 
-    Object.entries(contadores).forEach(([status, qtd]) => {
-        const spanId = COLUNAS_ID[status].replace('corpo-', 'qtd-');
+    // 👇 MUDANÇA AQUI: Atualiza os números no topo das colunas com a nova lógica à prova de falhas
+    Object.entries(contadoresColunas).forEach(([colunaId, qtd]) => {
+        const spanId = colunaId.replace('corpo-', 'qtd-');
         const badge = document.getElementById(spanId);
         if (badge) badge.innerText = qtd;
     });
