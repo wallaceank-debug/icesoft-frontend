@@ -1829,24 +1829,51 @@ function renderizarUpsellCheckout() {
     // Procura os produtos garantindo que número bata com número!
     const produtosUpsell = produtosDaNuvem.filter(p => idsSeguros.includes(Number(p.id)) && p.ativo !== false);
 
-    // Se não achar nada ou não tiver desconto, esconde
-    if (produtosUpsell.length === 0 || descontoUpsellGlobal <= 0) {
+    // Se não achar nada, esconde (Retiramos a trava de desconto obrigatório)
+    if (produtosUpsell.length === 0) {
         area.style.display = 'none';
         return;
     }
 
     area.style.display = 'block';
     carrossel.innerHTML = '';
+    
+    // Ajusta o título do carrossel dinamicamente conforme a estratégia de vendas
+    const tituloUpsell = area.querySelector('h4');
+    if (tituloUpsell) {
+        tituloUpsell.innerText = descontoUpsellGlobal > 0 ? "🔥 Leve junto com desconto!" : "🔥 Aproveite e leve junto!";
+    }
 
     produtosUpsell.forEach(p => {
         const precoNormal = Number(p.preco);
-        const descontoReais = precoNormal * (descontoUpsellGlobal / 100);
-        const precoComDesconto = precoNormal - descontoReais;
+        
+        // Trata o desconto apenas se o valor na gestão for maior que zero
+        const descontoReal = descontoUpsellGlobal > 0 ? descontoUpsellGlobal : 0;
+        const descontoReais = precoNormal * (descontoReal / 100);
+        const precoFinal = precoNormal - descontoReais;
+        
         const nomeLimpo = p.nome.replace(/'/g, "\\'"); 
 
         const visualProduto = p.imagem_url 
             ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
             : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center; background:#f8f9fa; border-radius: 6px;">${p.emoji || '🍦'}</div>`;
+
+        // Lógica inteligente do preço: Só risca o valor antigo se realmente tiver desconto
+        let htmlPreco = '';
+        if (descontoReal > 0) {
+            htmlPreco = `
+                <div>
+                    <div style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
+                    <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoFinal.toFixed(2).replace('.', ',')}</div>
+                </div>
+            `;
+        } else {
+            htmlPreco = `
+                <div>
+                    <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
+                </div>
+            `;
+        }
 
         carrossel.innerHTML += `
             <div style="flex: 0 0 130px; background: white; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; border: 1px solid #ffb3c6;">
@@ -1855,12 +1882,9 @@ function renderizarUpsellCheckout() {
                 
                 <h5 style="margin: 0 0 5px 0; font-size: 0.85rem; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.nome}</h5>
                 
-                <div>
-                    <div style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
-                    <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</div>
-                </div>
+                ${htmlPreco}
                 
-                <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoComDesconto}, ${p.id})" style="margin-top: 8px; background: #e91e63; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Adicionar</button>
+                <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoFinal}, ${p.id})" style="margin-top: 8px; background: #e91e63; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Adicionar</button>
             </div>
         `;
     });
