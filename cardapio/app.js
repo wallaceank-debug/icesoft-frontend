@@ -3369,17 +3369,25 @@ function atualizarInterfaceLogin(cliente) {
                 areaClubeLogado.innerHTML = `
                     ${htmlPremioAlerta}
                     
+                    <!-- 👇 Faixa Azul Clara: Carteira de Pontos Acumulados -->
+                    <div style="background: #e0f7fa; border: 1px solid #b2ebf2; padding: 15px 20px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="material-symbols-outlined" style="color: #00bcd4; font-size: 2.2rem;">stars</span>
+                            <div style="text-align: left;">
+                                <strong style="color: #00838f; font-size: 1.05rem; display: block; line-height: 1.2;">Pontos Acumulados</strong>
+                                <span style="color: #00acc1; font-size: 0.8rem; font-weight: 600;">Saldo p/ troca em produtos</span>
+                            </div>
+                        </div>
+                        <strong style="color: #00bcd4; font-size: 1.8rem;">${pontosTotais}</strong>
+                    </div>
+                    
+                    <!-- 👇 Cartão Fidelidade (Independente) -->
                     <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;">
                         
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <div style="display: flex; flex-direction: column;">
-                                <strong style="color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                                    ⭐ Cartão Fidelidade
-                                </strong>
-                                <span style="color: #00bcd4; font-size: 0.85rem; font-weight: bold; margin-top: 2px;">
-                                    Saldo Total: ${pontosTotais} pts
-                                </span>
-                            </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <strong style="color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                                ⭐ Cartão Fidelidade
+                            </strong>
                             <span style="background: #008be5; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;">
                                 ${pontosNaCartela} / ${metaPontos}
                             </span>
@@ -3390,9 +3398,10 @@ function atualizarInterfaceLogin(cliente) {
                         </div>
                         
                         <p style="font-size: 0.95rem; color: #666; text-align: center; margin: 0 0 20px 0;">
-                            Você tem <strong>${pontosNaCartela}</strong> pontos acumulados na cartela atual.
+                            Você tem <strong>${pontosNaCartela}</strong> carimbos na cartela atual.
                         </p>
 
+                        <!-- Box Amarelo de Regras -->
                         <div style="background: #fffdf5; border: 1px dashed #ffe082; padding: 15px; border-radius: 10px; text-align: left;">
                             <strong style="color: #f57f17; font-size: 1rem; display: block; text-align: center; margin-bottom: 10px;">
                                 🎁 Junte ${metaPontos} pontos e ganhe ${textoPremios}!
