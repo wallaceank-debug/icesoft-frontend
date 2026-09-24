@@ -3333,26 +3333,76 @@ function atualizarInterfaceLogin(cliente) {
         if (telaLoginClube) telaLoginClube.style.display = 'none';
         if (areaClubeLogado) {
             areaClubeLogado.style.display = 'block';
-            areaClubeLogado.innerHTML = `
-                <div style="background: linear-gradient(135deg, #022344, #0d4a82); padding: 25px 20px; border-radius: 15px; color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 2px solid #00bcd4;">
-                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 400;">Seu Saldo de Pontos</h3>
-                    <div style="font-size: 4rem; font-weight: 800; margin: 10px 0; color: #00bcd4;">${cliente.pontos_acumulados || 0}</div>
-                    <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">Continue comprando para juntar mais!</p>
-                </div>
+            
+            // Dá tempo do servidor carregar as regras globais de pontos antes de pintar a tela
+            setTimeout(() => {
+                const metaPontos = window.metaFidelidadeGlobal || 10;
+                const pontosTotais = Number(cliente.pontos_acumulados) || 0;
+                const pontosNaCartela = pontosTotais % metaPontos;
+                const premiosDisponiveis = Math.floor(pontosTotais / metaPontos);
+                const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
                 
-                <div style="margin-top: 25px; padding: 20px; background: white; border-radius: 15px; border: 1px dashed #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                    <h4 style="color: #333; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">redeem</span> Como resgatar?</h4>
-                    <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 0;">
-                        Navegue pela aba <strong>Cardápio</strong> e adicione produtos ao carrinho. Ao completar a cartela, a opção de resgate aparecerá automaticamente no momento do pagamento.
-                        <br><br>
-                        <strong style="color: #333;">Regras Atuais:</strong>
-                        <br>• Meta da cartela: <strong>${window.metaFidelidadeGlobal || 10} pontos</strong>${window.minimoParaGanharPontoGlobal > 0 ? `<br>• Pedido mínimo para pontuar: <strong>R$ ${window.minimoParaGanharPontoGlobal.toFixed(2).replace('.', ',')}</strong>` : ''}
-                        ${window.minimoParaResgatarGlobal > 0 ? `<br>• Pedido mínimo para resgatar: <strong>R$ ${window.minimoParaResgatarGlobal.toFixed(2).replace('.', ',')}</strong>` : ''}
-                    </p>
-                </div>
+                let tipoTexto = (tipoFidelidadeGlobal === 'Desconto em %' || tipoFidelidadeGlobal === 'porcentagem' || tipoFidelidadeGlobal === '%') ? 'porcentagem' : 'fixo';
+                let textoPremios = tipoTexto === 'porcentagem' ? `${valorPremioFidelidadeGlobal}% OFF` : `R$ ${Number(valorPremioFidelidadeGlobal).toFixed(2).replace('.', ',')} de Desconto`;
 
-                <button onclick="iniciarLoginCliente()" style="width: 100%; background: #fff0f4; color: #e91e63; border: 1px solid #ffb3c6; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; transition: 0.2s;">Sair da Conta</button>
-            `;
+                let regrasTexto = '';
+                if (window.minimoParaGanharPontoGlobal > 0) {
+                    regrasTexto += `<br><span style="color: #777;">• Pedido mínimo p/ pontuar: <strong style="color: #555;">R$ ${Number(window.minimoParaGanharPontoGlobal).toFixed(2).replace('.', ',')}</strong></span>`;
+                }
+                if (window.minimoParaResgatarGlobal > 0) {
+                    regrasTexto += `<br><span style="color: #777;">• Pedido mínimo p/ resgatar: <strong style="color: #555;">R$ ${Number(window.minimoParaResgatarGlobal).toFixed(2).replace('.', ',')}</strong></span>`;
+                }
+                if(regrasTexto === '') {
+                    regrasTexto = `<br><span style="color: #777;">• Ganhe 1 ponto a cada pedido finalizado.</span>`;
+                }
+
+                let htmlPremioAlerta = '';
+                if (premiosDisponiveis > 0) {
+                    htmlPremioAlerta = `
+                        <div style="background: linear-gradient(135deg, #fffbeb, #fff8e1); border: 1px solid #ffe082; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <strong style="color: #f57f17; font-size: 1.1rem;">🎁 Você tem ${premiosDisponiveis} prêmio(s) disponível(is)!</strong>
+                            <p style="font-size: 0.9rem; color: #555; margin: 5px 0 0 0;">Monte um pedido no cardápio para resgatar.</p>
+                        </div>
+                    `;
+                }
+
+                areaClubeLogado.innerHTML = `
+                    ${htmlPremioAlerta}
+                    
+                    <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <strong style="color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                                ⭐ Cartão Fidelidade
+                            </strong>
+                            <span style="background: #008be5; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;">
+                                ${pontosNaCartela} / ${metaPontos}
+                            </span>
+                        </div>
+                        
+                        <div style="background: #f0f0f0; border-radius: 10px; height: 14px; width: 100%; overflow: hidden; margin-bottom: 12px;">
+                            <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out; border-radius: 10px;"></div>
+                        </div>
+                        
+                        <p style="font-size: 0.95rem; color: #666; text-align: center; margin: 0 0 20px 0;">
+                            Você tem <strong>${pontosNaCartela}</strong> pontos acumulados na cartela atual.
+                        </p>
+
+                        <div style="background: #fffdf5; border: 1px dashed #ffe082; padding: 15px; border-radius: 10px; text-align: left;">
+                            <strong style="color: #f57f17; font-size: 1rem; display: block; text-align: center; margin-bottom: 10px;">
+                                🎁 Junte ${metaPontos} pontos e ganhe ${textoPremios}!
+                            </strong>
+                            
+                            <strong style="color: #555; font-size: 0.9rem;">Regras do Clube:</strong>
+                            <div style="font-size: 0.85rem; line-height: 1.6; margin-top: 5px;">
+                                ${regrasTexto}
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="iniciarLoginCliente()" style="width: 100%; background: #fff0f4; color: #e91e63; border: 1px solid #ffb3c6; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; transition: 0.2s;">Sair da Conta</button>
+                `;
+            }, 300); 
         }
 
         // 3. Preenche automaticamente o Checkout para o cliente não precisar digitar os dados de novo
