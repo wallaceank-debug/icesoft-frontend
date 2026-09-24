@@ -1658,7 +1658,8 @@ async function carregarConfiguracoesLoja() {
         // 👇 Lendo as regras do CRM para a Barrinha Expansível e Travas de Ticket Médio
         if (configs.fidelidade_tipo) tipoFidelidadeGlobal = configs.fidelidade_tipo;
         if (configs.fidelidade_valor) valorPremioFidelidadeGlobal = Number(configs.fidelidade_valor) || 0;
-        // 👇 Os novos limites globais para o Cardápio obedecer
+        // 👇 Os novos limites e a meta global para o Cardápio obedecer
+        window.metaFidelidadeGlobal = Number(configs.fidelidade_meta) || 10;
         window.minimoParaGanharPontoGlobal = Number(configs.fidelidade_min_ponto) || 0;
         window.minimoParaResgatarGlobal = Number(configs.fidelidade_min_resgate) || 0;
 
@@ -2576,7 +2577,7 @@ function ativarBarrinhaFidelidade(comprasValidas) {
     areaFidelidade.style.display = 'block';
 
     // 🧮 A MATEMÁTICA DO ACÚMULO DE PRÊMIOS
-    const metaPontos = 10; 
+    const metaPontos = window.metaFidelidadeGlobal || 10; 
     const totalPedidos = comprasValidas.length;
     
     // Progresso atual na cartela (Ex: Se tem 12 pedidos, o resto é 2)
@@ -2650,13 +2651,25 @@ function ativarBarrinhaFidelidade(comprasValidas) {
 
     let htmlExpansivelPremio = ``;
     if (valorPremioFidelidadeGlobal > 0) {
+        let regrasTexto = '';
+        if (window.minimoParaGanharPontoGlobal > 0) {
+            regrasTexto += `<br>• Pedido mínimo p/ pontuar: <strong>R$ ${window.minimoParaGanharPontoGlobal.toFixed(2).replace('.', ',')}</strong>`;
+        }
+        if (window.minimoParaResgatarGlobal > 0) {
+            regrasTexto += `<br>• Pedido mínimo p/ resgatar: <strong>R$ ${window.minimoParaResgatarGlobal.toFixed(2).replace('.', ',')}</strong>`;
+        }
+
         htmlExpansivelPremio = `
             <div style="text-align: center; margin-top: 8px;">
                 <span onclick="document.getElementById('detalhe-premio-fidelidade').style.display='block'; this.style.display='none';" style="cursor: pointer; color: var(--cor-primaria, #e91e63); font-size: 0.85rem; font-weight: bold; text-decoration: underline;">
-                    Ver meu prêmio
+                    Como funciona o prêmio?
                 </span>
-                <div id="detalhe-premio-fidelidade" style="display: none; background: #fffdf5; border: 1px dashed #ffe082; padding: 10px; border-radius: 8px; margin-top: 8px; animation: fadeIn 0.3s;">
-                    <strong style="color: #f57f17; font-size: 0.9rem;">🎁 Ao completar ${metaPontos} pontos, você ganha ${textoPremios}!</strong>
+                <div id="detalhe-premio-fidelidade" style="display: none; background: #fffdf5; border: 1px dashed #ffe082; padding: 12px; border-radius: 8px; margin-top: 8px; animation: fadeIn 0.3s; text-align: left;">
+                    <strong style="color: #f57f17; font-size: 0.95rem; display: block; text-align: center; margin-bottom: 5px;">🎁 Junte ${metaPontos} pontos e ganhe ${textoPremios}!</strong>
+                    <span style="font-size: 0.8rem; color: #666; line-height: 1.5;">
+                        <strong>Regras do Clube:</strong>
+                        ${regrasTexto || '<br>• Ganhe 1 ponto a cada pedido finalizado.'}
+                    </span>
                 </div>
             </div>
         `;
@@ -3329,7 +3342,13 @@ function atualizarInterfaceLogin(cliente) {
                 
                 <div style="margin-top: 25px; padding: 20px; background: white; border-radius: 15px; border: 1px dashed #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
                     <h4 style="color: #333; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">redeem</span> Como resgatar?</h4>
-                    <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 0;">Navegue pela aba <strong>Cardápio</strong> e adicione produtos ao carrinho. Se o item permitir troca por pontos e você tiver saldo suficiente, a opção de resgate aparecerá automaticamente no momento do pagamento.</p>
+                    <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 0;">
+                        Navegue pela aba <strong>Cardápio</strong> e adicione produtos ao carrinho. Ao completar a cartela, a opção de resgate aparecerá automaticamente no momento do pagamento.
+                        <br><br>
+                        <strong style="color: #333;">Regras Atuais:</strong>
+                        <br>• Meta da cartela: <strong>${window.metaFidelidadeGlobal || 10} pontos</strong>${window.minimoParaGanharPontoGlobal > 0 ? `<br>• Pedido mínimo para pontuar: <strong>R$ ${window.minimoParaGanharPontoGlobal.toFixed(2).replace('.', ',')}</strong>` : ''}
+                        ${window.minimoParaResgatarGlobal > 0 ? `<br>• Pedido mínimo para resgatar: <strong>R$ ${window.minimoParaResgatarGlobal.toFixed(2).replace('.', ',')}</strong>` : ''}
+                    </p>
                 </div>
 
                 <button onclick="iniciarLoginCliente()" style="width: 100%; background: #fff0f4; color: #e91e63; border: 1px solid #ffb3c6; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; transition: 0.2s;">Sair da Conta</button>
