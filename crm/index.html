@@ -108,6 +108,15 @@
                     <label>Valor do Prêmio</label>
                     <input type="number" id="fidelidade-valor" placeholder="Ex: 15">
                 </div>
+                <!-- 👇 NOVAS REGRAS DE TICKET MÉDIO -->
+                <div class="form-group">
+                    <label>Mín. p/ Ganhar Ponto (R$)</label>
+                    <input type="number" id="fidelidade-min-ponto" placeholder="Ex: 0" title="O cliente só ganha o ponto se o pedido for maior que este valor">
+                </div>
+                <div class="form-group">
+                    <label>Mín. p/ Resgatar (R$)</label>
+                    <input type="number" id="fidelidade-min-resgate" placeholder="Ex: 30" title="O cliente só pode usar o prêmio se o pedido atual for maior que este valor">
+                </div>
                 <button onclick="salvarConfigFidelidade()" class="btn-salvar">Salvar Regras</button>
             </div>
         </div>

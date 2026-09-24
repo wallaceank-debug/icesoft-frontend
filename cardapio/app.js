@@ -1655,9 +1655,12 @@ async function carregarConfiguracoesLoja() {
         if (configs.logo_loja && document.getElementById('img-logo-loja')) document.getElementById('img-logo-loja').src = configs.logo_loja;
         if (configs.pedido_minimo_delivery) pedidoMinimoDeliveryGlobal = parseFloat(configs.pedido_minimo_delivery) || 0;
         
-        // 👇 Lendo as regras do CRM para a Barrinha Expansível
+        // 👇 Lendo as regras do CRM para a Barrinha Expansível e Travas de Ticket Médio
         if (configs.fidelidade_tipo) tipoFidelidadeGlobal = configs.fidelidade_tipo;
         if (configs.fidelidade_valor) valorPremioFidelidadeGlobal = Number(configs.fidelidade_valor) || 0;
+        // 👇 Os novos limites globais para o Cardápio obedecer
+        window.minimoParaGanharPontoGlobal = Number(configs.fidelidade_min_ponto) || 0;
+        window.minimoParaResgatarGlobal = Number(configs.fidelidade_min_resgate) || 0;
 
         if (configs.endereco_loja) {
             if(document.getElementById('loja-endereco-texto')) document.getElementById('loja-endereco-texto').innerText = configs.endereco_loja;
@@ -2591,29 +2594,54 @@ function ativarBarrinhaFidelidade(comprasValidas) {
 
     // 📊 UI DO PRÊMIO DISPONÍVEL (Fica no topo se ele tiver saldo)
     let htmlPremio = '';
+    let subtotalAtual = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    
     if (premiosDisponiveis > 0) {
-        htmlPremio = `
-            <div style="background: linear-gradient(135deg, #fffbeb, #fff8e1); border: 1px solid #ffe082; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                <strong style="color: #f57f17; font-size: 1.05rem;">🎁 Você tem ${premiosDisponiveis} prêmio(s) disponível(is)!</strong>
-                <p style="font-size: 0.85rem; color: #555; margin: 5px 0 10px 0;">Use agora ou guarde para o próximo pedido.</p>
-                <button id="btn-resgatar-fidelidade" onclick="resgatarFidelidade()" style="width: 100%; padding: 10px; background: #FF9800; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; animation: piscarBarraFutura 1s infinite alternate;">
-                    Resgatar Prêmio Agora
-                </button>
-            </div>
-        `;
+        // 🛑 TRAVA DE RESGATE: Libera o botão só se bater o mínimo
+        if (window.minimoParaResgatarGlobal > 0 && subtotalAtual < window.minimoParaResgatarGlobal) {
+            let faltaParaResgatar = window.minimoParaResgatarGlobal - subtotalAtual;
+            htmlPremio = `
+                <div style="background: #fdfdfd; border: 1px dashed #ccc; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <strong style="color: #666; font-size: 1.05rem;">🎁 Você tem ${premiosDisponiveis} prêmio(s) aguardando!</strong>
+                    <p style="font-size: 0.85rem; color: #f44336; margin: 5px 0 0 0; font-weight: bold;">
+                        Falta R$ ${faltaParaResgatar.toFixed(2).replace('.', ',')} em produtos para liberar o resgate.
+                    </p>
+                </div>
+            `;
+        } else {
+            htmlPremio = `
+                <div style="background: linear-gradient(135deg, #fffbeb, #fff8e1); border: 1px solid #ffe082; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <strong style="color: #f57f17; font-size: 1.05rem;">🎁 Você tem ${premiosDisponiveis} prêmio(s) disponível(is)!</strong>
+                    <p style="font-size: 0.85rem; color: #555; margin: 5px 0 10px 0;">Use agora ou guarde para o próximo pedido.</p>
+                    <button id="btn-resgatar-fidelidade" onclick="resgatarFidelidade()" style="width: 100%; padding: 10px; background: #FF9800; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; animation: piscarBarraFutura 1s infinite alternate;">
+                        Resgatar Prêmio Agora
+                    </button>
+                </div>
+            `;
+        }
     }
 
     // 📊 UI DA BARRA DE PROGRESSO (Sempre visível mostrando a cartela atual)
     const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
-    const porcentagemFutura = (1 / metaPontos) * 100;
-
+    
+    // 🛑 TRAVA DE ACÚMULO: Mostra se vai ganhar ou se falta valor
+    let vaiGanharPonto = true;
+    let porcentagemFutura = (1 / metaPontos) * 100;
     let mensagem = `Você tem <strong>${pontosNaCartela}</strong> pontos e ganhará <strong style="color: #FF9800;">+ 1</strong> neste pedido!`;
-    if (pontosNaCartela === metaPontos - 1) {
-        mensagem = `Você tem <strong>${pontosNaCartela}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
-    } else if (pontosNaCartela === 0 && totalPedidos === 0) {
-        mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
-    } else if (pontosNaCartela === 0 && totalPedidos > 0) {
-        mensagem = `Cartela nova! Ganhe o <strong>1º ponto</strong> desta rodada ao finalizar! 🎉`;
+    
+    if (window.minimoParaGanharPontoGlobal > 0 && subtotalAtual < window.minimoParaGanharPontoGlobal) {
+        vaiGanharPonto = false;
+        porcentagemFutura = 0; // Apaga a barrinha laranja que pisca
+        let faltaParaPonto = window.minimoParaGanharPontoGlobal - subtotalAtual;
+        mensagem = `Adicione mais <strong>R$ ${faltaParaPonto.toFixed(2).replace('.', ',')}</strong> para ganhar 1 ponto nesta compra!`;
+    } else {
+        if (pontosNaCartela === metaPontos - 1) {
+            mensagem = `Você tem <strong>${pontosNaCartela}</strong> pontos. Este pedido vai <strong>completar sua cartela!</strong> 🎉`;
+        } else if (pontosNaCartela === 0 && totalPedidos === 0) {
+            mensagem = `Ganhe seu <strong>1º ponto</strong> ao finalizar este pedido! 🎉`;
+        } else if (pontosNaCartela === 0 && totalPedidos > 0) {
+            mensagem = `Cartela nova! Ganhe o <strong>1º ponto</strong> desta rodada ao finalizar! 🎉`;
+        }
     }
 
     // 👇 Traduz a linguagem do Painel CRM para o Cardápio
@@ -2652,6 +2680,13 @@ function ativarBarrinhaFidelidade(comprasValidas) {
 }
 
 async function resgatarFidelidade() {
+    // 🛑 TRAVA DE SEGURANÇA NO CLIQUE
+    let subtotalAtual = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+    if (window.minimoParaResgatarGlobal > 0 && subtotalAtual < window.minimoParaResgatarGlobal) {
+        alert(`Você precisa de pelo menos R$ ${window.minimoParaResgatarGlobal.toFixed(2).replace('.', ',')} no carrinho para usar seu prêmio.`);
+        return;
+    }
+
     // 1. Muda o botão para "carregando" enquanto busca as regras na nuvem
     const btn = document.getElementById('btn-resgatar-fidelidade');
     if (btn) {

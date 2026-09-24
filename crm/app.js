@@ -1,6 +1,6 @@
 const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
 let clientesGlobais = [];
-let configsFidelidade = { ativo: false, meta: 10, tipo: 'porcentagem', valor: 0 };
+let configsFidelidade = { ativo: false, meta: 10, tipo: 'porcentagem', valor: 0, minPonto: 0, minResgate: 0 };
 
 async function iniciarCRM() {
     await carregarConfigs();
@@ -16,11 +16,17 @@ async function carregarConfigs() {
         configsFidelidade.meta = Number(configs.fidelidade_meta) || 10;
         configsFidelidade.tipo = configs.fidelidade_tipo || 'porcentagem';
         configsFidelidade.valor = Number(configs.fidelidade_valor) || 0;
+        // 👇 Carrega as novas regras do banco
+        configsFidelidade.minPonto = Number(configs.fidelidade_min_ponto) || 0;
+        configsFidelidade.minResgate = Number(configs.fidelidade_min_resgate) || 0;
 
         document.getElementById('fidelidade-ativo').value = configs.fidelidade_ativo || 'false';
         document.getElementById('fidelidade-meta').value = configsFidelidade.meta;
         document.getElementById('fidelidade-tipo').value = configsFidelidade.tipo;
         document.getElementById('fidelidade-valor').value = configsFidelidade.valor;
+        // 👇 Preenche as caixinhas na tela
+        document.getElementById('fidelidade-min-ponto').value = configsFidelidade.minPonto;
+        document.getElementById('fidelidade-min-resgate').value = configsFidelidade.minResgate;
     } catch (e) {
         console.error("Erro ao carregar configurações de fidelidade:", e);
     }
@@ -34,7 +40,10 @@ async function salvarConfigFidelidade() {
         fidelidade_ativo: document.getElementById('fidelidade-ativo').value,
         fidelidade_meta: document.getElementById('fidelidade-meta').value,
         fidelidade_tipo: document.getElementById('fidelidade-tipo').value,
-        fidelidade_valor: document.getElementById('fidelidade-valor').value
+        fidelidade_valor: document.getElementById('fidelidade-valor').value,
+        // 👇 Adicionamos as novas regras no pacote que vai pro servidor
+        fidelidade_min_ponto: document.getElementById('fidelidade-min-ponto').value,
+        fidelidade_min_resgate: document.getElementById('fidelidade-min-resgate').value
     };
 
     try {
