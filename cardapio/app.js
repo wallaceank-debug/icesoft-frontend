@@ -3372,9 +3372,14 @@ function atualizarInterfaceLogin(cliente) {
                     <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;">
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <strong style="color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                                ⭐ Cartão Fidelidade
-                            </strong>
+                            <div style="display: flex; flex-direction: column;">
+                                <strong style="color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                                    ⭐ Cartão Fidelidade
+                                </strong>
+                                <span style="color: #00bcd4; font-size: 0.85rem; font-weight: bold; margin-top: 2px;">
+                                    Saldo Total: ${pontosTotais} pts
+                                </span>
+                            </div>
                             <span style="background: #008be5; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;">
                                 ${pontosNaCartela} / ${metaPontos}
                             </span>
