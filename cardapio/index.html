@@ -253,7 +253,7 @@
     <!-- ==========================================
          ABA 1: INÍCIO (Vitrine e Clube)
          ========================================== -->
-    <div id="aba-inicio" class="aba-conteudo ativa" style="padding-bottom: 160px;">
+    <div id="aba-inicio" class="aba-conteudo" style="padding-bottom: 160px;">
         <!-- Topo: Login e Nome -->
         <div style="background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
             <div id="area-login-cliente" onclick="iniciarLoginCliente()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
@@ -334,7 +334,7 @@
     <!-- ==========================================
          ABA 2: CARDÁPIO
          ========================================== -->
-    <div id="aba-cardapio" class="aba-conteudo" style="padding-bottom: 160px;">
+    <div id="aba-cardapio" class="aba-conteudo ativa" style="padding-bottom: 160px;">
         <div class="area-busca-flutuante" style="margin-top: 15px;">
             <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
         </div>
@@ -371,11 +371,11 @@
          BOTTOM NAVIGATION (MENU DO APP)
          ========================================== -->
     <nav class="bottom-nav" id="menu-inferior">
-        <div class="nav-item ativa" onclick="mudarAba('aba-inicio', this)">
+        <div class="nav-item" onclick="mudarAba('aba-inicio', this)">
             <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">home</span>
             Início
         </div>
-        <div class="nav-item nav-item-destaque" onclick="mudarAba('aba-cardapio', this)">
+        <div class="nav-item nav-item-destaque ativa" onclick="mudarAba('aba-cardapio', this)">
             <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">restaurant_menu</span>
             Cardápio
         </div>
