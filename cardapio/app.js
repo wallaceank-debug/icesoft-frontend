@@ -446,10 +446,7 @@ function obterLimiteDoGrupoNoProduto(grupoId) {
 }
 
 function verificarAdicao(id) {
-    if (!lojaAberta) {
-        alert("🛑 A loja está fechada no momento! Verifique nosso horário de funcionamento no topo da página.");
-        return;
-    }
+    // A trava de loja fechada foi removida daqui para o cliente poder simular e montar pedidos
     
     const produto = produtosDaNuvem.find(p => p.id === id);
     
@@ -603,12 +600,13 @@ function abrirModalEscolha(produto, isEditing = false) {
             }).join('');
 
             const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
-            const badgeObrigatorio = isObrigatorio
-                ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
-                : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
+                const badgeObrigatorio = isObrigatorio
+                    ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
+                    : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
 
-            container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
-        });
+                // 👇 INSERIDO O ID "grupo-opcoes-{grupo.id}" PARA A ROLAGEM INTELIGENTE
+                container.innerHTML += `<div id="grupo-opcoes-${grupo.id}" style="margin-bottom:20px; margin-top: 15px; scroll-margin-top: 20px;"><div class="cabecalho-grupo" style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s;"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
+            });
     }
     
     atualizarPrecoDinamico();
@@ -782,18 +780,38 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
     registrarEventoFunil('Adicionou ao Carrinho', produtoEmSelecao.nome);
 
     if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
-        const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
-        for (let grupo of gruposDoProduto) {
-            const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
-            if (isObrigatorio) {
-                const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
-                if (escolhasNesteGrupo.length === 0) {
-                    alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
-                    return; 
+            const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+            for (let grupo of gruposDoProduto) {
+                const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+                if (isObrigatorio) {
+                    const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
+                    if (escolhasNesteGrupo.length === 0) {
+                        
+                        // 👇 MÁGICA DA UX: Rola suavemente até o erro e dá um destaque visual
+                        const grupoElemento = document.getElementById(`grupo-opcoes-${grupo.id}`);
+                        if (grupoElemento) {
+                            grupoElemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            const cabecalho = grupoElemento.querySelector('.cabecalho-grupo');
+                            if (cabecalho) {
+                                cabecalho.style.border = '2px solid #f44336';
+                                cabecalho.style.boxShadow = '0 0 15px rgba(244, 67, 54, 0.3)';
+                                setTimeout(() => {
+                                    cabecalho.style.border = '1px solid #eee';
+                                    cabecalho.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
+                                }, 1500); // Tira o vermelho depois de 1,5 segundos
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
+                        }, 250); // Atraso minúsculo para a tela rolar antes do alerta congelar o celular
+                        
+                        return; 
+                    }
                 }
             }
         }
-    }
 
     let nomeFinal = produtoEmSelecao.nome;
     if (escolhasAtuais.length > 0) {
@@ -2333,11 +2351,7 @@ async function buscarDadosClienteCRM(telefoneFormatado) {
 // 🛒 VISUALIZAÇÃO DO CARRINHO (PRÉ-CHECKOUT)
 // ==========================================
 function abrirModalCarrinho() {
-    // 🔒 TRAVA DE SEGURANÇA
-    if (!isLojaAbertaGlobal) {
-        alert(`⚠️ ${mensagemFechadaGlobal}`);
-        return;
-    }
+    // A trava de loja fechada foi removida daqui para permitir a visualização do carrinho e upsell
     
     if (carrinho.length === 0) {
         alert("Seu carrinho está vazio! Adicione algumas delícias primeiro.");
@@ -2453,7 +2467,12 @@ function removerItemCarrinhoCliente(index) {
 }
 
 function irParaCheckout() {
-    
+    // 🛑 TRAVA DE SEGURANÇA: Impede ir pro checkout se a loja fechou
+    if (!isLojaAbertaGlobal) {
+        alert(`⚠️ ${mensagemFechadaGlobal}\nNão é possível finalizar pedidos no momento.`);
+        return; 
+    }
+
     // SENSOR 4: Cliente foi para a tela de pagamento/endereço!
     registrarEventoFunil('Iniciou Checkout');
 
@@ -3958,7 +3977,8 @@ function abrirModalCombo(produtoCombo, isEditing = false) {
                 const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
                 const badgeObrigatorio = isObrigatorio ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>` : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
 
-                container.innerHTML += `<div style="margin-bottom:20px; margin-top: 15px;"><div style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02);"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
+                // 👇 INSERIDO O ID PARA O COMBO ("grupo-opcoes-secaoId")
+                container.innerHTML += `<div id="grupo-opcoes-${secaoId}" style="margin-bottom:20px; margin-top: 15px; scroll-margin-top: 20px;"><div class="cabecalho-grupo" style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s;"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
                 indexGlobalGrupos++;
             });
         }
@@ -4095,7 +4115,27 @@ function confirmarEscolhasCombo(isResgate = false) {
                     const secaoExataId = prefixSecao + grupo.id;
                     const escolhasNesteGrupo = escolhasAtuais.filter(e => e.secaoId === secaoExataId);
                     if (escolhasNesteGrupo.length === 0) {
-                        alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO no item ${produtoFilho.nome}.\nPor favor, selecione pelo menos uma opção!`);
+                        
+                        // 👇 MÁGICA DA UX PARA O COMBO: Rola até o item faltante
+                        const grupoElemento = document.getElementById(`grupo-opcoes-${secaoExataId}`);
+                        if (grupoElemento) {
+                            grupoElemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            const cabecalho = grupoElemento.querySelector('.cabecalho-grupo');
+                            if (cabecalho) {
+                                cabecalho.style.border = '2px solid #f44336';
+                                cabecalho.style.boxShadow = '0 0 15px rgba(244, 67, 54, 0.3)';
+                                setTimeout(() => {
+                                    cabecalho.style.border = '1px solid #eee';
+                                    cabecalho.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
+                                }, 1500);
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO no item ${produtoFilho.nome}.\nPor favor, selecione pelo menos uma opção!`);
+                        }, 250);
+                        
                         return; 
                     }
                 }
