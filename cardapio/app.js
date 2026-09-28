@@ -165,29 +165,9 @@ async function carregarTudo() {
         renderizarCidades(); 
         renderizarBairros(); 
 
-        // 👇 NOVAS RENDERIZAÇÕES DOS 4 CARROSSÉIS
-        let banners = [];
-        try { banners = JSON.parse(configs.banners_promocionais); } catch(e) {}
-        renderizarBanners(banners);
-
-        let recompensas = [];
-        try { recompensas = JSON.parse(configs.carrossel_recompensas); } catch(e) {}
-        
-        // 🏆 Passamos o ranking de produtos principais em vez dos adicionais!
-        renderizarRankingMaisVendidos(topProdutosGlobais); 
-        renderizarCarrossel(produtosDaNuvem); // Destaques normais
-        renderizarRecompensas(produtosDaNuvem, recompensas);
-
-        // ==========================================
-        // 🚀 MÁGICA DO TÍTULO DINÂMICO PROTEGIDO
-        // ==========================================
-        const tituloDestaque = configs.titulo_carrossel_destaques || 'Destaques da Casa';
-        const elementoTitulo = document.getElementById('titulo-ui-destaques');
-        
-        if (elementoTitulo) {
-            // Injeta o texto mantendo o ícone rosa do material design
-            elementoTitulo.innerHTML = `<span class="material-symbols-outlined" style="color: #e91e63;">star</span> ${tituloDestaque}`;
-        }
+        // 🚀 UX OTIMIZADA: Carrosséis e Banners foram desativados para focar 
+        // na conversão direta do cardápio e reduzir a fadiga de decisão (Lei de Hick).
+        // O sistema agora roda muito mais leve no celular do cliente.
 
     } catch (e) { 
         console.error("Erro ao carregar do servidor novo:", e); 
@@ -305,16 +285,11 @@ function renderizarCardapio(lista) {
         let produtosHtml = '';
 
         produtosDestaCategoria.forEach(p => {
-            const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
-            const htmlDescricao = descricaoLimpa 
-                ? `<p style="margin: 4px 0 8px 0; color: #777; font-size: 0.85rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
-                : ``;
-            
             // O CÉREBRO DAS TAGS
             let tagHtml = '';
             if (p.tag && p.tag !== '') {
                 const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade', 'poucas_unidades': 'Poucas Unidades' };
-                tagHtml = `<div class="tag-flutuante tag-${p.tag}">${nomesTags[p.tag] || p.tag}</div>`;
+                tagHtml = `<div class="tag-flutuante tag-${p.tag}" style="top: -5px; left: -5px;">${nomesTags[p.tag] || p.tag}</div>`;
             }
 
             // TAG DE ESTOQUE DINÂMICA
@@ -323,12 +298,12 @@ function renderizarCardapio(lista) {
                 let corFundo = qtdEstoque > 5 ? '#e8f5e9' : '#fff3e0'; 
                 let corTexto = qtdEstoque > 5 ? '#2e7d32' : '#e65100'; 
                 if (qtdEstoque <= 2) { corFundo = '#ffebee'; corTexto = '#c62828'; } 
-                
-                tagHtml += `<div style="position: absolute; bottom: -10px; right: -5px; background: ${corFundo}; color: ${corTexto}; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid ${corTexto}50; z-index: 15;">📦 Restam ${qtdEstoque}</div>`;
+                tagHtml += `<div style="position: absolute; top: -10px; right: -5px; background: ${corFundo}; color:${corTexto}; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid ${corTexto}50; z-index: 15;">📦 Restam ${qtdEstoque}</div>`;
             }
 
-            // MATEMÁTICA DA PROMOÇÃO (Preço Riscado)
-            let precoHtml = `<div style="font-weight: 700; color: #333; font-size: 1rem; margin-top: 5px;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</div>`;
+            // 💰 MATEMÁTICA DO PREÇO (Limpo: Sem o cifrão "R$")
+            let valorNormal = Number(p.preco).toFixed(2).replace('.', ',');
+            let precoHtml = `<div style="font-size: 1.35rem; color: #888; font-weight: 500; text-align: center; margin-top: 5px; font-family: 'Inter', sans-serif;">${valorNormal}</div>`;
             
             if (isPromocaoAtivaAgora(p)) {
                 let precoComDesconto = Number(p.preco);
@@ -340,46 +315,72 @@ function renderizarCardapio(lista) {
                 if (precoComDesconto < 0) precoComDesconto = 0;
                 
                 precoHtml = `
-                    <div style="margin-top: 5px; display: flex; align-items: center; gap: 8px;">
-                        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">R$ ${Number(p.preco).toFixed(2).replace('.', ',')}</span>
-                        <strong style="color: #25D366; font-size: 1.1rem;">R$ ${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-top: 5px; line-height: 1;">
+                        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">${valorNormal}</span>
+                        <strong style="color: #25D366; font-size: 1.35rem;">${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
                     </div>
                 `;
             }
 
-            // 👇 NOVO: EXIBIÇÃO DOS PONTOS DO CLUBE ICESOFT
-            let badgePontos = '';
+            // 🎁 BADGES DO CLUBE ICESOFT (Estilo Novo)
+            let badgePontosGanhos = '';
+            let badgeResgate = '';
+            
             if (p.pontos_ganhos > 0) {
-                badgePontos += `<span style="background: #fff8e1; color: #f57f17; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #ffe082;">🎁 +${p.pontos_ganhos} pts</span>`;
+                badgePontosGanhos = `<span style="background: #00bcd4; color: white; font-size: 0.75rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">+ ${p.pontos_ganhos} pts</span>`;
             }
             if (p.pontos_resgate > 0) {
-                let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate} pts + R$ ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate} pts`;
-                badgePontos += `<span style="background: #e0f7fa; color: #00838f; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; border: 1px solid #b2ebf2;">⭐ Resgate: ${txtResgate}</span>`;
-            }
-            if (badgePontos !== '') {
-                precoHtml += `<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px;">${badgePontos}</div>`;
+                let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate}pts +${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate}pts`;
+                badgeResgate = `<span style="background: #00bcd4; color: white; font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; display: flex; align-items: center;">Resgate: ${txtResgate}</span>`;
             }
 
-            // Visual do Produto
+            // 🖼️ VISUAL DO PRODUTO (Agora na Esquerda: Foto + Preço em bloco vertical)
             const visualProduto = p.imagem_url 
-                ? `<div style="position: relative; flex-shrink: 0;">
+                ? `<div style="position: relative; width: 110px;">
                        ${tagHtml}
-                       <img src="${p.imagem_url}" loading="lazy" style="width: 90px; height: 90px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                       <img src="${p.imagem_url}" loading="lazy" style="width: 110px; height: 110px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                       ${precoHtml}
                    </div>`
-                : `<div style="position: relative; flex-shrink: 0;">
+                : `<div style="position: relative; width: 110px;">
                        ${tagHtml}
-                       <div style="font-size: 2.5rem; width: 90px; height: 90px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: center; align-items: center;">${p.emoji || '🍦'}</div>
+                       <div style="font-size: 2.5rem; width: 110px; height: 110px; background: #fff; border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid #eee;">${p.emoji || '🍦'}</div>
+                       ${precoHtml}
                    </div>`;
 
+            // 📝 DESCRIÇÃO
+            const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
+            const htmlDescricao = descricaoLimpa 
+                ? `<p style="margin: 6px 0 0 0; color: #777; font-size: 0.8rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
+                : ``;
+
+            // 🧩 MONTAGEM DO CARD INTEIRO (Flexbox Invertido)
             produtosHtml += `
-            <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; background: white; margin-top: 12px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s;">
-                <div style="flex: 1; min-width: 0;">
-                        <h3 style="margin: 0; color: #333; font-size: 1.05rem; font-weight: 600;">${p.nome}</h3>
-                        ${htmlDescricao}
-                        ${precoHtml}
-                    </div>
+            <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; gap: 15px; background: #f4f6f8; margin-top: 12px; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; cursor: pointer; transition: 0.2s;">
+                
+                <!-- Coluna Esquerda: Imagem e Preço -->
+                <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
                     ${visualProduto}
                 </div>
+                
+                <!-- Coluna Direita: Textos e Botões -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
+                    
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                            <h3 style="margin: 0; color: #666; font-size: 1.1rem; font-weight: 700; line-height: 1.2;">${p.nome}</h3>
+                            ${badgePontosGanhos}
+                        </div>
+                        ${htmlDescricao}
+                    </div>
+                    
+                    <!-- Botões alinhados na base -->
+                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px;">
+                        ${badgeResgate}
+                        <span style="background: var(--cor-primaria, #e91e63); color: white; font-size: 0.95rem; font-weight: 700; padding: 6px 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Adicionar</span>
+                    </div>
+
+                </div>
+            </div>
             `;
         });
 
@@ -1646,7 +1647,13 @@ async function carregarConfiguracoesLoja() {
         
         if (configs.cor_primaria) document.documentElement.style.setProperty('--cor-primaria', configs.cor_primaria);
         if (configs.nome_loja && document.getElementById('loja-nome-exibicao')) document.getElementById('loja-nome-exibicao').innerText = `${configs.nome_loja}`;
-        if (configs.mensagem_boas_vindas && document.getElementById('loja-mensagem-exibicao')) document.getElementById('loja-mensagem-exibicao').innerText = configs.mensagem_boas_vindas;
+        
+        // Exibe a mensagem de boas vindas apenas se houver texto cadastrado
+        if (configs.mensagem_boas_vindas && configs.mensagem_boas_vindas.trim() !== '' && document.getElementById('loja-mensagem-exibicao')) {
+            const msgBox = document.getElementById('loja-mensagem-exibicao');
+            msgBox.innerText = configs.mensagem_boas_vindas;
+            msgBox.style.display = 'block';
+        }
         if (configs.carrossel_destaques) { try { idsDestaquesGlobais = JSON.parse(configs.carrossel_destaques); } catch(e) {} }
         if (configs.upsell_desconto) descontoUpsellGlobal = Number(configs.upsell_desconto);
         if (configs.carrossel_upsell) { try { idsUpsellGlobais = JSON.parse(configs.carrossel_upsell); } catch(e) {} }
@@ -1980,21 +1987,20 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ==========================================
-// 🎨 DESENHA O MENU DE CATEGORIAS DINÂMICO
+// 🎨 DESENHA O MENU DE CATEGORIAS DINÂMICO (DROPDOWN)
 // ==========================================
 function renderizarMenuCategorias(lista) {
     const container = document.getElementById('menu-categorias-dinamico');
     if (!container) return;
 
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
-    let html = '';
+    let categoriasComProduto = [];
 
+    // Descobre quais categorias realmente tem produtos hoje
     categoriasOrdenadas.forEach(catNome => {
-        // Verifica se a categoria principal OU a adicional tem esse produto
         const temProduto = lista.some(p => {
             let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
             if (catPrincipal === catNome) return true;
-            
             if (p.categorias_adicionais) {
                 try {
                     let extras = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais;
@@ -2003,17 +2009,58 @@ function renderizarMenuCategorias(lista) {
             }
             return false;
         });
-
-        if (temProduto) {
-            html += `
-            <div onclick="rolarParaCategoria('${catNome.replace(/'/g, "\\'")}')" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; background: #ffffff; padding: 10px 20px; border-radius: 50px; border: 1px solid #e4e6eb; box-shadow: 0 4px 6px rgba(0,0,0,0.04); color: #333; font-family: 'Poppins', sans-serif; font-weight: bold; font-size: 0.95rem; transition: 0.2s;">
-                ${catNome}
-            </div>`;
-        }
+        if (temProduto) categoriasComProduto.push(catNome);
     });
 
-    container.innerHTML = html;
+    if (categoriasComProduto.length === 0) return;
+
+    // Constrói os itens da lista que ficarão escondidos
+    let htmlLista = categoriasComProduto.map(catNome => {
+        return `
+        <div onclick="selecionarCategoriaDropdown('${catNome.replace(/'/g, "\\'")}')" style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; cursor: pointer; font-size: 1rem;">
+            ${catNome}
+        </div>`;
+    }).join('');
+
+    // Constrói o Botão Principal + A Lista Injetada
+    container.innerHTML = `
+        <div style="position: relative; padding: 5px 20px 15px 20px;">
+            <div onclick="toggleDropdownCategorias()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--cor-primaria, #e91e63); color: white; padding: 12px 18px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1rem; transition: 0.2s;">
+                <span id="texto-categoria-atual">${categoriasComProduto[0]}</span>
+                <span id="seta-dropdown-categorias" style="transition: transform 0.3s; font-size: 0.9rem;">▼</span>
+            </div>
+            <div id="lista-dropdown-categorias" style="display: none; position: absolute; top: 60px; left: 20px; right: 20px; background: white; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; max-height: 350px; overflow-y: auto; padding-bottom: 10px;">
+                ${htmlLista}
+            </div>
+        </div>
+    `;
 }
+
+// Lógica para abrir/fechar a listinha
+window.toggleDropdownCategorias = function() {
+    const lista = document.getElementById('lista-dropdown-categorias');
+    const seta = document.getElementById('seta-dropdown-categorias');
+    if (lista.style.display === 'none' || lista.style.display === '') {
+        lista.style.display = 'block';
+        lista.style.animation = 'descerSuave 0.2s ease-out forwards';
+        if(seta) seta.style.transform = 'rotate(180deg)';
+    } else {
+        lista.style.display = 'none';
+        if(seta) seta.style.transform = 'rotate(0deg)';
+    }
+};
+
+// Lógica de quando o cliente clica na categoria desejada
+window.selecionarCategoriaDropdown = function(catNome) {
+    // Muda o nome do botão pro nome que ele clicou
+    document.getElementById('texto-categoria-atual').innerText = catNome;
+    
+    // Fecha a listinha
+    toggleDropdownCategorias();
+    
+    // Usa a inteligência que já existe para abrir a sanfona e descer a tela
+    rolarParaCategoria(catNome);
+};
 
 // Ação que abre e fecha a sanfona ao clicar nela
 window.toggleCategoriaCardapio = function(conteudoId, elementoHeader) {
@@ -2042,22 +2089,35 @@ window.rolarParaCategoria = function(nomeCategoria) {
     const headerElement = document.getElementById(catId);
     
     if (headerElement) {
+        // 👇 MÁGICA NOVA: Encontra todas as categorias abertas e fecha todas primeiro!
+        const todasAsCategorias = document.querySelectorAll('[id^="conteudo-categoria-"]');
+        const todasAsSetas = document.querySelectorAll('.seta-categoria');
+        
+        todasAsCategorias.forEach(conteudo => {
+            conteudo.style.display = 'none'; // Esconde os produtos
+        });
+        
+        todasAsSetas.forEach(seta => {
+            seta.style.transform = 'rotate(0deg)'; // Volta a setinha para apontar para baixo
+        });
+
+        // 👇 Agora abre APENAS a categoria que o cliente clicou
         const conteudoId = 'conteudo-' + catId;
         const conteudo = document.getElementById(conteudoId);
         const seta = headerElement.querySelector('.seta-categoria');
         
-        // Se a pessoa clicou no atalho e a sanfona estava fechada, o sistema abre ela com animação!
-        if (conteudo && (conteudo.style.display === 'none' || conteudo.style.display === '')) {
+        if (conteudo) {
             conteudo.style.display = 'block';
             
+            // Reinicia a animação de descer suavemente
             conteudo.classList.remove('animar-sanfona');
-            void conteudo.offsetWidth;
+            void conteudo.offsetWidth; 
             conteudo.classList.add('animar-sanfona');
 
-            if(seta) seta.style.transform = 'rotate(180deg)';
+            if (seta) seta.style.transform = 'rotate(180deg)'; // Aponta a seta pra cima
         }
 
-        // Rola a tela suavemente até a categoria
+        // Rola a tela suavemente até a categoria, deixando um pequeno espaço pro cabeçalho
         const y = headerElement.getBoundingClientRect().top + window.scrollY - 80; 
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
@@ -2485,31 +2545,19 @@ async function verificarSeLojaEstaAberta() {
 function bloquearLoja(mensagem) {
     isLojaAbertaGlobal = false;
     mensagemFechadaGlobal = mensagem;
-    
-    // Mostra o Banner Vermelho
-    const banner = document.getElementById('banner-loja-fechada');
-    const texto = document.getElementById('texto-loja-fechada');
-    if(banner && texto) {
-        texto.innerText = mensagem;
-        banner.style.display = 'block';
-    }
 
-    // Muda o textinho debaixo do nome da loja para Fechado
+    // Muda o textinho debaixo do nome da loja para a bolinha vermelha com a frase dinâmica
     const indicador = document.getElementById('indicador-status-loja');
     if (indicador) {
-        indicador.innerHTML = '🔴 Fechado no momento';
+        indicador.innerHTML = `🔴 ${mensagem}`;
         indicador.style.color = '#f44336';
     }
 }
 
 function liberarLoja() {
     isLojaAbertaGlobal = true;
-    
-    // Esconde o Banner Vermelho
-    const banner = document.getElementById('banner-loja-fechada');
-    if(banner) banner.style.display = 'none';
 
-    // Volta o textinho para Recebendo Pedidos
+    // Volta o textinho normal para Recebendo Pedidos com a bolinha verde
     const indicador = document.getElementById('indicador-status-loja');
     if (indicador) {
         indicador.innerHTML = '🟢 Recebendo pedidos';
@@ -2979,11 +3027,11 @@ function atualizarBarraCupom() {
     const textoFalta = document.getElementById('texto-cupom-falta');
     const barraProgresso = document.getElementById('barra-cupom-progresso');
 
-    const valorDescontoTxt = cupomDestaque.tipo === 'porcentagem' ? `${cupomDestaque.valor}% OFF` : `R$ ${Number(cupomDestaque.valor).toFixed(2).replace('.', ',')} OFF`;
+    const valorDescontoTxt = cupomDestaque.tipo === 'porcentagem' ? `${cupomDestaque.valor}% OFF` : `${Number(cupomDestaque.valor).toFixed(2).replace('.', ',')} OFF`;
 
     if (falta > 0) {
         textoChamada.innerHTML = `🎟️ Desbloqueie ${valorDescontoTxt}`;
-        textoFalta.innerHTML = `Falta R$ ${falta.toFixed(2).replace('.', ',')}`;
+        textoFalta.innerHTML = `Falta ${falta.toFixed(2).replace('.', ',')}`;
         barraProgresso.style.background = '#FF9800'; // Laranja enquanto enche
         
         // Se o cliente remover algo e cair do mínimo, removemos o auto-aplicar

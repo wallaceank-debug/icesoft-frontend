@@ -131,24 +131,11 @@
         }
 
         #menu-categorias-dinamico {
-            display: flex;
-            align-items: center; 
-            gap: 12px; 
-            padding: 15px 20px; 
+            display: block; 
             max-width: 600px; /* Mantém alinhado com o site */
             margin: 0 auto; 
-            overflow-x: auto; 
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
+            /* Removemos os limites de rolagem antigos (overflow) que estavam cortando a lista! */
         }
-
-        #menu-categorias-dinamico::-webkit-scrollbar { display: none; }
-        .menu-categorias-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .menu-categorias-scroll a:active { transform: scale(0.95); background: #f8f9fa !important; }
-
-        #menu-categorias-dinamico::-webkit-scrollbar { display: none; }
-        .menu-categorias-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .menu-categorias-scroll a:active { transform: scale(0.95); background: #f8f9fa !important; }
 
         /* O Carrossel de Destaques */
         .area-destaques { padding: 25px 20px 10px 20px; max-width: 600px; margin: 0 auto;}
@@ -224,12 +211,7 @@
         <button onclick="document.getElementById('banner-instagram').style.display='none'" style="position: absolute; right: 15px; top: 15px; background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; font-weight: bold; line-height: 1;">&times;</button>
     </div>
 
-    <!-- ==========================================
-         BANNER DE LOJA FECHADA
-         ========================================== -->
-    <div id="banner-loja-fechada" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: #f44336; color: white; text-align: center; padding: 12px 20px; font-weight: bold; z-index: 10000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); box-sizing: border-box; font-size: 0.95rem;">
-        ⚠️ <span id="texto-loja-fechada">A loja está fechada no momento.</span>
-    </div>
+    <!-- Banner removido para manter a interface limpa -->
 
     <div id="tela-carregamento" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-claro, #f4f6f8); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.4s ease;">
         <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🍦</div>
@@ -251,98 +233,52 @@
     </div>  
 
     <!-- ==========================================
-         ABA 1: INÍCIO (Vitrine e Clube)
-         ========================================== -->
-    <div id="aba-inicio" class="aba-conteudo" style="padding-bottom: 160px;">
-        <!-- Topo: Login e Nome -->
-        <div style="background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-            <div id="area-login-cliente" onclick="iniciarLoginCliente()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                <div style="background: #f0f2f5; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--cor-primaria, #e91e63); font-size: 1.2rem;">
-                    <span class="material-symbols-outlined">person</span>
-                </div>
-                <div>
-                    <span style="font-size: 0.75rem; color: #888; display: block; line-height: 1;">Bem-vindo(a)</span>
-                    <strong id="nome-cliente-topo" style="color: #333; font-size: 1rem;">Fazer Login</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="header-loja">
-            <div class="banner-loja">
-                <img id="img-banner-loja" src="" alt="Banner da Loja">
-            </div>
-            
-            <div class="info-loja-container">
-                <div class="logo-loja">
-                    <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" alt="Logo da Loja">
-                </div>
-                
-                <div class="texto-loja">
-                    <h1 id="loja-nome-exibicao">Icesoft Sorveteria & Açaíteria</h1>
-                    <p style="font-size: 0.85rem; color: #666; margin: 2px 0;">
-                        <span id="loja-endereco-texto">Endereço não informado</span> • 
-                        <span onclick="abrirModalInfoLoja()" style="color: var(--cor-primaria); font-weight: 600; cursor: pointer;">Mais informações</span>
-                    </p>
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                        <span id="indicador-status-loja" style="color: #25D366; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
-                            🟢 Recebendo pedidos
-                        </span>
-                        <span id="indicador-tempo-entrega" style="background: #fff3e0; color: #ff9800; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; display: none; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(255,152,0,0.1);">
-                            ⏱️ ~ 45 min
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div style="max-width: 600px; margin: 20px auto 15px auto; padding: 0 20px; box-sizing: border-box;">
-            <div id="loja-mensagem-exibicao" style="background: white; border-radius: 12px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center; border: 1px solid #f0f0f0; color: var(--cor-primaria, #00bcd4); font-size: 0.9rem; font-weight: 600; line-height: 1.4; transition: transform 0.3s ease;">
-            </div>
-        </div>
-
-        <!-- 1. CARROSSEL DE BANNERS -->
-        <section class="area-destaques" id="secao-banners-promo" style="display: none; padding-top: 5px;">
-            <div class="carrossel-banners" id="carrossel-imagens-promocionais"></div>
-        </section>
-
-        <!-- 2. RANKING MAIS VENDIDOS -->
-        <section class="area-destaques" id="secao-mais-vendidos" style="display: none; padding-top: 5px;">
-            <h3 style="font-size: 1.15rem; color: #333; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="color: #ff9800;">local_fire_department</span> Mais Pedidos (Top 6)
-            </h3>
-            <div class="carrossel" id="carrossel-produtos-ranking"></div>
-        </section>
-
-        <!-- 3. DESTAQUES DA CASA -->
-        <section class="area-destaques" id="secao-destaques" style="display: none; padding-top: 5px;">
-            <h3 id="titulo-ui-destaques" style="font-size: 1.15rem; color: #333; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="color: #e91e63;">star</span> Destaques da Casa
-            </h3>
-            <div class="carrossel" id="carrossel-produtos"></div>
-        </section>
-
-        <!-- 4. CARROSSEL DE RECOMPENSAS (CLUBE ICESOFT) -->
-        <section class="area-destaques" id="secao-recompensas" style="display: none; padding-top: 5px; margin-bottom: 20px;">
-            <h3 style="font-size: 1.15rem; color: #333; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="color: #00bcd4;">redeem</span> Troque seus pontos!
-            </h3>
-            <div class="carrossel" id="carrossel-produtos-recompensas"></div>
-        </section>
-
-    </div>
-
-    <!-- ==========================================
-         ABA 2: CARDÁPIO
+         ABA PRINCIPAL: CARDÁPIO ONLINE
          ========================================== -->
     <div id="aba-cardapio" class="aba-conteudo ativa" style="padding-bottom: 160px;">
-        <div class="area-busca-flutuante" style="margin-top: 15px;">
-            <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?">
+        
+        <!-- Topo Limpo e Focado em Conversão -->
+        <div style="background: white; padding: 20px 20px 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: relative; z-index: 10;">
+            <div style="display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto;">
+                
+                <!-- Info da Loja -->
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--cor-primaria); box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div>
+                        <h1 id="loja-nome-exibicao" style="margin: 0 0 2px 0; font-size: 1.15rem; color: #333; font-weight: 800;">Icesoft Sorvetes</h1>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="indicador-status-loja" style="color: #25D366; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">🟢 Recebendo pedidos</span>
+                            <span id="indicador-tempo-entrega" style="background: #fff3e0; color: #ff9800; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: bold; display: none; align-items: center; gap: 4px;">⏱️ ~ 45 min</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botão de Informações da Loja -->
+                <div style="display: flex; gap: 10px;">
+                    <div onclick="abrirModalInfoLoja()" style="background: #f4f7f6; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #666; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" title="Informações da Loja">
+                        <span class="material-symbols-outlined" style="font-size: 1.3rem;">info</span>
+                    </div>
+                </div>
+            </div> <!-- 👈 MÁGICA AQUI: Faltava fechar essa caixa! -->
+
+            <!-- Barra de Busca -->
+            <div style="max-width: 600px; margin: 15px auto 0 auto;">
+                <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?" style="width: 100%; padding: 12px 20px; border-radius: 25px; border: 2px solid var(--cor-primaria, #e91e63); background: #ffffff; font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: 0.2s;">
+            </div>
         </div>
 
-        <div class="faixa-sticky" style="margin-top: 15px;">
-            <div id="menu-categorias-dinamico" class="menu-categorias-scroll"></div>
+        <!-- Faixa de Categorias (Sticky) -->
+        <div class="faixa-sticky">
+            <span style="font-size: 0.85rem; color: #777; margin-left: 20px; display: block; padding-top: 15px; margin-bottom: -5px; font-weight: 500;">Categorias</span>
+            <div id="menu-categorias-dinamico"></div>
         </div>
 
+        <!-- Mensagem de Boas Vindas (Oculta por padrão) -->
+        <div style="max-width: 600px; margin: 15px auto 5px auto; padding: 0 20px; box-sizing: border-box;">
+            <div id="loja-mensagem-exibicao" style="display: none; background: #e0f7fa; border-radius: 10px; padding: 10px 15px; text-align: center; border: 1px solid #b2ebf2; color: #00838f; font-size: 0.85rem; font-weight: 600; line-height: 1.3;"></div>
+        </div>
+
+        <!-- Lista de Produtos Focada na Escaneabilidade -->
         <main id="lista-produtos" style="padding: 10px 20px; max-width: 600px; margin: 0 auto;">
             <!-- Os produtos serão desenhados aqui -->
         </main>
@@ -371,15 +307,11 @@
          BOTTOM NAVIGATION (MENU DO APP)
          ========================================== -->
     <nav class="bottom-nav" id="menu-inferior">
-        <div class="nav-item" onclick="mudarAba('aba-inicio', this)">
-            <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">home</span>
-            Início
-        </div>
-        <div class="nav-item nav-item-destaque ativa" onclick="mudarAba('aba-cardapio', this)">
+        <div class="nav-item ativa" onclick="mudarAba('aba-cardapio', this)" style="width: 50%;">
             <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">restaurant_menu</span>
             Cardápio
         </div>
-        <div class="nav-item" onclick="mudarAba('aba-clube', this)">
+        <div class="nav-item" onclick="mudarAba('aba-clube', this)" style="width: 50%;">
             <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">loyalty</span>
             Clube
         </div>
