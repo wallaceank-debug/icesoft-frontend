@@ -134,7 +134,8 @@ function renderizarTabela(lista) {
         `;
         // --- FIM: FAROL DE RETENÇÃO ---
 
-        const pedidosFeitos = Number(cliente.total_pedidos);
+        // 👇 A MÁGICA: O CRM agora usa apenas a contagem de pedidos que bateram o valor mínimo!
+        const pedidosFeitos = Number(cliente.pedidos_fidelidade !== undefined ? cliente.pedidos_fidelidade : cliente.total_pedidos);
 
         // Lógica Visual da Fidelidade
         let htmlFidelidade = '<span style="color:#999; font-size: 0.85rem;">Programa Desligado</span>';
