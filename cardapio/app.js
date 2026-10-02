@@ -1334,35 +1334,58 @@ function atualizarTotalCheckout() {
     let taxaEntrega = 0;
     
     const taxaDisplay = document.getElementById('taxa-entrega-display');
+    
+    // 👇 MÁGICA VISUAL: Prepara a caixinha de aviso abaixo da Cidade
+    const selectCidade = document.getElementById('cliente-cidade');
+    let avisoPromo = document.getElementById('aviso-promo-cidade');
+    if (selectCidade && !avisoPromo) {
+        avisoPromo = document.createElement('div');
+        avisoPromo.id = 'aviso-promo-cidade';
+        selectCidade.parentNode.insertBefore(avisoPromo, selectCidade.nextSibling);
+    }
+
     if (tipoEntrega === 'delivery') {
         const selectBairro = document.getElementById('cliente-bairro');
-        const selectCidade = document.getElementById('cliente-cidade'); // 👈 Pegamos a cidade
-        
+        const nomeCidade = selectCidade ? selectCidade.value : '';
+
+        // 🚀 EXIBE O ALERTA LOGO APÓS ESCOLHER A CIDADE (Antes do bairro!)
+        if (avisoPromo) {
+            if (nomeCidade === 'Porto Real') {
+                if (subtotal < 45.00) {
+                    let faltaPromo = 45.00 - subtotal;
+                    avisoPromo.innerHTML = `
+                        <div style="background: #fff8e1; border: 1px dashed #ffb300; padding: 12px; border-radius: 8px; margin-bottom: 10px; margin-top: -5px; text-align: center; animation: fadeIn 0.3s;">
+                            <span style="color: #f57f17; font-size: 0.85rem; font-weight: bold;">🛵 Frete Grátis para Porto Real!</span><br>
+                            <span onclick="fecharModalCheckout()" style="color: #f57f17; font-size: 0.85rem; font-weight: bold; cursor: pointer; text-decoration: underline; display: inline-block; margin-top: 5px;">
+                                + Adicione R$ ${faltaPromo.toFixed(2).replace('.', ',')} ao carrinho e não pague entrega!
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    avisoPromo.innerHTML = `
+                        <div style="background: #e8f5e9; border: 1px solid #4CAF50; padding: 10px; border-radius: 8px; margin-bottom: 10px; margin-top: -5px; text-align: center; animation: fadeIn 0.3s;">
+                            <span style="color: #2e7d32; font-size: 0.85rem; font-weight: bold;">🎉 Você ganhou Frete Grátis para Porto Real!</span>
+                        </div>
+                    `;
+                }
+            } else {
+                avisoPromo.innerHTML = ''; // Esconde se for Quatis
+            }
+        }
+
+        // Matemática da Taxa
         if (selectBairro && selectBairro.value && selectBairro.value !== "Retirada no Local") {
             const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
             taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
-            const nomeCidade = selectCidade ? selectCidade.value : '';
 
-            // 🚀 PROMOÇÃO INTELIGENTE: Frete Grátis Contextual
-            if (nomeCidade === 'Porto Real') {
-                if (subtotal >= 45.00) {
-                    taxaEntrega = 0; // Zera a matemática da taxa
-                    if (taxaDisplay) {
-                        taxaDisplay.innerHTML = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 8px; font-size: 0.85rem; font-weight: bold;">🎉 Grátis!</span>`;
-                    }
-                } else {
-                    let faltaPromo = 45.00 - subtotal;
-                    if (taxaDisplay) {
-                        taxaDisplay.innerHTML = `<div style="text-align: right;">
-                            R$ ${taxaEntrega.toFixed(2).replace('.', ',')}<br>
-                            <span onclick="fecharModalCheckout()" style="color: #f57f17; font-size: 0.75rem; font-weight: bold; cursor: pointer; text-decoration: underline;">
-                                + R$ ${faltaPromo.toFixed(2).replace('.', ',')} p/ Frete Grátis!
-                            </span>
-                        </div>`;
-                    }
+            // Se bater a meta em Porto Real, zera a matemática
+            if (nomeCidade === 'Porto Real' && subtotal >= 45.00) {
+                taxaEntrega = 0; 
+                if (taxaDisplay) {
+                    taxaDisplay.innerHTML = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 8px; font-size: 0.85rem; font-weight: bold;">🎉 Grátis!</span>`;
                 }
             } else {
-                // Matemática normal para Quatis e outras regiões (sem ciúmes)
+                // Preço normal para o resto ou se não bateu a meta
                 if (taxaDisplay) {
                     taxaDisplay.innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
                     taxaDisplay.style.color = "#666";
@@ -1372,6 +1395,8 @@ function atualizarTotalCheckout() {
             if (taxaDisplay) taxaDisplay.innerText = `Selecione o bairro`;
         }
     } else {
+        // Se for retirada, zera tudo e esconde o aviso
+        if (avisoPromo) avisoPromo.innerHTML = '';
         if (taxaDisplay) {
             taxaDisplay.innerText = `Grátis`;
             taxaDisplay.style.color = "#25D366";
