@@ -1336,12 +1336,25 @@ function atualizarTotalCheckout() {
     const taxaDisplay = document.getElementById('taxa-entrega-display');
     if (tipoEntrega === 'delivery') {
         const selectBairro = document.getElementById('cliente-bairro');
+        const selectCidade = document.getElementById('cliente-cidade'); // 👈 Pegamos a cidade
+        
         if (selectBairro && selectBairro.value && selectBairro.value !== "Retirada no Local") {
             const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
             taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
-            if (taxaDisplay) {
-                taxaDisplay.innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
-                taxaDisplay.style.color = "#666";
+            const nomeCidade = selectCidade ? selectCidade.value : '';
+
+            // 🚀 PROMOÇÃO: Frete Grátis Porto Real
+            if (nomeCidade === 'Porto Real' && subtotal >= 45.00) {
+                taxaEntrega = 0; // Zera a matemática da taxa
+                if (taxaDisplay) {
+                    taxaDisplay.innerText = `Grátis (Promoção)`;
+                    taxaDisplay.style.color = "#25D366"; // Pinta de verde
+                }
+            } else {
+                if (taxaDisplay) {
+                    taxaDisplay.innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
+                    taxaDisplay.style.color = "#666";
+                }
             }
         } else {
             if (taxaDisplay) taxaDisplay.innerText = `Selecione o bairro`;
