@@ -1343,14 +1343,26 @@ function atualizarTotalCheckout() {
             taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
             const nomeCidade = selectCidade ? selectCidade.value : '';
 
-            // 🚀 PROMOÇÃO: Frete Grátis Porto Real
-            if (nomeCidade === 'Porto Real' && subtotal >= 45.00) {
-                taxaEntrega = 0; // Zera a matemática da taxa
-                if (taxaDisplay) {
-                    taxaDisplay.innerText = `Grátis (Promoção)`;
-                    taxaDisplay.style.color = "#25D366"; // Pinta de verde
+            // 🚀 PROMOÇÃO INTELIGENTE: Frete Grátis Contextual
+            if (nomeCidade === 'Porto Real') {
+                if (subtotal >= 45.00) {
+                    taxaEntrega = 0; // Zera a matemática da taxa
+                    if (taxaDisplay) {
+                        taxaDisplay.innerHTML = `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 8px; font-size: 0.85rem; font-weight: bold;">🎉 Grátis!</span>`;
+                    }
+                } else {
+                    let faltaPromo = 45.00 - subtotal;
+                    if (taxaDisplay) {
+                        taxaDisplay.innerHTML = `<div style="text-align: right;">
+                            R$ ${taxaEntrega.toFixed(2).replace('.', ',')}<br>
+                            <span onclick="fecharModalCheckout()" style="color: #f57f17; font-size: 0.75rem; font-weight: bold; cursor: pointer; text-decoration: underline;">
+                                + R$ ${faltaPromo.toFixed(2).replace('.', ',')} p/ Frete Grátis!
+                            </span>
+                        </div>`;
+                    }
                 }
             } else {
+                // Matemática normal para Quatis e outras regiões (sem ciúmes)
                 if (taxaDisplay) {
                     taxaDisplay.innerText = `R$ ${taxaEntrega.toFixed(2).replace('.', ',')}`;
                     taxaDisplay.style.color = "#666";
@@ -2452,28 +2464,8 @@ function renderizarListaCarrinhoCliente() {
 
     const areaTotais = document.getElementById('area-totais-carrinho');
     if(areaTotais) {
-        
-        // 👇 MÁGICA DA PROMOÇÃO NO CARRINHO (Neuromarketing visual)
-        let htmlPromoPortoReal = '';
-        if (subtotal < 45.00) {
-            let faltaPromo = 45.00 - subtotal;
-            htmlPromoPortoReal = `
-                <div style="background: #fff8e1; border: 1px dashed #ffb300; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <span style="font-size: 0.85rem; color: #f57f17; font-weight: 600;">🛵 Mora em Porto Real?</span><br>
-                    <strong style="color: #f57f17; font-size: 0.95rem;">Falta ${faltaPromo.toFixed(2).replace('.', ',')} para ganhar FRETE GRÁTIS!</strong>
-                </div>
-            `;
-        } else {
-            htmlPromoPortoReal = `
-                <div style="background: #e8f5e9; border: 1px solid #4CAF50; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <strong style="color: #2e7d32; font-size: 0.95rem;">🎉 Parabéns! Se você for de Porto Real, seu frete é GRÁTIS!</strong>
-                </div>
-            `;
-        }
-
         areaTotais.innerHTML = `
             <div style="width: 100%;">
-                ${htmlPromoPortoReal}
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1rem; color: #777;">
                     <span>Subtotal:</span>
                     <span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
