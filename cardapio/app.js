@@ -3314,12 +3314,11 @@ window.mudarAba = function(abaId, elementoClicado) {
 };
 
 // ==========================================
-// 🎁 SISTEMA DO CLUBE ICESOFT (LOGIN E PERFIL)
+// 🎁 SISTEMA DO CLUBE ICESOFT (LOGIN E PERFIL COM 2FA)
 // ==========================================
 async function iniciarLoginCliente() {
     const clienteSalvo = localStorage.getItem('icesoft_cliente');
     
-    // Se o cliente já está logado, damos a opção de sair da conta
     if (clienteSalvo) {
         if (confirm("Você já está logado! Deseja sair da sua conta?")) {
             localStorage.removeItem('icesoft_cliente');
@@ -3328,60 +3327,81 @@ async function iniciarLoginCliente() {
         return;
     }
 
-    // Pede o WhatsApp
     const telefoneBruto = prompt("📱 Digite seu WhatsApp com DDD para entrar no Clube Icesoft:");
     if (!telefoneBruto) return;
 
-    // Usa a sua função que já existe para deixar o número perfeito
     const telefoneFormatado = padronizarTelefone(telefoneBruto);
+    const nomeTopo = document.getElementById('nome-cliente-topo');
 
     try {
-        // Avisa visualmente que está carregando
-        const nomeTopo = document.getElementById('nome-cliente-topo');
-        if (nomeTopo) nomeTopo.innerText = 'Buscando...';
+        if (nomeTopo) nomeTopo.innerText = 'Enviando código...';
 
-        // 1. Tenta logar SÓ com o telefone primeiro (deixa o servidor procurar o histórico)
+        // 1. SOLICITA O CÓDIGO VIA WHATSAPP (Avisa o servidor)
+        const resCodigo = await fetch(`${API_URL}/clientes/solicitar-codigo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telefone: telefoneFormatado })
+        });
+
+        const dataCodigo = await resCodigo.json();
+
+        // Se o seu servidor do Zap estiver desligado, ele avisa
+        if (!resCodigo.ok || !dataCodigo.sucesso) {
+            alert(`⚠️ ${dataCodigo.erro || "Não foi possível enviar o código. Verifique se o robô do WhatsApp está ativo."}`);
+            if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
+            return;
+        }
+
+        // 2. PEDE O CÓDIGO AO CLIENTE
+        const codigoDigitado = prompt(`💬 Um código de 6 dígitos foi enviado no WhatsApp para o número ${telefoneFormatado}.\n\nDigite o código de acesso abaixo:`);
+        
+        if (!codigoDigitado || codigoDigitado.trim() === '') {
+            alert("⚠️ Acesso cancelado. O código de segurança é obrigatório.");
+            if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
+            return;
+        }
+
+        if (nomeTopo) nomeTopo.innerText = 'Autenticando...';
+
+        // 3. TENTA FAZER LOGIN ENVIANDO O CÓDIGO COMO SENHA
         let res = await fetch(`${API_URL}/clientes/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telefone: telefoneFormatado, nome: "" })
+            body: JSON.stringify({ telefone: telefoneFormatado, nome: "", codigo: codigoDigitado.trim() })
         });
 
         let data = await res.json();
 
         if (data.sucesso) {
-            // 2. Se o servidor não encontrou histórico e devolveu o padrão 'Cliente VIP',
-            // significa que o cliente é 100% novo. Então nós OBRIGAMOS a digitar um nome.
+            // Se for cliente novo, pede o nome
             if (data.cliente.nome === 'Cliente VIP' || data.cliente.nome.trim() === '') {
-                const nomeDigitado = prompt("👤 É a sua primeira vez aqui!\nPor favor, digite seu nome completo:");
+                const nomeDigitado = prompt("✅ Código verificado!\nÉ a sua primeira vez aqui, digite seu nome completo:");
                 
-                // Se ele cancelar ou deixar em branco, bloqueia o login na hora
                 if (!nomeDigitado || nomeDigitado.trim() === '') {
                     alert("⚠️ O nome é obrigatório para criar a sua carteirinha de pontos.");
                     if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
                     return;
                 }
 
-                // 3. Manda o nome de volta pro servidor atualizar a ficha do cliente
+                // Manda o nome de volta pro servidor atualizar (mandamos o código junto para ele deixar passar)
                 res = await fetch(`${API_URL}/clientes/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telefone: telefoneFormatado, nome: nomeDigitado })
+                    body: JSON.stringify({ telefone: telefoneFormatado, nome: nomeDigitado, codigo: codigoDigitado.trim() })
                 });
                 data = await res.json();
             }
 
-            // MÁGICA: Guarda a "carteirinha" do cliente no navegador (Memória)
+            // Sucesso Total: Guarda a carteirinha blindada!
             localStorage.setItem('icesoft_cliente', JSON.stringify(data.cliente));
-            alert(`🎉 Bem-vindo(a) ao Clube, ${data.cliente.nome}!`);
+            alert(`🎉 Autenticado com sucesso! Bem-vindo(a) ao Clube, ${data.cliente.nome}!`);
             atualizarInterfaceLogin(data.cliente);
         } else {
-            alert("⚠️ Erro ao entrar no Clube. Tente novamente.");
+            alert(`⚠️ ${data.erro || "Código incorreto ou expirado. Tente novamente."}`);
             if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
         }
     } catch (e) {
         alert("🔌 Erro de conexão ao tentar fazer login.");
-        const nomeTopo = document.getElementById('nome-cliente-topo');
         if (nomeTopo) nomeTopo.innerText = 'Fazer Login';
     }
 }
