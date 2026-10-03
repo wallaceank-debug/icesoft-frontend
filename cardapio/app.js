@@ -1458,6 +1458,11 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
         const opcaoSelecionada = selectBairro.options[selectBairro.selectedIndex];
         taxaEntrega = Number(opcaoSelecionada.getAttribute('data-taxa')) || 0;
         
+        // ✨ CORREÇÃO: Salva a taxa zerada no banco se for Porto Real e atingiu a meta
+        if (cidade === 'Porto Real' && subtotal >= 45.00) {
+            taxaEntrega = 0;
+        }
+        
         const bairro = selectBairro.value;
         const rua = document.getElementById('cliente-rua').value.trim();
         const num = document.getElementById('cliente-numero').value.trim();
@@ -1577,6 +1582,13 @@ async function processarEnvioWhatsApp() {
         const selectBairro = document.getElementById('cliente-bairro');
         if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
             taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+            
+            // ✨ CORREÇÃO: Zera a taxa no envio do WhatsApp se for Porto Real e atingiu a meta
+            const selectCidade = document.getElementById('cliente-cidade');
+            const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
+            if (cidade === 'Porto Real' && subtotal >= 45.00) {
+                taxaEntrega = 0;
+            }
         }
     }
 
@@ -2915,6 +2927,13 @@ async function gerarEPagarPix(valorEspecifico = null) {
     if(tipoEntrega === 'delivery') {
         const selectBairro = document.getElementById('cliente-bairro');
         taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+        
+        // ✨ CORREÇÃO: Zera a taxa do Pix se for Porto Real e atingiu a meta
+        const selectCidade = document.getElementById('cliente-cidade');
+        const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
+        if (cidade === 'Porto Real' && subtotal >= 45.00) {
+            taxaEntrega = 0;
+        }
     }
 
     let totalFinal = (subtotal - desconto) + taxaEntrega;
@@ -3001,7 +3020,16 @@ async function checarStatusPagamento(transacaoId) {
             if (tipoEntregaChecked && tipoEntregaChecked.value === 'delivery') {
                 const selectBairro = document.getElementById('cliente-bairro');
                 if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
-                    totalPix += Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+                    let taxaPixel = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+                    
+                    // ✨ CORREÇÃO: Avisa o Facebook sobre o frete grátis se for Porto Real
+                    const selectCidade = document.getElementById('cliente-cidade');
+                    const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
+                    if (cidade === 'Porto Real' && totalPix >= 45.00) {
+                        taxaPixel = 0;
+                    }
+                    
+                    totalPix += taxaPixel;
                 }
             }
 
