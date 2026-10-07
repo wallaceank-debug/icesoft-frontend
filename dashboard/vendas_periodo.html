@@ -495,6 +495,13 @@
                     <span class="material-symbols-outlined">cancel</span> Cancelar Este Pedido
                 </button>
             `;
+        } else {
+            // Se estiver cancelado, mostra o botão de Restaurar
+            botoesAcao += `
+                <button id="btn-rest-${venda.id}" onclick="restaurarPedido(${venda.id})" style="background: #4CAF50; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; transition: 0.2s; box-shadow: 0 4px 6px rgba(76,175,80,0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span class="material-symbols-outlined">restore_from_trash</span> Restaurar p/ Cozinha
+                </button>
+            `;
         }
         
         botoesAcao += `</div>`;
@@ -740,6 +747,33 @@
         } catch (erro) {
             console.error("Erro na requisição:", erro);
             alert("⚠️ Erro de conexão ao cancelar.");
+        }
+    }
+
+    // 🚀 FUNÇÃO QUE RESTAURA O PEDIDO CANCELADO PARA O KANBAN
+    async function restaurarPedido(idPedido) {
+        const confirmar = confirm("Deseja restaurar este pedido?\n\nEle voltará para a fila da Cozinha (Kanban) como 'A Preparar', e os ingredientes serão descontados do estoque novamente.");
+        if (!confirmar) return;
+
+        try {
+            const btn = document.getElementById(`btn-rest-${idPedido}`);
+            if (btn) { btn.innerHTML = "⏳ Restaurando..."; btn.disabled = true; }
+
+            const resposta = await fetch(`${API_URL}/vendas/${idPedido}/restaurar`, {
+                method: 'PUT'
+            });
+
+            if (resposta.ok) {
+                alert("✅ Pedido ressuscitado! Já apitou na tela da cozinha.");
+                fecharModal();
+                buscarVendas(); // Atualiza a tabela e os números do faturamento na hora
+            } else {
+                alert("⚠️ Erro ao tentar restaurar o pedido.");
+                if (btn) { btn.innerHTML = "Restaurar p/ Cozinha"; btn.disabled = false; }
+            }
+        } catch (erro) {
+            console.error("Erro na requisição:", erro);
+            alert("⚠️ Erro de conexão ao restaurar.");
         }
     }
 
