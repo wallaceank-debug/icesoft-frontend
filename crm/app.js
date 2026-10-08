@@ -362,39 +362,93 @@ function ordenarClientes(coluna) {
     filtrarClientes();
 }
 
-// 2. Função que calcula as bolinhas baseadas na Última Compra
+// 2. Função que calcula as bolinhas e a Tendência (Crescimento de 30 dias)
 function atualizarContadoresKPI() {
     let ativos = 0;
     let emRisco = 0;
     let inativos = 0;
+    
+    // Memória da "Máquina do Tempo"
+    let ativosPassados = 0;
+    let emRiscoPassados = 0;
+    let inativosPassados = 0;
+    
     const hoje = new Date();
 
     clientesGlobais.forEach(c => {
-        // 🛡️ Segurança: Se o cliente não tem data ou a data for inválida, consideramos Inativo
+        // 🛡️ Segurança: Se o cliente não tem data, consideramos Inativo (Hoje e no Passado)
         if (!c.ultima_compra) {
             inativos++;
+            inativosPassados++;
             return;
         }
         
         const dataCompra = new Date(c.ultima_compra);
         if (isNaN(dataCompra.getTime())) {
             inativos++;
+            inativosPassados++;
             return;
         }
 
-        // 🧠 A mesma matemática da tabela
+        // 🧠 A matemática do tempo
         const dias = Math.floor((hoje - dataCompra) / (1000 * 60 * 60 * 24));
 
+        // 📊 1. ESTADO ATUAL (Hoje)
         if (dias < 15) {
-            ativos++;        // Verde (Ativos: < 15 dias)
+            ativos++;        
         } else if (dias < 30) {
-            emRisco++;       // Laranja (Em Risco: 15 a 29 dias)
+            emRisco++;       
         } else {
-            inativos++;      // Vermelho (Inativos: 30+ dias)
+            inativos++;      
+        }
+        
+        // ⏳ 2. ESTADO PASSADO (Como estava essa pessoa há 30 dias atrás?)
+        // Quem comprou há 30~44 dias, há um mês atrás era considerado "Ativo" (< 15 dias)
+        if (dias >= 30 && dias < 45) {
+            ativosPassados++;
+        } 
+        // Quem comprou há 45~59 dias, há um mês atrás estava "Em Risco" (15 a 29 dias)
+        else if (dias >= 45 && dias < 60) {
+            emRiscoPassados++;
+        } 
+        // Quem comprou há 60+ dias, há um mês atrás já era "Inativo" (30+ dias)
+        else if (dias >= 60) {
+            inativosPassados++;
         }
     });
 
+    // Atualiza os números gigantes
     document.getElementById('kpi-ativos').innerText = ativos;
     document.getElementById('kpi-risco').innerText = emRisco;
     document.getElementById('kpi-inativos').innerText = inativos;
+    
+    // 📈 3. CÁLCULO DAS TENDÊNCIAS (Crescimento %)
+    const calcularTrend = (atual, passado) => {
+        if (passado === 0) return atual > 0 ? 100 : 0;
+        return Math.round(((atual - passado) / passado) * 100);
+    };
+    
+    const gerarSeloTrend = (trend, invertido = false) => {
+        if (trend === 0) return `<span style="font-size: 0.75rem; color: #999; margin-left: 8px; font-weight: normal;">= 0%</span>`;
+        
+        let isPositivo = trend > 0;
+        // Lógica de cores: Aumentar Ativos (+) é Bom (Verde). Aumentar Inativos (+) é Ruim (Vermelho).
+        let isBom = invertido ? !isPositivo : isPositivo; 
+        
+        let cor = isBom ? '#4CAF50' : '#F44336';
+        let seta = isPositivo ? '↑' : '↓';
+        let sinal = isPositivo ? '+' : '';
+        
+        return `<span style="font-size: 0.75rem; font-weight: bold; color: ${cor}; margin-left: 8px; padding: 2px 6px; background: ${cor}15; border-radius: 10px; display: inline-block;">${seta} ${sinal}${trend}%</span>`;
+    };
+
+    // Injeta os selinhos de porcentagem nos cards
+    const trendAtivosElement = document.getElementById('trend-ativos');
+    if (trendAtivosElement) trendAtivosElement.innerHTML = gerarSeloTrend(calcularTrend(ativos, ativosPassados), false);
+    
+    const trendRiscoElement = document.getElementById('trend-risco');
+    if (trendRiscoElement) trendRiscoElement.innerHTML = gerarSeloTrend(calcularTrend(emRisco, emRiscoPassados), true); // Aumentar "Risco" é ruim
+    
+    const trendInativosElement = document.getElementById('trend-inativos');
+    if (trendInativosElement) trendInativosElement.innerHTML = gerarSeloTrend(calcularTrend(inativos, inativosPassados), true); // Aumentar "Inativos" é ruim
 }
