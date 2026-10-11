@@ -85,6 +85,12 @@ function processarMetricasEGraficos(vendas) {
     let faturamentoTotal = 0;
     let pedidosValidos = vendas.length;
 
+    // 👇 NOVAS VARIÁVEIS PARA TICKET MÉDIO SEPARADO
+    let faturamentoDelivery = 0;
+    let pedidosDelivery = 0;
+    let faturamentoSalo = 0;
+    let pedidosSalo = 0;
+
     let contagemPagamentos = {};
     let contagemOrigem = {};
     let contagemProdutos = {};
@@ -100,16 +106,22 @@ function processarMetricasEGraficos(vendas) {
         if(pag.toLowerCase().includes('pix')) pag = 'Pix';
         contagemPagamentos[pag] = (contagemPagamentos[pag] || 0) + valor;
 
-        // --- ORIGEM (CANAIS) ---
+        // --- ORIGEM (CANAIS) E TICKET MÉDIO SEPARADO ---
         let origem = v.origem || 'Balcão';
         contagemOrigem[origem] = (contagemOrigem[origem] || 0) + 1;
 
-        // --- DATAS E DIAS DA SEMANA (Blindado contra fuso horário) ---
+        // 👇 LÓGICA DE SEPARAÇÃO: DELIVERY VS SALÃO (Balcão/Mesas)
+        if (origem.toLowerCase().includes('delivery')) {
+            faturamentoDelivery += valor;
+            pedidosDelivery++;
+        } else {
+            faturamentoSalo += valor;
+            pedidosSalo++;
+        }
+
+        // --- DATAS E DIAS DA SEMANA ---
         if (v.data_hora) {
-            // Cria um objeto de data considerando a string bruta do banco
             let dataGeral = new Date(v.data_hora);
-            
-            // Força a extração da data no fuso de São Paulo (YYYY-MM-DD)
             let dataFormatadaLocal = new Intl.DateTimeFormat('fr-CA', { 
                 timeZone: 'America/Sao_Paulo', 
                 year: 'numeric', 
@@ -117,8 +129,6 @@ function processarMetricasEGraficos(vendas) {
                 day: '2-digit' 
             }).format(dataGeral);
             
-            // Extrai a data e converte para "Day" para o gráfico semanal, 
-            // setando horas para o meio-dia para evitar "turnos" fantasmas.
             const [anoV, mesV, diaV] = dataFormatadaLocal.split('-');
             let dataObjeto = new Date(anoV, mesV - 1, diaV, 12, 0, 0); 
 
@@ -126,16 +136,15 @@ function processarMetricasEGraficos(vendas) {
             faturamentoPorData[dataFormatadaLocal] = (faturamentoPorData[dataFormatadaLocal] || 0) + valor;
         }
 
-        // --- PRODUTOS (Leitura indestrutível do JSON do Banco) ---
+        // --- PRODUTOS ---
         let itensLidos = v.itens;
         if (typeof itensLidos === 'string') {
-            if (itensLidos.includes("[object")) return; // Ignora lixo do banco
+            if (itensLidos.includes("[object")) return; 
             if (itensLidos.trim().startsWith('[')) {
                 try { itensLidos = JSON.parse(itensLidos); } catch(e) {}
             }
         }
 
-        // Se for uma matriz (vendas mais recentes)
         if (Array.isArray(itensLidos)) {
             itensLidos.forEach(item => {
                 let nome = typeof item === 'string' ? item : (item.nome || item.produto_nome || item.nomeBase || "");
@@ -144,7 +153,6 @@ function processarMetricasEGraficos(vendas) {
                     if (nomeLimpo) contagemProdutos[nomeLimpo] = (contagemProdutos[nomeLimpo] || 0) + 1;
                 }
             });
-        // Se for string corrida (vendas antigas)
         } else if (typeof itensLidos === 'string') {
             let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
             let nomeBase = textoLimpo.split('(')[0].trim();
@@ -155,7 +163,24 @@ function processarMetricasEGraficos(vendas) {
     // --- ATUALIZAR OS KPIs VISUAIS ---
     document.getElementById('kpi-faturamento').innerText = `R$ ${faturamentoTotal.toFixed(2).replace('.', ',')}`;
     document.getElementById('kpi-pedidos').innerText = pedidosValidos;
-    document.getElementById('kpi-ticket').innerText = `R$ ${pedidosValidos > 0 ? (faturamentoTotal / pedidosValidos).toFixed(2).replace('.', ',') : '0,00'}`;
+    
+    // Ticket Geral
+    let ticketGeral = pedidosValidos > 0 ? (faturamentoTotal / pedidosValidos).toFixed(2) : '0.00';
+    document.getElementById('kpi-ticket').innerText = `R$ ${ticketGeral.replace('.', ',')}`;
+
+    // 👇 NOVO: Calculando e injetando os tickets separados
+    let ticketDelivery = pedidosDelivery > 0 ? (faturamentoDelivery / pedidosDelivery).toFixed(2) : '0.00';
+    let ticketSalo = pedidosSalo > 0 ? (faturamentoSalo / pedidosSalo).toFixed(2) : '0.00';
+
+    const elTicketDelivery = document.getElementById('ticket-delivery');
+    const elTicketBalcao = document.getElementById('ticket-balcao');
+
+    if(elTicketDelivery) {
+        elTicketDelivery.innerHTML = `<span class="material-symbols-outlined" style="font-size: 1.1rem;">two_wheeler</span> Delivery: R$ ${ticketDelivery.replace('.', ',')}`;
+    }
+    if(elTicketBalcao) {
+        elTicketBalcao.innerHTML = `<span class="material-symbols-outlined" style="font-size: 1.1rem;">storefront</span> Salão: R$ ${ticketSalo.replace('.', ',')}`;
+    }
 
     // --- DESENHAR OS GRÁFICOS ---
     desenharGraficoEvolucao(faturamentoPorData);
