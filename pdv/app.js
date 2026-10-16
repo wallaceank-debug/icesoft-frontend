@@ -1263,7 +1263,7 @@ async function transferirParaMesa(numeroMesa) {
     const itensParaMesa = carrinho.map(item => {
         const listaAdicionais = item.adicionais || [];
         const nomeCompleto = listaAdicionais.length > 0 ? `${item.nomeBase} (${listaAdicionais.join(', ')})` : item.nomeBase;
-        return { nomeBase: item.nomeBase, adicionais: listaAdicionais, nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
+        return { produtoId: item.produtoId || null, nomeBase: item.nomeBase, adicionais: listaAdicionais, nome: nomeCompleto, preco: item.preco, quantidade: item.qtd };
     });
 
     try {

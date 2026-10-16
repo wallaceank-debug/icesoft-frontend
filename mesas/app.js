@@ -42,7 +42,25 @@ async function carregarCardapio() {
         const todosGrupos = await resGrupos.json();
         categoriasGlobais = await resCat.json();
         
-        produtosNuvem = todosProdutos.filter(p => p.ativo !== false);
+        produtosNuvem = todosProdutos.filter(p => {
+            // 1. Esconde se estiver inativo ou com estoque zerado
+            if (p.ativo === false) return false;
+            if (p.controlar_estoque === true && (Number(p.estoque) || 0) <= 0) return false;
+
+            // 2. Se for um Combo, verifica se todos os produtos que fazem parte dele têm estoque
+            if (p.is_combo === true || p.is_combo === 'true') {
+                let itensDoCombo = [];
+                try { itensDoCombo = typeof p.combo_itens === 'string' ? JSON.parse(p.combo_itens || '[]') : (p.combo_itens || []); } catch(e) {}
+                
+                for (let itemFilho of itensDoCombo) {
+                    const prodFilho = todosProdutos.find(x => Number(x.id) === Number(itemFilho.produto_id));
+                    const qtdNecessaria = Number(itemFilho.quantidade) || 1;
+                    if (!prodFilho || prodFilho.ativo === false) return false;
+                    if (prodFilho.controlar_estoque === true && (Number(prodFilho.estoque) || 0) < qtdNecessaria) return false;
+                }
+            }
+            return true;
+        });
         gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
     } catch (e) {
         console.error("Erro ao carregar cardápio:", e);
@@ -209,12 +227,94 @@ function filtrarProdutosMesa() {
 // MÓDULO DE ADICIONAIS NAS MESAS
 // ==========================================
 
+// 📦 AUDITOR DE ESTOQUE NAS MESAS (SOMA CARRINHO ATUAL + TODAS AS MESAS ABERTAS)
+function contarUsoProdutoNasMesas(idProdutoAlvo) {
+    let totalEmUso = 0;
+    const prodAlvoObj = produtosNuvem.find(p => Number(p.id) === Number(idProdutoAlvo));
+    const nomeAlvoLimpo = prodAlvoObj ? prodAlvoObj.nome.toLowerCase().trim() : '';
+
+    const somarListaDeItens = (lista) => {
+        (lista || []).forEach(item => {
+            const qtdItem = Number(item.quantidade || item.qtd) || 1;
+            const nomeItemBase = (item.nomeBase || item.nome || '').split('(')[0].toLowerCase().trim();
+
+            // 1. Verifica se é o próprio produto (por ID ou pelo nome base)
+            if (Number(item.produtoId) === Number(idProdutoAlvo) || (nomeAlvoLimpo && nomeItemBase === nomeAlvoLimpo)) {
+                totalEmUso += qtdItem;
+            }
+
+            // 2. Verifica se o item lançado é um Combo que contém o produto alvo
+            const prodRef = produtosNuvem.find(p => Number(p.id) === Number(item.produtoId) || p.nome.toLowerCase().trim() === nomeItemBase);
+            if (prodRef && (prodRef.is_combo === true || prodRef.is_combo === 'true')) {
+                let filhos = [];
+                try { filhos = typeof prodRef.combo_itens === 'string' ? JSON.parse(prodRef.combo_itens || '[]') : (prodRef.combo_itens || []); } catch(e) {}
+                filhos.forEach(f => {
+                    if (Number(f.produto_id) === Number(idProdutoAlvo)) {
+                        totalEmUso += (Number(f.quantidade) || 1) * qtdItem;
+                    }
+                });
+            }
+        });
+    };
+
+    // Soma o que está sendo lançado agora + o que já está nas mesas abertas
+    somarListaDeItens(carrinhoLancamento);
+    mesasAbertas.forEach(m => somarListaDeItens(m.itens));
+
+    return totalEmUso;
+}
+
+function validarEstoqueMesa(produto, qtdParaAdicionar = 1) {
+    if (!produto) return false;
+
+    // 1. Verifica o estoque do próprio produto
+    if (produto.controlar_estoque === true) {
+        const estoqueTotal = Number(produto.estoque) || 0;
+        const jaEmUso = contarUsoProdutoNasMesas(produto.id);
+        if (jaEmUso + qtdParaAdicionar > estoqueTotal) {
+            alert(`⚠️ Estoque limite atingido!\nTemos apenas ${estoqueTotal} unidade(s) de "${produto.nome}" no estoque (já contando o que está reservado nas mesas abertas).`);
+            return false;
+        }
+    }
+
+    // 2. Se for Combo, verifica o estoque de cada produto filho
+    if (produto.is_combo === true || produto.is_combo === 'true') {
+        let filhos = [];
+        try { filhos = typeof produto.combo_itens === 'string' ? JSON.parse(produto.combo_itens || '[]') : (produto.combo_itens || []); } catch(e) {}
+        
+        for (let f of filhos) {
+            const prodFilho = produtosNuvem.find(p => Number(p.id) === Number(f.produto_id));
+            if (prodFilho && prodFilho.controlar_estoque === true) {
+                const estoqueFilho = Number(prodFilho.estoque) || 0;
+                const jaEmUsoFilho = contarUsoProdutoNasMesas(prodFilho.id);
+                const qtdNecessaria = (Number(f.quantidade) || 1) * qtdParaAdicionar;
+                
+                if (jaEmUsoFilho + qtdNecessaria > estoqueFilho) {
+                    alert(`⚠️ Estoque insuficiente do item "${prodFilho.nome}" para lançar este combo (Restam ${estoqueFilho} un. no total).`);
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 function verificarAdicaoMesa(id) {
     const produtoOriginal = produtosNuvem.find(p => p.id === id);
     if (!produtoOriginal) return;
 
+    // 🛑 Trava de estoque antes de adicionar na mesa
+    if (!validarEstoqueMesa(produtoOriginal, 1)) return;
+
     // 🛡️ Criamos uma cópia segura para podermos mudar o nome e o preço do item sem afetar o cardápio base na memória
     let produtoAdicionado = JSON.parse(JSON.stringify(produtoOriginal));
+
+    // 🍔 CÉREBRO DOS COMBOS NAS MESAS
+    if (produtoAdicionado.is_combo === true || produtoAdicionado.is_combo === 'true') {
+        abrirModalComboMesa(produtoAdicionado);
+        return;
+    }
     
     const nomeMinusculo = produtoAdicionado.nome.toLowerCase();
 
@@ -366,11 +466,44 @@ function fecharModalOpcoesMesa() {
 }
 
 function confirmarEscolhasEAdicionarMesa() {
+    // Se for um Combo, direciona para o fechamento inteligente de Combos
+    if (produtoEmSelecaoMesa && (produtoEmSelecaoMesa.is_combo === true || produtoEmSelecaoMesa.is_combo === 'true')) {
+        confirmarEscolhasComboMesa();
+        return;
+    }
+
     const nomeBase = produtoEmSelecaoMesa.nome;
     const listaAdicionais = escolhasAtuaisMesa.map(e => e.nome);
     const precoFinal = Number(produtoEmSelecaoMesa.preco) + escolhasAtuaisMesa.reduce((soma, e) => soma + Number(e.preco), 0);
     
-    adicionarAoCarrinhoMesa(nomeBase, listaAdicionais, precoFinal);
+    // Compila CMV (Ficha Técnica) do produto + adicionais na Mesa
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+    try {
+        let insumosBase = typeof produtoEmSelecaoMesa.insumos_json === 'string' ? JSON.parse(produtoEmSelecaoMesa.insumos_json || '[]') : (produtoEmSelecaoMesa.insumos_json || []);
+        insumosBase.forEach(ins => {
+            insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+            custoTotalFicha += (ins.qtd * ins.custo_unitario);
+        });
+    } catch(e) {}
+
+    escolhasAtuaisMesa.forEach(escolha => {
+        const grupo = gruposGlobais.find(g => g.id === escolha.grupoId);
+        if (grupo) {
+            const itemBanco = (grupo.itens || []).find(i => i.nome === escolha.nome);
+            if (itemBanco && itemBanco.insumos_json) {
+                try {
+                    let insumosAdic = typeof itemBanco.insumos_json === 'string' ? JSON.parse(itemBanco.insumos_json || '[]') : (itemBanco.insumos_json || []);
+                    insumosAdic.forEach(ins => {
+                        insumosConsolidados.push({ id_insumo: ins.id_insumo, qtd: ins.qtd, custo: ins.custo_unitario });
+                        custoTotalFicha += (ins.qtd * ins.custo_unitario);
+                    });
+                } catch(e) {}
+            }
+        }
+    });
+
+    adicionarAoCarrinhoMesa(nomeBase, listaAdicionais, precoFinal, produtoEmSelecaoMesa.id, custoTotalFicha, insumosConsolidados);
     fecharModalOpcoesMesa();
 }
 
@@ -378,13 +511,20 @@ function confirmarEscolhasEAdicionarMesa() {
 // CARRINHO E ENVIO PARA NUVEM
 // ==========================================
 
-function adicionarAoCarrinhoMesa(nomeBase, adicionais, precoFinal) {
-    // Salvamos a estrutura detalhada para a notinha e painel de pagamento!
+function adicionarAoCarrinhoMesa(nomeBase, adicionais, precoFinal, prodId = null, custoUnitario = 0, insumosUsados = []) {
+    const prodRef = prodId ? produtosNuvem.find(p => Number(p.id) === Number(prodId)) : produtosNuvem.find(p => nomeBase.startsWith(p.nome));
+    const idFinal = prodId || (prodRef ? prodRef.id : null);
+
+    // Salvamos a estrutura detalhada (incluindo produtoId e insumos) para o servidor abater o estoque certinho!
     carrinhoLancamento.push({
+        produtoId: idFinal,
         nomeBase: nomeBase,
         adicionais: adicionais || [],
         nome: adicionais.length > 0 ? `${nomeBase} (${adicionais.join(', ')})` : nomeBase,
-        preco: Number(precoFinal)
+        preco: Number(precoFinal),
+        quantidade: 1,
+        custo_unitario: custoUnitario,
+        insumos: insumosUsados
     });
     renderizarCarrinhoMesa();
 }
@@ -410,11 +550,15 @@ function renderizarCarrinhoMesa() {
         
         let htmlAdicionais = '';
         if (item.adicionais && item.adicionais.length > 0) {
-            htmlAdicionais = item.adicionais.map(adc => `
-                <div style="color: #666; font-size: 0.85rem; margin-top: 2px;">
-                    + ${adc}
-                </div>
-            `).join('');
+            htmlAdicionais = item.adicionais.map(adc => {
+                if (adc.startsWith('▶️')) {
+                    return `<div style="color: #e65100; font-size: 0.9rem; font-weight: 800; margin-top: 6px;">${adc}</div>`;
+                }
+                if (adc.startsWith('  (')) {
+                    return `<div style="color: #999; font-size: 0.8rem; padding-left: 10px; font-style: italic;">${adc}</div>`;
+                }
+                return `<div style="color: #666; font-size: 0.85rem; margin-top: 2px;">${adc.startsWith('  +') ? adc : '+ ' + adc}</div>`;
+            }).join('');
         }
 
         // 🚀 O NOVO CARD DO CARRINHO (Com bordas e lixeira Premium)
@@ -772,8 +916,12 @@ async function finalizarPagamentoMesa() {
     try {
         const itensFormatadosDashboard = itensSendoPagos.map(item => {
             return { 
+                produtoId: item.produtoId || null,
                 nome: `Mesa ${numeroMesaEmPagamento} - ${item.nome}`, 
-                preco: item.preco 
+                preco: item.preco,
+                quantidade: item.quantidade || 1,
+                custo_unitario: item.custo_unitario || 0,
+                insumos: item.insumos || []
             };
         });
 
@@ -817,7 +965,8 @@ async function finalizarPagamentoMesa() {
         }
 
         fecharModalPagamentoMesa();
-        await carregarMesas(); 
+        await carregarCardapio(); // 🔄 Atualiza os saldos de estoque na memória das Mesas imediatamente
+        await carregarMesas();
 
     } catch (e) {
         alert("Erro ao processar: " + e.message);
@@ -967,4 +1116,176 @@ async function buscarClienteCRM(telefoneDigitado) {
         console.log("Erro ao buscar histórico do cliente", e); 
         inputNome.placeholder = "Nome do Cliente (Opcional)";
     }
+}
+
+// ==========================================
+// 📦 MOTOR DE DESEMPACOTAMENTO DE COMBOS (MESAS)
+// ==========================================
+function abrirModalComboMesa(produtoCombo) {
+    produtoEmSelecaoMesa = produtoCombo;
+    escolhasAtuaisMesa = [];
+
+    document.getElementById('detalhes-produto-topo').innerHTML = `
+        <h2 style="margin:0; color:#022344; font-size: 1.5rem; font-weight: 800;">📦 ${produtoCombo.nome}</h2>
+        <p style="color:#ff9800; font-size:0.85rem; margin:0; font-weight: bold;">Monte os itens do combo para a Mesa ${mesaEmEdicao}:</p>
+    `;
+
+    const container = document.getElementById('container-grupos-opcoes');
+    container.innerHTML = '';
+    
+    let comboItens = [];
+    try { comboItens = typeof produtoCombo.combo_itens === 'string' ? JSON.parse(produtoCombo.combo_itens || '[]') : (produtoCombo.combo_itens || []); } catch(e) {}
+
+    let indexGlobalGrupos = 0; 
+
+    comboItens.forEach((itemCombo, indexFilho) => {
+        const produtoFilho = produtosNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho) return;
+
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd} de ${itemCombo.quantidade})` : produtoFilho.nome;
+            
+            container.innerHTML += `
+                <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 10px 15px; margin: 15px 0 5px 0; font-weight: bold; color: #e65100; border-radius: 4px;">
+                    ▶️ ${tituloItem.toUpperCase()}
+                </div>
+            `;
+
+            if (!produtoFilho.grupos_ids || produtoFilho.grupos_ids.length === 0) {
+                container.innerHTML += `<p style="padding: 0 15px; color: #777; font-size: 0.85rem; font-style: italic;">(Nenhum adicional para este item)</p>`;
+                continue;
+            }
+
+            const gruposDoFilho = produtoFilho.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+
+            gruposDoFilho.forEach((grupo) => {
+                const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+                if (itensAtivos.length === 0) return;
+                
+                const secaoId = `${indexFilho}_${qtd}_${grupo.id}`; 
+
+                let itensHtml = itensAtivos.map((item, idx) => {
+                    const chkId = `mesa-chk-${secaoId}-${idx}`;
+                    let precoReal = Number(item.preco);
+                    if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") precoReal = Number(item.preco_pdv);
+                    const precoAdc = precoReal > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${precoReal.toFixed(2).replace('.', ',')}</span>` : '';
+                    
+                    return `
+                    <div onclick="toggleOpcionalComboMesa('${secaoId}', '${item.nome}', ${precoReal}, '${chkId}', ${grupo.limite})" 
+                         style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">
+                            <span style="font-weight: 400; color: #022344; font-size: 1.1rem;">${item.nome}</span>
+                        </div>
+                        ${precoAdc}
+                    </div>`;
+                }).join('');
+
+                const isOpen = (indexGlobalGrupos === 0);
+                const displayBody = isOpen ? 'block' : 'none';
+                const bgHeader = isOpen ? '#0d4a82' : '#022344'; 
+                const iconHtml = isOpen ? `<span style="background:white; color:#022344; font-size:0.85rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Até ${grupo.limite}</span>` : `<span class="material-symbols-outlined" style="color:white;">arrow_drop_down</span>`;
+
+                container.innerHTML += `
+                    <div style="margin-bottom:10px; margin-left: 10px;">
+                        <div onclick="toggleAccordionMesa(this)" style="background:${bgHeader}; color:white; padding:12px 15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;">
+                            <strong style="font-size: 1.1rem; font-weight: 400;">${grupo.nome}:</strong>
+                            <div class="grupo-icon-area">${iconHtml}</div>
+                            <input type="hidden" class="grupo-limite-val" value="${grupo.limite}">
+                        </div>
+                        <div class="grupo-body-mesa" style="display:${displayBody}; padding: 5px 15px 10px 15px; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px;">
+                            ${itensHtml}
+                        </div>
+                    </div>
+                `;
+                indexGlobalGrupos++;
+            });
+        }
+    });
+
+    atualizarPrecoDinamicoMesa();
+    document.getElementById('modal-opcoes').style.display = 'flex';
+}
+
+function toggleOpcionalComboMesa(secaoId, nomeItem, preco, chkId, limiteGrupo) {
+    const chk = document.getElementById(chkId);
+    const index = escolhasAtuaisMesa.findIndex(e => e.nome === nomeItem && e.secaoId === secaoId);
+
+    if (index > -1) {
+        escolhasAtuaisMesa.splice(index, 1);
+        chk.checked = false;
+    } else {
+        const escolhasNoGrupo = escolhasAtuaisMesa.filter(e => e.secaoId === secaoId);
+        if (limiteGrupo === 1) {
+            if (escolhasNoGrupo.length > 0) {
+                const idxAnterior = escolhasAtuaisMesa.indexOf(escolhasNoGrupo[0]);
+                escolhasAtuaisMesa.splice(idxAnterior, 1);
+                document.querySelectorAll(`input[id^="mesa-chk-${secaoId}-"]`).forEach(c => c.checked = false);
+            }
+        } else if (escolhasNoGrupo.length >= limiteGrupo) {
+            alert(`Limite atingido para este grupo.`);
+            return;
+        }
+        escolhasAtuaisMesa.push({ secaoId, nome: nomeItem, preco: Number(preco) });
+        chk.checked = true;
+    }
+    atualizarPrecoDinamicoMesa();
+}
+
+function confirmarEscolhasComboMesa() {
+    const nomeBase = produtoEmSelecaoMesa.nome;
+    const precoFinal = Number(produtoEmSelecaoMesa.preco) + escolhasAtuaisMesa.reduce((soma, e) => soma + Number(e.preco), 0);
+    
+    let listaAdicionais = [];
+    let custoTotalFicha = 0;
+    let insumosConsolidados = [];
+
+    try {
+        let insumosBase = typeof produtoEmSelecaoMesa.insumos_json === 'string' ? JSON.parse(produtoEmSelecaoMesa.insumos_json || '[]') : (produtoEmSelecaoMesa.insumos_json || []);
+        insumosBase.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+    } catch(e) {}
+
+    let comboItens = [];
+    try { comboItens = typeof produtoEmSelecaoMesa.combo_itens === 'string' ? JSON.parse(produtoEmSelecaoMesa.combo_itens) : produtoEmSelecaoMesa.combo_itens; } catch(e){}
+
+    comboItens.forEach((itemCombo, indexFilho) => {
+        const produtoFilho = produtosNuvem.find(p => p.id === itemCombo.produto_id);
+        if (!produtoFilho) return;
+
+        for (let qtd = 1; qtd <= itemCombo.quantidade; qtd++) {
+            try {
+                let insumosFilho = typeof produtoFilho.insumos_json === 'string' ? JSON.parse(produtoFilho.insumos_json || '[]') : (produtoFilho.insumos_json || []);
+                insumosFilho.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+            } catch(e) {}
+            
+            const tituloItem = itemCombo.quantidade > 1 ? `${produtoFilho.nome} (${qtd}/${itemCombo.quantidade})` : produtoFilho.nome;
+            const prefixSecao = `${indexFilho}_${qtd}_`;
+            const escolhasDesteFilho = escolhasAtuaisMesa.filter(e => e.secaoId && e.secaoId.startsWith(prefixSecao));
+            
+            listaAdicionais.push(`▶️ [${tituloItem}]`);
+            
+            if (escolhasDesteFilho.length > 0) {
+                escolhasDesteFilho.forEach(e => {
+                    listaAdicionais.push(`  + ${e.nome}`);
+                    
+                    const grupoIdOriginal = Number(e.secaoId.split('_')[2]);
+                    const grupo = gruposGlobais.find(g => g.id === grupoIdOriginal);
+                    if (grupo) {
+                        const itemBanco = (grupo.itens || []).find(i => i.nome === e.nome);
+                        if (itemBanco && itemBanco.insumos_json) {
+                            try {
+                                let insumosAdic = typeof itemBanco.insumos_json === 'string' ? JSON.parse(itemBanco.insumos_json || '[]') : (itemBanco.insumos_json || []);
+                                insumosAdic.forEach(ins => { insumosConsolidados.push(ins); custoTotalFicha += (ins.qtd * ins.custo_unitario); });
+                            } catch(e) {}
+                        }
+                    }
+                });
+            } else {
+                listaAdicionais.push(`  (Sem adicionais)`);
+            }
+        }
+    });
+
+    adicionarAoCarrinhoMesa(nomeBase, listaAdicionais, precoFinal, produtoEmSelecaoMesa.id, custoTotalFicha, insumosConsolidados);
+    fecharModalOpcoesMesa();
 }
