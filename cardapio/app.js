@@ -126,14 +126,34 @@ async function carregarTudo() {
 
         let produtosBrutos = await resProd.json();
         
-        // 📸 O NOVO FILTRO BLINDADO
-        produtosDaNuvem = produtosBrutos.map(p => {
+        // 📸 O NOVO FILTRO BLINDADO (COM TRAVA DE ESTOQUE E AUDITORIA DE COMBOS)
+        const produtosComImagem = produtosBrutos.map(p => {
             if (p.imagem_url && !p.imagem_url.includes('ibb.co')) {
                 const nomeArquivo = p.imagem_url.split('/').pop(); 
                 p.imagem_url = `https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/uploads/${nomeArquivo}`;
             }
             return p;
-        }).filter(p => p.ativo !== false);
+        });
+
+        produtosDaNuvem = produtosComImagem.filter(p => {
+            // 1. Se estiver inativo ou com estoque zerado, esconde do cardápio
+            if (p.ativo === false) return false;
+            if (p.controlar_estoque === true && (Number(p.estoque) || 0) <= 0) return false;
+
+            // 2. Se for um Combo, verifica se todos os produtos de dentro dele estão ativos e têm estoque suficiente
+            if (p.is_combo === true || p.is_combo === 'true') {
+                let itensDoCombo = [];
+                try { itensDoCombo = typeof p.combo_itens === 'string' ? JSON.parse(p.combo_itens || '[]') : (p.combo_itens || []); } catch(e) {}
+                
+                for (let itemFilho of itensDoCombo) {
+                    const prodFilho = produtosComImagem.find(x => Number(x.id) === Number(itemFilho.produto_id));
+                    const qtdNecessaria = Number(itemFilho.quantidade) || 1;
+                    if (!prodFilho || prodFilho.ativo === false) return false;
+                    if (prodFilho.controlar_estoque === true && (Number(prodFilho.estoque) || 0) < qtdNecessaria) return false;
+                }
+            }
+            return true;
+        });
 
         let gruposBrutos = await resGrupos.json();
         gruposGlobais = gruposBrutos.filter(g => g.ativo !== false).map(g => {
@@ -445,10 +465,79 @@ function obterLimiteDoGrupoNoProduto(grupoId) {
     return grupo ? Number(grupo.limite) : 1;
 }
 
+// 📦 MOTOR DE AUDITORIA DE ESTOQUE NO CARRINHO (PRODUTOS AVULSOS + COMBOS)
+function contarUsoProdutoNoCarrinho(idProdutoAlvo, ignorarIndex = -1) {
+    let totalNoCarrinho = 0;
+    carrinho.forEach((item, idx) => {
+        if (idx === ignorarIndex) return;
+        
+        // 1. Conta se o próprio produto está no carrinho
+        if (Number(item.produtoId) === Number(idProdutoAlvo)) {
+            totalNoCarrinho += 1;
+        }
+        
+        // 2. Conta se este item do carrinho é um Combo que usa o produto alvo lá dentro
+        const prodNoCarrinho = produtosDaNuvem.find(p => Number(p.id) === Number(item.produtoId));
+        if (prodNoCarrinho && (prodNoCarrinho.is_combo === true || prodNoCarrinho.is_combo === 'true')) {
+            let filhos = [];
+            try { filhos = typeof prodNoCarrinho.combo_itens === 'string' ? JSON.parse(prodNoCarrinho.combo_itens || '[]') : (prodNoCarrinho.combo_itens || []); } catch(e) {}
+            filhos.forEach(f => {
+                if (Number(f.produto_id) === Number(idProdutoAlvo)) {
+                    totalNoCarrinho += (Number(f.quantidade) || 1);
+                }
+            });
+        }
+    });
+    return totalNoCarrinho;
+}
+
+function validarEstoqueParaAdicao(produto, qtdParaAdicionar, ignorarIndex = -1) {
+    if (!produto) return false;
+
+    // 1. Verifica o estoque do próprio produto
+    if (produto.controlar_estoque === true) {
+        const estoqueTotal = Number(produto.estoque) || 0;
+        const jaNoCarrinho = contarUsoProdutoNoCarrinho(produto.id, ignorarIndex);
+        if (jaNoCarrinho + qtdParaAdicionar > estoqueTotal) {
+            const disponivel = Math.max(0, estoqueTotal - jaNoCarrinho);
+            if (disponivel === 0) {
+                alert(`⚠️ Você já colocou no carrinho todas as ${estoqueTotal} unidade(s) disponíveis de "${produto.nome}"!`);
+            } else {
+                alert(`⚠️ Temos apenas ${estoqueTotal} unidade(s) de "${produto.nome}" no momento (você já tem ${jaNoCarrinho} no carrinho).`);
+            }
+            return false;
+        }
+    }
+
+    // 2. Se for um Combo, verifica o estoque de cada produto que faz parte dele
+    if (produto.is_combo === true || produto.is_combo === 'true') {
+        let filhos = [];
+        try { filhos = typeof produto.combo_itens === 'string' ? JSON.parse(produto.combo_itens || '[]') : (produto.combo_itens || []); } catch(e) {}
+        
+        for (let f of filhos) {
+            const prodFilho = produtosDaNuvem.find(p => Number(p.id) === Number(f.produto_id));
+            if (prodFilho && prodFilho.controlar_estoque === true) {
+                const estoqueFilho = Number(prodFilho.estoque) || 0;
+                const jaNoCarrinhoFilho = contarUsoProdutoNoCarrinho(prodFilho.id, ignorarIndex);
+                const qtdNecessaria = (Number(f.quantidade) || 1) * qtdParaAdicionar;
+                
+                if (jaNoCarrinhoFilho + qtdNecessaria > estoqueFilho) {
+                    alert(`⚠️ Estoque insuficiente de "${prodFilho.nome}" para adicionar mais unidades deste combo (Restam ${estoqueFilho} un. no total).`);
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 function verificarAdicao(id) {
-    // A trava de loja fechada foi removida daqui para o cliente poder simular e montar pedidos
-    
     const produto = produtosDaNuvem.find(p => p.id === id);
+    if (!produto) return;
+
+    // 🛑 Verifica se ainda há estoque disponível (descontando o que já está no carrinho) antes de abrir o modal
+    if (!validarEstoqueParaAdicao(produto, 1)) return;
     
     // 🍔 CÉREBRO DOS COMBOS (NOVO)
     if (produto.is_combo === true || produto.is_combo === 'true') {
@@ -739,12 +828,10 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
 function alterarQuantidadeModal(delta) {
     let novaQuantidade = quantidadeModal + delta;
     
-    // 🛑 NOVA TRAVA DE ESTOQUE: Impede que o cliente escolha mais do que tem na loja
-    if (produtoEmSelecao.controlar_estoque && delta > 0) {
-        const estoqueReal = Number(produtoEmSelecao.estoque) || 0;
-        if (novaQuantidade > estoqueReal) {
-            alert(`Desculpe! Temos apenas ${estoqueReal} unidade(s) deste produto no momento.`);
-            return; // Corta a função, o botão de [+] não faz nada!
+    // 🛑 NOVA TRAVA DE ESTOQUE INTELIGENTE: Soma o modal + o que já está no carrinho (funciona para produtos e combos)
+    if (delta > 0) {
+        if (!validarEstoqueParaAdicao(produtoEmSelecao, novaQuantidade, editandoIndex)) {
+            return; // Corta a função se ultrapassar o estoque real
         }
     }
 
@@ -1487,6 +1574,7 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
     }
 
     const itensFormatados = carrinho.map(item => ({ 
+        produtoId: item.produtoId || null,
         nome: "Delivery: " + item.nome, 
         preco: item.preco,
         quantidade: 1,
@@ -1685,11 +1773,20 @@ function atualizarStatusVisualRastreio(statusKanban) {
     let nivelAtivo = 0;
     const statusLimpo = statusKanban ? statusKanban.trim() : '';
 
+    const stepEntregaEl = document.getElementById('step-entrega');
+
     if (statusLimpo === 'Pendente Delivery') nivelAtivo = 0;
     else if (statusLimpo === 'A Preparar') nivelAtivo = 1;
-    else if (statusLimpo === 'Saiu p/ Entrega') nivelAtivo = 2;
-    else if (statusLimpo === 'Entregue') nivelAtivo = 3;
-    else if (statusLimpo === 'Cancelado') {
+    else if (statusLimpo === 'Saiu p/ Entrega') {
+        nivelAtivo = 2;
+        if (stepEntregaEl) stepEntregaEl.innerHTML = '<div class="icon-rastreio">🛵</div><div class="text-rastreio">Saiu para entrega</div>';
+    }
+    else if (statusLimpo === 'Pronto para Retirada') {
+        nivelAtivo = 2;
+        if (stepEntregaEl) stepEntregaEl.innerHTML = '<div class="icon-rastreio">🏬</div><div class="text-rastreio">Pronto para retirada na loja!</div>';
+    }
+    else if (statusLimpo === 'Entregue' || statusLimpo === 'Concluída') nivelAtivo = 3;
+    else if (statusLimpo.toLowerCase().includes('cancelad')) {
         document.getElementById('step-pendente').innerHTML = '<div class="icon-rastreio" style="background:#f44336; color:white;">❌</div><div class="text-rastreio" style="color:#f44336;">Pedido Cancelado</div>';
         document.getElementById('step-pendente').classList.add('ativo');
         if(rastreioIntervalo) clearInterval(rastreioIntervalo);
@@ -1987,6 +2084,8 @@ function adicionarOfertaAoCarrinho(nome, precoDesconto, prodId) {
     if (prodId) {
         const prod = produtosDaNuvem.find(p => p.id === prodId);
         if (prod) {
+            // 🛑 Impede adicionar pelo Upsell se já atingiu o limite do estoque no carrinho
+            if (!validarEstoqueParaAdicao(prod, 1)) return;
             try {
                 let insBase = typeof prod.insumos_json === 'string' ? JSON.parse(prod.insumos_json || '[]') : (prod.insumos_json || []);
                 insBase.forEach(ins => {

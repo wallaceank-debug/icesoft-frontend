@@ -38,7 +38,25 @@ async function carregarDadosIniciais() {
         categoriasGlobais = await resCat.json(); 
         categoriasPlanosDeContas = await resCatFin.json(); // 👈 Agora ele sabe quem é o resCatFin!
 
-        produtosDaNuvem = todosProdutos.filter(p => p.ativo !== false);
+        produtosDaNuvem = todosProdutos.filter(p => {
+            // 1. Esconde se estiver inativo ou com estoque zerado
+            if (p.ativo === false) return false;
+            if (p.controlar_estoque === true && (Number(p.estoque) || 0) <= 0) return false;
+
+            // 2. Se for um Combo, verifica se todos os itens que compõem o combo têm estoque disponível
+            if (p.is_combo === true || p.is_combo === 'true') {
+                let itensDoCombo = [];
+                try { itensDoCombo = typeof p.combo_itens === 'string' ? JSON.parse(p.combo_itens || '[]') : (p.combo_itens || []); } catch(e) {}
+                
+                for (let itemFilho of itensDoCombo) {
+                    const prodFilho = todosProdutos.find(x => Number(x.id) === Number(itemFilho.produto_id));
+                    const qtdNecessaria = Number(itemFilho.quantidade) || 1;
+                    if (!prodFilho || prodFilho.ativo === false) return false;
+                    if (prodFilho.controlar_estoque === true && (Number(prodFilho.estoque) || 0) < qtdNecessaria) return false;
+                }
+            }
+            return true;
+        });
         gruposGlobais = todosGrupos.filter(g => g.ativo !== false);
         
         renderizarBotoesCategoria();
@@ -185,8 +203,76 @@ function renderizarGradeProdutos(lista) {
 // ==========================================
 // LÓGICA DE ADIÇÃO E MODAL (ADICIONAIS E PESO)
 // ==========================================
-function verificarAdicao(id) {
+// 📦 AUDITOR DE ESTOQUE DO CARRINHO PDV (PRODUTOS AVULSOS + COMBOS)
+function contarUsoProdutoNoCarrinhoPDV(idProdutoAlvo) {
+    let totalNoCarrinho = 0;
+    carrinho.forEach(item => {
+        const qtdItem = Number(item.qtd) || 1;
+        
+        // 1. Conta se o próprio produto está no carrinho
+        if (Number(item.produtoId) === Number(idProdutoAlvo)) {
+            totalNoCarrinho += qtdItem;
+        }
+        
+        // 2. Conta se este item do carrinho é um Combo que usa o produto alvo lá dentro
+        const prodNoCarrinho = produtosDaNuvem.find(p => Number(p.id) === Number(item.produtoId) || p.nome === item.nomeBase);
+        if (prodNoCarrinho && (prodNoCarrinho.is_combo === true || prodNoCarrinho.is_combo === 'true')) {
+            let filhos = [];
+            try { filhos = typeof prodNoCarrinho.combo_itens === 'string' ? JSON.parse(prodNoCarrinho.combo_itens || '[]') : (prodNoCarrinho.combo_itens || []); } catch(e) {}
+            filhos.forEach(f => {
+                if (Number(f.produto_id) === Number(idProdutoAlvo)) {
+                    totalNoCarrinho += (Number(f.quantidade) || 1) * qtdItem;
+                }
+            });
+        }
+    });
+    return totalNoCarrinho;
+}
+
+function validarEstoquePDV(produto, qtdParaAdicionar = 1) {
+    if (!produto) return false;
+
+    // 1. Verifica estoque do produto principal
+    if (produto.controlar_estoque === true) {
+        const estoqueTotal = Number(produto.estoque) || 0;
+        const jaNoCarrinho = contarUsoProdutoNoCarrinhoPDV(produto.id);
+        if (jaNoCarrinho + qtdParaAdicionar > estoqueTotal) {
+            alert(`⚠️ Estoque limite atingido!\nTemos apenas ${estoqueTotal} unidade(s) de "${produto.nome}" na geladeira (já existem ${jaNoCarrinho} no carrinho).`);
+            return false;
+        }
+    }
+
+    // 2. Se for Combo, verifica o estoque de cada item que participa dele
+    if (produto.is_combo === true || produto.is_combo === 'true') {
+        let filhos = [];
+        try { filhos = typeof produto.combo_itens === 'string' ? JSON.parse(produto.combo_itens || '[]') : (produto.combo_itens || []); } catch(e) {}
+        
+        for (let f of filhos) {
+            const prodFilho = produtosDaNuvem.find(p => Number(p.id) === Number(f.produto_id));
+            if (prodFilho && prodFilho.controlar_estoque === true) {
+                const estoqueFilho = Number(prodFilho.estoque) || 0;
+                const jaNoCarrinhoFilho = contarUsoProdutoNoCarrinhoPDV(prodFilho.id);
+                const qtdNecessaria = (Number(f.quantidade) || 1) * qtdParaAdicionar;
+                
+                if (jaNoCarrinhoFilho + qtdNecessaria > estoqueFilho) {
+                    alert(`⚠️ Estoque insuficiente do item "${prodFilho.nome}" para montar mais unidades deste combo (Restam ${estoqueFilho} un. no estoque).`);
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+function verificarAdicao(id, isEdicao = false) {
     const produto = produtosDaNuvem.find(p => p.id === id);
+    if (!produto) return;
+
+    // 🛑 Trava de estoque antes de abrir o modal ou inserir (exceto se estiver apenas editando adicionais)
+    if (!isEdicao && !validarEstoquePDV(produto, 1)) return;
+
+    produtoEmSelecao = produto;
     const precoBaseCalculado = calcularPrecoComDesconto(produto);
 
     // 🧠 MOTOR DO CMV: Compila a Ficha Técnica Base
@@ -450,6 +536,9 @@ function atualizarTotais() {
 // GESTÃO DO CARRINHO (COM EDIÇÃO DE QUANTIDADE E AUTO-AGRUPAMENTO)
 // ==========================================
 function adicionarAoCarrinho(nomeBase, adicionais, preco, custoUnitario = 0, insumosUsados = []) {
+    const prodRef = produtoEmSelecao || produtosDaNuvem.find(p => p.nome === nomeBase);
+    const produtoId = prodRef ? prodRef.id : null;
+
     // 🧠 MÁGICA: Verifica se já existe um item exato no carrinho para agrupar!
     const itemExistente = carrinho.find(item => 
         item.nomeBase === nomeBase && 
@@ -460,7 +549,7 @@ function adicionarAoCarrinho(nomeBase, adicionais, preco, custoUnitario = 0, ins
     if (itemExistente) {
         itemExistente.qtd += 1;
     } else {
-        carrinho.push({ nomeBase, adicionais, preco: Number(preco), qtd: 1, custo_unitario: custoUnitario, insumos: insumosUsados });
+        carrinho.push({ produtoId, nomeBase, adicionais, preco: Number(preco), qtd: 1, custo_unitario: custoUnitario, insumos: insumosUsados });
     }
     renderizarCarrinho();
 }
@@ -470,8 +559,16 @@ function removerDoCarrinho(index) {
     renderizarCarrinho();
 }
 
-// 👇 NOVA FUNÇÃO: Altera a quantidade direto no carrinho com clique rápido
+// 👇 NOVA FUNÇÃO: Altera a quantidade direto no carrinho com trava de estoque real
 function alterarQuantidade(index, delta) {
+    if (delta > 0) {
+        const item = carrinho[index];
+        const prod = produtosDaNuvem.find(p => Number(p.id) === Number(item.produtoId) || p.nome === item.nomeBase);
+        if (prod && !validarEstoquePDV(prod, delta)) {
+            return; // Corta o aumento se não houver mais unidades na geladeira
+        }
+    }
+
     carrinho[index].qtd += delta;
     if (carrinho[index].qtd <= 0) {
         removerDoCarrinho(index); // Se chegar a zero, remove da lista automaticamente
@@ -696,11 +793,12 @@ async function finalizarVendaPDV() {
     }
 
     const itensFormatados = carrinho.map(item => {
-        let nomeCompleto = "Delivery: " + item.nomeBase; // Deixe "Balcão" se for na função finalizarVendaPDV!
+        let nomeCompleto = "Delivery: " + item.nomeBase;
         if (item.adicionais && item.adicionais.length > 0) {
             nomeCompleto += " (" + item.adicionais.join(', ') + ")";
         }
         return { 
+            produtoId: item.produtoId || null,
             nome: nomeCompleto, 
             preco: item.preco, 
             quantidade: item.qtd,
@@ -765,6 +863,7 @@ async function finalizarVendaPDV() {
             acrescimoGlobal = 0;
             renderizarCarrinho(); 
             fecharModalCheckout(); 
+            await carregarDadosIniciais(); // 🔄 Atualiza o estoque e esconde itens que acabaram de esgotar
         } else {
             alert("Erro ao salvar no banco de dados.");
         }
@@ -1290,11 +1389,12 @@ async function finalizarDeliveryPDV() {
     let totalCobranca = totalFinalGlobal + taxaEntrega;
     
     const itensFormatados = carrinho.map(item => {
-        let nomeCompleto = "Delivery: " + item.nomeBase; // Deixe "Balcão" se for na função finalizarVendaPDV!
+        let nomeCompleto = "Delivery: " + item.nomeBase;
         if (item.adicionais && item.adicionais.length > 0) {
             nomeCompleto += " (" + item.adicionais.join(', ') + ")";
         }
         return { 
+            produtoId: item.produtoId || null,
             nome: nomeCompleto, 
             preco: item.preco, 
             quantidade: item.qtd,
@@ -1337,6 +1437,7 @@ async function finalizarDeliveryPDV() {
             descontoGlobal = 0;
             acrescimoGlobal = 0;
             renderizarCarrinho(); 
+            await carregarDadosIniciais(); // 🔄 Atualiza o estoque na tela do PDV imediatamente 
         } else {
             alert("❌ Erro ao enviar pedido. Verifique a conexão.");
         }
@@ -1460,8 +1561,8 @@ function editarItemCarrinho(index) {
         return;
     }
 
-    // 1. Abre o modal com os dados do produto original
-    verificarAdicao(produtoOriginal.id);
+    // 1. Abre o modal com os dados do produto original avisando que é modo edição (true)
+    verificarAdicao(produtoOriginal.id, true);
 
     // 2. Aguarda o modal desenhar na tela (150ms)
     setTimeout(() => {

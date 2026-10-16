@@ -1471,52 +1471,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function abrirModalEstoque() {
   document.getElementById('modalEstoque').style.display = 'block';
-  carregarListaEstoque();
+  carregarListaEstoque(true);
 }
 
 function fecharModalEstoque() {
   document.getElementById('modalEstoque').style.display = 'none';
+  carregarTudo(); // Atualiza as chavinhas da tela principal ao fechar
 }
 
-async function carregarListaEstoque() {
+async function carregarListaEstoque(mostrarLoading = false) {
   const divLista = document.getElementById('listaEstoqueProdutos');
-  divLista.innerHTML = '<h3>Buscando itens na geladeira... 🥶</h3>';
+  if (mostrarLoading) {
+      divLista.innerHTML = '<h3>Buscando itens na geladeira... 🥶</h3>';
+  }
   
   try {
     const res = await fetch(`${API_URL}/produtos`);
     const produtos = await res.json();
     divLista.innerHTML = '';
+
+    // Filtra para exibir APENAS os produtos marcados com "Controlar quantidade em estoque?"
+    const produtosOrdenados = produtos
+        .filter(p => p.controlar_estoque === true)
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+
+    if (produtosOrdenados.length === 0) {
+        divLista.innerHTML = '<p style="text-align:center; color:#777; padding: 20px;">Nenhum produto está marcado para controlar estoque no momento.</p>';
+        return;
+    }
     
-    produtos.forEach(p => {
+    produtosOrdenados.forEach(p => {
       let estoqueAtual = Number(p.estoque) || 0; 
-      let corEstoque = estoqueAtual > 0 ? '#2ed573' : '#ff4757';
+      let isVisivel = p.ativo !== false;
+      let corEstoque = (estoqueAtual > 0 && isVisivel) ? '#2ed573' : '#ff4757';
+      let badgeControle = p.controlar_estoque 
+          ? `<span style="font-size: 0.75em; background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">📦 Controlado</span>` 
+          : `<span style="font-size: 0.75em; background: #eee; color: #777; padding: 2px 8px; border-radius: 10px; margin-left: 8px;">Livre (Sem trava)</span>`;
       
       divLista.innerHTML += `
-        <div class="item-estoque" data-nome="${p.nome.toLowerCase()}" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #f1f2f6; padding: 15px; border-radius: 8px; border-left: 5px solid ${corEstoque};">
+        <div class="item-estoque" data-nome="${p.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #f1f2f6; padding: 15px; border-radius: 8px; border-left: 5px solid ${corEstoque};">
           <div style="flex: 1; min-width: 150px;">
-            <strong style="font-size: 1.1em; color: #2f3542;">${p.nome}</strong>
-            <p style="margin: 0; font-size: 0.8em; color: #747d8c;">Status Atual: ${p.ativo ? '🟢 Visível' : '🔴 Bloqueado'}</p>
+            <strong style="font-size: 1.1em; color: #2f3542;">${p.nome} ${badgeControle}</strong>
+            <p style="margin: 4px 0 0 0; font-size: 0.85em; color: #747d8c;">
+              Status Atual: <strong>${isVisivel ? '🟢 Liberado no Cardápio/PDV' : '🔴 Esgotado / Bloqueado'}</strong>
+            </p>
           </div>
           
           <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
             <button onclick="alterarEstoque(${p.id}, ${estoqueAtual - 1})" style="background: #dfe4ea; border: none; padding: 10px 20px; font-size: 1.5em; border-radius: 5px; cursor: pointer; color: #333;">-</button>
-            <input type="number" value="${estoqueAtual}" onchange="alterarEstoque(${p.id}, Number(this.value))" style="font-size: 1.5em; font-weight: bold; width: 70px; text-align: center; color: #2f3542; border: 2px solid #dfe4ea; border-radius: 5px; padding: 5px; background: #ffffff;" />
+            <input type="number" value="${estoqueAtual}" onchange="alterarEstoque(${p.id}, Number(this.value))" style="font-size: 1.5em; font-weight: bold; width: 80px; text-align: center; color: #2f3542; border: 2px solid #dfe4ea; border-radius: 5px; padding: 5px; background: #ffffff;" />
             <button onclick="alterarEstoque(${p.id}, ${estoqueAtual + 1})" style="background: #dfe4ea; border: none; padding: 10px 20px; font-size: 1.5em; border-radius: 5px; cursor: pointer; color: #333;">+</button>
           </div>
         </div>
       `;
     });
+
+    // Mantém o filtro de busca ativo após atualizar a quantidade!
+    filtrarEstoqueVisual();
   } catch (erro) {
     divLista.innerHTML = '<p>Erro técnico ao carregar os produtos.</p>';
   }
 }
 
 function filtrarEstoqueVisual() {
-  let termo = document.getElementById('filtroEstoque').value.toLowerCase();
+  const inputFiltro = document.getElementById('filtroEstoque');
+  if (!inputFiltro) return;
+  let termo = inputFiltro.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   let itens = document.querySelectorAll('.item-estoque');
   
   itens.forEach(item => {
-    let nomeProduto = item.getAttribute('data-nome');
+    let nomeProduto = item.getAttribute('data-nome') || '';
     if (nomeProduto.includes(termo)) {
       item.style.display = 'flex'; 
     } else {
@@ -1534,7 +1558,8 @@ async function alterarEstoque(idProduto, novoValor) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estoque: novoValor })
     });
-    carregarListaEstoque();
+    await carregarListaEstoque(false); // Atualiza sem piscar a tela e mantendo a busca
+    await carregarTudo(); // Sincroniza a lista de trás imediatamente
   } catch (erro) {
     alert("Falha de comunicação com o sistema! Verifique a internet.");
   }
