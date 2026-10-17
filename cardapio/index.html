@@ -285,22 +285,65 @@
     </div>
 
     <!-- ==========================================
-         ABA 3: CLUBE ICESOFT (PONTOS)
+         ABA 3: CLUBE ICESOFT (PONTOS E FIDELIDADE)
          ========================================== -->
     <div id="aba-clube" class="aba-conteudo" style="padding-bottom: 160px; max-width: 600px; margin: 0 auto; padding: 20px;">
         
-        <!-- 👇 A MÁGICA: Aumentamos a margem de 40px para 120px para descer o bloco pro meio da tela -->
-        <div style="text-align: center; margin-top: 120px;" id="tela-login-clube">
-            <span class="material-symbols-outlined" style="font-size: 4rem; color: #ccc;">card_membership</span>
-            <h2 style="color: #333; margin-top: 10px;">Meu Clube Icesoft</h2>
-            <p style="color: #666; font-size: 0.95rem; margin-top: 5px;">Faça login para ver seus pontos e resgatar prêmios exclusivos!</p>
-            <button onclick="iniciarLoginCliente()" style="background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 12px 25px; border-radius: 30px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">Fazer Login agora</button>
+        <!-- TELA PARA QUEM AINDA NÃO FEZ LOGIN (Explicação Clara dos 2 Benefícios) -->
+        <div id="tela-login-clube" style="margin-top: 15px;">
+            <div style="background: linear-gradient(135deg, var(--cor-primaria, #00bcd4), #00838f); color: white; padding: 22px 20px; border-radius: 18px; text-align: center; box-shadow: 0 6px 15px rgba(0, 188, 212, 0.25); margin-bottom: 20px;">
+                <span style="font-size: 2.6rem; display: block; margin-bottom: 5px;">🎁</span>
+                <h2 style="margin: 0; font-size: 1.35rem; font-weight: 800;">Clube de Vantagens Icesoft</h2>
+                <p style="margin: 8px 0 16px 0; font-size: 0.9rem; opacity: 0.95; line-height: 1.4;">
+                    Aqui você ganha <strong>duas vezes</strong>! Entre com seu WhatsApp para acompanhar seus selos e trocar pontos por produtos:
+                </p>
+                <button onclick="iniciarLoginCliente()" style="background: #ffffff; color: #00838f; border: none; padding: 14px 28px; border-radius: 30px; font-size: 1rem; font-weight: 800; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    📱 Entrar com meu WhatsApp
+                </button>
+            </div>
+
+            <h3 style="color: #333; font-size: 1.05rem; margin: 0 0 12px 5px;">Como funcionam os nossos 2 benefícios:</h3>
+
+            <!-- Explicação Benefício 1: Cartão Fidelidade -->
+            <div style="background: #ffffff; border: 1px solid #ffe082; border-left: 6px solid #FF9800; border-radius: 14px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="font-size: 1.6rem;">⭐</span>
+                    <div>
+                        <strong style="color: #e65100; font-size: 1rem; display: block;">1. Cartão Fidelidade (Ganhe R$ 15,00 OFF)</strong>
+                        <span style="font-size: 0.75rem; color: #888; font-weight: 600;">Desconto direto no seu pedido</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; color: #555; line-height: 1.5; background: #fffdf5; padding: 10px 12px; border-radius: 10px; border: 1px dashed #ffe082;">
+                    • Comprou a partir de <strong>R$ 30,00</strong>? Você ganha <strong>1 ponto (selo)</strong> na cartela.<br>
+                    • Juntou <strong>5 selos</strong>? Você libera <strong>R$ 15,00 de desconto</strong> para usar na sua próxima compra (em pedidos de no mínimo R$ 30,00).<br>
+                    • <strong>Como usar:</strong> Na tela de finalizar o pedido, basta clicar no botão laranja <em>"Resgatar Prêmio Agora"</em>!
+                </div>
+            </div>
+
+            <!-- Explicação Benefício 2: Pontos por Produto -->
+            <div style="background: #ffffff; border: 1px solid #b2ebf2; border-left: 6px solid #00bcd4; border-radius: 14px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="font-size: 1.6rem;">🍦</span>
+                    <div>
+                        <strong style="color: #00838f; font-size: 1rem; display: block;">2. Pontos de Troca (Vale Produtos!)</strong>
+                        <span style="font-size: 0.75rem; color: #888; font-weight: 600;">Troque seus pontos por itens do cardápio</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.85rem; color: #555; line-height: 1.5; background: #f0fdfa; padding: 10px 12px; border-radius: 10px; border: 1px dashed #b2ebf2;">
+                    • Produtos com o selo azul <span style="background: #00bcd4; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 5px;">+ pts</span> somam pontos na sua carteira digital.<br>
+                    • Juntou os pontos necessários? Você pode <strong>trocar por produtos</strong> que tenham o selo <span style="background: #00bcd4; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 5px;">Resgate: X pts</span>.<br>
+                    • <strong>Como usar:</strong> Faça login aqui no Clube, clique no produto que deseja resgatar e aperte o botão azul <em>"Resgatar com Pontos"</em>!
+                </div>
+            </div>
         </div>
         
-        <!-- 👇 A MÁGICA 2: Adicionamos margem aqui também para proteger o cartão VIP de quem já está logado -->
-        <div id="area-clube-logado" style="display: none; margin-top: 60px;">
-            <!-- Será injetado via JS na próxima etapa -->
+        <!-- TELA PARA QUEM JÁ ESTÁ LOGADO -->
+        <div id="area-clube-logado" style="display: none; margin-top: 15px;">
+            <!-- Será injetado via JS -->
         </div>
+
+        <!-- VITRINE DE PRODUTOS DISPONÍVEIS PARA TROCA POR PONTOS (Visível para todos) -->
+        <div id="vitrine-troca-clube" style="margin-top: 20px;"></div>
     </div>
 
     <!-- ==========================================
@@ -311,9 +354,10 @@
             <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">restaurant_menu</span>
             Cardápio
         </div>
-        <div class="nav-item" onclick="mudarAba('aba-clube', this)" style="width: 50%;">
+        <div class="nav-item" onclick="mudarAba('aba-clube', this)" style="width: 50%; position: relative;">
+            <span style="position: absolute; top: 2px; right: 22%; background: #FF9800; color: white; font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">PRÊMIOS</span>
             <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">loyalty</span>
-            Clube
+            Clube & Pontos
         </div>
     </nav>
     
@@ -703,32 +747,44 @@
          MODAL: CARRINHO (PASSO ANTES DO CHECKOUT)
          ========================================== -->
     <div id="modal-carrinho-cliente" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:flex-end; z-index:9998;">
-        <div style="background:white; width:100%; max-width:600px; border-radius: 20px 20px 0 0; padding:25px 20px; max-height:85vh; display:flex; flex-direction:column; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); animation: subirModalCarrinho 0.3s ease-out;">
+        <div style="background:white; width:100%; max-width:600px; border-radius: 20px 20px 0 0; padding: 20px 20px 18px 20px; max-height: 88vh; display:flex; flex-direction:column; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); animation: subirModalCarrinho 0.3s ease-out; box-sizing: border-box;">
             
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 15px; margin-bottom: 15px;">
-                <h2 style="margin:0; color:#333; font-size: 1.4rem; display: flex; align-items: center; gap: 8px;">🛒 Seu Carrinho</h2>
+            <!-- TOPO FIXO DO CARRINHO -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 12px; margin-bottom: 10px; flex-shrink: 0;">
+                <h2 style="margin:0; color:#333; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">🛒 Seu Carrinho</h2>
                 <button onclick="fecharModalCarrinho()" style="background:#f0f2f5; border:none; width: 35px; height: 35px; border-radius: 50%; font-size:1.5rem; cursor:pointer; color:#555; display: flex; align-items: center; justify-content: center; transition: 0.2s;">&times;</button>
             </div>
             
-            <div id="lista-itens-carrinho-cliente" style="flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;">
-                <!-- Itens injetados via JS -->
-            </div>
-            
-            <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 15px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-bottom: 15px; flex-shrink: 0;">
-                <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
-                <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
-            </div>
+            <!-- MEIO ROLÁVEL (ITENS DO PEDIDO + UPSELL JUNTOS SEM ESMAGAR) -->
+            <div style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                    Itens do seu pedido:
+                </div>
 
-            <div id="area-totais-carrinho" style="background: #fafafa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed #ddd;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 1.1rem; color: #555; font-weight: 600;">Subtotal:</span>
-                    <strong id="subtotal-carrinho-cliente" style="font-size: 1.5rem; color: var(--cor-primaria, #e91e63);">R$ 0,00</strong>
+                <div id="lista-itens-carrinho-cliente" style="margin-bottom: 15px;">
+                    <!-- Itens injetados via JS -->
+                </div>
+                
+                <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 12px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-bottom: 5px;">
+                    <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
+                    <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
                 </div>
             </div>
-            
-            <button onclick="irParaCheckout()" style="width: 100%; background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px;">
-                Avançar <span style="font-size: 1.3rem;">➔</span>
-            </button>
+
+            <!-- RODAPÉ FIXO (TOTAIS + BOTÃO AVANÇAR SEMPRE VISÍVEIS) -->
+            <div style="flex-shrink: 0; border-top: 1px solid #f0f2f5; padding-top: 10px; background: white;">
+                <div id="area-totais-carrinho" style="background: #fafafa; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; border: 1px dashed #ddd;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 1.05rem; color: #555; font-weight: 600;">Subtotal:</span>
+                        <strong id="subtotal-carrinho-cliente" style="font-size: 1.4rem; color: var(--cor-primaria, #e91e63);">R$ 0,00</strong>
+                    </div>
+                </div>
+                
+                <button onclick="irParaCheckout()" style="width: 100%; background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.15rem; cursor: pointer; box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    Avançar <span style="font-size: 1.25rem;">➔</span>
+                </button>
+            </div>
+
         </div>
     </div>
 

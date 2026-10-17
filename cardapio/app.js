@@ -184,6 +184,7 @@ async function carregarTudo() {
         renderizarMenuCategorias(produtosDaNuvem);
         renderizarCidades(); 
         renderizarBairros(); 
+        renderizarVitrineClube();
 
         // 🚀 UX OTIMIZADA: Carrosséis e Banners foram desativados para focar 
         // na conversão direta do cardápio e reduzir a fadiga de decisão (Lei de Hick).
@@ -721,10 +722,36 @@ function abrirModalEscolha(produto, isEditing = false) {
     }
 
     if (btnResgate) {
-        if (clienteLogado && produto.pontos_resgate > 0 && clienteLogado.pontos_acumulados >= produto.pontos_resgate && !isEditing) {
+        if (produto.pontos_resgate > 0 && !isEditing) {
             btnResgate.style.display = 'flex';
-            let txtResgate = produto.resgate_dinheiro > 0 ? `${produto.pontos_resgate} pts + R$ ${Number(produto.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `Resgatar de Graça (${produto.pontos_resgate} pts)`;
-            document.getElementById('texto-resgate-dinamico').innerText = txtResgate;
+            let txtCusto = produto.resgate_dinheiro > 0 
+                ? `${produto.pontos_resgate} pts + R$ ${Number(produto.resgate_dinheiro).toFixed(2).replace('.', ',')}` 
+                : `${produto.pontos_resgate} pts (Grátis)`;
+
+            if (clienteLogado && Number(clienteLogado.pontos_acumulados) >= Number(produto.pontos_resgate)) {
+                // Cliente logado e COM saldo suficiente: libera o resgate!
+                btnResgate.setAttribute('onclick', 'confirmarEscolhasEAdicionar(true)');
+                btnResgate.style.background = '#e0f7fa';
+                btnResgate.style.color = '#00838f';
+                btnResgate.style.border = '2px solid #00bcd4';
+                document.getElementById('texto-resgate-dinamico').innerText = `🎁 Trocar meus pontos: ${txtCusto}`;
+            } else if (clienteLogado) {
+                // Cliente logado, mas AINDA SEM saldo suficiente: mostra quantos pontos faltam
+                let saldoAtual = Number(clienteLogado.pontos_acumulados) || 0;
+                let faltamPts = Number(produto.pontos_resgate) - saldoAtual;
+                btnResgate.setAttribute('onclick', `alert('🍦 Você tem ${saldoAtual} pontos de troca e este produto precisa de ${produto.pontos_resgate} pontos.\\n\\nFaltam apenas ${faltamPts} pontos! Continue comprando produtos com o selo azul (+ pts) para juntar e trocar.')`);
+                btnResgate.style.background = '#f4f7f6';
+                btnResgate.style.color = '#666';
+                btnResgate.style.border = '1px dashed #bbb';
+                document.getElementById('texto-resgate-dinamico').innerText = `🔒 Troque por ${txtCusto} (Faltam ${faltamPts} pts)`;
+            } else {
+                // Cliente DESLOGADO: convida para fazer login e trocar
+                btnResgate.setAttribute('onclick', `fecharModalOpcoes(); mudarAba('aba-clube', document.querySelectorAll('.bottom-nav .nav-item')[1]); iniciarLoginCliente();`);
+                btnResgate.style.background = '#fffdf5';
+                btnResgate.style.color = '#f57f17';
+                btnResgate.style.border = '1px dashed #ffb300';
+                document.getElementById('texto-resgate-dinamico').innerText = `🔑 Faça login p/ trocar por ${txtCusto}`;
+            }
         } else {
             btnResgate.style.display = 'none';
         }
@@ -3584,7 +3611,7 @@ async function iniciarLoginCliente() {
 }
 
 // Essa função troca as peças da tela dependendo se o cliente está logado ou não
-function atualizarInterfaceLogin(cliente) {
+async function atualizarInterfaceLogin(cliente) {
     const nomeTopo = document.getElementById('nome-cliente-topo');
     const telaLoginClube = document.getElementById('tela-login-clube');
     const areaClubeLogado = document.getElementById('area-clube-logado');
@@ -3593,94 +3620,135 @@ function atualizarInterfaceLogin(cliente) {
         // 1. Atualiza o Topo da Aba Início (Coloca o nome dele)
         if (nomeTopo) nomeTopo.innerText = cliente.nome;
 
-        // 2. Esconde o botão de login da Aba Clube e mostra o Cartão VIP
+        // 2. Esconde o painel deslogado e mostra o Painel VIP do Cliente
         if (telaLoginClube) telaLoginClube.style.display = 'none';
         if (areaClubeLogado) {
             areaClubeLogado.style.display = 'block';
-            
-            // Dá tempo do servidor carregar as regras globais de pontos antes de pintar a tela
-            setTimeout(() => {
-                const metaPontos = window.metaFidelidadeGlobal || 10;
-                const pontosTotais = Number(cliente.pontos_acumulados) || 0;
-                const pontosNaCartela = pontosTotais % metaPontos;
-                const premiosDisponiveis = Math.floor(pontosTotais / metaPontos);
-                const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
-                
-                let tipoTexto = (tipoFidelidadeGlobal === 'Desconto em %' || tipoFidelidadeGlobal === 'porcentagem' || tipoFidelidadeGlobal === '%') ? 'porcentagem' : 'fixo';
-                let textoPremios = tipoTexto === 'porcentagem' ? `${valorPremioFidelidadeGlobal}% OFF` : `R$ ${Number(valorPremioFidelidadeGlobal).toFixed(2).replace('.', ',')} de Desconto`;
+            areaClubeLogado.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">⏳ Carregando seus benefícios...</p>`;
 
-                let regrasTexto = '';
-                if (window.minimoParaGanharPontoGlobal > 0) {
-                    regrasTexto += `<br><span style="color: #777;">• Pedido mínimo p/ pontuar: <strong style="color: #555;">R$ ${Number(window.minimoParaGanharPontoGlobal).toFixed(2).replace('.', ',')}</strong></span>`;
+            // Busca o histórico real de pedidos do cliente para calcular a Cartela Fidelidade sem misturar com os pontos de produtos
+            let comprasValidas = [];
+            try {
+                const telFormatado = padronizarTelefone(cliente.telefone || '');
+                const resVendas = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(telFormatado)}`);
+                const todasCompras = await resVendas.json();
+                if (Array.isArray(todasCompras)) {
+                    comprasValidas = todasCompras.filter(c => c.status !== 'Cancelado' && c.status !== 'Cancelada');
                 }
-                if (window.minimoParaResgatarGlobal > 0) {
-                    regrasTexto += `<br><span style="color: #777;">• Pedido mínimo p/ resgatar: <strong style="color: #555;">R$ ${Number(window.minimoParaResgatarGlobal).toFixed(2).replace('.', ',')}</strong></span>`;
-                }
-                if(regrasTexto === '') {
-                    regrasTexto = `<br><span style="color: #777;">• Ganhe 1 ponto a cada pedido finalizado.</span>`;
-                }
+            } catch (e) {
+                console.log("Erro ao buscar histórico para cartela:", e);
+            }
 
-                let htmlPremioAlerta = '';
-                if (premiosDisponiveis > 0) {
-                    htmlPremioAlerta = `
-                        <div style="background: linear-gradient(135deg, #fffbeb, #fff8e1); border: 1px solid #ffe082; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                            <strong style="color: #f57f17; font-size: 1.1rem;">🎁 Você tem ${premiosDisponiveis} prêmio(s) disponível(is)!</strong>
-                            <p style="font-size: 0.9rem; color: #555; margin: 5px 0 0 0;">Monte um pedido no cardápio para resgatar.</p>
-                        </div>
-                    `;
-                }
+            const metaPontos = window.metaFidelidadeGlobal || 5;
+            const minPonto = window.minimoParaGanharPontoGlobal || 30;
+            const minResgate = window.minimoParaResgatarGlobal || 30;
+            const valorPremio = valorPremioFidelidadeGlobal || 15;
 
-                areaClubeLogado.innerHTML = `
-                    ${htmlPremioAlerta}
-                    
-                    <!-- 👇 Faixa Azul Clara: Carteira de Pontos Acumulados -->
-                    <div style="background: #e0f7fa; border: 1px solid #b2ebf2; padding: 15px 20px; border-radius: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <span class="material-symbols-outlined" style="color: #00bcd4; font-size: 2.2rem;">stars</span>
-                            <div style="text-align: left;">
-                                <strong style="color: #00838f; font-size: 1.05rem; display: block; line-height: 1.2;">Pontos Acumulados</strong>
-                                <span style="color: #00acc1; font-size: 0.8rem; font-weight: 600;">Saldo p/ troca em produtos</span>
-                            </div>
-                        </div>
-                        <strong style="color: #00bcd4; font-size: 1.8rem;">${pontosTotais}</strong>
+            // Matemática real do Cartão Fidelidade (baseada nos pedidos válidos, igual ao Checkout)
+            const totalPedidos = comprasValidas.length;
+            const pontosNaCartela = totalPedidos % metaPontos;
+            const premiosGanhos = Math.floor(totalPedidos / metaPontos);
+            const premiosUsados = comprasValidas.filter(v => v.observacoes && v.observacoes.includes('FIDELIDADE_VIP')).length;
+            let premiosDisponiveis = premiosGanhos - premiosUsados;
+            if (premiosDisponiveis < 0) premiosDisponiveis = 0;
+
+            const porcentagemAtual = (pontosNaCartela / metaPontos) * 100;
+            const pontosProdutosTotais = Number(cliente.pontos_acumulados) || 0;
+
+            let tipoTexto = (tipoFidelidadeGlobal === 'Desconto em %' || tipoFidelidadeGlobal === 'porcentagem' || tipoFidelidadeGlobal === '%') ? 'porcentagem' : 'fixo';
+            let textoPremios = tipoTexto === 'porcentagem' ? `${valorPremio}% OFF` : `R$ ${Number(valorPremio).toFixed(2).replace('.', ',')} de Desconto`;
+
+            let htmlPremioAlerta = '';
+            if (premiosDisponiveis > 0) {
+                htmlPremioAlerta = `
+                    <div style="background: linear-gradient(135deg, #fffbeb, #fff8e1); border: 2px solid #ffb300; padding: 16px; border-radius: 14px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);">
+                        <strong style="color: #e65100; font-size: 1.1rem; display: block;">🎉 Você tem ${premiosDisponiveis} desconto(s) de ${textoPremios} liberado(s)!</strong>
+                        <p style="font-size: 0.85rem; color: #555; margin: 6px 0 12px 0;">Adicione pelo menos R$ ${Number(minResgate).toFixed(2).replace('.', ',')} no carrinho e clique em <strong>"Resgatar Prêmio Agora"</strong> na tela de pagamento!</p>
+                        <button onclick="mudarAba('aba-cardapio', document.querySelectorAll('.bottom-nav .nav-item')[0])" style="background: #FF9800; color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; cursor: pointer;">Ir para o Cardápio Usar ➔</button>
                     </div>
-                    
-                    <!-- 👇 Cartão Fidelidade (Independente) -->
-                    <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee;">
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <strong style="color: #333; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                                ⭐ Cartão Fidelidade
-                            </strong>
-                            <span style="background: #008be5; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;">
-                                ${pontosNaCartela} / ${metaPontos}
-                            </span>
-                        </div>
-                        
-                        <div style="background: #f0f0f0; border-radius: 10px; height: 14px; width: 100%; overflow: hidden; margin-bottom: 12px;">
-                            <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out; border-radius: 10px;"></div>
-                        </div>
-                        
-                        <p style="font-size: 0.95rem; color: #666; text-align: center; margin: 0 0 20px 0;">
-                            Você tem <strong>${pontosNaCartela}</strong> carimbos na cartela atual.
-                        </p>
-
-                        <!-- Box Amarelo de Regras -->
-                        <div style="background: #fffdf5; border: 1px dashed #ffe082; padding: 15px; border-radius: 10px; text-align: left;">
-                            <strong style="color: #f57f17; font-size: 1rem; display: block; text-align: center; margin-bottom: 10px;">
-                                🎁 Junte ${metaPontos} pontos e ganhe ${textoPremios}!
-                            </strong>
-                            
-                            <strong style="color: #555; font-size: 0.9rem;">Regras do Clube:</strong>
-                            <div style="font-size: 0.85rem; line-height: 1.6; margin-top: 5px;">
-                                ${regrasTexto}
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="iniciarLoginCliente()" style="width: 100%; background: #fff0f4; color: #e91e63; border: 1px solid #ffb3c6; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 1rem; transition: 0.2s;">Sair da Conta</button>
                 `;
-            }, 300); 
+            }
+
+            // Desenha as bolinhas (selos) da Cartela Fidelidade para ficar super visual
+            let bolinhasHtml = '';
+            for (let i = 1; i <= metaPontos; i++) {
+                const conquistado = i <= pontosNaCartela;
+                bolinhasHtml += `
+                    <div style="width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; ${conquistado ? 'background: #4CAF50; color: white; box-shadow: 0 3px 8px rgba(76,175,80,0.3);' : 'background: #f4f7f6; color: #bbb; border: 2px dashed #ccc;'}">
+                        ${conquistado ? '✓' : i}
+                    </div>
+                `;
+            }
+
+            areaClubeLogado.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <span style="font-size: 0.8rem; color: #777;">Olá, membro VIP</span>
+                        <h2 style="margin: 0; color: #333; font-size: 1.3rem;">${cliente.nome} 👋</h2>
+                    </div>
+                    <button onclick="iniciarLoginCliente()" style="background: #fff0f4; color: #e91e63; border: 1px solid #ffb3c6; padding: 8px 14px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">Sair</button>
+                </div>
+
+                ${htmlPremioAlerta}
+
+                <!-- BENEFÍCIO 1: CARTÃO FIDELIDADE (SELos DE COMPRA) -->
+                <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #ffe082; border-top: 5px solid #FF9800; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div>
+                            <strong style="color: #333; font-size: 1.05rem; display: block;">⭐ Benefício 1: Cartão Fidelidade</strong>
+                            <span style="font-size: 0.8rem; color: #f57f17; font-weight: 700;">Prêmio: ${textoPremios}</span>
+                        </div>
+                        <span style="background: #fff3e0; color: #e65100; border: 1px solid #ffe082; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 800;">
+                            ${pontosNaCartela} / ${metaPontos} selos
+                        </span>
+                    </div>
+
+                    <!-- Bolinhas dos Selos -->
+                    <div style="display: flex; justify-content: space-around; align-items: center; margin: 18px 0; flex-wrap: wrap; gap: 8px;">
+                        ${bolinhasHtml}
+                    </div>
+
+                    <div style="background: #f0f0f0; border-radius: 10px; height: 10px; width: 100%; overflow: hidden; margin-bottom: 12px;">
+                        <div style="background: #4CAF50; height: 100%; width: ${porcentagemAtual}%; transition: 1s ease-in-out;"></div>
+                    </div>
+
+                    <p style="font-size: 0.88rem; color: #555; text-align: center; margin: 0 0 12px 0;">
+                        ${metaPontos - pontosNaCartela === 1 
+                            ? `🎉 Falta apenas <strong>1 pedido</strong> (mín. R$ ${Number(minPonto).toFixed(2).replace('.', ',')}) para ganhar <strong>${textoPremios}</strong>!` 
+                            : `Faltam <strong>${metaPontos - pontosNaCartela} pedidos</strong> (mín. R$ ${Number(minPonto).toFixed(2).replace('.', ',')}) para liberar seu desconto!`}
+                    </p>
+
+                    <div style="background: #fffdf5; border: 1px dashed #ffe082; padding: 12px; border-radius: 10px; font-size: 0.8rem; color: #666; line-height: 1.5;">
+                        <strong style="color: #e65100; display: block; margin-bottom: 4px;">📌 Como funciona e como usar:</strong>
+                        • Cada pedido finalizado a partir de <strong>R$ ${Number(minPonto).toFixed(2).replace('.', ',')}</strong> ganha <strong>1 selo</strong>.<br>
+                        • Ao juntar <strong>${metaPontos} selos</strong>, você ganha <strong>${textoPremios}</strong>.<br>
+                        • Para usar: monte um pedido de no mínimo <strong>R$ ${Number(minResgate).toFixed(2).replace('.', ',')}</strong> e, na etapa de pagamento, clique no botão laranja <em>"Resgatar Prêmio Agora"</em>!
+                    </div>
+                </div>
+
+                <!-- BENEFÍCIO 2: CARTEIRA DE PONTOS (TROCA POR PRODUTOS) -->
+                <div style="background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #b2ebf2; border-top: 5px solid #00bcd4;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="material-symbols-outlined" style="color: #00bcd4; font-size: 2.2rem;">redeem</span>
+                            <div>
+                                <strong style="color: #333; font-size: 1.05rem; display: block;">🍦 Benefício 2: Pontos de Produtos</strong>
+                                <span style="color: #00838f; font-size: 0.8rem; font-weight: 700;">Troque por produtos grátis do cardápio</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right; background: #e0f7fa; padding: 6px 12px; border-radius: 12px; border: 1px solid #b2ebf2;">
+                            <strong style="color: #00838f; font-size: 1.4rem; display: block; line-height: 1;">${pontosProdutosTotais}</strong>
+                            <span style="color: #00acc1; font-size: 0.7rem; font-weight: bold;">pts disponíveis</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #f0fdfa; border: 1px dashed #b2ebf2; padding: 12px; border-radius: 10px; font-size: 0.8rem; color: #555; line-height: 1.5;">
+                        <strong style="color: #00838f; display: block; margin-bottom: 4px;">📌 Como ganhar e como trocar:</strong>
+                        • <strong>Como ganhar:</strong> Comprando produtos do cardápio que possuem a etiqueta azul <span style="background: #00bcd4; color: white; font-size: 0.65rem; font-weight: bold; padding: 2px 5px; border-radius: 4px;">+ X pts</span>.<br>
+                        • <strong>Como trocar:</strong> Veja na lista abaixo os produtos disponíveis para troca! Basta clicar no produto desejado e apertar o botão azul <em>"🎁 Trocar meus pontos"</em>!
+                    </div>
+                </div>
+            `;
         }
 
         // 3. Preenche automaticamente o Checkout para o cliente não precisar digitar os dados de novo
@@ -3689,8 +3757,10 @@ function atualizarInterfaceLogin(cliente) {
         if (inputNomeCheckout) inputNomeCheckout.value = cliente.nome;
         if (inputTelCheckout) inputTelCheckout.value = cliente.telefone;
 
-        // 👉 NOVA LÓGICA: Aciona o radar de histórico silenciosamente assim que o cliente abre o cardápio!
-        // Isso faz o banner de avaliação pendente aparecer logo na tela inicial (vitrine).
+        // 4. Atualiza a vitrine de produtos de troca na aba Clube com o saldo do cliente
+        renderizarVitrineClube();
+
+        // 5. Aciona o radar de histórico silenciosamente
         buscarDadosClienteCRM(cliente.telefone);
 
     } else {
@@ -3704,7 +3774,83 @@ function atualizarInterfaceLogin(cliente) {
         const inputTelCheckout = document.getElementById('cliente-telefone');
         if (inputNomeCheckout) inputNomeCheckout.value = '';
         if (inputTelCheckout) inputTelCheckout.value = '';
+
+        // Atualiza a vitrine de produtos de troca no modo visitante
+        renderizarVitrineClube();
     }
+}
+
+// 🎁 NOVA FUNÇÃO: Desenha todos os produtos que podem ser trocados por pontos direto na aba Clube!
+function renderizarVitrineClube() {
+    const container = document.getElementById('vitrine-troca-clube');
+    if (!container) return;
+
+    const produtosResgataveis = (produtosDaNuvem || []).filter(p => Number(p.pontos_resgate) > 0 && p.ativo !== false);
+
+    if (produtosResgataveis.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let saldoCliente = 0;
+    let isLogado = false;
+    try {
+        const salvo = localStorage.getItem('icesoft_cliente');
+        if (salvo) {
+            const cli = JSON.parse(salvo);
+            saldoCliente = Number(cli.pontos_acumulados) || 0;
+            isLogado = true;
+        }
+    } catch (e) {}
+
+    // Ordena do menor custo em pontos para o maior (facilita o cliente ver o que está mais perto de alcançar)
+    produtosResgataveis.sort((a, b) => Number(a.pontos_resgate) - Number(b.pontos_resgate));
+
+    let cardsHtml = produtosResgataveis.map(p => {
+        const custoPts = Number(p.pontos_resgate);
+        const taxaExtra = Number(p.resgate_dinheiro) || 0;
+        const txtCusto = taxaExtra > 0 ? `${custoPts} pts + R$ ${taxaExtra.toFixed(2).replace('.', ',')}` : `${custoPts} pontos`;
+        const podeResgatar = isLogado && saldoCliente >= custoPts;
+
+        const imgHtml = p.imagem_url
+            ? `<img src="${p.imagem_url}" loading="lazy" style="width: 75px; height: 75px; border-radius: 10px; object-fit: cover; flex-shrink: 0;">`
+            : `<div style="width: 75px; height: 75px; border-radius: 10px; background: #e0f7fa; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0;">${p.emoji || '🍦'}</div>`;
+
+        let statusBotao = '';
+        if (podeResgatar) {
+            statusBotao = `<span style="background: #25D366; color: white; font-size: 0.78rem; font-weight: 800; padding: 6px 12px; border-radius: 20px; display: inline-block;">🔓 Resgatar Agora!</span>`;
+        } else if (isLogado) {
+            let faltam = custoPts - saldoCliente;
+            statusBotao = `<span style="background: #f0f2f5; color: #666; font-size: 0.75rem; font-weight: 700; padding: 5px 10px; border-radius: 20px; display: inline-block;">Faltam ${faltam} pts</span>`;
+        } else {
+            statusBotao = `<span style="background: #e0f7fa; color: #00838f; font-size: 0.75rem; font-weight: 700; padding: 5px 10px; border-radius: 20px; display: inline-block;">Ver produto ➔</span>`;
+        }
+
+        return `
+            <div onclick="verificarAdicao(${p.id})" style="background: white; border: 1px solid ${podeResgatar ? '#25D366' : '#e0e0e0'}; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                ${imgHtml}
+                <div style="flex: 1; min-width: 0;">
+                    <strong style="color: #333; font-size: 0.95rem; display: block; margin-bottom: 3px;">${p.nome}</strong>
+                    <div style="color: #00838f; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px;">⭐ Troque por: ${txtCusto}</div>
+                    ${statusBotao}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="background: #ffffff; padding: 18px; border-radius: 16px; border: 1px solid #eee; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <h3 style="margin: 0 0 5px 0; color: #00838f; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
+                🎁 Catálogo de Produtos para Trocar com Pontos
+            </h3>
+            <p style="margin: 0 0 15px 0; color: #777; font-size: 0.82rem;">
+                Toque em qualquer produto abaixo para escolher seus complementos e trocar pelos seus pontos acumulados:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${cardsHtml}
+            </div>
+        </div>
+    `;
 }
 
 // ==========================================
