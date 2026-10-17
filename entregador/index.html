@@ -186,7 +186,7 @@
             Ativos (<span id="qtd-ativos">0</span>)
         </div>
         <div class="tab" onclick="mudarAba('finalizados')" id="tab-finalizados">
-            Finalizados
+            Finalizados (<span id="qtd-finalizados">0</span>)
         </div>
     </div>
 
@@ -197,6 +197,22 @@
 
     <!-- ABA 2: PEDIDOS FINALIZADOS (ENTREGUE) -->
     <div id="conteudo-finalizados" class="conteudo-aba">
+        <!-- PAINEL DE ACERTO DO MOTOBOY -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+            <div style="background: white; padding: 12px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-bottom: 3px solid #00bcd4;">
+                <div style="font-size: 0.75rem; color: #777; font-weight: 600;">ENTREGAS</div>
+                <div id="resumo-qtd" style="font-size: 1.2rem; font-weight: 700; color: #333; margin-top: 4px;">0</div>
+            </div>
+            <div style="background: white; padding: 12px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-bottom: 3px solid #4CAF50;">
+                <div style="font-size: 0.75rem; color: #777; font-weight: 600;">MINHAS TAXAS</div>
+                <div id="resumo-taxas" style="font-size: 1.05rem; font-weight: 700; color: #2e7d32; margin-top: 4px;">R$ 0,00</div>
+            </div>
+            <div style="background: white; padding: 12px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-bottom: 3px solid #ff9800;">
+                <div style="font-size: 0.75rem; color: #777; font-weight: 600;">DINHEIRO MÃOS</div>
+                <div id="resumo-dinheiro" style="font-size: 1.05rem; font-weight: 700; color: #e65100; margin-top: 4px;">R$ 0,00</div>
+            </div>
+        </div>
+
         <div id="lista-finalizados" style="text-align: center; color: #888; padding-top: 20px;">Carregando histórico...</div>
     </div>
 
@@ -235,13 +251,16 @@
         }
 
         // ==========================================
-        // LÓGICA DE BAIXA DO PEDIDO (ENTREGUE)
+        // LÓGICA DE DESPACHO E BAIXA DO PEDIDO
         // ==========================================
-        async function marcarComoEntregue(id) {
-            event.stopPropagation(); // Impede que o modal de detalhes se abra ao clicar no botão
+        async function atualizarStatusEntrega(id, novoStatus, ev) {
+            if (ev) ev.stopPropagation(); // Impede que o modal de detalhes se abra ao clicar no botão
             
-            const confirmar = confirm("📦 Confirmar que este pedido foi entregue ao cliente?");
-            if (!confirmar) return;
+            const msgConfirmacao = novoStatus === 'Saiu p/ Entrega' 
+                ? "🛵 Confirmar que você pegou este pedido e está saindo para entrega?"
+                : "📦 Confirmar que este pedido foi entregue ao cliente?";
+                
+            if (!confirm(msgConfirmacao)) return;
 
             try {
                 const cracha = localStorage.getItem('icesoft_token');
@@ -251,7 +270,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${cracha}`
                     },
-                    body: JSON.stringify({ status: 'Entregue' })
+                    body: JSON.stringify({ status: novoStatus })
                 });
 
                 if (resposta.ok) {
@@ -275,12 +294,17 @@
                 });
 
                 if (res.status === 401 || res.status === 403) {
+                    localStorage.setItem('icesoft_retorno_login', window.location.href);
                     window.location.href = '../login/index.html';
                     return;
                 }
 
                 const vendas = await res.json();
-                entregasGlobais = vendas.filter(v => v.origem && v.origem.toLowerCase().includes('delivery'));
+                // Filtra apenas entregas de Delivery (ignorando pedidos de Retirada na Loja)
+                entregasGlobais = vendas.filter(v => 
+                    v.origem && v.origem.toLowerCase().includes('delivery') &&
+                    !(v.cliente_endereco && v.cliente_endereco.toLowerCase().includes('retirada'))
+                );
                 
                 renderizarListas();
             } catch (e) {
@@ -303,10 +327,35 @@
         }
 
         function renderizarListas() {
-            const ativos = entregasGlobais.filter(v => v.status === 'Saiu p/ Entrega' || v.status === 'Pendente Delivery');
+            // Mostra pedidos em rota no topo e pedidos que estão sendo montados logo abaixo
+            const ativos = entregasGlobais
+                .filter(v => v.status === 'Saiu p/ Entrega' || v.status === 'A Preparar' || v.status === 'Pendente Delivery')
+                .sort((a, b) => (a.status === 'Saiu p/ Entrega' ? -1 : 1));
+                
             const finalizados = entregasGlobais.filter(v => v.status === 'Entregue');
 
             document.getElementById('qtd-ativos').innerText = ativos.length;
+            const spanFinalizados = document.getElementById('qtd-finalizados');
+            if (spanFinalizados) spanFinalizados.innerText = finalizados.length;
+
+            // Calcula o Resumo Financeiro do Turno (Taxas e Dinheiro em Mãos)
+            let totalTaxas = 0;
+            let totalDinheiroMaos = 0;
+            finalizados.forEach(v => {
+                totalTaxas += Number(v.taxa_entrega) || 0;
+                if (v.pagamentos_detalhes) {
+                    const pd = typeof v.pagamentos_detalhes === 'string' ? JSON.parse(v.pagamentos_detalhes) : v.pagamentos_detalhes;
+                    totalDinheiroMaos += Number(pd.dinheiro) || 0;
+                } else if (v.forma_pagamento && v.forma_pagamento.toLowerCase().includes('dinheiro')) {
+                    totalDinheiroMaos += Number(v.valor_total) || 0;
+                }
+            });
+
+            if (document.getElementById('resumo-qtd')) {
+                document.getElementById('resumo-qtd').innerText = finalizados.length;
+                document.getElementById('resumo-taxas').innerText = `R$ ${totalTaxas.toFixed(2).replace('.', ',')}`;
+                document.getElementById('resumo-dinheiro').innerText = `R$ ${totalDinheiroMaos.toFixed(2).replace('.', ',')}`;
+            }
 
             const divAtivos = document.getElementById('lista-ativos');
             const divFinalizados = document.getElementById('lista-finalizados');
@@ -326,37 +375,65 @@
                 const iconePag = ehDinheiro ? 'payments' : 'check_circle';
                 const complementoTroco = ehDinheiro ? extrairTrocoSeExistir(pedido.forma_pagamento, pedido.valor_total) : '';
 
-                // Link Mágico do Google Maps
-                const linkMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco + ', Quatis RJ')}`;
+                // Link Inteligente do Google Maps (Reconhece Quatis e Porto Real)
+                const endLower = endereco.toLowerCase();
+                const complementoCidade = (endLower.includes('porto real') || endLower.includes('quatis')) ? ', RJ' : ', Quatis RJ';
+                const linkMaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco + complementoCidade)}`;
                 
-                // Link Mágico do WhatsApp
+                // Links de WhatsApp e Ligação
                 let linkWhats = '#';
+                let linkTel = '#';
                 if (pedido.cliente_telefone) {
-                    const numWhats = "55" + pedido.cliente_telefone.replace(/\D/g, '');
-                    linkWhats = `https://wa.me/${numWhats}?text=Olá ${nomeCli}, aqui é o entregador da Icesoft! Estou a caminho com o seu pedido.`;
+                    const numLimpo = pedido.cliente_telefone.replace(/\D/g, '');
+                    linkWhats = `https://wa.me/55${numLimpo}?text=${encodeURIComponent(`Olá ${nomeCli}, aqui é o entregador da Icesoft! Estou a caminho com o seu pedido #${numPedido}.`)}`;
+                    linkTel = `tel:${numLimpo}`;
                 }
+
+                // Etiqueta visual de status
+                const emRota = pedido.status === 'Saiu p/ Entrega';
+                const badgeStatus = isFinalizado 
+                    ? `<span style="background:#e8f5e9; color:#2e7d32; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:700;">✅ ENTREGUE</span>`
+                    : (emRota 
+                        ? `<span style="background:#fff3e0; color:#e65100; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:700;">🛵 EM ROTA</span>`
+                        : `<span style="background:#e3f2fd; color:#1565c0; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:700;">🥣 NA LOJA (${pedido.status})</span>`);
 
                 let acoesHtml = '';
                 if (!isFinalizado) {
+                    const botaoPrincipal = emRota
+                        ? `<button onclick="atualizarStatusEntrega(${pedido.id}, 'Entregue', event)" class="btn-acao" style="background: #4CAF50; width: 100%; margin-bottom: 5px; flex-basis: 100%; font-size: 1.05rem; box-shadow: 0 4px 6px rgba(76,175,80,0.3);">
+                               <span class="material-symbols-outlined">check_circle</span> Concluir Entrega
+                           </button>`
+                        : `<button onclick="atualizarStatusEntrega(${pedido.id}, 'Saiu p/ Entrega', event)" class="btn-acao" style="background: #ff9800; width: 100%; margin-bottom: 5px; flex-basis: 100%; font-size: 1.05rem; box-shadow: 0 4px 6px rgba(255,152,0,0.3);">
+                               <span class="material-symbols-outlined">two_wheeler</span> Sair p/ Entrega
+                           </button>`;
+
                     acoesHtml = `
                         <div class="acoes-rapidas" style="flex-wrap: wrap;">
-                            <button onclick="marcarComoEntregue(${pedido.id})" class="btn-acao" style="background: #4CAF50; width: 100%; margin-bottom: 5px; flex-basis: 100%; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(76,175,80,0.3);">
-                                <span class="material-symbols-outlined">check_circle</span> Concluir Entrega
-                            </button>
+                            ${botaoPrincipal}
                             <a href="${linkMaps}" target="_blank" class="btn-acao btn-maps">
                                 <span class="material-symbols-outlined">map</span> GPS
                             </a>
                             <a href="${linkWhats}" target="_blank" class="btn-acao btn-whats" ${!pedido.cliente_telefone ? 'style="opacity:0.5; pointer-events:none;"' : ''}>
-                                <span class="material-symbols-outlined">forum</span> Avisar
+                                <span class="material-symbols-outlined">forum</span> Zap
+                            </a>
+                            <a href="${linkTel}" class="btn-acao" style="background: #607d8b; flex: 0.7;" ${!pedido.cliente_telefone ? 'style="opacity:0.5; pointer-events:none;"' : ''}>
+                                <span class="material-symbols-outlined">call</span> Ligar
                             </a>
                         </div>
                     `;
                 }
 
+                const taxaInfo = Number(pedido.taxa_entrega) > 0 
+                    ? `<div style="font-size: 0.8rem; color: #666; margin-top: 6px; text-align: right;">🛵 Taxa da corrida: <strong>R$ ${Number(pedido.taxa_entrega).toFixed(2).replace('.',',')}</strong></div>` 
+                    : '';
+
                 return `
-                    <div class="card-entrega ${isFinalizado ? 'finalizado' : ''}" onclick="abrirDetalhes(${pedido.id})">
+                    <div class="card-entrega ${isFinalizado ? 'finalizado' : ''}" style="${!emRota && !isFinalizado ? 'border-left-color: #2196F3;' : ''}" onclick="abrirDetalhes(${pedido.id}, event)">
                         <div class="card-header">
-                            <span class="numero-pedido">#${numPedido}</span>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span class="numero-pedido">#${numPedido}</span>
+                                ${badgeStatus}
+                            </div>
                             <span style="color: #888; font-size: 0.9rem;">${hora}</span>
                         </div>
                         <div class="nome-cliente"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">person</span> ${pedido.cliente_nome || "Anônimo"}</div>
@@ -369,11 +446,11 @@
                         <div class="info-pagamento ${classePag}">
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <span class="material-symbols-outlined">${iconePag}</span>
-                                <span>${pedido.forma_pagamento.split('(')[0]} ${complementoTroco}</span>
+                                <span>${(pedido.forma_pagamento || 'A definir').split('(')[0]} ${complementoTroco}</span>
                             </div>
                             <span>R$ ${Number(pedido.valor_total).toFixed(2).replace('.',',')}</span>
                         </div>
-                        
+                        ${taxaInfo}
                         ${acoesHtml}
                     </div>
                 `;
@@ -384,11 +461,11 @@
         }
 
         // ==========================================
-        // LÓGICA DO MODAL (DETALHES DO PEDIDO)
+        // LÓGICA DO MODAL (CONFERÊNCIA DA SACOLA)
         // ==========================================
-        function abrirDetalhes(id) {
-            // Ignora se clicou em um dos botões (Maps/Whats)
-            if(event.target.closest('.acoes-rapidas')) return;
+        function abrirDetalhes(id, ev) {
+            // Ignora se clicou em um dos botões (Maps/Whats/Status)
+            if (ev && ev.target && ev.target.closest('.acoes-rapidas')) return;
 
             const pedido = entregasGlobais.find(p => p.id === id);
             if (!pedido) return;
@@ -407,10 +484,10 @@
             try {
                 const itens = typeof pedido.itens === 'string' ? JSON.parse(pedido.itens) : pedido.itens;
                 itens.forEach(item => {
-                    let nomeLimpo = item.nome.replace('Delivery: ', '');
+                    let nomeLimpo = (item.nome || '').replace('Delivery: ', '');
                     itensHtml += `
                         <div class="item-resumo">
-                            <span>${item.quantidade || 1}x ${nomeLimpo.split('(')[0]}</span>
+                            <span style="font-weight: 600; color: #333;">${item.quantidade || 1}x ${nomeLimpo}</span>
                         </div>
                     `;
                 });

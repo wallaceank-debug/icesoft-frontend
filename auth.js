@@ -4,8 +4,9 @@ function verificarAcesso() {
     // 1. Procura o "crachá" (token) no bolso do navegador
     const cracha = localStorage.getItem('icesoft_token');
     
-    // 2. Se o crachá não existir, joga o invasor para fora (tela de login)
+    // 2. Se o crachá não existir, memoriza a tela atual e envia para o login
     if (!cracha) {
+        localStorage.setItem('icesoft_retorno_login', window.location.href);
         window.location.href = '../login/index.html'; // Ajuste o caminho se necessário
         return false;
     }
