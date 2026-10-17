@@ -134,24 +134,27 @@ function renderizarTabela(lista) {
         `;
         // --- FIM: FAROL DE RETENÇÃO ---
 
-        // 👇 A MÁGICA: O CRM agora usa apenas a contagem de pedidos que bateram o valor mínimo!
+        // 👇 Contagem real de pedidos que atingiram o valor mínimo (ex: R$ 30,00)
         const pedidosFeitos = Number(cliente.pedidos_fidelidade !== undefined ? cliente.pedidos_fidelidade : cliente.total_pedidos);
+        const totalPedidosGeral = Number(cliente.total_pedidos || 0);
+        const premiosUsados = Number(cliente.premios_usados || 0);
 
-        // Lógica Visual da Fidelidade
+        // Lógica Visual da Fidelidade (Sincronizada com o Cardápio Digital)
         let htmlFidelidade = '<span style="color:#999; font-size: 0.85rem;">Programa Desligado</span>';
         
         if (configsFidelidade.ativo) {
             const meta = configsFidelidade.meta;
+            const premiosGanhos = Math.floor(pedidosFeitos / meta);
+            const premiosDisponiveis = Math.max(0, premiosGanhos - premiosUsados);
             const progressoAtual = pedidosFeitos % meta; 
-            const temPremioAguardando = (pedidosFeitos > 0 && progressoAtual === 0);
+            const temPremioAguardando = premiosDisponiveis > 0;
             
-            // Se ele completou a meta, a barra fica cheia (100%). Se não, calcula a %.
-            const porcentagemBarra = temPremioAguardando ? 100 : (progressoAtual / meta) * 100;
+            const porcentagemBarra = (temPremioAguardando && progressoAtual === 0) ? 100 : (progressoAtual / meta) * 100;
             const corBarra = temPremioAguardando ? '#25D366' : '#e91e63';
             
             const textoStatus = temPremioAguardando 
-                ? `<span class="premio-destravado">🎁 Prêmio Disponível!</span>`
-                : `<span class="status-fidelidade">${progressoAtual} / ${meta} pedidos</span>`;
+                ? `<span class="premio-destravado">🎁 ${premiosDisponiveis} Prêmio(s) Disponível(is)!</span> <span style="font-size: 0.75rem; color: #666; font-weight: bold; margin-left: 4px;">(${progressoAtual}/${meta})</span>`
+                : `<span class="status-fidelidade">${progressoAtual} / ${meta} selos (R$ ${configsFidelidade.minPonto}+)</span>`;
 
             htmlFidelidade = `
                 <div>
@@ -159,7 +162,9 @@ function renderizarTabela(lista) {
                     <div class="barra-fundo">
                         <div class="barra-progresso" style="width: ${porcentagemBarra}%; background-color: ${corBarra};"></div>
                     </div>
-                    <div style="font-size: 0.7rem; color: #888; margin-top: 3px;">Total histórico: ${pedidosFeitos} pedidos</div>
+                    <div style="font-size: 0.7rem; color: #888; margin-top: 3px;">
+                        Válidos: <strong>${pedidosFeitos}</strong> de ${totalPedidosGeral} pedidos | Resgatados: <strong>${premiosUsados}</strong>
+                    </div>
                 </div>
             `;
         }
@@ -349,8 +354,8 @@ function ordenarClientes(coluna) {
             valorA = new Date(a.ultima_compra).getTime();
             valorB = new Date(b.ultima_compra).getTime();
         } else if (coluna === 'fidelidade') {
-            valorA = parseInt(a.total_pedidos || 0);
-            valorB = parseInt(b.total_pedidos || 0);
+            valorA = parseInt(a.pedidos_fidelidade !== undefined ? a.pedidos_fidelidade : (a.total_pedidos || 0));
+            valorB = parseInt(b.pedidos_fidelidade !== undefined ? b.pedidos_fidelidade : (b.total_pedidos || 0));
         }
 
         if (valorA < valorB) return ordemCRM.direcao === 'asc' ? -1 : 1;

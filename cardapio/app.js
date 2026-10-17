@@ -1754,10 +1754,17 @@ async function abrirTelaRastreio() {
             const ultimoPedido = comprasDesteCliente.reduce((max, p) => p.id > max.id ? p : max, comprasDesteCliente[0]);
             rastreioPedidoId = ultimoPedido.id;
             
-            // 🧠 CORREÇÃO DO CRM: Calcula os pontos da cartela atual ignorando cancelados
-            const comprasValidas = comprasDesteCliente.filter(c => c.status !== 'Cancelado');
+            // 🧠 SINCRONIZADO COM O CRM: Conta apenas pedidos válidos que atingiram o valor mínimo (ex: R$ 30)
+            const minPonto = Number(window.minimoParaGanharPontoGlobal) || 0;
+            const comprasValidas = comprasDesteCliente.filter(c => 
+                c.status !== 'Cancelado' && 
+                c.status !== 'Cancelada' && 
+                !String(c.status || '').toLowerCase().includes('cancelad') &&
+                c.status !== 'Aguardando Pagamento' &&
+                Number(c.valor_total) >= minPonto
+            );
             const totalPedidos = comprasValidas.length;
-            const metaPontos = 10; 
+            const metaPontos = window.metaFidelidadeGlobal || 5; 
             
             let pontosNaCartela = totalPedidos % metaPontos;
             // Se completou a cartela exata (ex: 10, 20), mostra 10 em vez de 0
@@ -2831,18 +2838,28 @@ function ativarBarrinhaFidelidade(comprasValidas) {
 
     areaFidelidade.style.display = 'block';
 
-    // 🧮 A MATEMÁTICA DO ACÚMULO DE PRÊMIOS
-    const metaPontos = window.metaFidelidadeGlobal || 10; 
-    const totalPedidos = comprasValidas.length;
+    // 🧮 A MATEMÁTICA DO ACÚMULO DE PRÊMIOS (100% Sincronizada com o CRM)
+    const metaPontos = window.metaFidelidadeGlobal || 5; 
+    const minPonto = Number(window.minimoParaGanharPontoGlobal) || 0;
+    const comprasQuePontuam = comprasValidas.filter(v => 
+        !String(v.status || '').toLowerCase().includes('cancelad') && 
+        v.status !== 'Aguardando Pagamento' && 
+        Number(v.valor_total) >= minPonto
+    );
+    const totalPedidos = comprasQuePontuam.length;
     
-    // Progresso atual na cartela (Ex: Se tem 12 pedidos, o resto é 2)
+    // Progresso atual na cartela
     const pontosNaCartela = totalPedidos % metaPontos;
     
-    // Quantos prêmios ele já conquistou na vida? (Ex: 12 pedidos = 1 prêmio)
+    // Quantos prêmios ele já conquistou nas compras acima do valor mínimo
     const premiosGanhos = Math.floor(totalPedidos / metaPontos);
     
-    // Quantos ele já usou? (Contamos no histórico de observações)
-    const premiosUsados = comprasValidas.filter(v => v.observacoes && v.observacoes.includes('FIDELIDADE_VIP')).length;
+    // Quantos ele já usou (observações ou coluna cupom_usado)
+    const premiosUsados = comprasValidas.filter(v => 
+        !String(v.status || '').toLowerCase().includes('cancelad') &&
+        v.status !== 'Aguardando Pagamento' &&
+        ((v.observacoes && v.observacoes.includes('FIDELIDADE_VIP')) || v.cupom_usado === 'FIDELIDADE_VIP')
+    ).length;
     
     // O saldo real de prêmios que ele pode resgatar hoje
     let premiosDisponiveis = premiosGanhos - premiosUsados;
@@ -3626,29 +3643,40 @@ async function atualizarInterfaceLogin(cliente) {
             areaClubeLogado.style.display = 'block';
             areaClubeLogado.innerHTML = `<p style="text-align: center; color: #888; padding: 20px;">⏳ Carregando seus benefícios...</p>`;
 
-            // Busca o histórico real de pedidos do cliente para calcular a Cartela Fidelidade sem misturar com os pontos de produtos
+            // Busca o histórico real de pedidos e o saldo atualizado de pontos direto do servidor
             let comprasValidas = [];
+            const telFormatado = padronizarTelefone(cliente.telefone || '');
             try {
-                const telFormatado = padronizarTelefone(cliente.telefone || '');
-                const resVendas = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(telFormatado)}`);
+                const [resVendas, resSaldo] = await Promise.all([
+                    fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(telFormatado)}`),
+                    fetch(`${API_URL}/clientes/saldo/${encodeURIComponent(telFormatado)}`)
+                ]);
                 const todasCompras = await resVendas.json();
                 if (Array.isArray(todasCompras)) {
-                    comprasValidas = todasCompras.filter(c => c.status !== 'Cancelado' && c.status !== 'Cancelada');
+                    comprasValidas = todasCompras.filter(c => !String(c.status || '').toLowerCase().includes('cancelad') && c.status !== 'Aguardando Pagamento');
+                }
+                if (resSaldo.ok) {
+                    const dadosSaldo = await resSaldo.json();
+                    if (dadosSaldo.pontos_acumulados !== undefined) {
+                        cliente.pontos_acumulados = Number(dadosSaldo.pontos_acumulados) || 0;
+                        localStorage.setItem('icesoft_cliente', JSON.stringify(cliente));
+                    }
                 }
             } catch (e) {
-                console.log("Erro ao buscar histórico para cartela:", e);
+                console.log("Erro ao sincronizar histórico e saldo:", e);
             }
 
             const metaPontos = window.metaFidelidadeGlobal || 5;
-            const minPonto = window.minimoParaGanharPontoGlobal || 30;
-            const minResgate = window.minimoParaResgatarGlobal || 30;
+            const minPonto = Number(window.minimoParaGanharPontoGlobal) || 30;
+            const minResgate = Number(window.minimoParaResgatarGlobal) || 30;
             const valorPremio = valorPremioFidelidadeGlobal || 15;
 
-            // Matemática real do Cartão Fidelidade (baseada nos pedidos válidos, igual ao Checkout)
-            const totalPedidos = comprasValidas.length;
+            // Matemática real do Cartão Fidelidade (apenas pedidos >= minPonto, idêntico ao CRM)
+            const comprasQuePontuam = comprasValidas.filter(c => Number(c.valor_total) >= minPonto);
+            const totalPedidos = comprasQuePontuam.length;
             const pontosNaCartela = totalPedidos % metaPontos;
             const premiosGanhos = Math.floor(totalPedidos / metaPontos);
-            const premiosUsados = comprasValidas.filter(v => v.observacoes && v.observacoes.includes('FIDELIDADE_VIP')).length;
+            const premiosUsados = comprasValidas.filter(v => (v.observacoes && v.observacoes.includes('FIDELIDADE_VIP')) || v.cupom_usado === 'FIDELIDADE_VIP').length;
             let premiosDisponiveis = premiosGanhos - premiosUsados;
             if (premiosDisponiveis < 0) premiosDisponiveis = 0;
 
