@@ -136,9 +136,9 @@ async function carregarTudo() {
         });
 
         produtosDaNuvem = produtosComImagem.filter(p => {
-            // 1. Se estiver inativo ou com estoque zerado, esconde do cardápio
-            if (p.ativo === false) return false;
-            if (p.controlar_estoque === true && (Number(p.estoque) || 0) <= 0) return false;
+            // 1. Se estiver inativo (booleano, texto ou zero) ou com estoque zerado, esconde do cardápio e do clube
+            if (p.ativo === false || p.ativo === 'false' || p.ativo === 0) return false;
+            if ((p.controlar_estoque === true || p.controlar_estoque === 'true') && (Number(p.estoque) || 0) <= 0) return false;
 
             // 2. Se for um Combo, verifica se todos os produtos de dentro dele estão ativos e têm estoque suficiente
             if (p.is_combo === true || p.is_combo === 'true') {
@@ -148,8 +148,8 @@ async function carregarTudo() {
                 for (let itemFilho of itensDoCombo) {
                     const prodFilho = produtosComImagem.find(x => Number(x.id) === Number(itemFilho.produto_id));
                     const qtdNecessaria = Number(itemFilho.quantidade) || 1;
-                    if (!prodFilho || prodFilho.ativo === false) return false;
-                    if (prodFilho.controlar_estoque === true && (Number(prodFilho.estoque) || 0) < qtdNecessaria) return false;
+                    if (!prodFilho || prodFilho.ativo === false || prodFilho.ativo === 'false' || prodFilho.ativo === 0) return false;
+                    if ((prodFilho.controlar_estoque === true || prodFilho.controlar_estoque === 'true') && (Number(prodFilho.estoque) || 0) < qtdNecessaria) return false;
                 }
             }
             return true;
@@ -3529,6 +3529,11 @@ window.mudarAba = function(abaId, elementoClicado) {
     // Mostra a aba escolhida e pinta o botão correspondente
     document.getElementById(abaId).classList.add('ativa');
     if(elementoClicado) elementoClicado.classList.add('ativa');
+
+    // Se o cliente abriu a aba Clube, redesenha a vitrine para garantir que apenas produtos ativos apareçam
+    if (abaId === 'aba-clube' && typeof renderizarVitrineClube === 'function') {
+        renderizarVitrineClube();
+    }
     
     // Rola suavemente pro topo para o cliente não ficar perdido
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3813,7 +3818,32 @@ function renderizarVitrineClube() {
     const container = document.getElementById('vitrine-troca-clube');
     if (!container) return;
 
-    const produtosResgataveis = (produtosDaNuvem || []).filter(p => Number(p.pontos_resgate) > 0 && p.ativo !== false);
+    // Pega apenas as categorias que estão ativas e liberadas neste horário no cardápio
+    const categoriasAtivas = obterOrdemDasCategorias(produtosDaNuvem || []);
+
+    const produtosResgataveis = (produtosDaNuvem || []).filter(p => {
+        // 1. Precisa ter pontos de resgate configurados
+        if (!(Number(p.pontos_resgate) > 0)) return false;
+
+        // 2. Precisa estar ativo e com estoque disponível
+        if (p.ativo === false || p.ativo === 'false' || p.ativo === 0) return false;
+        if ((p.controlar_estoque === true || p.controlar_estoque === 'true') && (Number(p.estoque) || 0) <= 0) return false;
+
+        // 3. Precisa pertencer a uma categoria que esteja visível/ativa no cardápio
+        let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
+        let categoriaLiberada = categoriasAtivas.includes(catPrincipal);
+
+        if (!categoriaLiberada && p.categorias_adicionais) {
+            try {
+                let extras = typeof p.categorias_adicionais === 'string' ? JSON.parse(p.categorias_adicionais) : p.categorias_adicionais;
+                if (Array.isArray(extras) && extras.some(ext => categoriasAtivas.includes(ext))) {
+                    categoriaLiberada = true;
+                }
+            } catch (e) {}
+        }
+
+        return categoriaLiberada;
+    });
 
     if (produtosResgataveis.length === 0) {
         container.innerHTML = '';
