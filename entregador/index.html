@@ -514,9 +514,8 @@
             // Sincronização em Tempo Real (Mágica do WebSocket)
             if (typeof io !== 'undefined') {
                 const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
-                socket.on('novo_pedido_kanban', () => {
-                    carregarEntregas(); // Se o Kanban da loja mudar, o celular atualiza sozinho!
-                });
+                socket.on('novo_pedido_kanban', () => carregarEntregas());
+                socket.on('status_pedido_atualizado', () => carregarEntregas());
             }
         };
     </script>

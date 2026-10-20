@@ -51,7 +51,7 @@ setInterval(atualizarCronometros, 1000);
 // ==========================================
 // BUSCAR PEDIDOS NO SERVIDOR
 // ==========================================
-async function carregarPedidos(permitirSom = false) {
+async function carregarPedidos() {
     try {
         // 👇 1. Pega o crachá
         const cracha = localStorage.getItem('icesoft_token');
@@ -88,30 +88,19 @@ async function carregarPedidos(permitirSom = false) {
         });
 
         const pendentesAgora = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery');
-
-        // 🔔 Na primeira vez que abre a tela, apenas anota os pedidos que já estavam lá sem tocar som
+        
+        // Na primeira carga da página, apenas registra os pedidos atuais para não reimprimir tudo
         if (pedidosJaAlertados === null) {
             pedidosJaAlertados = pendentesAgora.map(p => p.id);
+            pedidosJaImpressos = pendentesAgora.map(p => p.id);
         } else {
-            // Verifica se entrou algum pedido inédito na coluna "Em Análise"
-            const chegouInedito = pendentesAgora.some(p => !pedidosJaAlertados.includes(p.id));
-            if (permitirSom && chegouInedito) {
-                tocarCampainha();
-            }
-            // Registra os IDs novos na memória para não apitar duas vezes para o mesmo pedido
-            pendentesAgora.forEach(p => {
-                if (!pedidosJaAlertados.includes(p.id)) {
-                    pedidosJaAlertados.push(p.id);
+            pendentesAgora.forEach(pedido => {
+                if (!pedidosJaImpressos.includes(pedido.id)) {
+                    imprimirComandaKanban(pedido);
+                    pedidosJaImpressos.push(pedido.id);
                 }
             });
         }
-        
-        pendentesAgora.forEach(pedido => {
-            if (!pedidosJaImpressos.includes(pedido.id)) {
-                imprimirComandaKanban(pedido);
-                pedidosJaImpressos.push(pedido.id);
-            }
-        });
 
         pedidosGlobais = pedidosDelivery; 
         renderizarKanban(pedidosDelivery);
@@ -544,16 +533,23 @@ window.onload = async () => {
         }
     } catch(e) { console.log("Erro ao buscar tempo, usando 45 min padrão."); }
 
-    carregarPedidos(false);
+    carregarPedidos();
 
     // Conecta no rádio do servidor para atualização em tempo real
     if (typeof io !== 'undefined') {
         const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
+        
+        // 🔔 Canal EXCLUSIVO de Pedido Novo do Cardápio Online (Toca o sininho e atualiza)
         socket.on('novo_pedido_kanban', (dados) => {
-            console.log("Atualização em tempo real no Kanban:", dados);
-            // Só autoriza o sininho se o servidor avisar que é pedido novo do Cardápio Online (tocar_som: true)
-            const deveTocarSom = Boolean(dados && dados.tocar_som === true);
-            carregarPedidos(deveTocarSom); 
+            console.log("🔔 Novo pedido recebido do Cardápio Online!", dados);
+            tocarCampainha();
+            carregarPedidos(); 
+        });
+
+        // 🔇 Canal EXCLUSIVO de Mudança de Etapa / Baixa do Entregador (Apenas move os cards em silêncio)
+        socket.on('status_pedido_atualizado', (dados) => {
+            console.log("🔇 Etapa do pedido atualizada em silêncio:", dados);
+            carregarPedidos(); 
         });
     }
 };
