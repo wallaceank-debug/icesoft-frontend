@@ -11,8 +11,8 @@ const COLUNAS_ID = {
 };
 
 let pedidosGlobais = []; 
-let qtdPendentesAnterior = -1; 
-let pedidosJaImpressos = []; 
+let pedidosJaAlertados = null; 
+let pedidosJaImpressos = [];
 
 // ==========================================
 // ⏱️ MOTOR DO CRONÔMETRO (SLA)
@@ -51,7 +51,7 @@ setInterval(atualizarCronometros, 1000);
 // ==========================================
 // BUSCAR PEDIDOS NO SERVIDOR
 // ==========================================
-async function carregarPedidos() {
+async function carregarPedidos(permitirSom = false) {
     try {
         // 👇 1. Pega o crachá
         const cracha = localStorage.getItem('icesoft_token');
@@ -88,12 +88,23 @@ async function carregarPedidos() {
         });
 
         const pendentesAgora = pedidosDelivery.filter(p => p.status.trim() === 'Pendente Delivery');
-        const qtdPendentesAtual = pendentesAgora.length;
 
-        if (qtdPendentesAnterior !== -1 && qtdPendentesAtual > qtdPendentesAnterior) {
-             tocarCampainha();
+        // 🔔 Na primeira vez que abre a tela, apenas anota os pedidos que já estavam lá sem tocar som
+        if (pedidosJaAlertados === null) {
+            pedidosJaAlertados = pendentesAgora.map(p => p.id);
+        } else {
+            // Verifica se entrou algum pedido inédito na coluna "Em Análise"
+            const chegouInedito = pendentesAgora.some(p => !pedidosJaAlertados.includes(p.id));
+            if (permitirSom && chegouInedito) {
+                tocarCampainha();
+            }
+            // Registra os IDs novos na memória para não apitar duas vezes para o mesmo pedido
+            pendentesAgora.forEach(p => {
+                if (!pedidosJaAlertados.includes(p.id)) {
+                    pedidosJaAlertados.push(p.id);
+                }
+            });
         }
-        qtdPendentesAnterior = qtdPendentesAtual;
         
         pendentesAgora.forEach(pedido => {
             if (!pedidosJaImpressos.includes(pedido.id)) {
@@ -533,14 +544,16 @@ window.onload = async () => {
         }
     } catch(e) { console.log("Erro ao buscar tempo, usando 45 min padrão."); }
 
-    carregarPedidos();
+    carregarPedidos(false);
 
     // Conecta no rádio do servidor para atualização em tempo real
     if (typeof io !== 'undefined') {
         const socket = io('https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host');
         socket.on('novo_pedido_kanban', (dados) => {
-            console.log("Chegou um pedido em tempo real!", dados);
-            carregarPedidos(); 
+            console.log("Atualização em tempo real no Kanban:", dados);
+            // Só autoriza o sininho se o servidor avisar que é pedido novo do Cardápio Online (tocar_som: true)
+            const deveTocarSom = Boolean(dados && dados.tocar_som === true);
+            carregarPedidos(deveTocarSom); 
         });
     }
 };
