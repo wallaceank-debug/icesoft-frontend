@@ -868,7 +868,8 @@ async function salvarProduto() {
             fecharModalProduto();
             await carregarTudo(); 
         } else {
-            alert("❌ Erro ao salvar produto no banco de dados.");
+            const erroDados = await resposta.json().catch(() => ({}));
+            alert("❌ Erro ao salvar produto no banco de dados: " + (erroDados.detalhe || erroDados.erro || resposta.status));
         }
     } catch (e) {
         alert("🔌 Erro de conexão. Verifique sua internet.");
