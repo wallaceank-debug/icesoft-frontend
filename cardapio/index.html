@@ -5,177 +5,427 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cardápio Digital - Icesoft</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css?v=2.1">
     <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     
     <style>
-        /* A Variável Mágica */
+        /* =========================================================
+           DESIGN SYSTEM CONTEMPORÂNEO (HIGH-CONVERSION APP UI)
+        ========================================================= */
         :root {
-            --cor-primaria: #00bcd4;
-            --bg-claro: #f4f7f6;
+            --cor-primaria: #e91e63;
+            --cor-secundaria: #00bcd4;
+            --cor-sucesso: #10b981;
+            --bg-claro: #f8fafc;
+            --bg-card: #ffffff;
+            --texto-principal: #0f172a;
+            --texto-secundario: #64748b;
+            --borda-suave: #e2e8f0;
+            --sombra-card: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+            --sombra-flutuante: 0 12px 32px -4px rgba(15, 23, 42, 0.14);
+            --raio-card: 20px;
+            --raio-pilula: 9999px;
         }
 
         body {
-            font-family: 'Inter', sans-serif !important;
-            background-color: var(--bg-claro);
-            margin: 0;
-            padding: 0;
-            touch-action: manipulation; /* Evita o zoom indesejado por toque duplo */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            background-color: var(--bg-claro) !important;
+            color: var(--texto-principal) !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            max-width: 600px !important;
+            min-height: 100vh;
+            box-shadow: 0 0 40px rgba(15, 23, 42, 0.06) !important;
+            touch-action: manipulation;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* ==========================================
-           NOVO HEADER DA LOJA (BANNER E LOGO)
-        ========================================== */
-        .header-loja {
-            background: #ffffff;
-            /* Margem negativa não é necessária aqui se o body não tiver padding, mas vamos garantir que ocule 100% da largura */
-            width: 100%; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            padding-bottom: 20px;
+        h1, h2, h3, h4, strong {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            letter-spacing: -0.02em;
         }
 
-        .banner-loja {
-            width: 100%;
-            height: 180px;
-            background-color: #eee;
-            overflow: hidden;
-        }
-
-        .banner-loja img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .info-loja-container {
-            display: flex;
-            align-items: flex-end;
-            padding: 0 20px;
-            max-width: 600px; /* Alinhado com o resto do cardápio */
-            margin: 0 auto;
+        /* =========================================================
+           HEADER DA LOJA E BUSCA INTELIGENTE
+        ========================================================= */
+        .app-header-moderno {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 20px 20px 16px 20px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.7);
             position: relative;
+            z-index: 10;
         }
 
-        .logo-loja {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            border: 4px solid #ffffff;
-            background: #ffffff;
-            margin-top: -55px; /* Puxa a logo para cima do banner */
-            overflow: hidden;
-            flex-shrink: 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            z-index: 2;
+        .search-wrapper {
+            position: relative;
+            max-width: 600px;
+            margin: 16px auto 0 auto;
         }
 
-        .logo-loja img {
+        .search-wrapper .icone-busca {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.25rem;
+            pointer-events: none;
+        }
+
+        #busca-produtos {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            padding: 13px 18px 13px 46px !important;
+            border-radius: 16px !important;
+            border: 1.5px solid var(--borda-suave) !important;
+            background: #f1f5f9 !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 0.95rem !important;
+            color: var(--texto-principal) !important;
+            outline: none !important;
+            box-sizing: border-box !important;
+            transition: all 0.25s ease !important;
+            box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
         }
 
-        .texto-loja {
-            margin-left: 15px;
-            padding-top: 10px;
-            padding-bottom: 5px;
+        #busca-produtos:focus {
+            background: #ffffff !important;
+            border-color: var(--cor-primaria) !important;
+            box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.1) !important;
         }
 
-        .texto-loja h1 {
-            margin: 0 0 4px 0;
-            font-size: 1.4rem;
-            color: #333;
-            font-weight: 800;
+        #busca-produtos::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
         }
 
-        .texto-loja p {
-            margin: 2px 0;
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        /* Ajustes para a tela do celular */
-        @media (max-width: 600px) {
-            .banner-loja { height: 130px; }
-            .logo-loja { width: 85px; height: 85px; margin-top: -42px; border-width: 3px; }
-            .texto-loja h1 { font-size: 1.15rem; }
-        }
-
-        /* Ajuste da barra de busca */
-        .area-busca-flutuante { padding: 0 20px; margin-top: 20px; position: relative; z-index: 10; max-width: 600px; margin-inline: auto;}
-        .area-busca-flutuante input { width: 100%; padding: 15px 20px; border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-family: 'Inter', sans-serif; font-size: 1rem; box-sizing: border-box; outline: none;}
-
-        /* ==========================================
-           MENU DE CATEGORIAS FIXO NO TOPO (STICKY)
-        ========================================== */
+        /* =========================================================
+           MENU DE CATEGORIAS FIXO (GLASSMORPHISM STICKY)
+        ========================================================= */
         .faixa-sticky {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background-color: var(--bg-claro);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            background: rgba(248, 250, 252, 0.88) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
             width: 100%;
-            
-            /* 🛑 O VERDADEIRO MATADOR DE GLITCHES EM CELULARES */
+            padding-top: 6px;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             transform: translateZ(0);
         }
 
-        /* Aplica a mesma proteção para os modais não piscarem */
-        #modal-checkout, #modal-opcoes {
+        #menu-categorias-dinamico {
+            display: block;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Sobrescreve o botão de dropdown gerado pelo app.js */
+        #menu-categorias-dinamico > div > div:first-child {
+            border-radius: 14px !important;
+            padding: 13px 18px !important;
+            box-shadow: 0 6px 16px -3px rgba(15, 23, 42, 0.12) !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.01em !important;
+        }
+
+        #lista-dropdown-categorias {
+            border-radius: 18px !important;
+            border: 1px solid var(--borda-suave) !important;
+            box-shadow: var(--sombra-flutuante) !important;
+            overflow-x: hidden !important;
+        }
+
+        #lista-dropdown-categorias > div {
+            transition: background 0.15s ease;
+            font-size: 0.95rem !important;
+            color: var(--texto-principal) !important;
+        }
+
+        #lista-dropdown-categorias > div:active {
+            background: #f1f5f9;
+        }
+
+        /* =========================================================
+           CARDS DE PRODUTOS E CATEGORIAS (SOBRESCRITA DO APP.JS)
+        ========================================================= */
+        #lista-produtos > h2 {
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            color: var(--texto-principal) !important;
+            margin: 10px 0 14px 4px !important;
+        }
+
+        /* Barra da Categoria (Acordeão) */
+        h3[id^="categoria-"] {
+            background: #ffffff !important;
+            color: var(--texto-principal) !important;
+            border-radius: 16px !important;
+            padding: 16px 20px !important;
+            margin: 0 0 12px 0 !important;
+            border: 1px solid var(--borda-suave) !important;
+            border-left: 5px solid var(--cor-primaria) !important;
+            box-shadow: var(--sombra-card) !important;
+            font-size: 1.05rem !important;
+            transition: all 0.2s ease !important;
+        }
+
+        h3[id^="categoria-"]:active {
+            transform: scale(0.99);
+        }
+
+        /* Card de Produto Individual */
+        .produto-card {
+            background: #ffffff !important;
+            border: 1px solid rgba(226, 232, 240, 0.85) !important;
+            border-radius: var(--raio-card) !important;
+            padding: 16px !important;
+            margin-top: 14px !important;
+            box-shadow: var(--sombra-card) !important;
+            gap: 16px !important;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+            position: relative;
+        }
+
+        .produto-card:active {
+            transform: scale(0.975) !important;
+            background: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        /* Foto do Produto no Card */
+        .produto-card img {
+            border-radius: 16px !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+            transition: transform 0.3s ease;
+        }
+
+        /* Preço Limpo (Sem R$ para reduzir dor de pagar, mas com contraste premium) */
+        .produto-card > div:first-child > div > div:last-child {
+            color: var(--texto-principal) !important;
+            font-weight: 800 !important;
+            font-size: 1.2rem !important;
+            margin-top: 8px !important;
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 10px;
+            display: inline-block;
+            letter-spacing: -0.02em;
+        }
+
+        /* Título do Produto */
+        .produto-card h3 {
+            color: var(--texto-principal) !important;
+            font-size: 1.02rem !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
+            letter-spacing: -0.015em !important;
+        }
+
+        /* Descrição Sensorial do Produto */
+        .produto-card p {
+            color: var(--texto-secundario) !important;
+            font-size: 0.82rem !important;
+            line-height: 1.45 !important;
+            margin-top: 6px !important;
+        }
+
+        /* Botão "Adicionar" dentro do Card */
+        .produto-card > div:last-child > div:last-child > span:last-child {
+            border-radius: var(--raio-pilula) !important;
+            padding: 8px 18px !important;
+            font-size: 0.88rem !important;
+            font-weight: 700 !important;
+            letter-spacing: -0.01em;
+            box-shadow: 0 4px 12px rgba(233, 30, 99, 0.22) !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Selos Semânticos / Tags Flutuantes */
+        .tag-flutuante {
+            position: absolute;
+            top: -8px !important;
+            left: -6px !important;
+            padding: 4px 10px !important;
+            border-radius: var(--raio-pilula) !important;
+            font-size: 0.68rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12) !important;
+        }
+        .tag-so_hoje { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .tag-mais_pedido { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .tag-oferta { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .tag-novidade { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .tag-poucas_unidades { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+
+        /* Carrossel de Destaques e Upsell */
+        .area-destaques { padding: 25px 20px 10px 20px; max-width: 600px; margin: 0 auto; }
+        .area-destaques h2 { font-size: 1.2rem; color: var(--texto-principal); margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .carrossel { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 12px; scroll-behavior: smooth; scroll-snap-type: x mandatory; }
+        .carrossel::-webkit-scrollbar { height: 5px; }
+        .carrossel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .card-destaque { flex: 0 0 160px; background: white; border-radius: 18px; padding: 14px; box-shadow: var(--sombra-card); display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--borda-suave); transition: 0.25s; cursor: pointer; scroll-snap-align: start; }
+        .card-destaque:active { transform: scale(0.97); border-color: var(--cor-primaria); }
+        .card-destaque h4 { margin: 0 0 8px 0; font-size: 0.92rem; color: var(--texto-principal); line-height: 1.3; }
+        .card-destaque .preco { font-weight: 800; color: var(--cor-primaria); font-size: 1.1rem; }
+        .card-destaque .btn-add-destaque { margin-top: 10px; background: var(--cor-primaria); color: white; border: none; padding: 9px; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; }
+
+        /* =========================================================
+           CARRINHO FLUTUANTE E BARRA DE PROGRESSO (GAMIFICAÇÃO)
+        ========================================================= */
+        #carrinho-flutuante {
+            max-width: 540px !important;
+            width: 92% !important;
+            bottom: 84px !important;
+            background: #0f172a !important;
+            color: #ffffff !important;
+            padding: 12px 16px 12px 22px !important;
+            border-radius: var(--raio-pilula) !important;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.35) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        #carrinho-qtd {
+            font-size: 0.78rem !important;
+            color: #94a3b8 !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        #carrinho-total {
+            font-size: 1.2rem !important;
+            font-weight: 800 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-whatsapp {
+            background-color: var(--cor-primaria) !important;
+            color: #ffffff !important;
+            border-radius: var(--raio-pilula) !important;
+            padding: 12px 22px !important;
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.4) !important;
+            transition: transform 0.2s ease !important;
+        }
+
+        #barra-cupom-flutuante {
+            max-width: 600px !important;
+            border-top: 1px solid var(--borda-suave);
+            background: rgba(255, 255, 255, 0.96) !important;
+            backdrop-filter: blur(12px);
+        }
+
+        /* =========================================================
+           BOTTOM NAVIGATION (BARRA DE NAVEGAÇÃO DO APP)
+        ========================================================= */
+        .bottom-nav {
+            max-width: 600px !important;
+            background: rgba(255, 255, 255, 0.92) !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+            box-shadow: 0 -8px 25px rgba(15, 23, 42, 0.05) !important;
+            padding: 8px 16px 12px 16px !important;
+            border-radius: 24px 24px 0 0 !important;
+        }
+
+        .nav-item {
+            border-radius: 16px !important;
+            font-weight: 700 !important;
+            color: #94a3b8 !important;
+        }
+
+        .nav-item.ativa {
+            background: rgba(233, 30, 99, 0.08) !important;
+            color: var(--cor-primaria) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: none !important;
+        }
+
+        /* =========================================================
+           MODAIS, OPÇÕES E CHECKOUT (ESTILO IFOOD / IOS SHEET)
+        ========================================================= */
+        #modal-checkout, #modal-opcoes, #modal-carrinho-cliente, #modal-info-loja, #modal-avaliacao {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
 
-        #menu-categorias-dinamico {
-            display: block; 
-            max-width: 600px; /* Mantém alinhado com o site */
-            margin: 0 auto; 
-            /* Removemos os limites de rolagem antigos (overflow) que estavam cortando a lista! */
+        .item-opcional-card {
+            border-radius: 12px;
+            margin-bottom: 4px;
+            transition: background 0.15s ease;
         }
 
-        /* O Carrossel de Destaques */
-        .area-destaques { padding: 25px 20px 10px 20px; max-width: 600px; margin: 0 auto;}
-        .area-destaques h2 { font-size: 1.2rem; color: #333; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;}
-        .carrossel { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; scroll-snap-type: x mandatory;}
-        .carrossel::-webkit-scrollbar { height: 6px; }
-        .carrossel::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
-        
-        .card-destaque { flex: 0 0 160px; background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; transition: 0.3s; cursor: pointer; scroll-snap-align: start; }
-        .card-destaque:active { transform: scale(0.98); border-color: var(--cor-primaria); }
-        .card-destaque h4 { margin: 0 0 10px 0; font-size: 0.95rem; color: #333; line-height: 1.3;}
-        .card-destaque .preco { font-weight: bold; color: var(--cor-primaria); font-size: 1.1rem; }
-        .card-destaque .btn-add-destaque { margin-top: 12px; background: var(--cor-primaria); color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;}
+        .item-opcional-card:active {
+            background: #f8fafc;
+        }
 
-        .btn-whatsapp { background-color: var(--cor-primaria) !important; }
-        #modal-opcoes button[onclick="confirmarEscolhasEAdicionar()"] { background-color: var(--cor-primaria) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; }
+        .secao-checkout {
+            background: #ffffff !important;
+            padding: 20px !important;
+            border-radius: 20px !important;
+            border: 1px solid var(--borda-suave) !important;
+            box-shadow: var(--sombra-card) !important;
+            margin-bottom: 16px !important;
+        }
+
+        .input-clean {
+            background: #f8fafc !important;
+            border: 1.5px solid var(--borda-suave) !important;
+            border-radius: 14px !important;
+            padding: 14px 16px !important;
+            color: var(--texto-principal) !important;
+            font-weight: 500;
+            transition: all 0.2s ease !important;
+        }
+
+        .input-clean:focus {
+            background: #ffffff !important;
+            border-color: var(--cor-primaria) !important;
+            box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.1) !important;
+        }
+
+        .card-selecao {
+            border: 1.5px solid var(--borda-suave) !important;
+            border-radius: 14px !important;
+            padding: 15px 16px !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .card-selecao.ativo {
+            border-color: var(--cor-sucesso) !important;
+            background: #ecfdf5 !important;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08) !important;
+        }
+
         #preco-dinamico { color: #ffffff !important; }
-        #lista-produtos h2 { max-width: 600px; margin: 0 auto 15px auto;}
 
-        /* As cores exatas do seu Print 2 em tom pastel */
-        .tag-flutuante {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            z-index: 10;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.75; }
+            100% { transform: scale(1); opacity: 1; }
         }
-        .tag-so_hoje { background: #ffdad6; color: #ba1a1a; border: 1px solid #ffb4ab; }
-        .tag-mais_pedido { background: #c4eed0; color: #0f5223; border: 1px solid #8fcf9e; }
-        .tag-oferta { background: #fde293; color: #8f4c00; border: 1px solid #f2c744; }
-        .tag-novidade { background: #d3e3fd; color: #0b57d0; border: 1px solid #a8c7fa; }
-        .tag-poucas_unidades { background: #fce4ec; color: #c2185b; border: 1px solid #f8bbd0; }
-        
     </style>
    
-    
+    <!-- Meta Pixel Code -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -186,163 +436,152 @@
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
     
-    // 🔴 ATENÇÃO: TROQUE O NÚMERO ABAIXO PELO SEU PIXEL ID DE VERDADE
     fbq('init', '977375813513190'); 
     fbq('track', 'PageView');
     </script>
     <noscript>
       <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=977375813513190&ev=PageView&noscript=1"/>
     </noscript>
-    
 </head>
 <body>
     
     <!-- ==========================================
          BANNER DE AVISO: NAVEGADOR DO INSTAGRAM
          ========================================== -->
-    <div id="banner-instagram" style="display: none; background: var(--cor-primaria, #e91e63); color: white; text-align: center; padding: 18px 20px; font-size: 0.95rem; z-index: 10001; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.15); line-height: 1.4;">
-        <span style="display: block; margin-bottom: 8px; font-weight: 800; font-size: 1.1rem;">👋 Olá! Bem-vindo(a) à Icesoft</span>
-        Para uma experiência completa, mais rápida e com todos os recursos liberados, recomendamos usar o seu navegador principal.
+    <div id="banner-instagram" style="display: none; background: linear-gradient(135deg, var(--cor-primaria, #e91e63), #ad1457); color: white; text-align: center; padding: 18px 20px; font-size: 0.92rem; z-index: 10001; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.18); line-height: 1.45;">
+        <span style="display: block; margin-bottom: 6px; font-weight: 800; font-size: 1.08rem;">👋 Olá! Bem-vindo(a) à Icesoft</span>
+        Para uma experiência mais rápida e com todos os recursos liberados, recomendamos abrir no seu navegador principal.
         
-        <div style="background: rgba(255,255,255,0.2); border: 1px dashed rgba(255,255,255,0.5); padding: 12px; border-radius: 10px; margin-top: 12px; font-size: 0.85rem; font-weight: 600;">
-            👉 Clique nos três pontinhos <strong style="font-size: 1.1rem;">(•••)</strong> no canto da tela e escolha <br><strong>"Abrir no navegador do sistema"</strong> 🌐
+        <div style="background: rgba(255,255,255,0.18); border: 1px dashed rgba(255,255,255,0.55); padding: 12px; border-radius: 12px; margin-top: 12px; font-size: 0.85rem; font-weight: 600;">
+            👉 Toque nos três pontinhos <strong style="font-size: 1.05rem;">(•••)</strong> no canto superior e escolha <br><strong>"Abrir no navegador do sistema"</strong> 🌐
         </div>
         
-        <button onclick="document.getElementById('banner-instagram').style.display='none'" style="position: absolute; right: 15px; top: 15px; background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; font-weight: bold; line-height: 1;">&times;</button>
+        <button onclick="document.getElementById('banner-instagram').style.display='none'" style="position: absolute; right: 14px; top: 12px; background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; font-weight: bold; line-height: 1; min-height: auto;">&times;</button>
     </div>
 
-    <!-- Banner removido para manter a interface limpa -->
-
-    <div id="tela-carregamento" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-claro, #f4f6f8); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.4s ease;">
-        <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🍦</div>
-        <h3 style="color: var(--cor-primaria, #e91e63); margin-top: 15px; font-family: 'Inter', sans-serif;">Carregando cardápio...</h3>
+    <!-- TELA DE CARREGAMENTO -->
+    <div id="tela-carregamento" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-claro, #f8fafc); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.4s ease;">
+        <div style="font-size: 4rem; animation: pulse 1.4s infinite;">🍦</div>
+        <h3 style="color: var(--texto-principal, #0f172a); margin-top: 16px; font-weight: 800; font-size: 1.1rem;">Preparando cardápio...</h3>
     </div>
-    
-    <style>
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-    </style>
 
-    <div id="overlay-loja-fechada" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; text-align:center; padding: 20px;">
-        <h1 style="color: #f44336; font-size: 4rem; margin-bottom: 10px;">🛑</h1>
-        <h2 style="color: white; font-family: 'Poppins', sans-serif; font-size: 2rem; margin-bottom: 15px;">Loja Fechada!</h2>
-        <p style="color: #ccc; font-family: 'Poppins', sans-serif; font-size: 1.1rem; max-width: 400px;">Nosso delivery está suspenso no momento. Retornaremos em breve durante nosso horário de funcionamento!</p>
+    <!-- OVERLAY LOJA FECHADA -->
+    <div id="overlay-loja-fechada" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.96); z-index:9999; justify-content:center; align-items:center; flex-direction:column; text-align:center; padding: 24px;">
+        <h1 style="color: #ef4444; font-size: 4rem; margin-bottom: 10px;">🛑</h1>
+        <h2 style="color: white; font-size: 1.8rem; margin-bottom: 12px;">Loja Fechada!</h2>
+        <p style="color: #94a3b8; font-size: 1.05rem; max-width: 380px; line-height: 1.5;">Nosso delivery está pausado no momento. Retornaremos em breve no nosso horário normal de funcionamento!</p>
     </div>  
 
     <!-- ==========================================
          ABA PRINCIPAL: CARDÁPIO ONLINE
          ========================================== -->
-    <div id="aba-cardapio" class="aba-conteudo ativa" style="padding-bottom: 160px;">
+    <div id="aba-cardapio" class="aba-conteudo ativa" style="padding-bottom: 170px;">
         
-        <!-- Topo Limpo e Focado em Conversão -->
-        <div style="background: white; padding: 20px 20px 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: relative; z-index: 10;">
+        <!-- Header Contemporâneo -->
+        <header class="app-header-moderno">
             <div style="display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto;">
                 
-                <!-- Info da Loja -->
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--cor-primaria); box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <!-- Identidade da Loja -->
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <img id="img-logo-loja" src="https://api.dicebear.com/7.x/initials/svg?seed=Icesoft&backgroundColor=e91e63&textColor=ffffff" alt="Logo Icesoft" style="width: 58px; height: 58px; border-radius: 18px; object-fit: cover; border: 2px solid var(--cor-primaria); box-shadow: 0 4px 12px rgba(233, 30, 99, 0.18);">
                     <div>
-                        <h1 id="loja-nome-exibicao" style="margin: 0 0 2px 0; font-size: 1.15rem; color: #333; font-weight: 800;">Icesoft Sorvetes</h1>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span id="indicador-status-loja" style="color: #25D366; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">🟢 Recebendo pedidos</span>
-                            <span id="indicador-tempo-entrega" style="background: #fff3e0; color: #ff9800; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem; font-weight: bold; display: none; align-items: center; gap: 4px;">⏱️ ~ 45 min</span>
+                        <h1 id="loja-nome-exibicao" style="margin: 0 0 4px 0; font-size: 1.22rem; color: var(--texto-principal); font-weight: 800;">Icesoft Sorvetes</h1>
+                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span id="indicador-status-loja" style="color: #10b981; font-weight: 700; font-size: 0.78rem; background: #ecfdf5; padding: 3px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;">🟢 Recebendo pedidos</span>
+                            <span id="indicador-tempo-entrega" style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; display: none; align-items: center; gap: 4px;">⏱️ ~ 45 min</span>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Botão de Informações da Loja -->
+                <!-- Botão Informações da Loja -->
                 <div style="display: flex; gap: 10px;">
-                    <div onclick="abrirModalInfoLoja()" style="background: #f4f7f6; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #666; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" title="Informações da Loja">
-                        <span class="material-symbols-outlined" style="font-size: 1.3rem;">info</span>
-                    </div>
+                    <button onclick="abrirModalInfoLoja()" style="background: #f1f5f9; border: 1px solid var(--borda-suave); width: 44px; height: 44px; border-radius: 14px; display: flex; justify-content: center; align-items: center; color: #475569; cursor: pointer; transition: 0.2s;" title="Informações da Loja">
+                        <span class="material-symbols-outlined" style="font-size: 1.35rem;">info</span>
+                    </button>
                 </div>
-            </div> <!-- 👈 MÁGICA AQUI: Faltava fechar essa caixa! -->
-
-            <!-- Barra de Busca -->
-            <div style="max-width: 600px; margin: 15px auto 0 auto;">
-                <input type="text" id="busca-produtos" placeholder="🔍 O que você quer pedir hoje?" style="width: 100%; padding: 12px 20px; border-radius: 25px; border: 2px solid var(--cor-primaria, #e91e63); background: #ffffff; font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: 0.2s;">
             </div>
-        </div>
 
-        <!-- Faixa de Categorias (Sticky) -->
+            <!-- Barra de Busca com Ícone Integrado -->
+            <div class="search-wrapper">
+                <span class="material-symbols-outlined icone-busca">search</span>
+                <input type="text" id="busca-produtos" placeholder="O que você deseja pedir hoje?">
+            </div>
+        </header>
+
+        <!-- Faixa de Categorias (Sticky Glassmorphism) -->
         <div class="faixa-sticky">
-            <span style="font-size: 0.85rem; color: #777; margin-left: 20px; display: block; padding-top: 15px; margin-bottom: -5px; font-weight: 500;">Categorias</span>
+            <span style="font-size: 0.75rem; color: #64748b; margin-left: 22px; display: block; padding-top: 8px; margin-bottom: -2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Navegar por categoria</span>
             <div id="menu-categorias-dinamico"></div>
         </div>
 
-        <!-- Mensagem de Boas Vindas (Oculta por padrão) -->
-        <div style="max-width: 600px; margin: 15px auto 5px auto; padding: 0 20px; box-sizing: border-box;">
-            <div id="loja-mensagem-exibicao" style="display: none; background: #e0f7fa; border-radius: 10px; padding: 10px 15px; text-align: center; border: 1px solid #b2ebf2; color: #00838f; font-size: 0.85rem; font-weight: 600; line-height: 1.3;"></div>
+        <!-- Mensagem de Boas-Vindas / Aviso Rápido -->
+        <div style="max-width: 600px; margin: 14px auto 4px auto; padding: 0 20px; box-sizing: border-box;">
+            <div id="loja-mensagem-exibicao" style="display: none; background: #ecfeff; border-radius: 14px; padding: 12px 16px; text-align: center; border: 1px solid #a5f3fc; color: #0e7490; font-size: 0.85rem; font-weight: 600; line-height: 1.4;"></div>
         </div>
 
-        <!-- Lista de Produtos Focada na Escaneabilidade -->
-        <main id="lista-produtos" style="padding: 10px 20px; max-width: 600px; margin: 0 auto;">
-            <!-- Os produtos serão desenhados aqui -->
+        <!-- Lista de Produtos (Injetada pelo app.js) -->
+        <main id="lista-produtos" style="padding: 12px 20px; max-width: 600px; margin: 0 auto;">
+            <!-- Produtos desenhados via JS -->
         </main>
     </div>
 
     <!-- ==========================================
          ABA 3: CLUBE ICESOFT (PONTOS E FIDELIDADE)
          ========================================== -->
-    <div id="aba-clube" class="aba-conteudo" style="padding-bottom: 160px; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div id="aba-clube" class="aba-conteudo" style="padding-bottom: 170px; max-width: 600px; margin: 0 auto; padding: 20px;">
         
-        <!-- TELA PARA QUEM AINDA NÃO FEZ LOGIN (Explicação Clara dos 2 Benefícios) -->
-        <div id="tela-login-clube" style="margin-top: 15px;">
-            <div style="background: linear-gradient(135deg, var(--cor-primaria, #00bcd4), #00838f); color: white; padding: 22px 20px; border-radius: 18px; text-align: center; box-shadow: 0 6px 15px rgba(0, 188, 212, 0.25); margin-bottom: 20px;">
-                <span style="font-size: 2.6rem; display: block; margin-bottom: 5px;">🎁</span>
-                <h2 style="margin: 0; font-size: 1.35rem; font-weight: 800;">Clube de Vantagens Icesoft</h2>
-                <p style="margin: 8px 0 16px 0; font-size: 0.9rem; opacity: 0.95; line-height: 1.4;">
+        <!-- TELA DESLOGADO -->
+        <div id="tela-login-clube" style="margin-top: 10px;">
+            <div style="background: linear-gradient(135deg, var(--cor-primaria, #e91e63), #be185d); color: white; padding: 26px 22px; border-radius: 24px; text-align: center; box-shadow: 0 12px 28px -6px rgba(233, 30, 99, 0.35); margin-bottom: 24px;">
+                <span style="font-size: 2.8rem; display: block; margin-bottom: 6px;">🎁</span>
+                <h2 style="margin: 0; font-size: 1.4rem; font-weight: 800;">Clube de Vantagens Icesoft</h2>
+                <p style="margin: 8px 0 18px 0; font-size: 0.92rem; opacity: 0.95; line-height: 1.45;">
                     Aqui você ganha <strong>duas vezes</strong>! Entre com seu WhatsApp para acompanhar seus selos e trocar pontos por produtos:
                 </p>
-                <button onclick="iniciarLoginCliente()" style="background: #ffffff; color: #00838f; border: none; padding: 14px 28px; border-radius: 30px; font-size: 1rem; font-weight: 800; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                <button onclick="iniciarLoginCliente()" style="background: #ffffff; color: #be185d; border: none; padding: 15px 28px; border-radius: 999px; font-size: 1rem; font-weight: 800; cursor: pointer; width: 100%; box-shadow: 0 6px 16px rgba(0,0,0,0.12);">
                     📱 Entrar com meu WhatsApp
                 </button>
             </div>
 
-            <h3 style="color: #333; font-size: 1.05rem; margin: 0 0 12px 5px;">Como funcionam os nossos 2 benefícios:</h3>
+            <h3 style="color: var(--texto-principal); font-size: 1.05rem; margin: 0 0 14px 4px; font-weight: 800;">Como funcionam os seus 2 benefícios:</h3>
 
-            <!-- Explicação Benefício 1: Cartão Fidelidade -->
-            <div style="background: #ffffff; border: 1px solid #ffe082; border-left: 6px solid #FF9800; border-radius: 14px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                    <span style="font-size: 1.6rem;">⭐</span>
+            <!-- Benefício 1: Cartão Fidelidade -->
+            <div style="background: #ffffff; border: 1px solid #fde68a; border-left: 6px solid #f59e0b; border-radius: 18px; padding: 18px; margin-bottom: 16px; box-shadow: var(--sombra-card);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <span style="font-size: 1.7rem;">⭐</span>
                     <div>
-                        <strong style="color: #e65100; font-size: 1rem; display: block;">1. Cartão Fidelidade (Ganhe R$ 15,00 OFF)</strong>
-                        <span style="font-size: 0.75rem; color: #888; font-weight: 600;">Desconto direto no seu pedido</span>
+                        <strong style="color: #b45309; font-size: 1rem; display: block;">1. Cartão Fidelidade (Ganhe R$ 15,00 OFF)</strong>
+                        <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Desconto direto no seu pedido</span>
                     </div>
                 </div>
-                <div style="font-size: 0.85rem; color: #555; line-height: 1.5; background: #fffdf5; padding: 10px 12px; border-radius: 10px; border: 1px dashed #ffe082;">
-                    • Comprou a partir de <strong>R$ 30,00</strong>? Você ganha <strong>1 ponto (selo)</strong> na cartela.<br>
-                    • Juntou <strong>5 selos</strong>? Você libera <strong>R$ 15,00 de desconto</strong> para usar na sua próxima compra (em pedidos de no mínimo R$ 30,00).<br>
-                    • <strong>Como usar:</strong> Na tela de finalizar o pedido, basta clicar no botão laranja <em>"Resgatar Prêmio Agora"</em>!
+                <div style="font-size: 0.85rem; color: #475569; line-height: 1.55; background: #fffbeb; padding: 12px 14px; border-radius: 12px; border: 1px dashed #fcd34d;">
+                    • Comprou a partir de <strong>R$ 30,00</strong>? Você ganha <strong>1 selo</strong> na cartela.<br>
+                    • Juntou <strong>5 selos</strong>? Você libera <strong>R$ 15,00 de desconto</strong> para usar na próxima compra (em pedidos a partir de R$ 30,00).<br>
+                    • <strong>Como usar:</strong> Na etapa final do pedido, toque em <em>"Resgatar Prêmio Agora"</em>!
                 </div>
             </div>
 
-            <!-- Explicação Benefício 2: Pontos por Produto -->
-            <div style="background: #ffffff; border: 1px solid #b2ebf2; border-left: 6px solid #00bcd4; border-radius: 14px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                    <span style="font-size: 1.6rem;">🍦</span>
+            <!-- Benefício 2: Pontos por Produto -->
+            <div style="background: #ffffff; border: 1px solid #a5f3fc; border-left: 6px solid #06b6d4; border-radius: 18px; padding: 18px; margin-bottom: 20px; box-shadow: var(--sombra-card);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <span style="font-size: 1.7rem;">🍦</span>
                     <div>
-                        <strong style="color: #00838f; font-size: 1rem; display: block;">2. Pontos de Troca (Vale Produtos!)</strong>
-                        <span style="font-size: 0.75rem; color: #888; font-weight: 600;">Troque seus pontos por itens do cardápio</span>
+                        <strong style="color: #0e7490; font-size: 1rem; display: block;">2. Pontos de Troca (Vale Produtos!)</strong>
+                        <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Troque seus pontos por delícias do cardápio</span>
                     </div>
                 </div>
-                <div style="font-size: 0.85rem; color: #555; line-height: 1.5; background: #f0fdfa; padding: 10px 12px; border-radius: 10px; border: 1px dashed #b2ebf2;">
-                    • Produtos com o selo azul <span style="background: #00bcd4; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 5px;">+ pts</span> somam pontos na sua carteira digital.<br>
-                    • Juntou os pontos necessários? Você pode <strong>trocar por produtos</strong> que tenham o selo <span style="background: #00bcd4; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 5px;">Resgate: X pts</span>.<br>
-                    • <strong>Como usar:</strong> Faça login aqui no Clube, clique no produto que deseja resgatar e aperte o botão azul <em>"Resgatar com Pontos"</em>!
+                <div style="font-size: 0.85rem; color: #475569; line-height: 1.55; background: #ecfeff; padding: 12px 14px; border-radius: 12px; border: 1px dashed #67e8f9;">
+                    • Produtos com o selo <span style="background: #00bcd4; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 6px;">+ pts</span> somam pontos na sua carteira.<br>
+                    • Juntou os pontos necessários? Troque por itens com o selo <span style="background: #00bcd4; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 6px;">Resgate: X pts</span>.<br>
+                    • <strong>Como usar:</strong> Faça login, toque no produto desejado e escolha <em>"Trocar meus pontos"</em>!
                 </div>
             </div>
         </div>
         
-        <!-- TELA PARA QUEM JÁ ESTÁ LOGADO -->
-        <div id="area-clube-logado" style="display: none; margin-top: 15px;">
-            <!-- Será injetado via JS -->
-        </div>
+        <!-- TELA LOGADO (Injetado via JS) -->
+        <div id="area-clube-logado" style="display: none; margin-top: 10px;"></div>
 
-        <!-- VITRINE DE PRODUTOS DISPONÍVEIS PARA TROCA POR PONTOS (Visível para todos) -->
+        <!-- VITRINE DE TROCA POR PONTOS -->
         <div id="vitrine-troca-clube" style="margin-top: 20px;"></div>
     </div>
 
@@ -350,42 +589,47 @@
          BOTTOM NAVIGATION (MENU DO APP)
          ========================================== -->
     <nav class="bottom-nav" id="menu-inferior">
-        <div class="nav-item ativa" onclick="mudarAba('aba-cardapio', this)" style="width: 50%;">
-            <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">restaurant_menu</span>
+        <div class="nav-item ativa" onclick="mudarAba('aba-cardapio', this)" style="width: 48%;">
+            <span class="material-symbols-outlined" style="font-size: 1.65rem; margin-bottom: 2px;">restaurant_menu</span>
             Cardápio
         </div>
-        <div class="nav-item" onclick="mudarAba('aba-clube', this)" style="width: 50%; position: relative;">
-            <span style="position: absolute; top: 2px; right: 22%; background: #FF9800; color: white; font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">PRÊMIOS</span>
-            <span class="material-symbols-outlined" style="font-size: 1.8rem; margin-bottom: 3px;">loyalty</span>
+        <div class="nav-item" onclick="mudarAba('aba-clube', this)" style="width: 48%; position: relative;">
+            <span style="position: absolute; top: 2px; right: 18%; background: linear-gradient(135deg, #f59e0b, #ea580c); color: white; font-size: 0.58rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);">PRÊMIOS</span>
+            <span class="material-symbols-outlined" style="font-size: 1.65rem; margin-bottom: 2px;">loyalty</span>
             Clube & Pontos
         </div>
     </nav>
     
+    <!-- BARRA DE PROGRESSO DE CUPOM (GAMIFICAÇÃO) -->
     <div id="barra-cupom-flutuante" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <strong id="texto-cupom-chamada" style="font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 5px;">
+            <strong id="texto-cupom-chamada" style="font-size: 0.88rem; color: var(--texto-principal); display: flex; align-items: center; gap: 5px;">
                 🎟️ Desbloqueie Desconto
             </strong>
-            <span id="texto-cupom-falta" style="font-size: 0.8rem; color: #666; font-weight: bold;">
+            <span id="texto-cupom-falta" style="font-size: 0.8rem; color: var(--texto-secundario); font-weight: 700;">
                 Calculando...
             </span>
         </div>
-        <div style="background: #e0e0e0; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
-            <div id="barra-cupom-progresso" style="background: #FF9800; width: 0%; height: 100%; transition: width 0.4s ease, background-color 0.4s ease;"></div>
+        <div style="background: #e2e8f0; border-radius: 999px; height: 8px; width: 100%; overflow: hidden;">
+            <div id="barra-cupom-progresso" style="background: #f59e0b; width: 0%; height: 100%; transition: width 0.4s ease, background-color 0.4s ease; border-radius: 999px;"></div>
         </div>
     </div>
 
+    <!-- CARRINHO FLUTUANTE -->
     <div id="carrinho-flutuante" class="carrinho-oculto">
         <div class="carrinho-info">
             <span id="carrinho-qtd">0 itens</span>
             <span id="carrinho-total">R$ 0,00</span>
         </div>
-        <button onclick="abrirModalCarrinho()" class="btn-whatsapp">Ver Carrinho 🛒</button>
+        <button onclick="abrirModalCarrinho()" class="btn-whatsapp">Ver Sacola 🛍️</button>
     </div>
 
-    <div id="modal-opcoes" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:10000;">
+    <!-- ==========================================
+         MODAL DE OPÇÕES E COMPLEMENTOS DO PRODUTO
+         ========================================== -->
+    <div id="modal-opcoes" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.65); justify-content:center; align-items:flex-end; z-index:10000;">
         
-        <div style="background:white; width:100%; max-width:500px; border-top-left-radius:25px; border-top-right-radius:25px; max-height:85vh; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; position: relative; overflow: hidden;">
+        <div style="background:white; width:100%; max-width:560px; border-top-left-radius:28px; border-top-right-radius:28px; max-height:88vh; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; position: relative; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);">
             
             <div style="padding: 20px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch;">
                 <div id="detalhes-produto-topo" style="text-align:center; margin-bottom:20px;"></div>
@@ -393,99 +637,97 @@
             </div>
 
             <!-- RODAPÉ DO MODAL DE OPÇÕES -->
-            <div style="padding: 15px 20px 20px 20px; background: white; border-top: 1px solid #eee; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 10;">
+            <div style="padding: 14px 20px 20px 20px; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); border-top: 1px solid var(--borda-suave); box-shadow: 0 -8px 25px rgba(15, 23, 42, 0.05); z-index: 10;">
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; gap: 15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; gap: 14px;">
                     
-                    <!-- SELETOR DE QUANTIDADE (Na Esquerda) -->
-                    <div id="seletor-quantidade-modal" style="display: flex; align-items: center; background: #f4f7f6; border: 1px solid #ddd; border-radius: 30px; padding: 4px 10px; gap: 12px; flex-shrink: 0;">
-                        <button onclick="alterarQuantidadeModal(-1)" style="background: none; border: none; font-size: 1.5rem; color: #555; cursor: pointer; display: flex; justify-content: center; align-items: center;">-</button>
-                        <span id="quantidade-modal-display" style="font-weight: bold; font-size: 1.2rem; color: #333; min-width: 25px; text-align: center;">1</span>
-                        <button onclick="alterarQuantidadeModal(1)" style="background: none; border: none; font-size: 1.5rem; color: var(--cor-primaria, #e91e63); cursor: pointer; display: flex; justify-content: center; align-items: center;">+</button>
+                    <!-- SELETOR DE QUANTIDADE -->
+                    <div id="seletor-quantidade-modal" style="display: flex; align-items: center; background: #f1f5f9; border: 1px solid var(--borda-suave); border-radius: 999px; padding: 4px 10px; gap: 10px; flex-shrink: 0;">
+                        <button onclick="alterarQuantidadeModal(-1)" style="background: none; border: none; font-size: 1.4rem; color: #475569; cursor: pointer; width: 36px; height: 40px; display: flex; justify-content: center; align-items: center; font-weight: 700;">-</button>
+                        <span id="quantidade-modal-display" style="font-weight: 800; font-size: 1.15rem; color: var(--texto-principal); min-width: 24px; text-align: center;">1</span>
+                        <button onclick="alterarQuantidadeModal(1)" style="background: none; border: none; font-size: 1.4rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 36px; height: 40px; display: flex; justify-content: center; align-items: center; font-weight: 700;">+</button>
                     </div>
 
-                    <!-- BOTÃO ADICIONAR E RESGATAR (Na Direita) -->
+                    <!-- BOTÕES ADICIONAR E RESGATAR -->
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                        <button id="btn-adicionar-normal" onclick="confirmarEscolhasEAdicionar(false)" style="width: 100%; color:white; border:none; padding:16px 20px; border-radius:30px; cursor:pointer; background: var(--cor-primaria, #e91e63); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s ease;">
-                            <span style="font-weight: 600; font-size: 1.05rem;">Adicionar</span>
-                            <strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>
+                        <button id="btn-adicionar-normal" onclick="confirmarEscolhasEAdicionar(false)" style="width: 100%; color:white; border:none; padding: 16px 22px; border-radius: 999px; cursor:pointer; background: var(--cor-primaria, #e91e63); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 6px 18px rgba(233, 30, 99, 0.28); transition: transform 0.2s ease;">
+                            <span style="font-weight: 700; font-size: 1rem;">Adicionar</span>
+                            <strong id="preco-dinamico" style="font-size: 1.1rem; font-weight: 800;">R$ 0,00</strong>
                         </button>
                         
-                        <!-- 👇 NOVO: BOTÃO DE RESGATE DO CLUBE (Oculto por padrão) -->
-                        <button id="btn-resgatar-pontos" onclick="confirmarEscolhasEAdicionar(true)" style="display: none; width: 100%; color:#00838f; border: 2px solid #00bcd4; padding:12px 20px; border-radius:30px; cursor:pointer; background: #e0f7fa; justify-content: center; align-items: center; gap: 8px; font-weight: bold; transition: 0.2s ease;">
+                        <button id="btn-resgatar-pontos" onclick="confirmarEscolhasEAdicionar(true)" style="display: none; width: 100%; color:#0e7490; border: 2px solid #06b6d4; padding: 12px 18px; border-radius: 999px; cursor:pointer; background: #ecfeff; justify-content: center; align-items: center; gap: 8px; font-weight: 800; transition: 0.2s ease;">
                             <span class="material-symbols-outlined" style="font-size: 1.2rem;">redeem</span>
                             <span id="texto-resgate-dinamico">Resgatar por X pts</span>
                         </button>
                     </div>
                 </div>
                 
-                <button onclick="fecharModalOpcoes()" style="width:100%; background:none; border:none; color:#999; padding:10px 15px 0 15px; margin-top:8px; cursor:pointer; font-weight: 600;">Voltar ao cardápio</button>
-                
+                <button onclick="fecharModalOpcoes()" style="width:100%; background:none; border:none; color:#64748b; padding:10px 15px 0 15px; margin-top:6px; cursor:pointer; font-weight: 700; font-size: 0.9rem;">Voltar ao cardápio</button>
             </div>
-
         </div>
     </div>
 
     <!-- ==========================================
-         NOVO MODAL DE CHECKOUT EM ETAPAS
-     ========================================== -->
-    
-    <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:flex-end; z-index:4000;">
-        <div class="modal-conteudo checkout-container" style="background:#f4f7f6; padding:0; border-top-left-radius:20px; border-top-right-radius:20px; width:100%; max-width:500px; display:flex; flex-direction:column; height: 90vh; overflow: hidden; position: relative; animation: slideUp 0.3s ease-out;">
+         MODAL DE CHECKOUT EM ETAPAS (GUEST CHECKOUT)
+         ========================================== -->
+    <div id="modal-checkout" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.72); justify-content:center; align-items:flex-end; z-index:4000;">
+        <div class="modal-conteudo checkout-container" style="background: var(--bg-claro); padding:0; border-top-left-radius:28px; border-top-right-radius:28px; width:100%; max-width:560px; display:flex; flex-direction:column; height: 92vh; overflow: hidden; position: relative; animation: slideUp 0.3s ease-out;">
             
-            <div class="checkout-header" style="background: white; padding: 20px 20px 15px 20px; border-bottom: 1px solid #eee; text-align: center; border-top-left-radius:20px; border-top-right-radius:20px; flex-shrink: 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <button onclick="voltarPassoCheckout()" id="btn-voltar-topo" style="background: none; border: none; font-size: 1.2rem; color: #666; cursor: pointer; display: none;">❮</button>
-                    <h3 style="margin: 0; color: #333; font-size: 1.2rem; flex: 1;">Finalizar Pedido</h3>
-                    <button onclick="fecharModalCheckout()" style="background: none; border: none; font-size: 1.5rem; color: #999; cursor: pointer;">&times;</button>
+            <div class="checkout-header" style="background: white; padding: 20px 20px 16px 20px; border-bottom: 1px solid var(--borda-suave); text-align: center; border-top-left-radius:28px; border-top-right-radius:28px; flex-shrink: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <button onclick="voltarPassoCheckout()" id="btn-voltar-topo" style="background: #f1f5f9; border: none; width: 38px; height: 38px; border-radius: 50%; font-size: 1rem; color: #334155; cursor: pointer; display: none;">❮</button>
+                    <h3 style="margin: 0; color: var(--texto-principal); font-size: 1.2rem; font-weight: 800; flex: 1;">Finalizar Pedido</h3>
+                    <button onclick="fecharModalCheckout()" style="background: #f1f5f9; border: none; width: 38px; height: 38px; border-radius: 50%; font-size: 1.4rem; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
                 </div>
                 
                 <div class="progresso-container" style="justify-content: space-around;">
                     <div class="progresso-linha" style="left: 25%; right: 25%;"></div>
                     <div class="progresso-passo ativo" id="ind-passo-1"><div class="bolinha">1</div><span>Entrega</span></div>
-                    <div class="progresso-passo" id="ind-passo-2"><div class="bolinha">2</div><span>Pagamento Final</span></div>
+                    <div class="progresso-passo" id="ind-passo-2"><div class="bolinha">2</div><span>Pagamento</span></div>
                 </div>
             </div>
 
             <div style="flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch;">
                 
+                <!-- PASSO 1: IDENTIFICAÇÃO E ENTREGA -->
                 <div id="checkout-passo-1" class="checkout-passo ativo">
                     <div class="secao-checkout">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h4 style="margin: 0;">Seus Dados</h4>
-                            <span id="badge-crm" style="display: none; background: #25D366; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3); animation: pulseRastreio 2s infinite;">✅ Cliente Encontrado</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h4 style="margin: 0; font-weight: 800;">Seus Dados Rápidos</h4>
+                            <span id="badge-crm" style="display: none; background: #10b981; color: white; padding: 4px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">✅ Cliente Encontrado</span>
                         </div>
-                        <input type="tel" id="cliente-telefone" class="input-clean" placeholder="WhatsApp (Ex: 24 99999-9999)" autocomplete="tel" style="font-size: 1.1rem; font-weight: bold; letter-spacing: 1px;">
-                        <input type="text" id="cliente-nome" class="input-clean" placeholder="Nome" autocomplete="name">
+                        <input type="tel" id="cliente-telefone" class="input-clean" placeholder="Seu WhatsApp com DDD (Ex: 24 99999-9999)" autocomplete="tel" style="font-size: 1.05rem; font-weight: 700;">
+                        <input type="text" id="cliente-nome" class="input-clean" placeholder="Seu Nome Completo" autocomplete="name" style="margin-bottom: 0;">
                     </div>
 
                     <div class="secao-checkout">
-                        <h4>Opções de entrega</h4>
+                        <h4 style="font-weight: 800;">Como deseja receber?</h4>
                         
                         <label class="card-selecao ativo" id="label-entrega">
-                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                                 <input type="radio" name="tipo_entrega" value="delivery" checked onchange="mudarTipoEntrega()" style="display: none;">
-                                <span style="font-size: 1.2rem;">🛵</span>
+                                <span style="font-size: 1.35rem;">🛵</span>
                                 <div style="flex: 1;">
-                                    <strong style="display: block; color: #333;">Receber no endereço</strong>
+                                    <strong style="display: block; color: var(--texto-principal);">Receber no meu endereço</strong>
+                                    <span style="font-size: 0.78rem; color: var(--texto-secundario);">Entrega rápida em domicílio</span>
                                 </div>
                                 <div class="radio-customizado marcado"></div>
                             </div>
                         </label>
 
                         <label class="card-selecao" id="label-retirada" style="margin-top: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
                                 <input type="radio" name="tipo_entrega" value="retirada" onchange="mudarTipoEntrega()" style="display: none;">
-                                <span style="font-size: 1.2rem;">🏬</span>
+                                <span style="font-size: 1.35rem;">🏬</span>
                                 <div style="flex: 1;">
-                                    <strong style="display: block; color: #333;">Retirar na loja</strong>
-                                    <span style="font-size: 0.8rem; color: #25D366; font-weight: bold;">GRÁTIS</span>
+                                    <strong style="display: block; color: var(--texto-principal);">Retirar na loja</strong>
+                                    <span style="font-size: 0.78rem; color: #10b981; font-weight: 800;">SEM TAXA DE ENTREGA</span>
                                 </div>
                                 <div class="radio-customizado"></div>
                             </div>
                         </label>
 
-                        <div id="area-endereco" style="margin-top: 15px;">
+                        <div id="area-endereco" style="margin-top: 16px;">
                             <select id="cliente-cidade" class="input-clean select-clean" onchange="aoMudarCidade()" style="margin-bottom: 10px;">
                                 <option value="" disabled selected>🏙️ Selecione sua Cidade</option>
                             </select>
@@ -494,64 +736,63 @@
                                 <option value="" data-taxa="0" disabled selected>📍 Selecione primeiro a Cidade</option>
                             </select>
                             
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua" style="flex: 2;">
+                            <div style="display: flex; gap: 10px; margin-top: 2px;">
+                                <input type="text" id="cliente-rua" class="input-clean" placeholder="Rua / Avenida" style="flex: 2;">
                                 <input type="text" id="cliente-numero" class="input-clean" placeholder="Nº" style="flex: 1;">
                             </div>
-                            <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-top: 10px;">
+                            <input type="text" id="cliente-complemento" class="input-clean" placeholder="Complemento / Ponto de Referência" style="margin-bottom: 0;">
                         </div>
                     </div>
                 </div>
 
+                <!-- PASSO 2: RESUMO, FIDELIDADE E PAGAMENTO -->
                 <div id="checkout-passo-2" class="checkout-passo">
                     <div id="ancora-fidelidade"></div>
 
                     <div class="secao-checkout">
-                        <h4 style="margin-bottom: 10px;">Seu Pedido</h4>
+                        <h4 style="margin-bottom: 12px; font-weight: 800;">Resumo do Pedido</h4>
                         <div id="lista-resumo-itens" style="margin-bottom: 15px;"></div>
                         
-                        <p id="gatilho-cupom" onclick="document.getElementById('area-inserir-cupom').style.display='flex'; this.style.display='none';" style="cursor: pointer; color: var(--cor-primaria); font-size: 0.9rem; font-weight: bold; margin: 0 0 15px 0;">
-                            + Adicionar cupom de desconto
+                        <p id="gatilho-cupom" onclick="document.getElementById('area-inserir-cupom').style.display='flex'; this.style.display='none';" style="cursor: pointer; color: var(--cor-primaria); font-size: 0.9rem; font-weight: 700; margin: 0 0 14px 0; display: inline-flex; align-items: center; gap: 4px;">
+                            🎟️ Possui um cupom de desconto? Toque aqui
                         </p>
 
                         <div id="area-inserir-cupom" style="display: none; gap: 10px; margin-bottom: 15px;">
-                            <input type="text" id="input-cupom" placeholder="Cupom de desconto" class="input-clean" style="flex: 1; text-transform: uppercase; margin-bottom: 0;">
-                            <button type="button" onclick="aplicarCupom()" style="padding: 0 15px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold;">Aplicar</button>
+                            <input type="text" id="input-cupom" placeholder="Código do cupom" class="input-clean" style="flex: 1; text-transform: uppercase; margin-bottom: 0;">
+                            <button type="button" onclick="aplicarCupom()" style="padding: 0 20px; background: var(--texto-principal); color: white; border: none; border-radius: 14px; font-weight: 700; cursor: pointer;">Aplicar</button>
                         </div>
-                        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -5px; margin-bottom: 10px; display: none;"></div>
+                        <div id="msg-cupom" style="font-size: 0.85rem; margin-top: -5px; margin-bottom: 12px; display: none; font-weight: 600;"></div>
 
-                        <textarea id="cliente-observacao" class="input-clean" placeholder="Alguma observação no pedido?" rows="2" style="resize: none; margin-bottom: 0;"></textarea>
+                        <textarea id="cliente-observacao" class="input-clean" placeholder="Alguma observação para o preparo ou entrega?" rows="2" style="resize: none; margin-bottom: 0;"></textarea>
                     </div>
 
-                    <div class="secao-checkout" style="background: #fafafa; border: 1px dashed #ccc;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
-                            <span>Subtotal</span><span id="subtotal-display">R$ 0,00</span>
+                    <div class="secao-checkout" style="background: #f8fafc !important;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.92rem; color: var(--texto-secundario);">
+                            <span>Subtotal</span><span id="subtotal-display" style="font-weight: 600;">R$ 0,00</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666;">
-                            <span>Taxa de Entrega</span><span id="taxa-entrega-display">R$ 0,00</span>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.92rem; color: var(--texto-secundario);">
+                            <span>Taxa de Entrega</span><span id="taxa-entrega-display" style="font-weight: 600;">R$ 0,00</span>
                         </div>
-                        <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #25D366; font-weight: bold;">
-                            <span>Desconto</span><span id="desconto-display-valor">- R$ 0,00</span>
+                        <div id="desconto-display-linha" style="display: none; justify-content: space-between; margin-bottom: 6px; font-size: 0.92rem; color: #10b981; font-weight: 700;">
+                            <span>Desconto Aplicado</span><span id="desconto-display-valor">- R$ 0,00</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                            <strong style="color: #333; font-size: 1.1rem;">Total a Pagar</strong>
-                            <strong id="total-checkout-display" style="color: var(--cor-primaria); font-size: 1.4rem;">R$ 0,00</strong>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borda-suave);">
+                            <strong style="color: var(--texto-principal); font-size: 1.1rem;">Total a Pagar</strong>
+                            <strong id="total-checkout-display" style="color: var(--cor-primaria); font-size: 1.45rem; font-weight: 800;">R$ 0,00</strong>
                         </div>
                     </div>
 
                     <div class="secao-checkout">
-                        <h4 style="margin-bottom: 15px;">Como você prefere pagar?</h4>
+                        <h4 style="margin-bottom: 14px; font-weight: 800;">Escolha como pagar</h4>
 
-                        <!-- 👇 O CHECKBOX DO SEU DESIGN -->
-                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer; background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce0ff;">
-                            <input type="checkbox" id="chk-pagamento-dividido" onchange="togglePagamentoDividido()" style="width: 20px; height: 20px; accent-color: var(--cor-primaria);">
-                            <span style="font-weight: bold; color: #0b57d0; font-size: 0.95rem;">Dividir Pagamento em 2 métodos</span>
+                        <!-- DIVIDIR PAGAMENTO -->
+                        <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; cursor: pointer; background: #eff6ff; padding: 13px 16px; border-radius: 14px; border: 1px solid #bfdbfe;">
+                            <input type="checkbox" id="chk-pagamento-dividido" onchange="togglePagamentoDividido()" style="width: 20px; height: 20px; accent-color: var(--cor-primaria); min-height: auto;">
+                            <span style="font-weight: 700; color: #1d4ed8; font-size: 0.92rem;">Dividir pagamento em 2 formas</span>
                         </label>
 
-                        <!-- 👇 A CAIXA QUE ABRE SE ELE MARCAR DIVIDIDO -->
-                        <div id="area-pagamento-dividido" style="display: none; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 15px;">
-                            
-                            <label style="font-size: 0.85rem; font-weight: bold; color: #555;">PRIMEIRO MÉTODO</label>
+                        <div id="area-pagamento-dividido" style="display: none; background: #f8fafc; border: 1px solid var(--borda-suave); border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+                            <label style="font-size: 0.78rem; font-weight: 800; color: var(--texto-secundario); margin-bottom: 6px; display: block;">1º MÉTODO DE PAGAMENTO</label>
                             <select id="pag-div-1-metodo" class="input-clean select-clean" style="margin-bottom: 10px;" onchange="calcularRestanteDividido()">
                                 <option value="Pagamento via Pix Online">Pix Online (Pagar Agora)</option>
                                 <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
@@ -561,9 +802,9 @@
                                 <option value="Ticket Alimentação">Ticket Alimentação (Na Entrega)</option>
                                 <option value="Dinheiro">Dinheiro</option>
                             </select>
-                            <input type="number" id="pag-div-1-valor" class="input-clean" placeholder="Qual valor passar aqui? (Ex: 25,00)" oninput="calcularRestanteDividido()" step="0.01">
+                            <input type="number" id="pag-div-1-valor" class="input-clean" placeholder="Valor no 1º método (Ex: 25,00)" oninput="calcularRestanteDividido()" step="0.01">
 
-                            <label style="font-size: 0.85rem; font-weight: bold; color: #555; margin-top: 10px; display: block;">RESTANTE DO VALOR</label>
+                            <label style="font-size: 0.78rem; font-weight: 800; color: var(--texto-secundario); margin-top: 8px; margin-bottom: 6px; display: block;">2º MÉTODO (RESTANTE)</label>
                             <select id="pag-div-2-metodo" class="input-clean select-clean" style="margin-bottom: 10px;" onchange="atualizarBotaoCTA()">
                                 <option value="Cartão de Crédito">Cartão de Crédito (Na Entrega)</option>
                                 <option value="Cartão de Débito">Cartão de Débito (Na Entrega)</option>
@@ -572,155 +813,156 @@
                                 <option value="Ticket Alimentação">Ticket Alimentação (Na Entrega)</option>
                                 <option value="Dinheiro">Dinheiro</option>
                             </select>
-                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f4f7f6; padding: 15px; border-radius: 10px; border: 1px solid #ddd;">
-                                <span style="font-weight: bold; color: #666;">Valor Restante:</span>
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--borda-suave);">
+                                <span style="font-weight: 700; color: var(--texto-secundario);">Restante a pagar:</span>
                                 <strong id="pag-div-2-valor-display" style="color: var(--cor-primaria); font-size: 1.2rem;">R$ 0,00</strong>
                             </div>
                         </div>
 
-                        <!-- 👇 ENVOLVA OS PAGAMENTOS ANTIGOS NESTA DIV PARA PODERMOS ESCONDER -->
+                        <!-- PAGAMENTO ÚNICO -->
                         <div id="area-pagamento-unico">
-                            <p style="font-size: 0.8rem; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 8px;">Pagamento Único</p>
+                            <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--texto-secundario); font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px;">Pagar Online no App</p>
                         
-                        <label class="card-selecao ativo" onclick="selecionarPagamento(this, 'Pagamento via Pix Online')" style="border-color: #25D366; background: #f0fdf4;">
-                            <input type="radio" name="forma_pag" value="Pagamento via Pix Online" checked style="display: none;">
-                            <img src="../pix-icon.png" alt="Pix Oficial" style="width: 24px; height: 24px; object-fit: contain; margin-right: 10px;">
-                            <div style="flex: 1;">
-                                <span style="font-weight: bold; color: #333; display: block;">Pix (Pagar Agora)</span>
-                                <span class="badge-recomendado">Aprovação Imediata</span>
-                            </div>
-                            <div class="radio-customizado marcado"></div>
-                        </label>
-
-                        <p style="font-size: 0.8rem; text-transform: uppercase; color: #888; font-weight: bold; margin-top: 20px; margin-bottom: 8px;">Pagar na Entrega</p>
-
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Crédito')">
-                            <input type="radio" name="forma_pag" value="Cartão de Crédito" style="display: none;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-                            <span style="flex: 1; font-weight: 600; color: #444;">Cartão de Crédito</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-                        
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Débito')">
-                            <input type="radio" name="forma_pag" value="Cartão de Débito" style="display: none;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-                            <span style="flex: 1; font-weight: 600; color: #444;">Cartão de Débito</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-
-                        <!-- Menu Expansível de Vouchers -->
-                        <div style="background: white; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-                            <div onclick="toggleVouchers()" style="padding: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff; transition: background 0.2s;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><circle cx="12" cy="14" r="2"></circle></svg>
-                                    <span style="font-weight: 600; color: #444;">Voucher Alimentação</span>
+                            <label class="card-selecao ativo" onclick="selecionarPagamento(this, 'Pagamento via Pix Online')">
+                                <input type="radio" name="forma_pag" value="Pagamento via Pix Online" checked style="display: none;">
+                                <img src="../pix-icon.png" alt="Pix Oficial" style="width: 24px; height: 24px; object-fit: contain; margin-right: 12px;">
+                                <div style="flex: 1;">
+                                    <span style="font-weight: 800; color: var(--texto-principal); display: block;">Pix (Aprovação Imediata)</span>
+                                    <span class="badge-recomendado">Mais rápido • Libera na hora</span>
                                 </div>
-                                <span id="seta-vouchers" style="transition: transform 0.3s; color: #666; font-size: 1.2rem;">▼</span>
+                                <div class="radio-customizado marcado"></div>
+                            </label>
+
+                            <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--texto-secundario); font-weight: 800; letter-spacing: 0.05em; margin-top: 18px; margin-bottom: 8px;">Pagar na Entrega / Retirada</p>
+
+                            <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Crédito')">
+                                <input type="radio" name="forma_pag" value="Cartão de Crédito" style="display: none;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" style="margin-right: 12px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                                <span style="flex: 1; font-weight: 600; color: var(--texto-principal);">Cartão de Crédito</span>
+                                <div class="radio-customizado"></div>
+                            </label>
+                            
+                            <label class="card-selecao" onclick="selecionarPagamento(this, 'Cartão de Débito')">
+                                <input type="radio" name="forma_pag" value="Cartão de Débito" style="display: none;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" style="margin-right: 12px;"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                                <span style="flex: 1; font-weight: 600; color: var(--texto-principal);">Cartão de Débito</span>
+                                <div class="radio-customizado"></div>
+                            </label>
+
+                            <!-- Vouchers Alimentação -->
+                            <div style="background: white; border: 1.5px solid var(--borda-suave); border-radius: 14px; margin-bottom: 10px; overflow: hidden;">
+                                <div onclick="toggleVouchers()" style="padding: 15px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #fff;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect><circle cx="12" cy="14" r="2"></circle></svg>
+                                        <span style="font-weight: 600; color: var(--texto-principal);">Vale / Voucher Alimentação</span>
+                                    </div>
+                                    <span id="seta-vouchers" style="transition: transform 0.3s; color: #64748b; font-size: 1rem;">▼</span>
+                                </div>
+                                
+                                <div id="lista-vouchers" style="display: none; flex-direction: column; padding: 10px; gap: 6px; border-top: 1px solid var(--borda-suave); background: #f8fafc;">
+                                    <label class="card-selecao" onclick="selecionarPagamento(this, 'Pluxee Alimentação')" style="margin-bottom: 0;">
+                                        <input type="radio" name="forma_pag" value="Pluxee Alimentação" style="display: none;">
+                                        <span style="flex: 1; font-weight: 600; color: var(--texto-principal);">Pluxee (Sodexo)</span>
+                                        <div class="radio-customizado"></div>
+                                    </label>
+                                    
+                                    <label class="card-selecao" onclick="selecionarPagamento(this, 'VR Alimentação')" style="margin-bottom: 0;">
+                                        <input type="radio" name="forma_pag" value="VR Alimentação" style="display: none;">
+                                        <span style="flex: 1; font-weight: 600; color: var(--texto-principal);">VR Alimentação</span>
+                                        <div class="radio-customizado"></div>
+                                    </label>
+                                    
+                                    <label class="card-selecao" onclick="selecionarPagamento(this, 'Ticket Alimentação')" style="margin-bottom: 0;">
+                                        <input type="radio" name="forma_pag" value="Ticket Alimentação" style="display: none;">
+                                        <span style="flex: 1; font-weight: 600; color: var(--texto-principal);">Ticket Alimentação</span>
+                                        <div class="radio-customizado"></div>
+                                    </label>
+                                </div>
                             </div>
                             
-                            <div id="lista-vouchers" style="display: none; flex-direction: column; padding: 10px; gap: 5px; border-top: 1px solid #eee; background: #fafafa;">
-                                <label class="card-selecao" onclick="selecionarPagamento(this, 'Pluxee Alimentação')" style="margin-bottom: 0; box-shadow: none; border-color: #ddd;">
-                                    <input type="radio" name="forma_pag" value="Pluxee Alimentação" style="display: none;">
-                                    <span style="flex: 1; font-weight: 600; color: #444;">Pluxee Alimentação</span>
-                                    <div class="radio-customizado"></div>
-                                </label>
-                                
-                                <label class="card-selecao" onclick="selecionarPagamento(this, 'VR Alimentação')" style="margin-bottom: 0; box-shadow: none; border-color: #ddd;">
-                                    <input type="radio" name="forma_pag" value="VR Alimentação" style="display: none;">
-                                    <span style="flex: 1; font-weight: 600; color: #444;">VR Alimentação</span>
-                                    <div class="radio-customizado"></div>
-                                </label>
-                                
-                                <label class="card-selecao" onclick="selecionarPagamento(this, 'Ticket Alimentação')" style="margin-bottom: 0; box-shadow: none; border-color: #ddd;">
-                                    <input type="radio" name="forma_pag" value="Ticket Alimentação" style="display: none;">
-                                    <span style="flex: 1; font-weight: 600; color: #444;">Ticket Alimentação</span>
-                                    <div class="radio-customizado"></div>
-                                </label>
+                            <label class="card-selecao" onclick="selecionarPagamento(this, 'Dinheiro')">
+                                <input type="radio" name="forma_pag" value="Dinheiro" style="display: none;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="margin-right: 12px;"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect><circle cx="12" cy="12" r="2"></circle></svg>
+                                <span style="flex: 1; font-weight: 600; color: var(--texto-principal);">Dinheiro em Espécie</span>
+                                <div class="radio-customizado"></div>
+                            </label>
+
+                            <div id="area-troco" style="display: none; margin-top: 10px;">
+                                <input type="number" id="cliente-troco" class="input-clean" placeholder="Precisa de troco para quanto? (Ex: 50)">
                             </div>
                         </div>
-                        
-                        <label class="card-selecao" onclick="selecionarPagamento(this, 'Dinheiro')">
-                            <input type="radio" name="forma_pag" value="Dinheiro" style="display: none;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#85bb65" stroke-width="2" style="margin-right: 10px;"><rect x="2" y="6" width="20" height="12" rx="2" ry="2"></rect><circle cx="12" cy="12" r="2"></circle></svg>
-                            <span style="flex: 1; font-weight: 600; color: #444;">Dinheiro em Espécie</span>
-                            <div class="radio-customizado"></div>
-                        </label>
-
-                        <div id="area-troco" style="display: none; margin-top: 10px; padding-left: 45px;">
-                            <input type="number" id="cliente-troco" class="input-clean" placeholder="Precisa de troco para quanto?">
-                        </div>
-                    </div> <!-- Fecha area-pagamento-unico -->
-                </div> <!-- Fecha secao-checkout "Como você prefere pagar?" -->
-                
-            </div> <!-- Fecha checkout-passo-2 -->
-            </div> <!-- Fecha a área de scroll (flex: 1) -->
-
-            <div style="padding: 15px 20px 20px 20px; background: white; border-top: 1px solid #eee; flex-shrink: 0; box-shadow: 0 -4px 10px rgba(0,0,0,0.02);">
-                <button id="btn-avancar-checkout" onclick="avancarPassoCheckout()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;">Continuar para Pagamento</button>
+                    </div>
+                </div>
             </div>
 
-        </div> <!-- Fecha modal-conteudo -->
-    </div> <!-- Fecha modal-checkout -->
-
-<div id="modal-info-loja" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:flex-end; z-index:5000;">
-        <div style="background:white; width:100%; max-width:500px; border-top-left-radius:25px; border-top-right-radius:25px; padding:25px; animation: slideUp 0.3s ease-out; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #333; font-size: 1.3rem;">Sobre a Loja</h2>
-                <button onclick="fecharModalInfoLoja()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888;">&times;</button>
+            <div style="padding: 14px 20px 20px 20px; background: white; border-top: 1px solid var(--borda-suave); flex-shrink: 0;">
+                <button id="btn-avancar-checkout" onclick="avancarPassoCheckout()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 16px; border-radius: 999px; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 6px 20px rgba(233, 30, 99, 0.28);">Continuar para Pagamento</button>
             </div>
-            
-            <div style="margin-bottom: 20px;">
-                <h3 style="margin: 0 0 5px 0; color: var(--cor-primaria); font-size: 1rem; display: flex; align-items: center; gap: 8px;">📍 Endereço</h3>
-                <p id="modal-endereco-texto" style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.4;">Não informado</p>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <h3 style="margin: 0 0 5px 0; color: var(--cor-primaria); font-size: 1rem; display: flex; align-items: center; gap: 8px;">🕒 Horários de Funcionamento</h3>
-                <p id="modal-horarios-texto" style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">Não informado</p>
-            </div>
-
-            <div style="margin-bottom: 25px;">
-                <h3 style="margin: 0 0 5px 0; color: var(--cor-primaria); font-size: 1rem; display: flex; align-items: center; gap: 8px;">💳 Formas de Pagamento</h3>
-                <p id="modal-pagamentos-texto" style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap;">Não informado</p>
-            </div>
-            
-            <button onclick="fecharModalInfoLoja()" style="width: 100%; padding: 15px; background: #f0f2f5; color: #333; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer;">Entendi</button>
         </div>
     </div>
 
-<!-- ==========================================
+    <!-- ==========================================
+         MODAL DE INFORMAÇÕES DA LOJA
+         ========================================== -->
+    <div id="modal-info-loja" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.65); justify-content:center; align-items:flex-end; z-index:5000;">
+        <div style="background:white; width:100%; max-width:540px; border-top-left-radius:28px; border-top-right-radius:28px; padding:26px 24px; animation: slideUp 0.3s ease-out; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: var(--texto-principal); font-size: 1.3rem; font-weight: 800;">Sobre a Loja</h2>
+                <button onclick="fecharModalInfoLoja()" style="background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.4rem; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 18px; background: #f8fafc; padding: 14px; border-radius: 14px; border: 1px solid var(--borda-suave);">
+                <h3 style="margin: 0 0 6px 0; color: var(--cor-primaria); font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">📍 Endereço</h3>
+                <p id="modal-endereco-texto" style="margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.45;">Não informado</p>
+            </div>
+
+            <div style="margin-bottom: 18px; background: #f8fafc; padding: 14px; border-radius: 14px; border: 1px solid var(--borda-suave);">
+                <h3 style="margin: 0 0 6px 0; color: var(--cor-primaria); font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">🕒 Horários de Funcionamento</h3>
+                <p id="modal-horarios-texto" style="margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.45; white-space: pre-wrap;">Não informado</p>
+            </div>
+
+            <div style="margin-bottom: 22px; background: #f8fafc; padding: 14px; border-radius: 14px; border: 1px solid var(--borda-suave);">
+                <h3 style="margin: 0 0 6px 0; color: var(--cor-primaria); font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">💳 Formas de Pagamento</h3>
+                <p id="modal-pagamentos-texto" style="margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.45; white-space: pre-wrap;">Não informado</p>
+            </div>
+            
+            <button onclick="fecharModalInfoLoja()" style="width: 100%; padding: 15px; background: var(--texto-principal); color: #ffffff; border: none; border-radius: 999px; font-weight: 800; font-size: 1rem; cursor: pointer;">Fechar</button>
+        </div>
+    </div>
+
+    <!-- ==========================================
          TELA DE RASTREIO PÓS-COMPRA
          ========================================== -->
-    <div id="modal-rastreio" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#f4f7f6; z-index:9999; flex-direction:column;">
+    <div id="modal-rastreio" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-claro); z-index:9999; flex-direction:column;">
         
-        <div style="background: var(--cor-primaria); padding: 30px 20px; color: white; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
-            <h2 style="margin: 0; font-size: 1.8rem;">Pedido Enviado! 🎉</h2>
-            <p style="margin: 5px 0 0 0; font-size: 1rem; opacity: 0.9;">Acompanhe o status em tempo real</p>
+        <div style="background: linear-gradient(135deg, var(--cor-primaria), #be185d); padding: 32px 20px; color: white; text-align: center; box-shadow: 0 8px 25px rgba(233, 30, 99, 0.25); border-bottom-left-radius: 28px; border-bottom-right-radius: 28px;">
+            <h2 style="margin: 0; font-size: 1.75rem; font-weight: 800;">Pedido Recebido! 🎉</h2>
+            <p style="margin: 6px 0 0 0; font-size: 0.95rem; opacity: 0.92;">Acompanhe o preparo em tempo real abaixo</p>
         </div>
         
-        <div style="padding: 20px; flex: 1; overflow-y: auto;">
+        <div style="padding: 20px; flex: 1; overflow-y: auto; max-width: 560px; width: 100%; margin: 0 auto; box-sizing: border-box;">
             
-            <!-- Clube de Fidelidade -->
-            <div style="background: linear-gradient(135deg, #333, #555); border-radius: 15px; padding: 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
-                <div style="font-size: 2.5rem; background: rgba(255,255,255,0.1); width: 65px; height: 65px; display: flex; justify-content: center; align-items: center; border-radius: 50%; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);">🎁</div>
+            <!-- Cartela Fidelidade no Rastreio -->
+            <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 20px; padding: 20px; color: white; box-shadow: var(--sombra-card); display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                <div style="font-size: 2.2rem; background: rgba(255,255,255,0.1); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; border-radius: 18px; flex-shrink: 0;">🎁</div>
                 <div>
-                    <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; color: #ffeb3b;">Clube Fidelidade</h3>
-                    <p style="margin: 0; font-size: 0.95rem; opacity: 0.9;">Você tem <strong id="rastreio-fidelidade-qtd" style="font-size: 1.3rem; color: white;">0</strong> pontos na sua cartela atual!</p>
+                    <h3 style="margin: 0 0 4px 0; font-size: 1.05rem; color: #fbbf24; font-weight: 800;">Clube Fidelidade</h3>
+                    <p style="margin: 0; font-size: 0.9rem; color: #e2e8f0;">Você acumula <strong id="rastreio-fidelidade-qtd" style="font-size: 1.25rem; color: white;">0</strong> selo(s) na sua cartela atual!</p>
                 </div>
             </div>
 
             <!-- Timeline do Pedido -->
-            <div style="background: white; border-radius: 15px; padding: 25px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                <h3 style="margin: 0 0 20px 0; color: #333; text-align: center; font-size: 1.1rem;">Status do Pedido</h3>
+            <div style="background: white; border-radius: 20px; padding: 24px 20px; box-shadow: var(--sombra-card); border: 1px solid var(--borda-suave);">
+                <h3 style="margin: 0 0 20px 0; color: var(--texto-principal); text-align: center; font-size: 1.05rem; font-weight: 800;">Andamento do Pedido</h3>
                 
                 <div class="timeline-rastreio">
                     <div class="step-rastreio" id="step-pendente">
                         <div class="icon-rastreio">🕒</div>
-                        <div class="text-rastreio">Aguardando aceitação</div>
+                        <div class="text-rastreio">Aguardando confirmação</div>
                     </div>
                     <div class="step-rastreio" id="step-preparando">
                         <div class="icon-rastreio">👨‍🍳</div>
-                        <div class="text-rastreio">Em produção</div>
+                        <div class="text-rastreio">Em preparação caprichada</div>
                     </div>
                     <div class="step-rastreio" id="step-entrega">
                         <div class="icon-rastreio">🛵</div>
@@ -728,132 +970,126 @@
                     </div>
                     <div class="step-rastreio" id="step-entregue">
                         <div class="icon-rastreio">✅</div>
-                        <div class="text-rastreio">Entregue / Finalizado</div>
+                        <div class="text-rastreio">Entregue / Concluído</div>
                     </div>
                 </div>
             </div>
             
-            <button id="btn-avaliar-pedido" onclick="abrirModalAvaliacao()" style="display: none; width: 100%; margin-top: 20px; padding: 15px; border-radius: 12px; background: #FF9800; color: white; font-weight: bold; font-size: 1.1rem; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); transition: 0.2s;">⭐ Avaliar Experiência</button>
+            <button id="btn-avaliar-pedido" onclick="abrirModalAvaliacao()" style="display: none; width: 100%; margin-top: 20px; padding: 16px; border-radius: 999px; background: #f59e0b; color: white; font-weight: 800; font-size: 1.05rem; border: none; cursor: pointer; box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3);">⭐ Avaliar Experiência</button>
 
-            <button onclick="fecharTelaRastreio()" style="width: 100%; margin-top: 15px; padding: 15px; border-radius: 12px; border: 2px solid var(--cor-primaria); background: transparent; color: var(--cor-primaria); font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s;">Fazer um Novo Pedido</button>
+            <button onclick="fecharTelaRastreio()" style="width: 100%; margin-top: 14px; padding: 15px; border-radius: 999px; border: 2px solid var(--cor-primaria); background: transparent; color: var(--cor-primaria); font-weight: 800; font-size: 1rem; cursor: pointer;">Voltar ao Cardápio</button>
         </div>
     </div>
 
-
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="./app.js"></script>
-
-        <!-- ==========================================
-         MODAL: CARRINHO (PASSO ANTES DO CHECKOUT)
+    <!-- ==========================================
+         MODAL: CARRINHO (SACOLA E CROSS-SELL)
          ========================================== -->
-    <div id="modal-carrinho-cliente" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:flex-end; z-index:9998;">
-        <div style="background:white; width:100%; max-width:600px; border-radius: 20px 20px 0 0; padding: 20px 20px 18px 20px; max-height: 88vh; display:flex; flex-direction:column; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); animation: subirModalCarrinho 0.3s ease-out; box-sizing: border-box;">
+    <div id="modal-carrinho-cliente" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.65); justify-content:center; align-items:flex-end; z-index:9998;">
+        <div style="background:white; width:100%; max-width:560px; border-radius: 28px 28px 0 0; padding: 22px 20px 20px 20px; max-height: 88vh; display:flex; flex-direction:column; box-shadow: 0 -10px 35px rgba(0,0,0,0.18); animation: subirModalCarrinho 0.3s ease-out; box-sizing: border-box;">
             
-            <!-- TOPO FIXO DO CARRINHO -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 12px; margin-bottom: 10px; flex-shrink: 0;">
-                <h2 style="margin:0; color:#333; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">🛒 Seu Carrinho</h2>
-                <button onclick="fecharModalCarrinho()" style="background:#f0f2f5; border:none; width: 35px; height: 35px; border-radius: 50%; font-size:1.5rem; cursor:pointer; color:#555; display: flex; align-items: center; justify-content: center; transition: 0.2s;">&times;</button>
+            <!-- TOPO FIXO DA SACOLA -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--borda-suave); padding-bottom: 14px; margin-bottom: 12px; flex-shrink: 0;">
+                <h2 style="margin:0; color:var(--texto-principal); font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">🛍️ Sua Sacola</h2>
+                <button onclick="fecharModalCarrinho()" style="background:#f1f5f9; border:none; width: 38px; height: 38px; border-radius: 50%; font-size:1.4rem; cursor:pointer; color:#64748b; display: flex; align-items: center; justify-content: center;">&times;</button>
             </div>
             
-            <!-- MEIO ROLÁVEL (ITENS DO PEDIDO + UPSELL JUNTOS SEM ESMAGAR) -->
+            <!-- MEIO ROLÁVEL (ITENS + MOTOR DE CROSS-SELL) -->
             <div style="flex: 1; overflow-y: auto; padding-right: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch;">
-                <div style="font-size: 0.78rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-                    Itens do seu pedido:
+                <div style="font-size: 0.75rem; font-weight: 800; color: var(--texto-secundario); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">
+                    Itens selecionados
                 </div>
 
-                <div id="lista-itens-carrinho-cliente" style="margin-bottom: 15px;">
-                    <!-- Itens injetados via JS -->
-                </div>
+                <div id="lista-itens-carrinho-cliente" style="margin-bottom: 16px;"></div>
                 
-                <div id="area-upsell-checkout" style="display: none; background: #fff4f4; padding: 12px 10px; border-radius: 10px; border: 1px dashed #ffb3c6; margin-bottom: 5px;">
-                    <h4 style="margin: 0 0 10px 0; color: #e91e63; font-size: 0.9rem; text-align: center;">🔥 Leve junto com desconto!</h4>
-                    <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 5px; gap: 10px;"></div>
+                <!-- Cross-Sell / Peça Também -->
+                <div id="area-upsell-checkout" style="display: none; background: #fff1f2; padding: 14px 12px; border-radius: 18px; border: 1px solid #fecdd3; margin-bottom: 6px;">
+                    <h4 style="margin: 0 0 10px 0; color: #be123c; font-size: 0.92rem; font-weight: 800; text-align: center;">🔥 Peça também e deixe seu pedido completo!</h4>
+                    <div class="carrossel" id="carrossel-upsell" style="padding-bottom: 4px; gap: 10px;"></div>
                 </div>
             </div>
 
-            <!-- RODAPÉ FIXO (TOTAIS + BOTÃO AVANÇAR SEMPRE VISÍVEIS) -->
-            <div style="flex-shrink: 0; border-top: 1px solid #f0f2f5; padding-top: 10px; background: white;">
-                <div id="area-totais-carrinho" style="background: #fafafa; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; border: 1px dashed #ddd;">
+            <!-- RODAPÉ FIXO -->
+            <div style="flex-shrink: 0; border-top: 1px solid var(--borda-suave); padding-top: 12px; background: white;">
+                <div id="area-totais-carrinho" style="background: #f8fafc; padding: 14px 16px; border-radius: 16px; margin-bottom: 14px; border: 1px solid var(--borda-suave);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 1.05rem; color: #555; font-weight: 600;">Subtotal:</span>
-                        <strong id="subtotal-carrinho-cliente" style="font-size: 1.4rem; color: var(--cor-primaria, #e91e63);">R$ 0,00</strong>
+                        <span style="font-size: 1rem; color: var(--texto-secundario); font-weight: 600;">Subtotal:</span>
+                        <strong id="subtotal-carrinho-cliente" style="font-size: 1.4rem; color: var(--cor-primaria, #e91e63); font-weight: 800;">R$ 0,00</strong>
                     </div>
                 </div>
                 
-                <button onclick="irParaCheckout()" style="width: 100%; background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.15rem; cursor: pointer; box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px;">
-                    Avançar <span style="font-size: 1.25rem;">➔</span>
+                <button onclick="irParaCheckout()" style="width: 100%; background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 16px; border-radius: 999px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 6px 20px rgba(233, 30, 99, 0.3); transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    Escolher Entrega e Pagamento <span style="font-size: 1.2rem;">➔</span>
                 </button>
             </div>
-
         </div>
     </div>
 
     <!-- ==========================================
          MODAL PIX (PAGAMENTO AUTOMÁTICO)
          ========================================== -->
-    <div id="modal-pix" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; z-index:9999; flex-direction:column; padding: 20px; box-sizing: border-box;">
-        <div style="background:white; padding:30px 20px; border-radius:20px; text-align:center; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out;">
+    <div id="modal-pix" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.88); justify-content:center; align-items:center; z-index:9999; flex-direction:column; padding: 20px; box-sizing: border-box;">
+        <div style="background:white; padding:28px 22px; border-radius:24px; text-align:center; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); animation: slideUp 0.3s ease-out;">
     
-    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px; margin-top: -10px;">
-        
-        <img src="../pix-icon.png" alt="Pix Oficial" style="height: 35px; object-fit: contain;">
-
-    </div>
-    
-    <div style="background: #e6f4ea; color: #1e8e3e; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 15px; text-transform: uppercase;">
-        🔒 Ambiente 100% Seguro
-    </div>
-
-    <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Escaneie o QR Code ou copie o código abaixo para o pedido ser enviado à cozinha!</p>
-
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 20px;">
-                <img id="pix-qr-code" src="" style="width: 200px; height: 200px; object-fit: contain; margin: 0 auto; display: block;" alt="QR Code Pix">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <img src="../pix-icon.png" alt="Pix Oficial" style="height: 34px; object-fit: contain;">
+            </div>
+            
+            <div style="background: #ecfdf5; color: #059669; padding: 4px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; display: inline-block; margin-bottom: 14px; text-transform: uppercase;">
+                🔒 Ambiente 100% Seguro
             </div>
 
-            <input type="text" id="pix-copia-cola" readonly style="width: 100%; padding: 12px; border: 1px dashed #ccc; border-radius: 10px; font-family: monospace; font-size: 0.75rem; color: #555; text-align: center; margin-bottom: 15px; box-sizing: border-box;" value="Carregando...">
+            <p style="color: var(--texto-secundario); font-size: 0.88rem; margin-bottom: 18px; line-height: 1.45;">Escaneie o QR Code ou copie o código Pix abaixo para aprovação imediata do seu pedido!</p>
 
-            <button onclick="copiarPix()" id="btn-copiar-pix" style="width: 100%; background: #00bcd4; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-bottom: 15px; transition: 0.2s;">📋 Copiar Código Pix</button>
+            <div style="background: #f8fafc; padding: 16px; border-radius: 18px; border: 1px solid var(--borda-suave); margin-bottom: 18px;">
+                <img id="pix-qr-code" src="" style="width: 190px; height: 190px; object-fit: contain; margin: 0 auto; display: block;" alt="QR Code Pix">
+            </div>
 
-            <p id="pix-status-texto" style="color: #FF9800; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                ⏳ Aguardando pagamento...
+            <input type="text" id="pix-copia-cola" readonly style="width: 100%; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 12px; font-family: monospace; font-size: 0.75rem; color: #475569; text-align: center; margin-bottom: 14px; box-sizing: border-box; background: #f8fafc;" value="Carregando...">
+
+            <button onclick="copiarPix()" id="btn-copiar-pix" style="width: 100%; background: #00bcd4; color: white; border: none; padding: 15px; border-radius: 999px; font-size: 1.05rem; font-weight: 800; cursor: pointer; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(0, 188, 212, 0.3);">📋 Copiar Código Pix</button>
+
+            <p id="pix-status-texto" style="color: #f59e0b; font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                ⏳ Aguardando confirmação do banco...
             </p>
 
-            <button onclick="cancelarPix()" style="width: 100%; background: transparent; color: #999; border: none; padding: 10px; margin-top: 10px; cursor: pointer; text-decoration: underline;">Cancelar e Voltar</button>
+            <button onclick="cancelarPix()" style="width: 100%; background: transparent; color: #94a3b8; border: none; padding: 10px; margin-top: 6px; cursor: pointer; font-weight: 600;">Voltar e trocar forma de pagamento</button>
         </div>
     </div>
     
-    <div id="pwa-install-banner" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); z-index: 9999; align-items: center; justify-content: space-between; border-left: 5px solid var(--cor-primaria);">
+    <!-- BANNER INSTALAÇÃO PWA -->
+    <div id="pwa-install-banner" style="display: none; position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; background: white; padding: 16px; border-radius: 20px; box-shadow: var(--sombra-flutuante); z-index: 9999; align-items: center; justify-content: space-between; border: 1px solid var(--borda-suave); border-left: 5px solid var(--cor-primaria);">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: #e0f7fa; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <div style="background: #fdf2f8; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
                 📲
             </div>
-            <div style="line-height: 1.2;">
-                <strong style="color: #333; font-size: 1rem;">Instalar Aplicativo</strong><br>
-                <span style="color: #666; font-size: 0.8rem;">Peça mais rápido na próxima!</span>
+            <div style="line-height: 1.25;">
+                <strong style="color: var(--texto-principal); font-size: 0.95rem;">Instalar App Icesoft</strong><br>
+                <span style="color: var(--texto-secundario); font-size: 0.78rem;">Peça em 1 toque na próxima vez!</span>
             </div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 5px;">
-            <button onclick="instalarPWA()" style="background: var(--cor-primaria); border: none; padding: 8px 15px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,188,212,0.3);">Instalar</button>
-            <button onclick="fecharBannerPWA()" style="background: transparent; border: none; color: #999; font-weight: bold; cursor: pointer; padding: 5px; font-size: 0.8rem;">Agora não</button>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+            <button onclick="instalarPWA()" style="background: var(--cor-primaria); border: none; padding: 8px 16px; border-radius: 999px; color: white; font-weight: 700; cursor: pointer; min-height: 36px;">Instalar</button>
+            <button onclick="fecharBannerPWA()" style="background: transparent; border: none; color: #94a3b8; font-weight: 600; cursor: pointer; padding: 4px; font-size: 0.75rem; min-height: auto;">Agora não</button>
         </div>
     </div>
     
-    <div id="lightbox-foto" onclick="fecharFotoInteira()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(5px);">
-        <img id="lightbox-img" src="" style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 12px; transform: scale(0.8); transition: transform 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <div style="position: absolute; top: 20px; right: 25px; color: white; font-size: 2.5rem; font-weight: bold; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">&times;</div>
+    <!-- LIGHTBOX DE ZOOM NA FOTO -->
+    <div id="lightbox-foto" onclick="fecharFotoInteira()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.88); z-index: 99999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(8px);">
+        <img id="lightbox-img" src="" alt="Visualização Ampliada" style="max-width: 90%; max-height: 85%; object-fit: contain; border-radius: 20px; transform: scale(0.8); transition: transform 0.3s ease; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <div style="position: absolute; top: 20px; right: 24px; color: white; font-size: 2.4rem; font-weight: bold; cursor: pointer;">&times;</div>
     </div>
 
     <!-- ==========================================
-         MODAL DE AVALIAÇÃO DO PEDIDO (ESTILO IFOOD)
+         MODAL DE AVALIAÇÃO DO PEDIDO
          ========================================== -->
-    <div id="modal-avaliacao" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:10000; padding: 20px; box-sizing: border-box;">
-        <div style="background:white; width:100%; max-width:400px; border-radius:20px; padding:25px; text-align:center; animation: slideUp 0.3s ease-out; position: relative;">
-            <button onclick="fecharModalAvaliacao()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; color:#999; cursor:pointer;">&times;</button>
-            <h2 style="margin: 0 0 10px 0; color: #333; font-size: 1.4rem;">O que achou? ⭐</h2>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4;">Sua opinião é muito importante para a Icesoft melhorar sempre!</p>
+    <div id="modal-avaliacao" class="modal-oculto" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.75); justify-content:center; align-items:center; z-index:10000; padding: 20px; box-sizing: border-box;">
+        <div style="background:white; width:100%; max-width:420px; border-radius:24px; padding:26px 22px; text-align:center; animation: slideUp 0.3s ease-out; position: relative; box-shadow: var(--sombra-flutuante);">
+            <button onclick="fecharModalAvaliacao()" style="position:absolute; top:16px; right:16px; background:#f1f5f9; border:none; width: 34px; height: 34px; border-radius: 50%; font-size:1.3rem; color:#64748b; cursor:pointer; min-height: auto;">&times;</button>
+            <h2 style="margin: 0 0 8px 0; color: var(--texto-principal); font-size: 1.35rem; font-weight: 800;">O que achou? ⭐</h2>
+            <p style="color: var(--texto-secundario); font-size: 0.88rem; margin-bottom: 18px; line-height: 1.45;">Sua opinião ajuda a Icesoft a entregar experiências cada vez melhores!</p>
 
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee;">
-                <p style="font-weight: bold; margin: 0 0 10px 0; color: #444; font-size: 0.95rem;">1. O Cardápio Online foi fácil de usar?</p>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--borda-suave);">
+                <p style="font-weight: 700; margin: 0 0 10px 0; color: var(--texto-principal); font-size: 0.92rem;">1. Facilidade de pedir pelo App</p>
                 <div class="estrelas-avaliacao" id="estrelas-cardapio">
                     <span onclick="marcarEstrela('cardapio', 1)">★</span>
                     <span onclick="marcarEstrela('cardapio', 2)">★</span>
@@ -863,8 +1099,8 @@
                 </div>
             </div>
 
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee;">
-                <p style="font-weight: bold; margin: 0 0 10px 0; color: #444; font-size: 0.95rem;">2. Qualidade do Pedido e Entrega</p>
+            <div style="background: #f8fafc; padding: 15px; border-radius: 16px; border: 1px solid var(--borda-suave);">
+                <p style="font-weight: 700; margin: 0 0 10px 0; color: var(--texto-principal); font-size: 0.92rem;">2. Sabor, Qualidade e Entrega</p>
                 <div class="estrelas-avaliacao" id="estrelas-pedido">
                     <span onclick="marcarEstrela('pedido', 1)">★</span>
                     <span onclick="marcarEstrela('pedido', 2)">★</span>
@@ -874,25 +1110,27 @@
                 </div>
             </div>
 
-            <textarea id="obs-avaliacao" placeholder="Quer deixar algum comentário ou elogio? (Opcional)" style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 12px; margin-top: 15px; font-family: 'Inter', sans-serif; resize: none; box-sizing: border-box; outline: none;"></textarea>
+            <textarea id="obs-avaliacao" placeholder="Deseja deixar algum elogio ou sugestão? (Opcional)" class="input-clean" style="margin-top: 14px; resize: none;" rows="2"></textarea>
 
-            <button id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s;">Enviar Avaliação</button>
+            <button id="btn-enviar-avaliacao" onclick="enviarAvaliacao()" style="width: 100%; background: var(--cor-primaria); color: white; border: none; padding: 15px; border-radius: 999px; font-size: 1.05rem; font-weight: 800; cursor: pointer; margin-top: 8px; box-shadow: 0 6px 18px rgba(233, 30, 99, 0.25);">Enviar Avaliação</button>
         </div>
     </div>
 
     <!-- ==========================================
          BANNER FLUTUANTE DE AVALIAÇÃO PENDENTE
          ========================================== -->
-    <div id="banner-avaliacao-pendente" style="display: none; position: fixed; bottom: 85px; right: 20px; background: white; padding: 12px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9997; border-left: 4px solid #FF9800; align-items: center; gap: 10px; animation: slideInRight 0.4s ease-out; max-width: 280px;">
+    <div id="banner-avaliacao-pendente" style="display: none; position: fixed; bottom: 88px; right: 16px; background: white; padding: 12px 16px; border-radius: 16px; box-shadow: var(--sombra-flutuante); z-index: 9997; border: 1px solid var(--borda-suave); border-left: 4px solid #f59e0b; align-items: center; gap: 10px; animation: slideInRight 0.4s ease-out; max-width: 280px;">
         <div onclick="abrirAvaliacaoPendente()" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <div style="font-size: 1.8rem;">⭐</div>
-            <div style="line-height: 1.2;">
-                <strong style="color: #333; font-size: 0.9rem;">Avalie seu último pedido</strong><br>
-                <span style="color: #666; font-size: 0.75rem;">Leva só 10 segundos!</span>
+            <div style="font-size: 1.7rem;">⭐</div>
+            <div style="line-height: 1.25;">
+                <strong style="color: var(--texto-principal); font-size: 0.88rem;">Avalie seu último pedido</strong><br>
+                <span style="color: var(--texto-secundario); font-size: 0.75rem;">Leva apenas 10 segundos!</span>
             </div>
         </div>
-        <button onclick="ignorarAvaliacaoPendente()" style="background: none; border: none; color: #999; font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 5px;">&times;</button>
+        <button onclick="ignorarAvaliacaoPendente()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 0 4px; min-height: auto;">&times;</button>
     </div>
 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="./app.js?v=2.1"></script>
 </body>
 </html>

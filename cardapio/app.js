@@ -185,6 +185,7 @@ async function carregarTudo() {
         renderizarCidades(); 
         renderizarBairros(); 
         renderizarVitrineClube();
+        carregarModuloPecaDeNovo(); // ⚡ NOVO: Ativa o módulo "Peça de Novo em 1 Toque"
 
         // 🚀 UX OTIMIZADA: Carrosséis e Banners foram desativados para focar 
         // na conversão direta do cardápio e reduzir a fadiga de decisão (Lei de Hick).
@@ -277,12 +278,11 @@ function obterOrdemDasCategorias(listaProdutosAtual) {
 
 function renderizarCardapio(lista) {
     const container = document.getElementById('lista-produtos');
-    container.innerHTML = '<h2 style="margin-bottom: 20px; color: #333;">Cardápio</h2>';
+    container.innerHTML = '<h2 style="margin-bottom: 16px; color: #0f172a; font-weight: 800;">Cardápio</h2>';
 
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
 
     categoriasOrdenadas.forEach((catNome, index) => {
-        // Filtra os produtos desta categoria (mesma regra mágica de antes)
         const produtosDestaCategoria = lista.filter(p => {
             let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
             if (catPrincipal === catNome) return true;
@@ -298,33 +298,35 @@ function renderizarCardapio(lista) {
         
         if (produtosDestaCategoria.length === 0) return;
 
-        // IDs únicos para o Acordeão funcionar
         const catId = 'categoria-' + catNome.replace(/[^a-zA-Z0-9]/g, '');
         const conteudoId = 'conteudo-' + catId;
 
-        // Monta o recheio: a lista de produtos
         let produtosHtml = '';
 
         produtosDestaCategoria.forEach(p => {
-            // O CÉREBRO DAS TAGS
+            // SELOS SEMÂNTICOS / TAGS
             let tagHtml = '';
             if (p.tag && p.tag !== '') {
                 const nomesTags = { 'so_hoje': 'Só hoje', 'mais_pedido': 'Mais pedido', 'oferta': 'Oferta', 'novidade': 'Novidade', 'poucas_unidades': 'Poucas Unidades' };
-                tagHtml = `<div class="tag-flutuante tag-${p.tag}" style="top: -5px; left: -5px;">${nomesTags[p.tag] || p.tag}</div>`;
+                tagHtml = `<div class="tag-flutuante tag-${p.tag}" style="top: -6px; left: -6px;">${nomesTags[p.tag] || p.tag}</div>`;
             }
 
-            // TAG DE ESTOQUE DINÂMICA
+            // TAG DE ESTOQUE DINÂMICA (GATILHO DE ESCASSEZ)
             if (p.controlar_estoque && p.mostrar_estoque) {
                 const qtdEstoque = Number(p.estoque) || 0;
-                let corFundo = qtdEstoque > 5 ? '#e8f5e9' : '#fff3e0'; 
-                let corTexto = qtdEstoque > 5 ? '#2e7d32' : '#e65100'; 
-                if (qtdEstoque <= 2) { corFundo = '#ffebee'; corTexto = '#c62828'; } 
-                tagHtml += `<div style="position: absolute; top: -10px; right: -5px; background: ${corFundo}; color:${corTexto}; font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid ${corTexto}50; z-index: 15;">📦 Restam ${qtdEstoque}</div>`;
+                let corFundo = qtdEstoque > 5 ? '#dcfce7' : '#fef3c7'; 
+                let corTexto = qtdEstoque > 5 ? '#15803d' : '#b45309'; 
+                if (qtdEstoque <= 2) { corFundo = '#fee2e2'; corTexto = '#b91c1c'; } 
+                tagHtml += `<div style="position: absolute; bottom: 6px; left: 6px; right: 6px; background: ${corFundo}f2; backdrop-filter: blur(4px); color:${corTexto}; font-size: 0.65rem; font-weight: 800; padding: 3px 6px; border-radius: 8px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.12); z-index: 15;">📦 Restam ${qtdEstoque}</div>`;
             }
 
-            // 💰 MATEMÁTICA DO PREÇO (Limpo: Sem o cifrão "R$")
+            // PREÇO LIMPO (SEM R$ - SUPRESSÃO DA DOR DE PAGAR)
             let valorNormal = Number(p.preco).toFixed(2).replace('.', ',');
-            let precoHtml = `<div style="font-size: 1.35rem; color: #888; font-weight: 500; text-align: center; margin-top: 5px; font-family: 'Inter', sans-serif;">${valorNormal}</div>`;
+            let precoHtml = `
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                    <strong style="font-size: 1.32rem; color: #0f172a; font-weight: 800; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.03em; line-height: 1;">${valorNormal}</strong>
+                </div>
+            `;
             
             if (isPromocaoAtivaAgora(p)) {
                 let precoComDesconto = Number(p.preco);
@@ -336,68 +338,69 @@ function renderizarCardapio(lista) {
                 if (precoComDesconto < 0) precoComDesconto = 0;
                 
                 precoHtml = `
-                    <div style="display: flex; flex-direction: column; align-items: center; margin-top: 5px; line-height: 1;">
-                        <span style="text-decoration: line-through; color: #999; font-size: 0.85rem;">${valorNormal}</span>
-                        <strong style="color: #25D366; font-size: 1.35rem;">${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1;">
+                        <span style="text-decoration: line-through; color: #94a3b8; font-size: 0.78rem; font-weight: 600;">${valorNormal}</span>
+                        <strong style="color: #10b981; font-size: 1.32rem; font-weight: 800; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.03em;">${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
                     </div>
                 `;
             }
 
-            // 🎁 BADGES DO CLUBE ICESOFT (Estilo Novo)
+            // BADGES DO CLUBE ICESOFT
             let badgePontosGanhos = '';
             let badgeResgate = '';
             
             if (p.pontos_ganhos > 0) {
-                badgePontosGanhos = `<span style="background: #00bcd4; color: white; font-size: 0.75rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">+ ${p.pontos_ganhos} pts</span>`;
+                badgePontosGanhos = `<span style="background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 999px; flex-shrink: 0;">+${p.pontos_ganhos} pts</span>`;
             }
             if (p.pontos_resgate > 0) {
-                let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate}pts +${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate}pts`;
-                badgeResgate = `<span style="background: #00bcd4; color: white; font-size: 0.75rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; display: flex; align-items: center;">Resgate: ${txtResgate}</span>`;
+                let txtResgate = p.resgate_dinheiro > 0 ? `${p.pontos_resgate} pts + ${Number(p.resgate_dinheiro).toFixed(2).replace('.', ',')}` : `${p.pontos_resgate} pts`;
+                badgeResgate = `<div style="margin-top: 8px;"><span style="background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">🎁 Troque por ${txtResgate}</span></div>`;
             }
 
-            // 🖼️ VISUAL DO PRODUTO (Agora na Esquerda: Foto + Preço em bloco vertical)
+            // FOTO DO PRODUTO (LIMPA E QUADRADA NA ESQUERDA)
             const visualProduto = p.imagem_url 
-                ? `<div style="position: relative; width: 110px;">
+                ? `<div style="position: relative; width: 108px; height: 108px;">
                        ${tagHtml}
-                       <img src="${p.imagem_url}" loading="lazy" style="width: 110px; height: 110px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                       ${precoHtml}
+                       <img src="${p.imagem_url}" loading="lazy" style="width: 108px; height: 108px; object-fit: cover; border-radius: 16px; display: block;">
+                       <span style="display:none;"></span>
                    </div>`
-                : `<div style="position: relative; width: 110px;">
+                : `<div style="position: relative; width: 108px; height: 108px;">
                        ${tagHtml}
-                       <div style="font-size: 2.5rem; width: 110px; height: 110px; background: #fff; border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid #eee;">${p.emoji || '🍦'}</div>
-                       ${precoHtml}
+                       <div style="font-size: 2.6rem; width: 108px; height: 108px; background: #f8fafc; border-radius: 16px; display: flex; justify-content: center; align-items: center; border: 1px solid #e2e8f0;">${p.emoji || '🍦'}</div>
+                       <span style="display:none;"></span>
                    </div>`;
 
-            // 📝 DESCRIÇÃO
+            // DESCRIÇÃO SENSORIAL
             const descricaoLimpa = p.descricao && p.descricao !== 'null' ? p.descricao : '';
             const htmlDescricao = descricaoLimpa 
-                ? `<p style="margin: 6px 0 0 0; color: #777; font-size: 0.8rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
+                ? `<p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.82rem; line-height: 1.42; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${descricaoLimpa}</p>` 
                 : ``;
 
-            // 🧩 MONTAGEM DO CARD INTEIRO (Flexbox Invertido)
+            // CARD COMPLETO (FOTO À ESQUERDA + PREÇO E CTA NO RODAPÉ DIREITO)
             produtosHtml += `
-            <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; gap: 15px; background: #f4f6f8; margin-top: 12px; padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; cursor: pointer; transition: 0.2s;">
+            <div class="produto-card" onclick="verificarAdicao(${p.id})" style="display: flex; gap: 16px; background: #ffffff; margin-top: 14px; padding: 14px; border-radius: 20px; border: 1px solid #e2e8f0; cursor: pointer; align-items: stretch;">
                 
-                <!-- Coluna Esquerda: Imagem e Preço -->
-                <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+                <!-- Coluna Esquerda: Apenas Foto + Tag -->
+                <div style="flex-shrink: 0; display: flex; align-items: center;">
                     ${visualProduto}
                 </div>
                 
-                <!-- Coluna Direita: Textos e Botões -->
+                <!-- Coluna Direita: Título, Descrição e Barra de Conversão (Preço + CTA) -->
                 <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
                     
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                            <h3 style="margin: 0; color: #666; font-size: 1.1rem; font-weight: 700; line-height: 1.2;">${p.nome}</h3>
+                            <h3 style="margin: 0; color: #0f172a; font-size: 1.02rem; font-weight: 700; line-height: 1.28;">${p.nome}</h3>
                             ${badgePontosGanhos}
                         </div>
                         ${htmlDescricao}
+                        ${badgeResgate}
                     </div>
                     
-                    <!-- Botões alinhados na base -->
-                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px;">
-                        ${badgeResgate}
-                        <span style="background: var(--cor-primaria, #e91e63); color: white; font-size: 0.95rem; font-weight: 700; padding: 6px 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Adicionar</span>
+                    <!-- Rodapé do Card: Preço na esquerda e Botão Adicionar na direita -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-top: 12px; padding-top: 6px;">
+                        ${precoHtml}
+                        <span style="background: var(--cor-primaria, #e91e63); color: white; font-size: 0.88rem; font-weight: 700; padding: 8px 18px; border-radius: 999px; box-shadow: 0 4px 12px rgba(233, 30, 99, 0.22); flex-shrink: 0;">+ Adicionar</span>
                     </div>
 
                 </div>
@@ -405,26 +408,18 @@ function renderizarCardapio(lista) {
             `;
         });
 
-        // MÁGICA DO ACORDEÃO: Deixa apenas a primeira categoria aberta por padrão
         const isPrimeira = index === 0;
         const displayInicial = isPrimeira ? 'block' : 'none';
         const rotacaoSeta = isPrimeira ? 'transform: rotate(180deg);' : 'transform: rotate(0deg);';
 
         container.innerHTML += `
-            <div style="margin-bottom: 20px;">
-                <!-- A BARRA ELEGANTE DA CATEGORIA -->
-                <h3 id="${catId}" onclick="toggleCategoriaCardapio('${conteudoId}', this)" style="color: #333; margin: 0 0 10px 0; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.1rem; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border-left: 6px solid var(--cor-primaria, #e91e63); transition: transform 0.2s; user-select: none;">
-                    
-                    <!-- A CAIXA FLEXÍVEL DO TÍTULO (Mais escura e com espaçamento elegante) -->
-                    <span style="flex: 1; padding-right: 15px; line-height: 1.3; word-break: break-word; font-weight: 700; letter-spacing: 0.5px;">${catNome}</span>
-                    
-                    <!-- A SETA COM A COR DA MARCA -->
-                    <span class="seta-categoria" style="transition: transform 0.3s; color: var(--cor-primaria, #e91e63); font-size: 1.2rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; ${rotacaoSeta}">▼</span>
-                
+            <div style="margin-bottom: 18px;">
+                <h3 id="${catId}" onclick="toggleCategoriaCardapio('${conteudoId}', this)" style="color: #0f172a; margin: 0 0 10px 0; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.05rem; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; border-left: 5px solid var(--cor-primaria, #e91e63); user-select: none;">
+                    <span style="flex: 1; padding-right: 15px; line-height: 1.3; word-break: break-word; font-weight: 800;">${catNome}</span>
+                    <span class="seta-categoria" style="transition: transform 0.3s; color: var(--cor-primaria, #e91e63); font-size: 1.05rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; ${rotacaoSeta}">▼</span>
                 </h3>
                 
-                <!-- O RECHEIO: Sem a caixa cinza por trás, deixando os produtos "flutuarem" no fundo -->
-                <div id="${conteudoId}" style="display: ${displayInicial}; padding: 5px 0;">
+                <div id="${conteudoId}" style="display: ${displayInicial}; padding: 2px 0;">
                     ${produtosHtml}
                 </div>
             </div>
@@ -553,23 +548,18 @@ function abrirModalEscolha(produto, isEditing = false) {
     produtoEmSelecao = produto;
     
     if (isEditing) {
-        // Se estamos editando, puxa as escolhas que estavam salvas no carrinho
         escolhasAtuais = JSON.parse(JSON.stringify(carrinho[editandoIndex].escolhas || []));
-        quantidadeModal = 1; // Na edição, sempre alteramos 1 unidade por vez
-        
-        // Esconde a barrinha de [+ e -] para não bagunçar o item editado
+        quantidadeModal = 1;
         const seletorQtd = document.getElementById('seletor-quantidade-modal');
         if(seletorQtd) seletorQtd.style.display = 'none';
     } else {
         escolhasAtuais = [];
         quantidadeModal = 1; 
-        editandoIndex = -1; // Garante que não é edição
-        
+        editandoIndex = -1;
         const seletorQtd = document.getElementById('seletor-quantidade-modal');
         if(seletorQtd) seletorQtd.style.display = 'flex';
     }
     
-    // SENSOR 2: Cliente se interessou por um produto!
     if(!isEditing) registrarEventoFunil('Visualizou Produto', produto.nome);
 
     if(document.getElementById('quantidade-modal-display')) {
@@ -579,29 +569,29 @@ function abrirModalEscolha(produto, isEditing = false) {
     const topo = document.getElementById('detalhes-produto-topo');
     
     const descricaoHTML = produto.descricao && produto.descricao !== 'null'
-        ? `<p style="color: #666; font-size: 0.95rem; margin-top: 8px; line-height: 1.4; text-align: left;">${produto.descricao}</p>`
+        ? `<p style="color: #64748b; font-size: 0.92rem; margin-top: 8px; line-height: 1.45; text-align: left;">${produto.descricao}</p>`
         : ``;
 
     const visualTopo = produto.imagem_url
-        ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
-               <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: rgba(255,255,255,0.9); border-radius: 10px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
-               <img src="${produto.imagem_url}" onclick="abrirFotoInteira(this.src)" style="width: 100%; height: 220px; object-fit: cover; border-top-left-radius: 25px; border-top-right-radius: 25px; display: block; background: #f8f9fa; cursor: pointer;">
+        ? `<div id="area-arraste" style="position: relative; margin: -20px -20px 16px -20px; width: calc(100% + 40px);">
+               <div style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 48px; height: 5px; background: rgba(255,255,255,0.92); border-radius: 999px; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>
+               <img src="${produto.imagem_url}" onclick="abrirFotoInteira(this.src)" style="width: 100%; height: 230px; object-fit: cover; border-top-left-radius: 28px; border-top-right-radius: 28px; display: block; background: #f8fafc; cursor: pointer;">
            </div>`
         : `<div id="area-arraste" style="position: relative; font-size: 4rem; padding-top: 20px; padding-bottom: 10px; text-align: center;">
-               <div style="position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 45px; height: 5px; background: #ccc; border-radius: 10px; z-index: 10;"></div>
+               <div style="position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 48px; height: 5px; background: #cbd5e1; border-radius: 999px; z-index: 10;"></div>
                ${produto.emoji || '🍦'}
            </div>`;
 
     const temAdicionais = produto.grupos_ids && produto.grupos_ids.length > 0;
     const htmlFaixaComplementos = temAdicionais 
-        ? `<div style="background: #f0f2f5; margin: 15px -20px 0 -20px; padding: 10px 20px;">
-            <p style="color: var(--cor-primaria, #e91e63); margin: 0; font-weight: bold; font-size: 0.95rem; text-transform: uppercase;">Escolha seus complementos</p>
+        ? `<div style="background: #f1f5f9; margin: 16px -20px 0 -20px; padding: 12px 20px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+            <p style="color: #0f172a; margin: 0; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: left;">Personalize seu pedido</p>
            </div>`
         : ``;
 
     topo.innerHTML = `
         ${visualTopo}
-        <h2 style="margin: 0; color: #333; font-size: 1.4rem; text-align: left;">${produto.nome}</h2>
+        <h2 style="margin: 0; color: #0f172a; font-size: 1.38rem; font-weight: 800; text-align: left;">${produto.nome}</h2>
         ${descricaoHTML}
         ${htmlFaixaComplementos}
     `;
@@ -623,7 +613,6 @@ function abrirModalEscolha(produto, isEditing = false) {
                 let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
                 let identificador = `opc-${grupo.id}-${idx}`;
 
-                // ✏️ Verifica se essa opção já estava marcada antes (para o botão de Editar)
                 const escolhaExistente = escolhasAtuais.find(e => e.nome === nomeCompleto && e.grupoId === grupo.id);
                 const qtdExistente = escolhaExistente ? escolhaExistente.quantidade : 0;
                 const isChecked = qtdExistente > 0 ? 'checked' : '';
@@ -638,31 +627,31 @@ function abrirModalEscolha(produto, isEditing = false) {
                 }
 
                 if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
-                    tagHtml += `<span style="font-size: 0.65rem; background: #c4eed0; color: #0f5223; padding: 3px 8px; border-radius: 12px; font-weight: bold; border: 1px solid #8fcf9e; margin-left: 6px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🔥 Mais Pedido</span>`;
+                    tagHtml += `<span style="font-size: 0.65rem; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 999px; font-weight: 800; border: 1px solid #bbf7d0; margin-left: 6px; vertical-align: middle;">🔥 Favorito</span>`;
                 }
 
                 const imgThumb = item.imagem_url
-                    ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid #eee; flex-shrink: 0; cursor: zoom-in; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`
+                    ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 52px; height: 52px; border-radius: 12px; object-fit: cover; border: 1px solid #e2e8f0; flex-shrink: 0; cursor: zoom-in;">`
                     : ``; 
 
                 const nomePrecoHtml = `
                     <div style="display: flex; flex-direction: column; gap: 3px; justify-content: center;">
                         <div style="display: flex; align-items: center; flex-wrap: wrap;">
-                            <span style="font-weight:600; color:#333; line-height: 1.2;">${nomeLimpoVisual}</span>
+                            <span style="font-weight: 600; color: #0f172a; font-size: 0.95rem; line-height: 1.25;">${nomeLimpoVisual}</span>
                             ${tagHtml}
                         </div>
-                        <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                        <span style="color: ${precoSeguro > 0 ? '#64748b' : '#10b981'}; font-size: 0.84rem; font-weight: 700;">${precoSeguro > 0 ? '+ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
                     </div>
                 `;
 
                 if (limiteAtual === 1) { 
                     return `
-                    <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                    <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; cursor:pointer;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
                             ${imgThumb}
                             ${nomePrecoHtml}
                         </div>
-                        <div style="flex-shrink: 0; padding-left: 10px;">
+                        <div style="flex-shrink: 0; padding-left: 10px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
                             <input type="checkbox" id="${identificador}" ${isChecked} style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none; flex-shrink: 0; width: 22px; height: 22px; margin: 0;">
                         </div>
                     </div>`;
@@ -670,19 +659,19 @@ function abrirModalEscolha(produto, isEditing = false) {
                     const displayBtnIni = qtdExistente > 0 ? 'none' : 'flex';
                     const displayControle = qtdExistente > 0 ? 'flex' : 'none';
                     return `
-                    <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                    <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 8px; border-bottom: 1px solid #f1f5f9;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
                             ${imgThumb}
                             ${nomePrecoHtml}
                         </div>
                         <div style="flex-shrink: 0; padding-left: 10px;">
-                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0; transition: 0.2s;">
+                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f8fafc; color: var(--cor-primaria, #e91e63); border-radius: 12px; width: 44px; height: 44px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: 800; font-size: 1.4rem; cursor: pointer; border: 1.5px solid #e2e8f0; transition: 0.2s;">
                                 +
                             </div>
-                            <div id="controle-qtd-${identificador}" style="display: ${displayControle}; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
-                                <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">-</button>
-                                <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">${qtdExistente}</span>
-                                <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.2rem; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">+</button>
+                            <div id="controle-qtd-${identificador}" style="display: ${displayControle}; align-items: center; background: #ffffff; border: 1.5px solid var(--cor-primaria, #e91e63); border-radius: 999px; padding: 2px; box-shadow: 0 2px 8px rgba(233, 30, 99, 0.12);">
+                                <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}')" style="background: none; border: none; font-size: 1.25rem; font-weight: 700; color: #475569; cursor: pointer; width: 38px; height: 40px; display: flex; justify-content: center; align-items: center;">-</button>
+                                <span id="${identificador}" style="font-weight: 800; font-size: 0.98rem; color: #0f172a; min-width: 24px; text-align: center;">${qtdExistente}</span>
+                                <button onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: none; border: none; font-size: 1.25rem; font-weight: 700; color: var(--cor-primaria, #e91e63); cursor: pointer; width: 38px; height: 40px; display: flex; justify-content: center; align-items: center;">+</button>
                             </div>
                         </div>
                     </div>`;
@@ -690,18 +679,29 @@ function abrirModalEscolha(produto, isEditing = false) {
             }).join('');
 
             const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
-                const badgeObrigatorio = isObrigatorio
-                    ? `<span style="font-size:0.7rem; color: white; background: #f44336; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Obrigatório</span>`
-                    : `<span style="font-size:0.7rem; color: #666; background: #e0e0e0; padding:3px 8px; border-radius:10px; margin-left: 8px; font-weight: bold;">Opcional</span>`;
+            const badgeObrigatorio = isObrigatorio
+                ? `<span style="font-size:0.68rem; color: #b91c1c; background: #fee2e2; padding: 3px 8px; border-radius: 999px; margin-left: 8px; font-weight: 800;">Obrigatório</span>`
+                : `<span style="font-size:0.68rem; color: #64748b; background: #e2e8f0; padding: 3px 8px; border-radius: 999px; margin-left: 8px; font-weight: 700;">Opcional</span>`;
 
-                // 👇 INSERIDO O ID "grupo-opcoes-{grupo.id}" PARA A ROLAGEM INTELIGENTE
-                container.innerHTML += `<div id="grupo-opcoes-${grupo.id}" style="margin-bottom:20px; margin-top: 15px; scroll-margin-top: 20px;"><div class="cabecalho-grupo" style="background:#fff; border: 1px solid #eee; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s;"><strong style="color:#333; font-size: 1.05rem; display: flex; align-items: center;">${grupo.nome} ${badgeObrigatorio}</strong><span style="font-size:0.75rem; color: white; background: var(--cor-primaria, #e91e63); padding:4px 10px; border-radius:20px; font-weight: bold;">Até ${limiteAtual}</span></div>${itensHtml}</div>`;
-            });
+            // 👇 CORRIGIDO: Adicionado id="cabecalho-grupo-${grupo.id}" e class="badge-contador-grupo"
+            container.innerHTML += `
+                <div id="grupo-opcoes-${grupo.id}" style="margin-bottom: 22px; margin-top: 16px; scroll-margin-top: 16px;">
+                    <div id="cabecalho-grupo-${grupo.id}" class="cabecalho-grupo" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 14px; display:flex; justify-content:space-between; align-items: center; transition: all 0.25s ease;">
+                        <strong style="color:#0f172a; font-size: 0.98rem; display: flex; align-items: center; flex-wrap: wrap;">${grupo.nome} ${badgeObrigatorio}</strong>
+                        <span class="badge-contador-grupo" style="font-size:0.72rem; color: white; background: #0f172a; padding: 4px 10px; border-radius: 999px; font-weight: 700; flex-shrink: 0; transition: all 0.25s ease;">0/${limiteAtual}</span>
+                    </div>
+                    ${itensHtml}
+                </div>`;
+        });
+
+        // Inicializa o visual dos contadores (especialmente útil ao Editar um item)
+        gruposDoProduto.forEach(grupo => {
+            atualizarContadorGrupo(grupo.id, obterLimiteDoGrupoNoProduto(grupo.id));
+        });
     }
     
     atualizarPrecoDinamico();
 
-    // Lógica do botão de Resgate e Interface do Botão Normal
     const btnResgate = document.getElementById('btn-resgatar-pontos');
     const btnAddNormal = document.getElementById('btn-adicionar-normal');
     const clienteSalvo = localStorage.getItem('icesoft_cliente');
@@ -709,15 +709,14 @@ function abrirModalEscolha(produto, isEditing = false) {
     try { if (clienteSalvo) clienteLogado = JSON.parse(clienteSalvo); } catch(e) {}
 
     if (btnAddNormal) {
-        // 🧹 Limpa a memória para garantir que não vai disparar a função do Combo sem querer
         btnAddNormal.setAttribute('onclick', 'confirmarEscolhasEAdicionar(false)');
         
         if (isEditing) {
-            btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Salvar Edição</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
-            btnAddNormal.style.background = '#00bcd4'; // Fica azul indicando modo de edição
+            btnAddNormal.innerHTML = `<span style="font-weight: 700; font-size: 1rem;">Salvar Edição</span><strong id="preco-dinamico" style="font-size: 1.1rem; font-weight: 800;">R$ 0,00</strong>`;
+            btnAddNormal.style.background = '#00bcd4';
         } else {
-            btnAddNormal.innerHTML = `<span style="font-weight: 600; font-size: 1.05rem;">Adicionar</span><strong id="preco-dinamico" style="font-size: 1.15rem;">R$ 0,00</strong>`;
-            btnAddNormal.style.background = 'var(--cor-primaria, #e91e63)'; // Rosa padrão
+            btnAddNormal.innerHTML = `<span style="font-weight: 700; font-size: 1rem;">Adicionar</span><strong id="preco-dinamico" style="font-size: 1.1rem; font-weight: 800;">R$ 0,00</strong>`;
+            btnAddNormal.style.background = 'var(--cor-primaria, #e91e63)';
         }
     }
 
@@ -729,27 +728,24 @@ function abrirModalEscolha(produto, isEditing = false) {
                 : `${produto.pontos_resgate} pts (Grátis)`;
 
             if (clienteLogado && Number(clienteLogado.pontos_acumulados) >= Number(produto.pontos_resgate)) {
-                // Cliente logado e COM saldo suficiente: libera o resgate!
                 btnResgate.setAttribute('onclick', 'confirmarEscolhasEAdicionar(true)');
-                btnResgate.style.background = '#e0f7fa';
-                btnResgate.style.color = '#00838f';
-                btnResgate.style.border = '2px solid #00bcd4';
+                btnResgate.style.background = '#ecfeff';
+                btnResgate.style.color = '#0e7490';
+                btnResgate.style.border = '2px solid #06b6d4';
                 document.getElementById('texto-resgate-dinamico').innerText = `🎁 Trocar meus pontos: ${txtCusto}`;
             } else if (clienteLogado) {
-                // Cliente logado, mas AINDA SEM saldo suficiente: mostra quantos pontos faltam
                 let saldoAtual = Number(clienteLogado.pontos_acumulados) || 0;
                 let faltamPts = Number(produto.pontos_resgate) - saldoAtual;
-                btnResgate.setAttribute('onclick', `alert('🍦 Você tem ${saldoAtual} pontos de troca e este produto precisa de ${produto.pontos_resgate} pontos.\\n\\nFaltam apenas ${faltamPts} pontos! Continue comprando produtos com o selo azul (+ pts) para juntar e trocar.')`);
-                btnResgate.style.background = '#f4f7f6';
-                btnResgate.style.color = '#666';
-                btnResgate.style.border = '1px dashed #bbb';
+                btnResgate.setAttribute('onclick', `alert('🍦 Você tem ${saldoAtual} pontos de troca e este produto precisa de ${produto.pontos_resgate} pontos.\\n\\nFaltam apenas ${faltamPts} pontos! Continue comprando produtos com o selo (+ pts) para juntar e trocar.')`);
+                btnResgate.style.background = '#f8fafc';
+                btnResgate.style.color = '#64748b';
+                btnResgate.style.border = '1px dashed #cbd5e1';
                 document.getElementById('texto-resgate-dinamico').innerText = `🔒 Troque por ${txtCusto} (Faltam ${faltamPts} pts)`;
             } else {
-                // Cliente DESLOGADO: convida para fazer login e trocar
                 btnResgate.setAttribute('onclick', `fecharModalOpcoes(); mudarAba('aba-clube', document.querySelectorAll('.bottom-nav .nav-item')[1]); iniciarLoginCliente();`);
-                btnResgate.style.background = '#fffdf5';
-                btnResgate.style.color = '#f57f17';
-                btnResgate.style.border = '1px dashed #ffb300';
+                btnResgate.style.background = '#fffbeb';
+                btnResgate.style.color = '#b45309';
+                btnResgate.style.border = '1px dashed #fcd34d';
                 document.getElementById('texto-resgate-dinamico').innerText = `🔑 Faça login p/ trocar por ${txtCusto}`;
             }
         } else {
@@ -762,47 +758,118 @@ function abrirModalEscolha(produto, isEditing = false) {
     aplicarGestoSwipe();
 }
 
+// ==========================================
+// 🎨 ATUALIZAÇÃO DO CONTADOR E AUTO-SCROLL
+// ==========================================
+function atualizarContadorGrupo(grupoId, limiteAtual) {
+    const grupoHeader = document.getElementById(`cabecalho-grupo-${grupoId}`);
+    if (!grupoHeader) return;
+
+    let totalSelecionado = 0;
+    escolhasAtuais.forEach(e => {
+        if (e.grupoId === grupoId) totalSelecionado += e.quantidade;
+    });
+
+    const badgeContador = grupoHeader.querySelector('.badge-contador-grupo');
+    if (!badgeContador) return;
+
+    if (totalSelecionado >= limiteAtual) {
+        badgeContador.innerHTML = `${totalSelecionado}/${limiteAtual} Completo ✓`;
+        badgeContador.style.background = '#10b981';
+        badgeContador.style.color = '#ffffff';
+        grupoHeader.style.background = '#ecfdf5';
+        grupoHeader.style.borderColor = '#a7f3d0';
+    } else if (totalSelecionado > 0) {
+        badgeContador.innerHTML = `${totalSelecionado}/${limiteAtual} escolhidos`;
+        badgeContador.style.background = '#f59e0b';
+        badgeContador.style.color = '#ffffff';
+        grupoHeader.style.background = '#fffbeb';
+        grupoHeader.style.borderColor = '#fde68a';
+    } else {
+        badgeContador.innerHTML = `0/${limiteAtual} • Até ${limiteAtual}`;
+        badgeContador.style.background = '#0f172a';
+        badgeContador.style.color = '#ffffff';
+        grupoHeader.style.background = '#f8fafc';
+        grupoHeader.style.borderColor = '#e2e8f0';
+    }
+}
+
+// 🪄 GATILHO DE AUTO-SCROLL: Desliza suavemente para o próximo grupo assim que o atual é completado
+function verificarProximoGrupoPendente(grupoAtualId) {
+    if (!produtoEmSelecao || !produtoEmSelecao.grupos_ids) return;
+
+    const gruposDoProduto = produtoEmSelecao.grupos_ids
+        .map(id => gruposGlobais.find(g => g.id === Number(id)))
+        .filter(g => g && g.ativo !== false);
+
+    const indexAtual = gruposDoProduto.findIndex(g => g.id === grupoAtualId);
+    if (indexAtual === -1) return;
+
+    // Procura o próximo grupo abaixo que ainda não atingiu o limite máximo
+    for (let i = indexAtual + 1; i < gruposDoProduto.length; i++) {
+        let proximoGrupo = gruposDoProduto[i];
+        let limiteProximo = obterLimiteDoGrupoNoProduto(proximoGrupo.id);
+        let selecionadosNesse = escolhasAtuais
+            .filter(e => e.grupoId === proximoGrupo.id)
+            .reduce((s, e) => s + e.quantidade, 0);
+
+        if (selecionadosNesse < limiteProximo) {
+            const elementoProximo = document.getElementById(`grupo-opcoes-${proximoGrupo.id}`);
+            if (elementoProximo) {
+                setTimeout(() => {
+                    elementoProximo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 220);
+            }
+            break;
+        }
+    }
+}
+
 function toggleOpcional(grupoId, nomeItem, preco, chkId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
-    const limiteAtual = obterLimiteDoGrupoNoProduto(grupoId); // 👇 NOVO: Puxa o limite inteligente
+    const limiteAtual = obterLimiteDoGrupoNoProduto(grupoId); 
     const chk = document.getElementById(chkId);
     const index = escolhasAtuais.findIndex(e => e.nome === nomeItem && e.grupoId === grupoId);
 
     if (index > -1) { 
-        // Se já estava marcado, o cliente quer desmarcar
         escolhasAtuais.splice(index, 1); 
         chk.checked = false; 
     } else {
-        // O cliente quer marcar uma nova opção
         const escolhasNoGrupo = escolhasAtuais.filter(e => e.grupoId === grupoId);
         
-        if (limiteAtual === 1) { // 👇 NOVO: Avalia com o limite personalizado
-            // Comportamento de "Radio Button": Se o limite é 1, remove a escolha anterior
+        if (limiteAtual === 1) {
             if (escolhasNoGrupo.length > 0) {
                 const idxAnterior = escolhasAtuais.indexOf(escolhasNoGrupo[0]);
                 escolhasAtuais.splice(idxAnterior, 1);
-                
-                // 🐛 CORREÇÃO AQUI: Procurar o prefixo 'opc-' e desmarcar a caixinha antiga
                 document.querySelectorAll(`input[id^="opc-${grupoId}-"]`).forEach(c => c.checked = false);
             }
         } else {
-            // Trava de segurança extra (para limites maiores que 1)
-            if (escolhasNoGrupo.length >= limiteAtual) { // 👇 NOVO: Avalia com o limite personalizado
+            if (escolhasNoGrupo.length >= limiteAtual) {
                 alert(`⚠️ Você só pode escolher até ${limiteAtual} opção(ões) em ${grupo.nome}.`);
-                return; // Corta a função aqui, não deixa marcar
+                return; 
             }
         }
         
-        // Adiciona a nova escolha no carrinho virtual e marca a caixinha
         escolhasAtuais.push({ grupoId, nome: nomeItem, preco: Number(preco), quantidade: 1 });
         chk.checked = true;
+
+        // Verifica quantos itens ficaram selecionados neste grupo e dispara o Auto-Scroll se completou
+        const totalAgora = escolhasAtuais
+            .filter(e => e.grupoId === grupoId)
+            .reduce((s, e) => s + e.quantidade, 0);
+
+        if (totalAgora >= limiteAtual) {
+            verificarProximoGrupoPendente(grupoId);
+        }
     }
+
+    atualizarContadorGrupo(grupoId, limiteAtual);
     atualizarPrecoDinamico();
 }
 
 function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     const grupo = gruposGlobais.find(g => g.id === grupoId);
-    const limiteAtual = obterLimiteDoGrupoNoProduto(grupoId); // 👇 NOVO: Puxa o limite inteligente
+    const limiteAtual = obterLimiteDoGrupoNoProduto(grupoId);
     
     let totalSelecionadoNoGrupo = 0;
     escolhasAtuais.forEach(e => {
@@ -814,10 +881,11 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     let qtdAtual = itemAtual ? itemAtual.quantidade : 0;
 
     if (delta > 0) { 
-        if (totalSelecionadoNoGrupo >= limiteAtual) { // 👇 NOVO: Avalia com o limite personalizado
+        if (totalSelecionadoNoGrupo >= limiteAtual) {
             return alert(`Você só pode escolher até ${limiteAtual} opção(ões) em ${grupo.nome}`);
         }
         qtdAtual++;
+        totalSelecionadoNoGrupo++;
         if (itemAtual) {
             itemAtual.quantidade = qtdAtual;
         } else {
@@ -826,6 +894,7 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
     } else if (delta < 0) { 
         if (qtdAtual > 0) {
             qtdAtual--;
+            totalSelecionadoNoGrupo--;
             if (qtdAtual === 0) {
                 escolhasAtuais.splice(index, 1); 
             } else {
@@ -836,7 +905,6 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
 
     document.getElementById(spanId).innerText = qtdAtual;
     
-    // 🚀 ALTERAÇÃO VISUAL: Esconde o botão [+] e mostra o [- 1 +] apenas quando selecionado
     const btnIni = document.getElementById(`btn-add-ini-${spanId}`);
     const controleQtd = document.getElementById(`controle-qtd-${spanId}`);
     if (btnIni && controleQtd) {
@@ -849,16 +917,21 @@ function alterarQtdOpcional(grupoId, nomeItem, preco, delta, spanId) {
         }
     }
 
+    atualizarContadorGrupo(grupoId, limiteAtual);
     atualizarPrecoDinamico();
+
+    // Se o cliente acabou de atingir o limite máximo do grupo (ex: 3/3), desliza para o próximo grupo!
+    if (delta > 0 && totalSelecionadoNoGrupo >= limiteAtual) {
+        verificarProximoGrupoPendente(grupoId);
+    }
 }
 
 function alterarQuantidadeModal(delta) {
     let novaQuantidade = quantidadeModal + delta;
     
-    // 🛑 NOVA TRAVA DE ESTOQUE INTELIGENTE: Soma o modal + o que já está no carrinho (funciona para produtos e combos)
     if (delta > 0) {
         if (!validarEstoqueParaAdicao(produtoEmSelecao, novaQuantidade, editandoIndex)) {
-            return; // Corta a função se ultrapassar o estoque real
+            return;
         }
     }
 
@@ -872,7 +945,6 @@ function alterarQuantidadeModal(delta) {
 }
 
 function atualizarPrecoDinamico() {
-    // 💰 Descobre o preço base verificando se tem promoção ativa
     let precoBase = Number(produtoEmSelecao.preco);
     if (isPromocaoAtivaAgora(produtoEmSelecao)) {
         if (produtoEmSelecao.tipo_promocao === 'porcentagem') {
@@ -890,42 +962,41 @@ function atualizarPrecoDinamico() {
     document.getElementById('preco-dinamico').innerText = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
 }
 
+// 👇 FUNÇÃO RESTAURADA: Confirma as escolhas e adiciona o produto na sacola
 function confirmarEscolhasEAdicionar(isResgate = false) {
     registrarEventoFunil('Adicionou ao Carrinho', produtoEmSelecao.nome);
 
     if (produtoEmSelecao.grupos_ids && produtoEmSelecao.grupos_ids.length > 0) {
-            const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
-            for (let grupo of gruposDoProduto) {
-                const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
-                if (isObrigatorio) {
-                    const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
-                    if (escolhasNesteGrupo.length === 0) {
+        const gruposDoProduto = produtoEmSelecao.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
+        for (let grupo of gruposDoProduto) {
+            const isObrigatorio = (grupo.obrigatorio == 1 || grupo.obrigatorio == true || grupo.obrigatorio === 'true');
+            if (isObrigatorio) {
+                const escolhasNesteGrupo = escolhasAtuais.filter(e => e.grupoId === grupo.id);
+                if (escolhasNesteGrupo.length === 0) {
+                    const grupoElemento = document.getElementById(`grupo-opcoes-${grupo.id}`);
+                    if (grupoElemento) {
+                        grupoElemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
-                        // 👇 MÁGICA DA UX: Rola suavemente até o erro e dá um destaque visual
-                        const grupoElemento = document.getElementById(`grupo-opcoes-${grupo.id}`);
-                        if (grupoElemento) {
-                            grupoElemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            
-                            const cabecalho = grupoElemento.querySelector('.cabecalho-grupo');
-                            if (cabecalho) {
-                                cabecalho.style.border = '2px solid #f44336';
-                                cabecalho.style.boxShadow = '0 0 15px rgba(244, 67, 54, 0.3)';
-                                setTimeout(() => {
-                                    cabecalho.style.border = '1px solid #eee';
-                                    cabecalho.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
-                                }, 1500); // Tira o vermelho depois de 1,5 segundos
-                            }
+                        const cabecalho = grupoElemento.querySelector('.cabecalho-grupo');
+                        if (cabecalho) {
+                            cabecalho.style.border = '2px solid #ef4444';
+                            cabecalho.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.25)';
+                            setTimeout(() => {
+                                cabecalho.style.border = '1px solid #e2e8f0';
+                                cabecalho.style.boxShadow = 'none';
+                            }, 1500);
                         }
-                        
-                        setTimeout(() => {
-                            alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
-                        }, 250); // Atraso minúsculo para a tela rolar antes do alerta congelar o celular
-                        
-                        return; 
                     }
+                    
+                    setTimeout(() => {
+                        alert(`⚠️ O grupo "${grupo.nome}" é OBRIGATÓRIO.\nPor favor, selecione pelo menos uma opção!`);
+                    }, 250);
+                    
+                    return; 
                 }
             }
         }
+    }
 
     let nomeFinal = produtoEmSelecao.nome;
     if (escolhasAtuais.length > 0) {
@@ -946,7 +1017,6 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
         if (precoBase < 0) precoBase = 0; 
     }
 
-    // MOTOR DO CMV (Ficha Técnica Master)
     let custoTotalFicha = 0;
     let insumosConsolidados = [];
 
@@ -978,13 +1048,12 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
     const valorComplementos = escolhasAtuais.reduce((soma, e) => soma + (Number(e.preco) * e.quantidade), 0);
     let precoFinal = precoBase + valorComplementos;
 
-    // 👇 LÓGICA DO CLUBE ICESOFT (RESGATE E GANHO DE PONTOS)
     let pontosUsados = 0;
     let pontosGanhos = 0;
 
     if (isResgate) {
-        precoFinal = Number(produtoEmSelecao.resgate_dinheiro) || 0; // O preço base zera ou fica o valor da taxa configurada
-        precoFinal += valorComplementos; // Os complementos ainda são cobrados em dinheiro normalmente
+        precoFinal = Number(produtoEmSelecao.resgate_dinheiro) || 0;
+        precoFinal += valorComplementos;
         pontosUsados = Number(produtoEmSelecao.pontos_resgate) || 0;
         nomeFinal = "🎁 [RESGATE] " + nomeFinal;
     } else {
@@ -992,7 +1061,6 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
     }
     
     if (editandoIndex > -1) {
-        // ✏️ MODO EDIÇÃO: Atualiza o item existente no lugar de criar um novo
         carrinho[editandoIndex] = {
             nome: nomeFinal,
             preco: precoFinal,
@@ -1004,17 +1072,15 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
             produtoId: produtoEmSelecao.id,
             escolhas: JSON.parse(JSON.stringify(escolhasAtuais))
         };
-        editandoIndex = -1; // Desliga o modo de edição
+        editandoIndex = -1;
         atualizarBarraCarrinho();
         
-        // Atualiza a tela de onde o cliente veio (Carrinho ou Checkout)
         if (document.getElementById('modal-checkout').style.display === 'flex') {
             renderizarResumoCarrinho();
         } else if (document.getElementById('modal-carrinho-cliente').style.display === 'flex') {
             renderizarListaCarrinhoCliente();
         }
     } else {
-        // 🛒 MODO ADIÇÃO NORMAL: Dispara pro carrinho
         for (let i = 0; i < quantidadeModal; i++) {
             const escolhasClonadas = JSON.parse(JSON.stringify(escolhasAtuais));
             adicionarAoCarrinho(nomeFinal, precoFinal, custoTotalFicha, insumosConsolidados, isResgate, pontosUsados, pontosGanhos, produtoEmSelecao.id, escolhasClonadas);
@@ -1024,9 +1090,8 @@ function confirmarEscolhasEAdicionar(isResgate = false) {
     fecharModalOpcoes();
 }
 
-// 👇 NOVA FUNÇÃO RESTAURADA: Ensina o navegador a esconder a tela e liberar o scroll do celular
 function fecharModalOpcoes() {
-    editandoIndex = -1; // ✏️ Reseta o modo de edição se o cliente desistir
+    editandoIndex = -1;
     document.getElementById('modal-opcoes').style.display = 'none';
     document.body.style.overflow = 'auto'; 
 }
@@ -1068,24 +1133,28 @@ function adicionarAoCarrinho(nome, preco, custoUnitario = 0, insumosUsados = [],
 function atualizarBarraCarrinho() {
     const barra = document.getElementById('carrinho-flutuante');
     
-    // 👉 A MÁGICA: O gatilho roda PRIMEIRO para aplicar ou remover cupons automaticamente
+    // 1. Atualiza primeiro a barra de cupom para saber se ela está visível na tela
     if (typeof atualizarBarraCupom === 'function') atualizarBarraCupom();
 
     if (carrinho.length > 0) {
         barra.classList.replace('carrinho-oculto', 'carrinho-visivel');
         barra.style.display = 'flex';
 
-        // 🪄 O GATILHO DA PULSAÇÃO SUAVE
+        // 👇 POSICIONAMENTO INTELIGENTE: Se a barra de cupom estiver ativa, a pílula da sacola flutua acima dela (148px). Se não, fica em 84px.
+        const barraCupom = document.getElementById('barra-cupom-flutuante');
+        const cupomVisivel = barraCupom && barraCupom.style.display !== 'none';
+        barra.style.setProperty('bottom', cupomVisivel ? '148px' : '84px', 'important');
+
+        // Gatilho da pulsação suave
         const btnCarrinho = barra.querySelector('.btn-whatsapp');
         if (btnCarrinho) {
             btnCarrinho.classList.remove('botao-pulsando');
-            void btnCarrinho.offsetWidth; // Pequeno truque para forçar o navegador a reiniciar a animação
+            void btnCarrinho.offsetWidth;
             btnCarrinho.classList.add('botao-pulsando');
         }
         
         let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
         
-        // 👇 Aplica o desconto na barrinha flutuante
         let desconto = 0;
         if (cupomAtivo) {
             let valorCupomNum = Number(cupomAtivo.valor) || 0;
@@ -1594,6 +1663,13 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
     
+    // ⚡ MEMÓRIA PARA O "PEÇA DE NOVO": Salva o telefone e o último carrinho no celular mesmo sem login no Clube
+    if (telefone) localStorage.setItem('icesoft_ultimo_telefone', telefone);
+    const itensNormaisParaMemoria = carrinho.filter(item => !item.isResgate && !String(item.nome).includes('[RESGATE]'));
+    if (itensNormaisParaMemoria.length > 0) {
+        localStorage.setItem('icesoft_ultimo_pedido_local', JSON.stringify(itensNormaisParaMemoria));
+    }
+    
     // 🚀 CRM: Salva na observação se o cliente gastou o prêmio Fidelidade ou outro cupom
     let observacao = document.getElementById('cliente-observacao').value.trim();
     if (cupomAtivo) {
@@ -2045,13 +2121,9 @@ function renderizarUpsellCheckout() {
     const carrossel = document.getElementById('carrossel-upsell');
     if (!area || !carrossel) return;
 
-    // 🛡️ O TRADUTOR: Pega os IDs da nuvem e força todos a virarem números de matemática
     const idsSeguros = idsUpsellGlobais.map(id => Number(id));
-    
-    // Procura os produtos garantindo que número bata com número!
     const produtosUpsell = produtosDaNuvem.filter(p => idsSeguros.includes(Number(p.id)) && p.ativo !== false);
 
-    // Se não achar nada, esconde (Retiramos a trava de desconto obrigatório)
     if (produtosUpsell.length === 0) {
         area.style.display = 'none';
         return;
@@ -2060,53 +2132,44 @@ function renderizarUpsellCheckout() {
     area.style.display = 'block';
     carrossel.innerHTML = '';
     
-    // Ajusta o título do carrossel dinamicamente conforme a estratégia de vendas
     const tituloUpsell = area.querySelector('h4');
     if (tituloUpsell) {
-        tituloUpsell.innerText = descontoUpsellGlobal > 0 ? "🔥 Leve junto com desconto!" : "🔥 Aproveite e leve junto!";
+        tituloUpsell.innerText = descontoUpsellGlobal > 0 ? "🔥 Complete seu pedido com desconto!" : "🔥 Peça também e deixe seu pedido completo!";
     }
 
     produtosUpsell.forEach(p => {
         const precoNormal = Number(p.preco);
-        
-        // Trata o desconto apenas se o valor na gestão for maior que zero
         const descontoReal = descontoUpsellGlobal > 0 ? descontoUpsellGlobal : 0;
         const descontoReais = precoNormal * (descontoReal / 100);
         const precoFinal = precoNormal - descontoReais;
-        
         const nomeLimpo = p.nome.replace(/'/g, "\\'"); 
 
         const visualProduto = p.imagem_url 
-            ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`
-            : `<div style="font-size: 2.5rem; text-align: center; margin-bottom: 8px; height: 75px; display: flex; align-items: center; justify-content: center; background:#f8f9fa; border-radius: 6px;">${p.emoji || '🍦'}</div>`;
+            ? `<img src="${p.imagem_url}" loading="lazy" style="width: 100%; height: 82px; object-fit: cover; border-radius: 12px; margin-bottom: 8px;">`
+            : `<div style="font-size: 2.4rem; text-align: center; margin-bottom: 8px; height: 82px; display: flex; align-items: center; justify-content: center; background:#f8fafc; border-radius: 12px;">${p.emoji || '🍦'}</div>`;
 
-        // Lógica inteligente do preço: Só risca o valor antigo se realmente tiver desconto
         let htmlPreco = '';
         if (descontoReal > 0) {
             htmlPreco = `
-                <div>
-                    <div style="text-decoration: line-through; color: #999; font-size: 0.75rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
-                    <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoFinal.toFixed(2).replace('.', ',')}</div>
+                <div style="margin: 4px 0;">
+                    <div style="text-decoration: line-through; color: #94a3b8; font-size: 0.72rem; font-weight: 600;">${precoNormal.toFixed(2).replace('.', ',')}</div>
+                    <div style="font-weight: 800; color: #10b981; font-size: 1.05rem;">${precoFinal.toFixed(2).replace('.', ',')}</div>
                 </div>
             `;
         } else {
             htmlPreco = `
-                <div>
-                    <div style="font-weight: bold; color: #e91e63; font-size: 1rem;">R$ ${precoNormal.toFixed(2).replace('.', ',')}</div>
+                <div style="margin: 4px 0;">
+                    <div style="font-weight: 800; color: #0f172a; font-size: 1.05rem;">${precoNormal.toFixed(2).replace('.', ',')}</div>
                 </div>
             `;
         }
 
         carrossel.innerHTML += `
-            <div style="flex: 0 0 130px; background: white; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; border: 1px solid #ffb3c6;">
-                
+            <div style="flex: 0 0 142px; background: white; border-radius: 16px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; border: 1px solid #fecdd3; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);">
                 ${visualProduto}
-                
-                <h5 style="margin: 0 0 5px 0; font-size: 0.85rem; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.nome}</h5>
-                
+                <h5 style="margin: 0 0 4px 0; font-size: 0.82rem; font-weight: 700; color: #0f172a; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.nome}</h5>
                 ${htmlPreco}
-                
-                <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoFinal}, ${p.id})" style="margin-top: 8px; background: #e91e63; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">+ Adicionar</button>
+                <button onclick="adicionarOfertaAoCarrinho('${nomeLimpo}', ${precoFinal}, ${p.id})" style="margin-top: 6px; background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 8px 10px; min-height: 36px; border-radius: 999px; font-weight: 700; cursor: pointer; font-size: 0.78rem; box-shadow: 0 2px 8px rgba(233, 30, 99, 0.2);">+ Adicionar</button>
             </div>
         `;
     });
@@ -2202,6 +2265,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ==========================================
 // 🎨 DESENHA O MENU DE CATEGORIAS DINÂMICO (DROPDOWN)
 // ==========================================
+// ==========================================
+// 🎨 MENU DE CATEGORIAS EM PÍLULAS DESLIZANTES
+// ==========================================
 function renderizarMenuCategorias(lista) {
     const container = document.getElementById('menu-categorias-dinamico');
     if (!container) return;
@@ -2209,7 +2275,7 @@ function renderizarMenuCategorias(lista) {
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
     let categoriasComProduto = [];
 
-    // Descobre quais categorias realmente tem produtos hoje
+    // Filtra apenas categorias que possuem produtos ativos hoje
     categoriasOrdenadas.forEach(catNome => {
         const temProduto = lista.some(p => {
             let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
@@ -2227,111 +2293,129 @@ function renderizarMenuCategorias(lista) {
 
     if (categoriasComProduto.length === 0) return;
 
-    // Constrói os itens da lista que ficarão escondidos
-    let htmlLista = categoriasComProduto.map(catNome => {
+    // Injeta o estilo para ocultar a barra de rolagem feia mantendo o deslize suave no dedo
+    if (!document.getElementById('estilo-pilulas-categorias')) {
+        const style = document.createElement('style');
+        style.id = 'estilo-pilulas-categorias';
+        style.innerHTML = `
+            #trilho-pilulas-categorias::-webkit-scrollbar { display: none; }
+            #trilho-pilulas-categorias { -ms-overflow-style: none; scrollbar-width: none; }
+            .pilula-categoria-btn:active { transform: scale(0.95); }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Constrói as pílulas horizontais (a primeira já nasce ativa)
+    let htmlPilulas = categoriasComProduto.map((catNome, idx) => {
+        const catIdLimpo = catNome.replace(/[^a-zA-Z0-9]/g, '');
+        const isAtiva = idx === 0;
+        
+        const bg = isAtiva ? 'var(--cor-primaria, #e91e63)' : '#ffffff';
+        const cor = isAtiva ? '#ffffff' : '#475569';
+        const borda = isAtiva ? 'var(--cor-primaria, #e91e63)' : '#e2e8f0';
+        const sombra = isAtiva ? '0 4px 12px rgba(233, 30, 99, 0.25)' : '0 2px 5px rgba(15, 23, 42, 0.03)';
+
         return `
-        <div onclick="selecionarCategoriaDropdown('${catNome.replace(/'/g, "\\'")}')" style="padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; font-weight: 600; cursor: pointer; font-size: 1rem;">
-            ${catNome}
-        </div>`;
+            <button type="button"
+                id="pilula-cat-${catIdLimpo}"
+                class="pilula-categoria-btn"
+                onclick="selecionarCategoriaPilula('${catNome.replace(/'/g, "\\'")}')"
+                style="flex: 0 0 auto; min-height: 44px; padding: 8px 18px; border-radius: 999px; border: 1.5px solid ${borda}; background: ${bg}; color: ${cor}; box-shadow: ${sombra}; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; outline: none;">
+                ${catNome}
+            </button>
+        `;
     }).join('');
 
-    // Constrói o Botão Principal + A Lista Injetada
     container.innerHTML = `
-        <div style="position: relative; padding: 5px 20px 15px 20px;">
-            <div onclick="toggleDropdownCategorias()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--cor-primaria, #e91e63); color: white; padding: 12px 18px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1rem; transition: 0.2s;">
-                <span id="texto-categoria-atual">${categoriasComProduto[0]}</span>
-                <span id="seta-dropdown-categorias" style="transition: transform 0.3s; font-size: 0.9rem;">▼</span>
-            </div>
-            <div id="lista-dropdown-categorias" style="display: none; position: absolute; top: 60px; left: 20px; right: 20px; background: white; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; max-height: 350px; overflow-y: auto; padding-bottom: 10px;">
-                ${htmlLista}
-            </div>
+        <div id="trilho-pilulas-categorias" style="display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 8px 20px 14px 20px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
+            ${htmlPilulas}
         </div>
     `;
 }
 
-// Lógica para abrir/fechar a listinha
-window.toggleDropdownCategorias = function() {
-    const lista = document.getElementById('lista-dropdown-categorias');
-    const seta = document.getElementById('seta-dropdown-categorias');
-    if (lista.style.display === 'none' || lista.style.display === '') {
-        lista.style.display = 'block';
-        lista.style.animation = 'descerSuave 0.2s ease-out forwards';
-        if(seta) seta.style.transform = 'rotate(180deg)';
-    } else {
-        lista.style.display = 'none';
-        if(seta) seta.style.transform = 'rotate(0deg)';
+// Atualiza a cor da pílula ativa e centraliza ela suavemente na barra superior
+window.destacarPilulaAtiva = function(catNome) {
+    const catIdLimpo = catNome.replace(/[^a-zA-Z0-9]/g, '');
+    const todasPilulas = document.querySelectorAll('.pilula-categoria-btn');
+    
+    todasPilulas.forEach(btn => {
+        btn.style.background = '#ffffff';
+        btn.style.color = '#475569';
+        btn.style.borderColor = '#e2e8f0';
+        btn.style.boxShadow = '0 2px 5px rgba(15, 23, 42, 0.03)';
+    });
+
+    const pilulaAlvo = document.getElementById(`pilula-cat-${catIdLimpo}`);
+    if (pilulaAlvo) {
+        pilulaAlvo.style.background = 'var(--cor-primaria, #e91e63)';
+        pilulaAlvo.style.color = '#ffffff';
+        pilulaAlvo.style.borderColor = 'var(--cor-primaria, #e91e63)';
+        pilulaAlvo.style.boxShadow = '0 4px 12px rgba(233, 30, 99, 0.25)';
+        
+        // Desliza a barra horizontalmente para deixar a pílula clicada centralizada na tela
+        pilulaAlvo.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
 };
 
-// Lógica de quando o cliente clica na categoria desejada
-window.selecionarCategoriaDropdown = function(catNome) {
-    // Muda o nome do botão pro nome que ele clicou
-    document.getElementById('texto-categoria-atual').innerText = catNome;
-    
-    // Fecha a listinha
-    toggleDropdownCategorias();
-    
-    // Usa a inteligência que já existe para abrir a sanfona e descer a tela
+// Ação ao clicar em uma pílula no topo
+window.selecionarCategoriaPilula = function(catNome) {
+    destacarPilulaAtiva(catNome);
     rolarParaCategoria(catNome);
 };
 
-// Ação que abre e fecha a sanfona ao clicar nela
+// Ação que abre e fecha a sanfona ao clicar direto na barra da categoria no cardápio
 window.toggleCategoriaCardapio = function(conteudoId, elementoHeader) {
     const conteudo = document.getElementById(conteudoId);
     const seta = elementoHeader.querySelector('.seta-categoria');
     
     if (conteudo.style.display === 'none' || conteudo.style.display === '') {
-        // 1. Mostra a categoria
         conteudo.style.display = 'block';
-        
-        // 2. 🪄 O GATILHO DA DESCIDA SUAVE
         conteudo.classList.remove('animar-sanfona');
-        void conteudo.offsetWidth; // Truque para reiniciar a animação
+        void conteudo.offsetWidth;
         conteudo.classList.add('animar-sanfona');
 
-        if(seta) seta.style.transform = 'rotate(180deg)'; // Gira a setinha para cima
+        if (seta) seta.style.transform = 'rotate(180deg)';
+
+        // Sincroniza a pílula lá no topo quando o cliente abre a categoria manualmente
+        const tituloSpan = elementoHeader.querySelector('span:first-child');
+        if (tituloSpan) destacarPilulaAtiva(tituloSpan.innerText.trim());
     } else {
         conteudo.style.display = 'none';
-        if(seta) seta.style.transform = 'rotate(0deg)'; // Volta a setinha para baixo
+        if (seta) seta.style.transform = 'rotate(0deg)';
     }
 };
 
-// Inteligência que liga as bolinhas de atalho (Story) com as sanfonas
+// Abre a categoria escolhida, fecha as demais para evitar poluição visual e rola a tela
 window.rolarParaCategoria = function(nomeCategoria) {
     const catId = 'categoria-' + nomeCategoria.replace(/[^a-zA-Z0-9]/g, '');
     const headerElement = document.getElementById(catId);
     
     if (headerElement) {
-        // 👇 MÁGICA NOVA: Encontra todas as categorias abertas e fecha todas primeiro!
         const todasAsCategorias = document.querySelectorAll('[id^="conteudo-categoria-"]');
         const todasAsSetas = document.querySelectorAll('.seta-categoria');
         
         todasAsCategorias.forEach(conteudo => {
-            conteudo.style.display = 'none'; // Esconde os produtos
+            conteudo.style.display = 'none';
         });
         
         todasAsSetas.forEach(seta => {
-            seta.style.transform = 'rotate(0deg)'; // Volta a setinha para apontar para baixo
+            seta.style.transform = 'rotate(0deg)';
         });
 
-        // 👇 Agora abre APENAS a categoria que o cliente clicou
         const conteudoId = 'conteudo-' + catId;
         const conteudo = document.getElementById(conteudoId);
         const seta = headerElement.querySelector('.seta-categoria');
         
         if (conteudo) {
             conteudo.style.display = 'block';
-            
-            // Reinicia a animação de descer suavemente
             conteudo.classList.remove('animar-sanfona');
             void conteudo.offsetWidth; 
             conteudo.classList.add('animar-sanfona');
 
-            if (seta) seta.style.transform = 'rotate(180deg)'; // Aponta a seta pra cima
+            if (seta) seta.style.transform = 'rotate(180deg)';
         }
 
-        // Rola a tela suavemente até a categoria, deixando um pequeno espaço pro cabeçalho
-        const y = headerElement.getBoundingClientRect().top + window.scrollY - 80; 
+        const y = headerElement.getBoundingClientRect().top + window.scrollY - 90; 
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
 };
@@ -2579,32 +2663,32 @@ function renderizarListaCarrinhoCliente() {
             const nomePrincipal = partes[0].trim();
             const adicionaisString = partes.slice(1).join('(').replace(/\)$/, '');
             
-            // 👇 A MÁGICA DA SACOLA: Organiza os adicionais e destaca os Combos
+            // Organiza os adicionais e destaca os Combos
             const listaAdicionais = adicionaisString.split(',').map(a => a.trim()).filter(a => a !== '');
             let htmlAdic = listaAdicionais.map(adc => {
                 if (adc.startsWith('▶️')) {
-                    return `<div style="color: var(--cor-primaria, #e91e63); font-size: 0.9rem; font-weight: 800; margin-top: 8px; margin-bottom: 2px;">${adc.replace('▶️ ', '')}</div>`;
+                    return `<div style="color: var(--cor-primaria, #e91e63); font-size: 0.88rem; font-weight: 800; margin-top: 8px; margin-bottom: 2px;">${adc.replace('▶️ ', '')}</div>`;
                 } else if (adc.startsWith('(') && adc.includes('Sem adicionais')) {
-                    return `<div style="color: #999; font-size: 0.8rem; padding-left: 10px; font-style: italic;">${adc}</div>`;
+                    return `<div style="color: #94a3b8; font-size: 0.8rem; padding-left: 10px; font-style: italic;">${adc}</div>`;
                 } else {
                     let adicLimpo = adc.replace(/^\+\s*/, '');
-                    return `<div style="color: #666; font-size: 0.8rem; padding-left: 10px; margin-top: 2px;">+ ${adicLimpo}</div>`;
+                    return `<div style="color: #64748b; font-size: 0.8rem; padding-left: 10px; margin-top: 2px;">+ ${adicLimpo}</div>`;
                 }
             }).join('');
 
             desc = `
-                <div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${nomePrincipal.replace('Delivery: ', '').replace('🎁 [RESGATE] ', '🎁 ')}</div>
-                <div style="margin-top: 4px; line-height: 1.3;">${htmlAdic}</div>
+                <div style="font-weight: 700; color: #0f172a; font-size: 1.02rem;">1x ${nomePrincipal.replace('Delivery: ', '').replace('🎁 [RESGATE] ', '🎁 ')}</div>
+                <div style="margin-top: 4px; line-height: 1.35;">${htmlAdic}</div>
             `;
         } else {
-            desc = `<div style="font-weight: 700; color: #333; font-size: 1.05rem;">1x ${item.nome.replace('Delivery: ', '')}</div>`;
+            desc = `<div style="font-weight: 700; color: #0f172a; font-size: 1.02rem;">1x ${item.nome.replace('Delivery: ', '')}</div>`;
         }
 
         container.innerHTML += `
             <div class="item-carrinho-cliente">
                 <div style="flex: 1; padding-right: 15px;">
                     ${desc}
-                    <div style="color: var(--cor-primaria, #e91e63); font-weight: 800; margin-top: 6px; font-size: 1.1rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
+                    <div style="color: var(--cor-primaria, #e91e63); font-weight: 800; margin-top: 6px; font-size: 1.08rem;">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</div>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <button onclick="editarItemCarrinho(${index})" class="btn-editar-item" title="Editar item"><span class="material-symbols-outlined" style="font-size: 1.3rem;">edit</span></button>
@@ -2613,8 +2697,11 @@ function renderizarListaCarrinhoCliente() {
             </div>
         `;
     });
+
+    // 🚀 ATUALIZA A BARRA DE PROGRESSO DO SELO FIDELIDADE DENTRO DA SACOLA
+    renderizarProgressoFidelidadeSacola(subtotal);
     
-    // 👇 MATEMÁTICA DO DESCONTO NO CARRINHO
+    // MATEMÁTICA DO DESCONTO NO CARRINHO
     let desconto = 0;
     let htmlDesconto = '';
     
@@ -2622,7 +2709,7 @@ function renderizarListaCarrinhoCliente() {
         let valorCupomNum = Number(cupomAtivo.valor) || 0;
         desconto = cupomAtivo.tipo === 'porcentagem' ? subtotal * (valorCupomNum / 100) : valorCupomNum;
         htmlDesconto = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.95rem; color: #4CAF50;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.92rem; color: #10b981; font-weight: 700;">
                 <span>Desconto (${cupomAtivo.codigo})</span>
                 <strong>- R$ ${desconto.toFixed(2).replace('.', ',')}</strong>
             </div>
@@ -2636,14 +2723,14 @@ function renderizarListaCarrinhoCliente() {
     if(areaTotais) {
         areaTotais.innerHTML = `
             <div style="width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1rem; color: #777;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; color: #64748b; font-weight: 600;">
                     <span>Subtotal:</span>
                     <span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
                 </div>
                 ${htmlDesconto}
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
-                    <span style="font-size: 1.1rem; color: #333; font-weight: 600;">Total:</span>
-                    <strong style="font-size: 1.5rem; color: var(--cor-primaria, #e91e63);">R$ ${totalFinal.toFixed(2).replace('.', ',')}</strong>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0;">
+                    <span style="font-size: 1.08rem; color: #0f172a; font-weight: 800;">Total:</span>
+                    <strong style="font-size: 1.45rem; color: var(--cor-primaria, #e91e63); font-weight: 800;">R$ ${totalFinal.toFixed(2).replace('.', ',')}</strong>
                 </div>
             </div>
         `;
@@ -2652,6 +2739,78 @@ function renderizarListaCarrinhoCliente() {
     if (carrinho.length === 0) {
         fecharModalCarrinho();
         if (typeof atualizarBarraCarrinho === "function") atualizarBarraCarrinho();
+    }
+}
+
+// ⭐ MOTOR DE GRADIENTE DE META: BARRA DO SELO FIDELIDADE NA SACOLA
+function renderizarProgressoFidelidadeSacola(subtotal) {
+    const areaUpsell = document.getElementById('area-upsell-checkout');
+    const listaItens = document.getElementById('lista-itens-carrinho-cliente');
+    const containerPai = areaUpsell ? areaUpsell.parentNode : (listaItens ? listaItens.parentNode : null);
+    if (!containerPai) return;
+
+    let boxFidelidade = document.getElementById('barra-fidelidade-sacola');
+    if (!boxFidelidade) {
+        boxFidelidade = document.createElement('div');
+        boxFidelidade.id = 'barra-fidelidade-sacola';
+        if (areaUpsell) {
+            containerPai.insertBefore(boxFidelidade, areaUpsell);
+        } else {
+            containerPai.appendChild(boxFidelidade);
+        }
+    }
+
+    // Puxa as regras configuradas na Gestão (ou usa o padrão de R$ 30 / 5 selos / R$ 15 OFF)
+    const minPonto = Number(window.minimoParaGanharPontoGlobal) > 0 ? Number(window.minimoParaGanharPontoGlobal) : 30;
+    const metaPontos = Number(window.metaFidelidadeGlobal) > 0 ? Number(window.metaFidelidadeGlobal) : 5;
+    const valorPremio = Number(valorPremioFidelidadeGlobal) > 0 ? Number(valorPremioFidelidadeGlobal) : 15;
+    const isPorcentagem = (tipoFidelidadeGlobal === 'Desconto em %' || tipoFidelidadeGlobal === 'porcentagem' || tipoFidelidadeGlobal === '%');
+    const textoPremio = isPorcentagem ? `${valorPremio}% OFF` : `R$ ${valorPremio.toFixed(2).replace('.', ',')} OFF`;
+
+    const falta = minPonto - subtotal;
+    let porcentagem = (subtotal / minPonto) * 100;
+    if (porcentagem > 100) porcentagem = 100;
+    if (porcentagem < 6 && subtotal > 0) porcentagem = 6;
+
+    if (falta > 0) {
+        // ESTADO 1: AINDA FALTA VALOR (Gatilho de Gradiente de Meta + Aversão à Perda)
+        const faltaFormatado = falta.toFixed(2).replace('.', ',');
+        boxFidelidade.style.cssText = "background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a; border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08); transition: all 0.3s ease;";
+        boxFidelidade.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
+                <span style="font-size: 0.84rem; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 5px;">
+                    ⭐ Selo Fidelidade <span style="font-weight: 600; font-size: 0.75rem; color: #b45309;">(Prêmio: ${textoPremio})</span>
+                </span>
+                <span style="background: #f59e0b; color: white; font-size: 0.72rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; flex-shrink: 0;">
+                    Falta ${faltaFormatado}
+                </span>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.85); border-radius: 999px; height: 9px; width: 100%; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);">
+                <div style="background: linear-gradient(90deg, #f59e0b, #ea580c); width: ${porcentagem}%; height: 100%; border-radius: 999px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            </div>
+            <p style="margin: 8px 0 0 0; font-size: 0.79rem; color: #78350f; line-height: 1.35; text-align: center;">
+                Adicione mais <strong>${faltaFormatado}</strong> ao pedido para ganhar <strong>+1 selo</strong> na sua cartela! 👇
+            </p>
+        `;
+    } else {
+        // ESTADO 2: META ATINGIDA! (Recompensa Dopaminérgica + Efeito de Dotação)
+        boxFidelidade.style.cssText = "background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1); transition: all 0.3s ease;";
+        boxFidelidade.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
+                <span style="font-size: 0.85rem; font-weight: 800; color: #065f46; display: flex; align-items: center; gap: 5px;">
+                    🎉 +1 Selo Fidelidade Garantido!
+                </span>
+                <span style="background: #10b981; color: white; font-size: 0.72rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; flex-shrink: 0;">
+                    Liberado ✓
+                </span>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.85); border-radius: 999px; height: 9px; width: 100%; overflow: hidden;">
+                <div style="background: #10b981; width: 100%; height: 100%; border-radius: 999px; transition: width 0.4s ease;"></div>
+            </div>
+            <p style="margin: 8px 0 0 0; font-size: 0.79rem; color: #047857; line-height: 1.35; text-align: center;">
+                Pedido qualificado! Ao finalizar, você soma <strong>+1 selo</strong> rumo ao seu prêmio de <strong>${textoPremio}</strong> (a cada ${metaPontos} selos).
+            </p>
+        `;
     }
 }
 
@@ -3302,12 +3461,8 @@ function atualizarBarraCupom() {
 
     barraProgresso.style.width = `${porcentagem}%`;
 
-    // Empurra a barra do cupom para cima dependendo do que está na tela
-    if (carrinho.length > 0) {
-        barraCupom.style.bottom = '150px'; // Sobe para ficar acima do Carrinho Flutuante (Slim)
-    } else {
-        barraCupom.style.bottom = '75px'; // Fica logo acima do Menu Inferior
-    }
+    // Mantém a barra do cupom sempre encaixada perfeitamente no Menu Inferior
+    barraCupom.style.bottom = '68px';
     
     // Atualiza a matemática do checkout
     if (typeof atualizarTotalCheckout === 'function') atualizarTotalCheckout();
@@ -4657,4 +4812,179 @@ function confirmarEscolhasCombo(isResgate = false) {
     if(btnAddNormal) btnAddNormal.setAttribute('onclick', 'confirmarEscolhasEAdicionar(false)');
 
     fecharModalOpcoes();
+}
+
+// ==========================================
+// ⚡ MÓDULO: PEÇA DE NOVO EM 1 TOQUE
+// ==========================================
+let itensUltimoPedidoCache = [];
+
+async function carregarModuloPecaDeNovo() {
+    let telefoneBusca = null;
+
+    // 1. Tenta pegar o telefone do Clube Icesoft ou do último Guest Checkout salvo no aparelho
+    try {
+        const clienteSalvo = localStorage.getItem('icesoft_cliente');
+        if (clienteSalvo) {
+            const cli = JSON.parse(clienteSalvo);
+            if (cli && cli.telefone) telefoneBusca = padronizarTelefone(cli.telefone);
+        }
+    } catch (e) {}
+
+    if (!telefoneBusca) {
+        const ultimoTel = localStorage.getItem('icesoft_ultimo_telefone');
+        if (ultimoTel) telefoneBusca = padronizarTelefone(ultimoTel);
+    }
+
+    // Se já temos o telefone, preenche silenciosamente no checkout para facilitar o CRM
+    if (telefoneBusca) {
+        const inputTelCheckout = document.getElementById('cliente-telefone');
+        if (inputTelCheckout && !inputTelCheckout.value) {
+            inputTelCheckout.value = telefoneBusca;
+        }
+    }
+
+    let itensEncontrados = [];
+
+    // 2. Busca o último pedido real na nuvem (se houver telefone identificado)
+    if (telefoneBusca) {
+        try {
+            const res = await fetch(`${API_URL}/vendas/cliente/${encodeURIComponent(telefoneBusca)}`);
+            if (res.ok) {
+                const compras = await res.json();
+                if (Array.isArray(compras) && compras.length > 0) {
+                    const comprasValidas = compras.filter(c => 
+                        !String(c.status || '').toLowerCase().includes('cancelad') && 
+                        c.status !== 'Aguardando Pagamento'
+                    );
+                    if (comprasValidas.length > 0) {
+                        const ultimoPedido = comprasValidas.reduce((max, p) => p.id > max.id ? p : max, comprasValidas[0]);
+                        let itensBrutos = [];
+                        try {
+                            itensBrutos = typeof ultimoPedido.itens === 'string' ? JSON.parse(ultimoPedido.itens) : (ultimoPedido.itens || []);
+                        } catch (e) {}
+
+                        // Filtra brindes de resgate para não duplicar prêmios grátis
+                        itensEncontrados = itensBrutos.filter(i => !i.isResgate && !(Number(i.pontosUsados) > 0) && !String(i.nome || '').includes('[RESGATE]'));
+                    }
+                }
+            }
+        } catch (e) {
+            console.log("Falha silenciosa ao buscar último pedido na nuvem:", e);
+        }
+    }
+
+    // 3. Fallback: Se não achou na nuvem, verifica se há um último pedido salvo localmente no aparelho
+    if (itensEncontrados.length === 0) {
+        try {
+            const salvoLocal = localStorage.getItem('icesoft_ultimo_pedido_local');
+            if (salvoLocal) {
+                itensEncontrados = JSON.parse(salvoLocal);
+            }
+        } catch (e) {}
+    }
+
+    if (!itensEncontrados || itensEncontrados.length === 0) return;
+
+    // 4. Audita se os produtos ainda existem e estão ativos no cardápio de hoje
+    const itensDisponiveisHoje = [];
+    itensEncontrados.forEach(item => {
+        let nomeLimpo = String(item.nome || '').replace(/^Delivery:\s*/i, '').trim();
+        let nomeBase = nomeLimpo.includes('(') ? nomeLimpo.substring(0, nomeLimpo.indexOf('(')).trim() : nomeLimpo;
+
+        let prodOriginal = null;
+        if (item.produtoId) {
+            prodOriginal = produtosDaNuvem.find(p => Number(p.id) === Number(item.produtoId));
+        }
+        if (!prodOriginal) {
+            prodOriginal = produtosDaNuvem.find(p => p.nome.toLowerCase() === nomeBase.toLowerCase());
+        }
+
+        if (prodOriginal) {
+            itensDisponiveisHoje.push({
+                nomeExibicao: nomeLimpo,
+                preco: Number(item.preco) || Number(prodOriginal.preco),
+                custo_unitario: Number(item.custo_unitario) || 0,
+                insumos: item.insumos || [],
+                pontosGanhos: Number(prodOriginal.pontos_ganhos) || 0,
+                produtoId: prodOriginal.id,
+                escolhas: item.escolhas || []
+            });
+        }
+    });
+
+    if (itensDisponiveisHoje.length === 0) return;
+
+    itensUltimoPedidoCache = itensDisponiveisHoje;
+    renderizarCardPecaDeNovo(itensDisponiveisHoje);
+}
+
+function renderizarCardPecaDeNovo(itens) {
+    const listaProdutosContainer = document.getElementById('lista-produtos');
+    if (!listaProdutosContainer) return;
+
+    let boxExistente = document.getElementById('box-peca-de-novo');
+    if (boxExistente) boxExistente.remove();
+
+    const totalEstimado = itens.reduce((soma, i) => soma + Number(i.preco), 0);
+    const resumoNomes = itens.map(i => `• 1x ${i.nomeExibicao}`).join('<br>');
+
+    const box = document.createElement('div');
+    box.id = 'box-peca-de-novo';
+    box.style.cssText = "background: linear-gradient(135deg, #ffffff, #fff1f2); border: 1.5px solid #fecdd3; border-radius: 20px; padding: 16px 18px; margin-bottom: 20px; box-shadow: 0 8px 24px -4px rgba(233, 30, 99, 0.1); animation: fadeIn 0.35s ease;";
+
+    box.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="background: var(--cor-primaria, #e91e63); color: white; width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem;">⚡</span>
+                <strong style="color: #0f172a; font-size: 0.98rem; font-weight: 800;">Bateu a vontade? Peça de novo!</strong>
+            </div>
+            <span style="font-size: 0.72rem; font-weight: 700; color: #be123c; background: #ffe4e6; padding: 3px 9px; border-radius: 999px;">Em 1 toque</span>
+        </div>
+
+        <div style="font-size: 0.82rem; color: #475569; line-height: 1.45; margin-bottom: 14px; padding-left: 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            ${resumoNomes}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed #fecdd3; gap: 12px;">
+            <div>
+                <span style="font-size: 0.72rem; color: #64748b; display: block; font-weight: 600;">Total dos itens</span>
+                <strong style="font-size: 1.15rem; color: #0f172a; font-weight: 800;">${totalEstimado.toFixed(2).replace('.', ',')}</strong>
+            </div>
+            <button onclick="repetirUltimoPedido()" style="background: var(--cor-primaria, #e91e63); color: white; border: none; padding: 10px 20px; min-height: 44px; border-radius: 999px; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(233, 30, 99, 0.28); display: flex; align-items: center; gap: 6px; transition: transform 0.15s ease;">
+                🔄 Repetir meu pedido
+            </button>
+        </div>
+    `;
+
+    listaProdutosContainer.insertBefore(box, listaProdutosContainer.firstChild);
+}
+
+function repetirUltimoPedido() {
+    if (!itensUltimoPedidoCache || itensUltimoPedidoCache.length === 0) return;
+
+    let adicionouAlgum = false;
+
+    for (let item of itensUltimoPedidoCache) {
+        const prodOriginal = produtosDaNuvem.find(p => Number(p.id) === Number(item.produtoId));
+        if (prodOriginal && validarEstoqueParaAdicao(prodOriginal, 1)) {
+            adicionarAoCarrinho(
+                item.nomeExibicao,
+                item.preco,
+                item.custo_unitario,
+                item.insumos,
+                false,
+                0,
+                item.pontosGanhos,
+                item.produtoId,
+                item.escolhas
+            );
+            adicionouAlgum = true;
+        }
+    }
+
+    if (adicionouAlgum) {
+        registrarEventoFunil('Repetiu Último Pedido');
+        abrirModalCarrinho(); // Já abre a sacola na hora para o cliente revisar e finalizar!
+    }
 }
