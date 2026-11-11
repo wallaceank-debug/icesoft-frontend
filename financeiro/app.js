@@ -4,7 +4,6 @@ let contasBancariasGlobais = []; // 👇 NOVO: Guarda os bancos na memória
 let filtroLancamentosAtual = 'todos'; // 👇 NOVO: Guarda o filtro ativo
 
 window.onload = async () => {
-    // 👇 NOVO: Configura as datas para o primeiro e último dia do mês atual
     const hoje = new Date();
     const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
     const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
@@ -14,16 +13,15 @@ window.onload = async () => {
 
     await carregarCategorias(); 
     await carregarBancos(); 
-    popularFiltroBancos(); // 👇 Alimenta a nova caixinha de seleção de bancos
-    popularFiltroCategorias(); // 👇 NOVO: Preenche a caixinha de categorias!
+    popularFiltroBancos();
+    popularFiltroCategorias();
     await carregarResumoFinanceiro();
     await carregarLancamentos();
-    await carregarAlertasInteligentes(); // 👇 NOVO: Carrega os conselhos do CFO
 };
 
 function popularFiltroBancos() {
     const selectFiltro = document.getElementById('filtro-banco');
-    if(selectFiltro) {
+    if (selectFiltro) {
         selectFiltro.innerHTML = '<option value="">Todos os Bancos</option>';
         contasBancariasGlobais.forEach(b => {
             selectFiltro.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
@@ -33,12 +31,11 @@ function popularFiltroBancos() {
 
 function popularFiltroCategorias() {
     const selectFiltroCat = document.getElementById('filtro-categoria');
-    if(!selectFiltroCat) return;
+    if (!selectFiltroCat) return;
     
     selectFiltroCat.innerHTML = '<option value="">Todas as Categorias</option>';
     const catFiltradas = categoriasFinanceiras.filter(c => c.ativa !== false);
     
-    // A ESTRUTURA PAI OFICIAL (Garante a sincronia de números com a tela de Categorias)
     const GRUPOS_PAI = [
         { dre: 'receita_bruta', nome: '1 - Receitas Operacionais Brutas' },
         { dre: 'deducoes', nome: '2 - Deduções da Receita Bruta' },
@@ -76,110 +73,137 @@ async function carregarCategorias() {
     } catch (e) { console.error("Erro ao carregar categorias"); }
 }
 
+// 🏦 Filtra o extrato clicando direto no card do banco para conciliação
+function selecionarBancoConciliacao(bancoId) {
+    const selectBanco = document.getElementById('filtro-banco');
+    const checkOcultar = document.getElementById('filtro-ocultar-internos');
+    const btnTodos = document.getElementById('btn-ver-todos-bancos');
+
+    if (selectBanco) selectBanco.value = bancoId ? String(bancoId) : '';
+    
+    // Quando seleciona um banco específico para conciliar, mostra também as transferências e fechamentos dele
+    if (checkOcultar) {
+        checkOcultar.checked = !bancoId;
+    }
+    if (btnTodos) {
+        btnTodos.style.display = bancoId ? 'inline-block' : 'none';
+    }
+
+    renderizarCardsBancos();
+    carregarLancamentos();
+}
+
+function renderizarCardsBancos() {
+    const containerBancos = document.getElementById('container-saldos-bancos');
+    if (!containerBancos) return;
+
+    const bancoSelecionado = document.getElementById('filtro-banco')?.value || '';
+    containerBancos.innerHTML = '';
+
+    contasBancariasGlobais.forEach(b => {
+        const corSaldo = b.saldo_atual >= 0 ? '#2e7d32' : '#c62828';
+        const isSelecionado = String(b.id) === String(bancoSelecionado);
+        const isTransicao = b.nome.toLowerCase().includes('transição');
+        const bordaCard = isSelecionado ? '2px solid #1565c0' : '1px solid #e0e0e0';
+        const fundoCard = isSelecionado ? '#f0f7ff' : '#fafafa';
+
+        let btnConciliarHtml = '';
+        if (isTransicao && b.saldo_atual > 0) {
+            btnConciliarHtml = `
+                <button onclick="event.stopPropagation(); abrirModalTransferencia();" style="margin-top: 8px; width: 100%; background: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                    🔄 Conciliar Lote
+                </button>
+            `;
+        }
+
+        containerBancos.innerHTML += `
+            <div onclick="selecionarBancoConciliacao(${b.id})" style="background: ${fundoCard}; padding: 12px 16px; border-radius: 10px; min-width: 185px; flex-shrink: 0; border: ${bordaCard}; border-left: 4px solid ${isTransicao ? '#ff9800' : '#2196F3'}; cursor: pointer; transition: 0.2s;">
+                <div style="font-size: 0.82rem; color: #555; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${b.nome}">${b.nome}</div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: ${corSaldo};">
+                    R$ ${parseFloat(b.saldo_atual).toFixed(2).replace('.', ',')}
+                </div>
+                ${btnConciliarHtml}
+            </div>
+        `;
+    });
+}
+
 async function carregarResumoFinanceiro() {
     try {
-        // Assegura que temos os saldos de bancos mais atualizados na memória
         await carregarBancos();
-
-        // 1. Pega o crachá no bolso do navegador
         const cracha = localStorage.getItem('icesoft_token');
         
-        // 2. Mostra o crachá para o servidor
         const res = await fetch(`${API_URL}/financeiro/resumo`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${cracha}`
-            }
+            headers: { 'Authorization': `Bearer ${cracha}` }
         });
         
-        // 3. Se for barrado, joga para a tela de login
         if (res.status === 401 || res.status === 403) {
-             window.location.href = '../login/index.html';
-             return;
+            window.location.href = '../login/index.html';
+            return;
         }
 
         const dados = await res.json();
         
-        // 👇 MUDANÇA 1: Identifica o saldo retido na Conta de Transição
         const contaTransicao = contasBancariasGlobais.find(b => b.nome.toLowerCase().includes('transição'));
-        const saldoTransicao = contaTransicao ? contaTransicao.saldo_atual : 0;
+        const saldoTransicao = contaTransicao ? parseFloat(contaTransicao.saldo_atual) : 0;
 
-        // 👇 MUDANÇA 2: Aloca o valor em trânsito no card "A Receber" somado a possíveis pendências já enviadas pelo servidor
-        const totalAReceber = dados.receber + saldoTransicao;
+        const totalAReceber = parseFloat(dados.receber || 0) + saldoTransicao;
+        const totalAPagar = parseFloat(dados.pagar || 0);
+
         document.getElementById('fin-receber').innerText = `R$ ${totalAReceber.toFixed(2).replace('.', ',')}`;
+        document.getElementById('fin-pagar').innerText = `R$ ${totalAPagar.toFixed(2).replace('.', ',')}`;
+
+        const elDetalheTransicao = document.getElementById('fin-detalhe-transicao');
+        if (elDetalheTransicao) {
+            elDetalheTransicao.innerText = saldoTransicao > 0 
+                ? `Sendo R$ ${saldoTransicao.toFixed(2).replace('.', ',')} na Conta de Transição`
+                : `Nenhum lote retido na Transição`;
+        }
         
-        document.getElementById('fin-pagar').innerText = `R$ ${dados.pagar.toFixed(2).replace('.', ',')}`;
-        
-        // 👇 MUDANÇA 3: Exclui a Conta de Transição do cálculo do Saldo Líquido Bancário
         const saldoApenasBancos = contasBancariasGlobais
             .filter(b => !b.nome.toLowerCase().includes('caixa físico') && !b.nome.toLowerCase().includes('gaveta') && !b.nome.toLowerCase().includes('transição'))
-            .reduce((soma, b) => soma + b.saldo_atual, 0);
+            .reduce((soma, b) => soma + parseFloat(b.saldo_atual), 0);
 
-        // Alimenta o card de Saldo de Bancos
-        document.getElementById('fin-saldo-bancos').innerText = `R$ ${saldoApenasBancos.toFixed(2).replace('.', ',')}`;
+        const elSaldoBancos = document.getElementById('fin-saldo-bancos');
+        elSaldoBancos.innerText = `R$ ${saldoApenasBancos.toFixed(2).replace('.', ',')}`;
+        elSaldoBancos.style.color = saldoApenasBancos < 0 ? '#f44336' : '#333';
 
-        // Alerta visual de saldo negativo para o Saldo de Bancos
-        if (saldoApenasBancos < 0) {
-            document.getElementById('fin-saldo-bancos').style.color = '#f44336';
-        } else {
-            document.getElementById('fin-saldo-bancos').style.color = '#333';
+        // Termômetro prático: Saldo nos Bancos vs Boletos a Pagar do Mês
+        const elFolego = document.getElementById('fin-folego-mes');
+        if (elFolego) {
+            const diferencaMes = saldoApenasBancos - totalAPagar;
+            if (diferencaMes >= 0) {
+                elFolego.style.color = '#2e7d32';
+                elFolego.innerText = `✅ Cobre as contas (Sobra R$ ${diferencaMes.toFixed(2).replace('.', ',')})`;
+            } else {
+                elFolego.style.color = '#d32f2f';
+                elFolego.innerText = `⚠️ Faltam R$ ${Math.abs(diferencaMes).toFixed(2).replace('.', ',')} p/ cobrir o mês`;
+            }
         }
 
-        // Renderiza os pequenos cards de bancos dinamicamente
-            const containerBancos = document.getElementById('container-saldos-bancos');
-            if (containerBancos) {
-                containerBancos.innerHTML = '';
-                contasBancariasGlobais.forEach(b => {
-                    const corSaldo = b.saldo_atual >= 0 ? '#4CAF50' : '#f44336';
-                    containerBancos.innerHTML += `
-                        <div style="background: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 160px; flex-shrink: 0; border-left: 4px solid #2196F3;">
-                            <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${b.nome}">${b.nome}</div>
-                            <div style="font-size: 1.1rem; font-weight: bold; color: ${corSaldo};">
-                                R$ ${parseFloat(b.saldo_atual).toFixed(2).replace('.', ',')}
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            // 👇 PASSO 3: INJEÇÃO DOS DADOS DE ESTOQUE NA TELA
-            try {
-                // Como criamos a inteligência no endpoint de gráficos (Passo 1), chamamos ele aqui
-                const resGraficos = await fetch(`${API_URL}/financeiro/graficos`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${cracha}` }
-                });
-                if (resGraficos.ok) {
-                    const dadosGraficos = await resGraficos.json();
-                    if (dadosGraficos.estoque_metrics) {
-                        const formataMoeda = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                        document.getElementById('kpi-estoque-investido').innerText = formataMoeda(dadosGraficos.estoque_metrics.investido);
-                        document.getElementById('kpi-estoque-potencial').innerText = formataMoeda(dadosGraficos.estoque_metrics.potencial);
-                        document.getElementById('kpi-estoque-lucro').innerText = formataMoeda(dadosGraficos.estoque_metrics.lucro);
-                    }
-                }
-            } catch (errEstoque) {
-                console.error("Erro ao carregar métricas de estoque:", errEstoque);
-            }
-            // 👆 FIM DA INJEÇÃO DO ESTOQUE
-
-        } catch (e) {
-            console.error("Erro ao carregar resumo:", e);
-        }
+        renderizarCardsBancos();
+    } catch (e) {
+        console.error("Erro ao carregar resumo:", e);
     }
+}
 
-// 👇 NOVA FUNÇÃO: Acionada quando você clica num dos cards
 function filtrarLancamentos(tipo) {
     filtroLancamentosAtual = tipo;
-    carregarLancamentos(); // Manda a tabela se redesenhar com o novo filtro
+    carregarLancamentos();
 }
 
 function limparFiltrosTabela() {
     document.getElementById('filtro-busca').value = '';
     document.getElementById('filtro-banco').value = '';
-    document.getElementById('filtro-categoria').value = ''; // 👇 NOVO
+    document.getElementById('filtro-categoria').value = '';
+    if (document.getElementById('filtro-ocultar-internos')) {
+        document.getElementById('filtro-ocultar-internos').checked = true;
+    }
+    if (document.getElementById('btn-ver-todos-bancos')) {
+        document.getElementById('btn-ver-todos-bancos').style.display = 'none';
+    }
     
-    // 👇 NOVO: Ao limpar, volta para o mês atual ao invés de deixar vazio
     const hoje = new Date();
     const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
     const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
@@ -188,6 +212,7 @@ function limparFiltrosTabela() {
     document.getElementById('filtro-data-fim').value = ultimoDia;
     
     filtroLancamentosAtual = 'todos';
+    renderizarCardsBancos();
     carregarLancamentos();
 }
 
@@ -197,105 +222,192 @@ async function carregarLancamentos() {
     
     const busca = document.getElementById('filtro-busca')?.value || '';
     const bancoId = document.getElementById('filtro-banco')?.value || '';
-    const categoriaId = document.getElementById('filtro-categoria')?.value || ''; // 👇 NOVO
+    const categoriaId = document.getElementById('filtro-categoria')?.value || '';
     const dataInicio = document.getElementById('filtro-data-inicio')?.value || '';
     const dataFim = document.getElementById('filtro-data-fim')?.value || '';
+    const ocultarInternos = document.getElementById('filtro-ocultar-internos')?.checked || false;
     
     try {
-        // 👇 MÁGICA: Avisa ao servidor exatamente o que o usuário quer ver
         const params = new URLSearchParams({ 
             busca, 
             banco_id: bancoId,
-            categoria_id: categoriaId, // 👇 NOVO 
+            categoria_id: categoriaId,
             data_inicio: dataInicio, 
             data_fim: dataFim,
-            filtro_card: filtroLancamentosAtual
+            filtro_card: (filtroLancamentosAtual === 'pagar' || filtroLancamentosAtual === 'receber') ? filtroLancamentosAtual : 'todos'
         });
         
         const res = await fetch(`${API_URL}/financeiro/lancamentos?${params}`);
-        let lista = await res.json();
-        
-        // Formatação visual dos Títulos
+        let listaBruta = await res.json();
+
+        // Identifica a categoria de movimentação interna para calcular o resumo limpo do mês
+        const idsCatInterna = categoriasFinanceiras
+            .filter(c => c.dre_ref === 'movimentacao_interna')
+            .map(c => Number(c.id));
+
+        const ehMovimentacaoInterna = (item) => {
+            const desc = (item.descricao || '').toLowerCase();
+            return idsCatInterna.includes(Number(item.categoria_id)) ||
+                   desc.includes('fechamento de caixa #') ||
+                   desc.includes('[saída transferência]') ||
+                   desc.includes('[entrada transferência]');
+        };
+
+        atualizarLabelMesNavegacao();
+
+        // Calcula o Resumo das Transações no Período e o que vence nos próximos 7 dias
+        let entradasPagasMes = 0;
+        let saidasPagasMes = 0;
+        let qtdContasPendentes = 0;
+        let totalPagar7Dias = 0;
+
+        const limite7Dias = new Date();
+        limite7Dias.setDate(limite7Dias.getDate() + 7);
+        const limite7DiasStr = limite7Dias.toLocaleDateString('en-CA');
+
+        listaBruta.forEach(item => {
+            if (ehMovimentacaoInterna(item)) return;
+            const val = parseFloat(item.valor) || 0;
+            if (item.status === 'Pago') {
+                if (item.tipo === 'Receita') entradasPagasMes += val;
+                else if (item.tipo === 'Despesa') saidasPagasMes += val;
+            } else if (item.status === 'Pendente' && item.tipo === 'Despesa') {
+                qtdContasPendentes++;
+                if (item.data_vencimento) {
+                    const dItem = new Date(item.data_vencimento);
+                    dItem.setMinutes(dItem.getMinutes() + dItem.getTimezoneOffset());
+                    if (dItem.toLocaleDateString('en-CA') <= limite7DiasStr) {
+                        totalPagar7Dias += val;
+                    }
+                }
+            }
+        });
+
+        const saldoMovimentadoMes = entradasPagasMes - saidasPagasMes;
+        if (document.getElementById('fin-mes-entradas')) {
+            document.getElementById('fin-mes-entradas').innerText = `R$ ${entradasPagasMes.toFixed(2).replace('.', ',')}`;
+            document.getElementById('fin-mes-saidas').innerText = `R$ ${saidasPagasMes.toFixed(2).replace('.', ',')}`;
+            const elResumoSaldo = document.getElementById('fin-resumo-mes-saldo');
+            elResumoSaldo.innerText = `${saldoMovimentadoMes >= 0 ? '' : '- '}R$ ${Math.abs(saldoMovimentadoMes).toFixed(2).replace('.', ',')}`;
+            elResumoSaldo.style.color = saldoMovimentadoMes >= 0 ? '#2e7d32' : '#c62828';
+        }
+        if (document.getElementById('fin-qtd-pendentes')) {
+            document.getElementById('fin-qtd-pendentes').innerHTML = totalPagar7Dias > 0
+                ? `<span style="color:#d32f2f; font-weight:700;">🔥 Próx. 7 dias: R$ ${totalPagar7Dias.toFixed(2).replace('.', ',')}</span> (${qtdContasPendentes} no mês)`
+                : (qtdContasPendentes > 0 ? `✅ Nada p/ os próx. 7 dias (${qtdContasPendentes} no mês)` : `Nenhuma conta pendente no período`);
+        }
+
+        // Aplica filtros visuais na lista
+        let lista = listaBruta.filter(item => {
+            if (ocultarInternos && ehMovimentacaoInterna(item)) return false;
+            if (filtroLancamentosAtual === 'pagos' && item.status !== 'Pago') return false;
+            return true;
+        });
+
         if (filtroLancamentosAtual === 'receber') {
             tituloTabela.innerHTML = '🔍 Filtrando: Contas a Receber (Pendentes)';
             tituloTabela.style.color = '#4CAF50';
         } else if (filtroLancamentosAtual === 'pagar') {
             tituloTabela.innerHTML = '🔍 Filtrando: Contas a Pagar (Pendentes)';
             tituloTabela.style.color = '#f44336';
+        } else if (filtroLancamentosAtual === 'pagos') {
+            tituloTabela.innerHTML = '✅ Filtrando: Lançamentos Já Pagos / Recebidos';
+            tituloTabela.style.color = '#00838f';
         } else {
-            tituloTabela.innerHTML = 'Últimos Lançamentos';
+            const bancoObj = contasBancariasGlobais.find(b => String(b.id) === String(bancoId));
+            tituloTabela.innerHTML = bancoObj ? `🏦 Extrato: ${bancoObj.nome}` : 'Resumo de Transações do Mês';
             tituloTabela.style.color = '#333';
         }
 
         if (lista.length === 0) {
-            container.innerHTML = '<p style="color: #999; font-style: italic;">Nenhum lançamento encontrado para este filtro.</p>';
+            container.innerHTML = '<p style="color: #999; font-style: italic; padding: 15px 0;">Nenhum lançamento encontrado para este filtro.</p>';
             return;
         }
 
-        // 👇 NOVO: Ordena a lista cronologicamente de forma DECRESCENTE (mais recentes no topo)
         lista.sort((a, b) => {
             if (!a.data_vencimento) return 1;
             if (!b.data_vencimento) return -1;
-            return new Date(b.data_vencimento) - new Date(a.data_vencimento); // 🔄 MÁGICA: Invertemos o B pelo A aqui!
+            return new Date(b.data_vencimento) - new Date(a.data_vencimento);
         });
+
+        const hojeStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
         let html = `<table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <tr style="border-bottom: 2px solid #eee; color: #666;">
                             <th style="padding: 10px;">Vencimento</th>
                             <th style="padding: 10px;">Descrição</th>
-                            <th style="padding: 10px;">Tipo</th>
+                            <th style="padding: 10px;">Banco / Conta</th>
                             <th style="padding: 10px;">Status</th>
                             <th style="padding: 10px; text-align: right;">Valor</th>
                             <th style="padding: 10px; text-align: center;">Ações</th>
                         </tr>`;
         
-        let dataAtualGrupo = ''; // 👇 NOVO: Memória para saber em qual dia estamos desenhando
+        let dataAtualGrupo = '';
 
         lista.forEach(item => {
             const corValor = item.tipo === 'Receita' ? '#4CAF50' : '#f44336';
-            const corStatus = item.status === 'Pago' ? '#4CAF50' : '#FF9800';
-            
             let dataFormatada = 'Sem data';
-            let dataAgrupamento = 'Sem data'; // 👇 NOVO: Guarda o texto "13 de setembro"
+            let dataAgrupamento = 'Sem data';
+            let dataIsoItem = '';
             
             if (item.data_vencimento) {
                 const d = new Date(item.data_vencimento);
                 d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
                 dataFormatada = d.toLocaleDateString('pt-BR');
+                dataIsoItem = d.toLocaleDateString('en-CA');
                 
-                // 👇 NOVO: Traduz o número do mês para o nome por extenso
                 const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
                 dataAgrupamento = `${d.getDate()} de ${meses[d.getMonth()]}`;
             }
             
-            // 👇 MÁGICA: Se o dia da conta atual for diferente do dia da conta anterior, desenha uma barra separadora!
             if (dataAgrupamento !== dataAtualGrupo) {
                 html += `<tr style="background-color: #f8f9fa; border-top: 2px solid #eee; border-bottom: 1px solid #ddd;">
-                            <td colspan="6" style="padding: 12px 10px; font-weight: bold; color: #333; font-size: 0.95rem;">
+                            <td colspan="6" style="padding: 10px; font-weight: bold; color: #333; font-size: 0.92rem;">
                                 📅 ${dataAgrupamento}
                             </td>
                          </tr>`;
-                dataAtualGrupo = dataAgrupamento; // Atualiza a memória
+                dataAtualGrupo = dataAgrupamento;
             }
 
-            let iconeRepeticao = item.recorrente ? `<span class="material-symbols-outlined" style="font-size: 1rem; color: #9c27b0; vertical-align: middle; margin-left: 5px;" title="Conta de Repetição">repeat</span>` : '';
+            // Etiqueta inteligente de vencimento
+            let badgeStatusHtml = '';
+            if (item.status === 'Pago') {
+                badgeStatusHtml = `<span style="background: #4CAF50; color: white; padding: 4px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 600;">Pago</span>`;
+            } else if (dataIsoItem && dataIsoItem < hojeStr) {
+                badgeStatusHtml = `<span style="background: #d32f2f; color: white; padding: 4px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 700;">⚠️ Atrasado</span>`;
+            } else if (dataIsoItem && dataIsoItem === hojeStr) {
+                badgeStatusHtml = `<span style="background: #f57c00; color: white; padding: 4px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 700;">🔥 Vence Hoje</span>`;
+            } else {
+                badgeStatusHtml = `<span style="background: #FF9800; color: white; padding: 4px 10px; border-radius: 10px; font-size: 0.78rem; font-weight: 600;">Pendente</span>`;
+            }
+
+            const bancoItem = contasBancariasGlobais.find(b => Number(b.id) === Number(item.conta_id));
+            const nomeBanco = bancoItem ? bancoItem.nome : '-';
+
+            let iconeRepeticao = item.recorrente ? `<span class="material-symbols-outlined" style="font-size: 1rem; color: #9c27b0; vertical-align: middle; margin-left: 5px;" title="Conta Fixa / Parcelada">repeat</span>` : '';
             const itemString = encodeURIComponent(JSON.stringify(item));
 
-            html += `<tr style="border-bottom: 1px solid #eee; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#e3f2fd'" onmouseout="this.style.backgroundColor='transparent'">
+            // Botão de Baixa Rápida para Pendentes OU Botão de Auditar Lote se for entrada na Conta de Transição
+            const ehEntradaTransicao = bancoItem && bancoItem.nome.toLowerCase().includes('transição') && item.tipo === 'Receita';
+            let btnBaixaRapida = '';
+            if (item.status === 'Pendente') {
+                btnBaixaRapida = `<button onclick="darBaixaRapida('${itemString}')" style="background:#e8f5e9; border:1px solid #a5d6a7; color:#2e7d32; cursor:pointer; font-size:0.8rem; font-weight:700; padding:4px 8px; border-radius:6px; margin-right:6px;" title="Marcar como Pago em 1 clique">✅ Baixar</button>`;
+            } else if (ehEntradaTransicao) {
+                btnBaixaRapida = `<button onclick="auditarLancamentoTransicao('${itemString}')" style="background:#fff3e0; border:1px solid #ffb74d; color:#e65100; cursor:pointer; font-size:0.8rem; font-weight:700; padding:4px 8px; border-radius:6px; margin-right:6px;" title="Transferir este lote para o banco real">🔄 Auditar</button>`;
+            }
+
+            html += `<tr style="border-bottom: 1px solid #eee; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f1f8ff'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding: 10px; color: #666; font-size: 0.9rem;">${dataFormatada}</td>
-                        <td style="padding: 10px; font-weight: 500;">${item.descricao} ${iconeRepeticao}</td>
-                        <td style="padding: 10px;">${item.tipo}</td>
-                        <td style="padding: 10px;">
-                            <span style="background: ${corStatus}; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.8rem;">
-                                ${item.status}
-                            </span>
-                        </td>
+                        <td style="padding: 10px; font-weight: 600; color: #333;">${item.descricao} ${iconeRepeticao}</td>
+                        <td style="padding: 10px; color: #666; font-size: 0.85rem;">${nomeBanco}</td>
+                        <td style="padding: 10px;">${badgeStatusHtml}</td>
                         <td style="padding: 10px; text-align: right; font-weight: bold; color: ${corValor};">
-                            R$ ${parseFloat(item.valor).toFixed(2).replace('.', ',')}
+                            ${item.tipo === 'Despesa' ? '- ' : ''}R$ ${parseFloat(item.valor).toFixed(2).replace('.', ',')}
                         </td>
-                        <td style="padding: 10px; text-align: center;">
-                            <button onclick="prepararEdicaoLancamento('${itemString}')" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Editar Lançamento">✏️</button>
-                            <button onclick="deletarLancamento(${item.id}, ${item.recorrente})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem; transition: 0.2s;" title="Excluir Lançamento">🗑️</button>
+                        <td style="padding: 10px; text-align: center; white-space: nowrap;">
+                            ${btnBaixaRapida}
+                            <button onclick="prepararEdicaoLancamento('${itemString}')" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.15rem; vertical-align:middle;" title="Editar Lançamento">✏️</button>
+                            <button onclick="deletarLancamento(${item.id}, ${item.recorrente})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.15rem; vertical-align:middle;" title="Excluir Lançamento">🗑️</button>
                         </td>
                      </tr>`;
         });
@@ -305,6 +417,47 @@ async function carregarLancamentos() {
 
     } catch (e) {
         container.innerHTML = '<p style="color: red;">Erro ao buscar os lançamentos no banco de dados.</p>';
+    }
+}
+
+// ⚡ NOVA FUNÇÃO: Dá baixa em uma conta pendente com 1 clique
+async function darBaixaRapida(itemStringCodificado) {
+    const item = JSON.parse(decodeURIComponent(itemStringCodificado));
+    if (!confirm(`Confirmar baixa de "${item.descricao}" no valor de R$ ${parseFloat(item.valor).toFixed(2).replace('.', ',')}?`)) return;
+
+    let dataVenc = '';
+    if (item.data_vencimento) {
+        const d = new Date(item.data_vencimento);
+        d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+        dataVenc = d.toISOString().split('T')[0];
+    }
+
+    try {
+        const payload = {
+            descricao: item.descricao,
+            valor: parseFloat(item.valor),
+            data_vencimento: dataVenc,
+            status: 'Pago',
+            tipo: item.tipo,
+            categoria_id: item.categoria_id,
+            conta_id: item.conta_id,
+            aplicar_futuros: false
+        };
+
+        const res = await fetch(`${API_URL}/financeiro/lancamentos/${item.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            await carregarResumoFinanceiro();
+            await carregarLancamentos();
+        } else {
+            alert("❌ Erro ao dar baixa no lançamento.");
+        }
+    } catch (e) {
+        alert("❌ Falha de conexão com o servidor.");
     }
 }
 
@@ -339,7 +492,7 @@ function abrirModalLancamento(tipo) {
     
     document.getElementById('lan-descricao').value = '';
     document.getElementById('lan-valor').value = '';
-    document.getElementById('lan-data').value = '';
+    document.getElementById('lan-data').value = new Date().toLocaleDateString('en-CA');
     document.getElementById('lan-status').value = 'Pendente';
     
     // 👇 Garante que a área de repetição VAI APARECER ao criar um novo
@@ -673,7 +826,39 @@ async function deletarBanco(id) {
 }
 
 // ==========================================
-// 🔄 LÓGICA DE TRANSFERÊNCIA E AUDITORIA
+// 🗓️ NAVEGAÇÃO RÁPIDA DE MÊS (1 CLIQUE)
+// ==========================================
+function atualizarLabelMesNavegacao() {
+    const elLabel = document.getElementById('label-mes-navegacao');
+    const dataInicio = document.getElementById('filtro-data-inicio')?.value;
+    if (!elLabel || !dataInicio) return;
+
+    const [ano, mes] = dataInicio.split('-');
+    const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    elLabel.innerText = `${nomesMeses[parseInt(mes, 10) - 1]} ${ano}`;
+}
+
+function navegarMesFinanceiro(direcao) {
+    const inputInicio = document.getElementById('filtro-data-inicio');
+    const inputFim = document.getElementById('filtro-data-fim');
+    if (!inputInicio || !inputFim) return;
+
+    const base = inputInicio.value ? new Date(inputInicio.value + 'T12:00:00') : new Date();
+    const novoAno = base.getFullYear();
+    const novoMes = base.getMonth() + direcao;
+
+    const primeiroDia = new Date(novoAno, novoMes, 1).toISOString().split('T')[0];
+    const ultimoDia = new Date(novoAno, novoMes + 1, 0).toISOString().split('T')[0];
+
+    inputInicio.value = primeiroDia;
+    inputFim.value = ultimoDia;
+
+    atualizarLabelMesNavegacao();
+    carregarLancamentos();
+}
+
+// ==========================================
+// 🔄 LÓGICA DE TRANSFERÊNCIA E AUDITORIA TURBO
 // ==========================================
 function abrirModalTransferencia() {
     const selectOrigem = document.getElementById('trans-origem');
@@ -684,19 +869,69 @@ function abrirModalTransferencia() {
     
     contasBancariasGlobais.forEach(b => {
         selectOrigem.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
-        selectDestino.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+        if (!b.nome.toLowerCase().includes('transição')) {
+            selectDestino.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+        }
     });
 
-    // Inteligência: Já deixa a Conta de Transição pré-selecionada na origem
     const contaTransicao = contasBancariasGlobais.find(b => b.nome.toLowerCase().includes('transição'));
     if (contaTransicao) selectOrigem.value = contaTransicao.id;
 
+    if (document.getElementById('trans-descricao-custom')) {
+        document.getElementById('trans-descricao-custom').value = 'Conciliação de Cartões/Pix';
+    }
     document.getElementById('trans-valor-bruto').value = '';
+    if (document.getElementById('trans-valor-liquido')) {
+        document.getElementById('trans-valor-liquido').value = '';
+    }
     document.getElementById('trans-taxa').value = '0.00';
-    const d = new Date();
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    document.getElementById('trans-data').value = d.toISOString().split('T')[0];
+    document.getElementById('trans-data').value = new Date().toLocaleDateString('en-CA');
     document.getElementById('modal-transferencia').style.display = 'flex';
+}
+
+// Abre o modal já preenchido ao clicar em "🔄 Auditar" na linha da Conta de Transição
+function auditarLancamentoTransicao(itemStringCodificado) {
+    const item = JSON.parse(decodeURIComponent(itemStringCodificado));
+    abrirModalTransferencia();
+
+    const valorBruto = parseFloat(item.valor) || 0;
+    document.getElementById('trans-valor-bruto').value = valorBruto.toFixed(2);
+    if (document.getElementById('trans-valor-liquido')) {
+        document.getElementById('trans-valor-liquido').value = valorBruto.toFixed(2);
+    }
+    document.getElementById('trans-taxa').value = '0.00';
+
+    if (document.getElementById('trans-descricao-custom')) {
+        document.getElementById('trans-descricao-custom').value = `Auditoria: ${item.descricao}`;
+    }
+
+    if (item.data_vencimento) {
+        const d = new Date(item.data_vencimento);
+        d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+        document.getElementById('trans-data').value = d.toISOString().split('T')[0];
+    }
+}
+
+// Calcula automaticamente a taxa ao digitar o Valor Líquido que caiu no banco
+function calcularTaxaPorLiquido(origemCampo) {
+    const elBruto = document.getElementById('trans-valor-bruto');
+    const elLiquido = document.getElementById('trans-valor-liquido');
+    const elTaxa = document.getElementById('trans-taxa');
+    if (!elBruto || !elLiquido || !elTaxa) return;
+
+    const bruto = parseFloat(elBruto.value) || 0;
+
+    if (origemCampo === 'bruto') {
+        const taxaAtual = parseFloat(elTaxa.value) || 0;
+        elLiquido.value = Math.max(0, bruto - taxaAtual).toFixed(2);
+    } else if (origemCampo === 'liquido') {
+        const liquido = parseFloat(elLiquido.value) || 0;
+        const taxaCalculada = Math.max(0, bruto - liquido);
+        elTaxa.value = taxaCalculada.toFixed(2);
+    } else if (origemCampo === 'taxa') {
+        const taxa = parseFloat(elTaxa.value) || 0;
+        elLiquido.value = Math.max(0, bruto - taxa).toFixed(2);
+    }
 }
 
 function fecharModalTransferencia() {
@@ -709,6 +944,7 @@ async function executarTransferencia() {
     const valorBruto = parseFloat(document.getElementById('trans-valor-bruto').value);
     const taxa = parseFloat(document.getElementById('trans-taxa').value) || 0;
     const dataTrans = document.getElementById('trans-data').value;
+    const descCustom = document.getElementById('trans-descricao-custom')?.value.trim() || 'Conciliação de Cartões/Pix';
 
     if (!origem || !destino || isNaN(valorBruto) || valorBruto <= 0 || !dataTrans) {
         return alert("⚠️ Por favor, preencha as contas, o valor bruto e a data corretamente.");
@@ -729,21 +965,22 @@ async function executarTransferencia() {
                 conta_destino_id: destino,
                 valor_bruto: valorBruto,
                 taxa: taxa,
-                data_transferencia: dataTrans, // 👇 Envia para o servidor
-                descricao: `Conciliação de Cartões/Pix`
+                data_transferencia: dataTrans,
+                descricao: descCustom
             })
         });
 
         if (res.ok) {
             alert("✅ Auditoria realizada! Dinheiro transferido e taxas computadas no DRE.");
-            
-            // 👇 MÁGICA DE PRODUTIVIDADE: Mantém o modal aberto, limpa os valores e foca o cursor para o próximo recibo!
             document.getElementById('trans-valor-bruto').value = '';
+            if (document.getElementById('trans-valor-liquido')) {
+                document.getElementById('trans-valor-liquido').value = '';
+            }
             document.getElementById('trans-taxa').value = '0.00';
             document.getElementById('trans-valor-bruto').focus();
             
-            await carregarResumoFinanceiro(); // Atualiza os cards principais no fundo
-            await carregarLancamentos(); // Atualiza a tabela de lançamentos no fundo
+            await carregarResumoFinanceiro();
+            await carregarLancamentos();
         } else {
             alert("❌ Erro ao processar a transferência no servidor.");
         }

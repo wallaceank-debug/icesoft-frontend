@@ -74,8 +74,12 @@
         .col-av, .col-ah { background-color: transparent; font-size: 0.8rem; text-align: center !important; }
 
         /* MÁGICA 4: O Destaque do Mês Atual */
-        .col-destaque { background-color: #e0f2fe !important; } /* Um azul bem claro e elegante */
+        .col-destaque { background-color: #e0f2fe !important; }
         .fluxo-table tbody tr:hover td.col-destaque { background-color: #bae6fd !important; }
+
+        /* Modo Compacto: Oculta AV% e AH% para caberem mais meses na tela */
+        .modo-compacto .col-av, .modo-compacto .col-ah { display: none !important; }
+        .modo-compacto .fluxo-table { min-width: 1100px; }
     </style>
 </head>
 <body>
@@ -138,8 +142,17 @@
 
         <main class="fin-container">
             <div class="fluxo-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h2 style="margin-top: 0; color: #333; margin-bottom: 0;">Evolução e Previsão Financeira (12 Meses)</h2>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button id="btn-modo-compacto" onclick="toggleModoCompacto()" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #334155; font-weight: 600; font-size: 0.82rem; cursor: pointer;">
+                            📐 Modo Compacto (Só R$)
+                        </button>
+                        <div style="display: inline-flex; background: #f0f0f0; padding: 4px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                            <button id="btn-fluxo-previsto" onclick="mudarVisaoFluxo('previsto')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: #333;">🗓️ Com Previsão (Inclui Pendentes)</button>
+                            <button id="btn-fluxo-efetuado" onclick="mudarVisaoFluxo('efetuado')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; background: transparent; color: #888;">✅ Apenas Pagos (Caixa Real)</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tabela-container">
@@ -151,6 +164,39 @@
 
     <script>
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
+        let modoCompactoAtivo = false;
+        let visaoFluxoAtual = 'previsto';
+
+        window.toggleModoCompacto = () => {
+            modoCompactoAtivo = !modoCompactoAtivo;
+            const container = document.getElementById('tabela-container');
+            const btn = document.getElementById('btn-modo-compacto');
+            container.classList.toggle('modo-compacto', modoCompactoAtivo);
+            document.querySelectorAll('.th-mes-topo').forEach(th => {
+                th.setAttribute('colspan', modoCompactoAtivo ? '1' : '3');
+            });
+            if (btn) {
+                btn.innerText = modoCompactoAtivo ? '📊 Mostrar % (AV e AH)' : '📐 Modo Compacto (Só R$)';
+                btn.style.background = modoCompactoAtivo ? '#e0f2fe' : '#f8fafc';
+            }
+        };
+
+        window.mudarVisaoFluxo = (novaVisao) => {
+            if (visaoFluxoAtual === novaVisao) return;
+            visaoFluxoAtual = novaVisao;
+            const btnPrev = document.getElementById('btn-fluxo-previsto');
+            const btnEfet = document.getElementById('btn-fluxo-efetuado');
+            if (btnPrev && btnEfet) {
+                btnPrev.style.background = novaVisao === 'previsto' ? '#fff' : 'transparent';
+                btnPrev.style.color = novaVisao === 'previsto' ? '#333' : '#888';
+                btnPrev.style.boxShadow = novaVisao === 'previsto' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none';
+
+                btnEfet.style.background = novaVisao === 'efetuado' ? '#fff' : 'transparent';
+                btnEfet.style.color = novaVisao === 'efetuado' ? '#333' : '#888';
+                btnEfet.style.boxShadow = novaVisao === 'efetuado' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none';
+            }
+            carregarFluxoCaixa();
+        };
 
         const formatarMes = (str) => {
             const [y, m] = str.split('-');
@@ -204,10 +250,12 @@
             return Array.from(names).sort();
         };
 
-        window.onload = async () => {
+        window.onload = () => carregarFluxoCaixa();
+
+        async function carregarFluxoCaixa() {
             try {
                 const cracha = localStorage.getItem('icesoft_token');
-                const res = await fetch(`${API_URL}/financeiro/fluxo-caixa`, {
+                const res = await fetch(`${API_URL}/financeiro/fluxo-caixa?visao=${visaoFluxoAtual}`, {
                     headers: { 'Authorization': `Bearer ${cracha}` }
                 });
 
@@ -227,12 +275,14 @@
                 dados.forEach(d => {
                     let isAtual = d.mes === mesAtualStr;
                     let bgHl = isAtual ? ' col-destaque' : '';
+                    let idMesAtual = isAtual ? ' id="th-mes-atual-foco"' : '';
+                    let colspanMes = modoCompactoAtivo ? '1' : '3';
                     let badge = '';
                     if (d.mes < mesAtualStr) badge = '<br><span style="color:#94a3b8; font-size:0.75rem; font-weight:normal;">(Realizado)</span>';
                     else if (isAtual) badge = '<br><span style="color:#0284c7; font-size:0.75rem; font-weight:bold;">(Atual)</span>';
                     else badge = '<br><span style="color:#d97706; font-size:0.75rem; font-weight:bold;">(Previsto)</span>';
                     
-                    html += `<th colspan="3" class="col-mes${bgHl}" style="text-align: center; line-height: 1.2;">${formatarMes(d.mes)}${badge}</th>`;
+                    html += `<th${idMesAtual} colspan="${colspanMes}" class="th-mes-topo col-mes${bgHl}" style="text-align: center; line-height: 1.2;">${formatarMes(d.mes)}${badge}</th>`;
                 });
                 html += `</tr><tr>`;
                 
@@ -371,12 +421,23 @@
                 html += renderLinha('🏦 SALDO FINAL ACUMULADO', 'saldo_final', { cssClass: 'linha-saldo final', overrideCor: (v) => v >= 0 ? 'color: #4ade80 !important;' : 'color: #ef4444 !important;', hideAV: true });
 
                 html += `</tbody></table>`;
-                document.getElementById('tabela-container').innerHTML = html;
+                const containerTabela = document.getElementById('tabela-container');
+                containerTabela.innerHTML = html;
+                containerTabela.classList.toggle('modo-compacto', modoCompactoAtivo);
+
+                // Rola a tabela horizontalmente de forma automática para deixar o Mês Atual visível no centro
+                setTimeout(() => {
+                    const thAtual = document.getElementById('th-mes-atual-foco');
+                    if (thAtual && containerTabela) {
+                        const posScroll = thAtual.offsetLeft - 320;
+                        if (posScroll > 0) containerTabela.scrollLeft = posScroll;
+                    }
+                }, 80);
 
             } catch (e) {
                 document.getElementById('tabela-container').innerHTML = `<p style="color: red;">Erro ao gerar relatório de Fluxo de Caixa.</p>`;
             }
-        };
+        }
     </script>
 </body>
 </html>

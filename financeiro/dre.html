@@ -109,23 +109,55 @@
         const API_URL = 'https://icesoft-sistema-icesoft-api-v2.tm3i9u.easypanel.host/api';
         let dreGlobal = null;
         let visaoDetalhada = false;
-        let visaoRegime = 'previsto'; // Começa mostrando o mês todo
+        let visaoRegime = 'previsto';
+        let tipoCmvAtual = 'ficha'; // 'ficha' (Fichas Técnicas) ou 'compras' (Boletos Fornecedores)
 
-        const fMoeda = (valor) => `R$ ${valor.toFixed(2).replace('.', ',')}`;
+        const hojeInit = new Date();
+        let anoDreAtual = hojeInit.getFullYear();
+        let mesDreAtual = hojeInit.getMonth() + 1; // 1 a 12
+
+        const getMesParam = () => `${anoDreAtual}-${String(mesDreAtual).padStart(2, '0')}`;
+        const getNomeMesAno = () => {
+            const nomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            return `${nomes[mesDreAtual - 1]} ${anoDreAtual}`;
+        };
+
+        window.navegarMesDRE = (direcao) => {
+            const d = new Date(anoDreAtual, (mesDreAtual - 1) + direcao, 1);
+            anoDreAtual = d.getFullYear();
+            mesDreAtual = d.getMonth() + 1;
+            carregarDRE();
+        };
+
+        const fMoeda = (valor) => `R$ ${(Number(valor) || 0).toFixed(2).replace('.', ',')}`;
         
         window.toggleVisao = () => {
             visaoDetalhada = !visaoDetalhada;
-            renderizarDRE(); // Redesenha a tela mantendo as abas certas
+            renderizarDRE();
         };
 
-        // 👇 NOVO: Função que troca a chave do DRE (Efetuado x Previsto)
-        window.mudarVisaoRegime = (regime) => {
-            if(visaoRegime === regime) return;
-            visaoRegime = regime;
-            carregarDRE(); // Busca no servidor e recalcula
-        }
+        window.toggleDetalheLinha = (chaveUnica) => {
+            const el = document.getElementById(`detalhe-${chaveUnica}`);
+            const icon = document.getElementById(`icon-${chaveUnica}`);
+            if (!el) return;
+            const aberto = el.style.display === 'block';
+            el.style.display = aberto ? 'none' : 'block';
+            if (icon) icon.innerText = aberto ? 'expand_more' : 'expand_less';
+        };
 
-        const renderDetalhes = (refs) => {
+        window.mudarVisaoRegime = (regime) => {
+            if (visaoRegime === regime) return;
+            visaoRegime = regime;
+            carregarDRE();
+        };
+
+        window.mudarTipoCMV = (novoTipo) => {
+            if (tipoCmvAtual === novoTipo) return;
+            tipoCmvAtual = novoTipo;
+            carregarDRE();
+        };
+
+        const renderDetalhes = (refs, chaveUnica) => {
             let html = '';
             const chaves = Array.isArray(refs) ? refs : [refs];
             let encontrou = false;
@@ -137,34 +169,40 @@
                     dreGlobal.detalhes[ref].forEach(d => {
                         const pctDetail = dreGlobal.receita_bruta > 0 ? ((d.total / dreGlobal.receita_bruta) * 100).toFixed(1) + '%' : '0.0%';
                         conteudoHtml += `
-                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #666; margin-bottom: 8px; align-items: center;">
-                                <span style="display: flex; align-items: center; gap: 5px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: #ccc;">subdirectory_arrow_right</span> ${d.nome}</span>
-                                <span><small style="color:#999; margin-right:8px; font-weight:700;">${pctDetail}</small> ${fMoeda(d.total)}</span>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #555; margin-bottom: 8px; align-items: center;">
+                                <span style="display: flex; align-items: center; gap: 5px;"><span class="material-symbols-outlined" style="font-size: 1.1rem; color: #999;">subdirectory_arrow_right</span> ${d.nome}</span>
+                                <span><small style="color:#888; margin-right:8px; font-weight:700;">${pctDetail}</small> ${fMoeda(d.total)}</span>
                             </div>`;
                     });
                 }
             });
             
             if (encontrou) {
-                html = `<div class="dre-detalhes" style="display: none; background: #fafafa; padding: 12px 15px 4px 15px; border-bottom: 1px solid #eee; border-left: 4px solid #00bcd4; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                html = `<div id="detalhe-${chaveUnica}" class="dre-detalhes" style="display: ${visaoDetalhada ? 'block' : 'none'}; background: #fafafa; padding: 12px 15px 4px 15px; border-bottom: 1px solid #eee; border-left: 4px solid #00bcd4; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
                             ${conteudoHtml}
                         </div>`;
             }
-            return html;
+            return { html, encontrou };
         };
 
         const renderLinha = (nome, valor, dre_ref, classeAdicional) => {
             const pct = dreGlobal.receita_bruta > 0 ? ((Math.abs(valor) / dreGlobal.receita_bruta) * 100).toFixed(1) + '%' : '0.0%';
+            const chaveUnica = Array.isArray(dre_ref) ? dre_ref.join('_') : (dre_ref || '');
+            const detObj = dre_ref ? renderDetalhes(dre_ref, chaveUnica) : { html: '', encontrou: false };
+
+            const cursorStyle = detObj.encontrou ? 'cursor: pointer;' : '';
+            const onClickAttr = detObj.encontrou ? `onclick="toggleDetalheLinha('${chaveUnica}')" title="Clique para ver detalhes"` : '';
+            const setaHtml = detObj.encontrou ? `<span id="icon-${chaveUnica}" class="material-symbols-outlined" style="font-size: 1.15rem; vertical-align: middle; color: #888; margin-left: 4px;">${visaoDetalhada ? 'expand_less' : 'expand_more'}</span>` : '';
+
             let html = `
-                <div class="dre-row ${classeAdicional}">
-                    <span>${nome}</span>
+                <div class="dre-row ${classeAdicional}" ${onClickAttr} style="${cursorStyle}">
+                    <span style="display: flex; align-items: center;">${nome} ${setaHtml}</span>
                     <span><span class="pct-badge">${pct}</span> ${fMoeda(valor)}</span>
                 </div>`;
-            if (dre_ref) html += renderDetalhes(dre_ref);
+            html += detObj.html;
             return html;
         };
 
-        // 👇 ATUALIZADO: O construtor visual agora inclui o botão alternador
         const renderizarDRE = () => {
             const container = document.getElementById('dre-conteudo');
             const classeLucro = dreGlobal.lucro_liquido >= 0 ? 'dre-total' : 'dre-total prejuizo';
@@ -173,38 +211,58 @@
 
             const btnVisaoCor = visaoDetalhada ? '#607d8b' : '#00bcd4';
             const btnVisaoIcone = visaoDetalhada ? 'visibility_off' : 'visibility';
-            const btnVisaoTexto = visaoDetalhada ? 'Visão Resumida' : 'Visão Completa';
+            const btnVisaoTexto = visaoDetalhada ? 'Recolher Tudo' : 'Expandir Tudo';
+
+            const labelLinhaCMV = tipoCmvAtual === 'ficha'
+                ? '(-) CMV REAL (Fichas Técnicas Consumidas)'
+                : '(-) CMV COMPRAS (Boletos de Fornecedores)';
 
             container.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
                     <div>
-                        <h2 style="margin: 0; color: #333;">Competência: Mês Atual</h2>
-                        <div style="margin-top: 8px; display: inline-flex; background: #f0f0f0; padding: 4px; border-radius: 8px; border: 1px solid #e0e0e0;">
-                            <button onclick="mudarVisaoRegime('previsto')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: ${visaoRegime === 'previsto' ? '#fff' : 'transparent'}; box-shadow: ${visaoRegime === 'previsto' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${visaoRegime === 'previsto' ? '#333' : '#888'}; transition: 0.2s;">🗓️ Mês Completo (Previsto)</button>
-                            <button onclick="mudarVisaoRegime('efetuado')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: ${visaoRegime === 'efetuado' ? '#fff' : 'transparent'}; box-shadow: ${visaoRegime === 'efetuado' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${visaoRegime === 'efetuado' ? '#333' : '#888'}; transition: 0.2s;">✅ Apenas Pagos (Efetuado)</button>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <h2 style="margin: 0; color: #333;">Competência:</h2>
+                            <div style="display: inline-flex; align-items: center; gap: 6px; background: #f0f4f8; padding: 4px 8px; border-radius: 8px; border: 1px solid #cfd8dc;">
+                                <button onclick="navegarMesDRE(-1)" style="background: white; border: 1px solid #ccc; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-weight: bold; color: #333;" title="Mês Anterior">◀</button>
+                                <span style="font-size: 0.95rem; font-weight: 700; color: #003366; min-width: 135px; text-align: center;">${getNomeMesAno()}</span>
+                                <button onclick="navegarMesDRE(1)" style="background: white; border: 1px solid #ccc; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-weight: bold; color: #333;" title="Próximo Mês">▶</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <div style="display: inline-flex; background: #f0f0f0; padding: 4px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <button onclick="mudarVisaoRegime('previsto')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; background: ${visaoRegime === 'previsto' ? '#fff' : 'transparent'}; box-shadow: ${visaoRegime === 'previsto' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${visaoRegime === 'previsto' ? '#333' : '#888'};">🗓️ Previsto (Mês Todo)</button>
+                                <button onclick="mudarVisaoRegime('efetuado')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; background: ${visaoRegime === 'efetuado' ? '#fff' : 'transparent'}; box-shadow: ${visaoRegime === 'efetuado' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${visaoRegime === 'efetuado' ? '#333' : '#888'};">✅ Realizado (Só Pagos)</button>
+                            </div>
+
+                            <div style="display: inline-flex; background: #f0f0f0; padding: 4px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                <button onclick="mudarTipoCMV('ficha')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; background: ${tipoCmvAtual === 'ficha' ? '#fff' : 'transparent'}; box-shadow: ${tipoCmvAtual === 'ficha' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${tipoCmvAtual === 'ficha' ? '#003366' : '#888'};" title="Calcula o custo pelas receitas vendidas">🍨 CMV: Ficha Técnica</button>
+                                <button onclick="mudarTipoCMV('compras')" style="padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; background: ${tipoCmvAtual === 'compras' ? '#fff' : 'transparent'}; box-shadow: ${tipoCmvAtual === 'compras' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'}; color: ${tipoCmvAtual === 'compras' ? '#003366' : '#888'};" title="Calcula o custo pelos boletos de insumos do mês">📦 CMV: Compras</button>
+                            </div>
                         </div>
                     </div>
-                    <button id="btn-visao" onclick="toggleVisao()" style="padding: 10px 18px; background: ${btnVisaoCor}; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                    <button id="btn-visao" onclick="toggleVisao()" style="padding: 10px 16px; background: ${btnVisaoCor}; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
                         <span class="material-symbols-outlined" style="font-size:1.2rem;">${btnVisaoIcone}</span> ${btnVisaoTexto}
                     </button>
                 </div>
                 
                 ${(() => {
-                    const diff = (dreGlobal.cmv_financeiro || 0) - dreGlobal.cmv;
-                    if (diff === 0 && dreGlobal.cmv === 0) return '';
+                    const cmvCompras = dreGlobal.cmv_financeiro || 0;
+                    const cmvFicha = dreGlobal.cmv_ficha !== undefined ? dreGlobal.cmv_ficha : dreGlobal.cmv;
+                    const diff = cmvCompras - cmvFicha;
+                    if (cmvCompras === 0 && cmvFicha === 0) return '';
                     const cor = diff > 0 ? '#ff9800' : '#4CAF50';
                     const bg = diff > 0 ? '#fff3e0' : '#e8f5e9';
-                    const icon = diff > 0 ? 'warning' : 'check_circle';
+                    const icon = diff > 0 ? 'inventory_2' : 'check_circle';
                     return `
-                    <div style="background: ${bg}; padding: 15px; border-left: 5px solid ${cor}; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-start; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <span class="material-symbols-outlined" style="color: ${cor}; font-size: 2rem;">${icon}</span>
-                        <div>
-                            <h4 style="margin: 0 0 5px 0; color: ${cor}; font-size: 1rem;">Radar de Estoque e Desperdício</h4>
-                            <p style="margin: 0; color: #555; font-size: 0.9rem; line-height: 1.4;">
-                                Pago a Fornecedores no mês (Compras): <strong>${fMoeda(dreGlobal.cmv_financeiro || 0)}</strong><br>
-                                Custo consumido nas vendas (Receitas): <strong>${fMoeda(dreGlobal.cmv)}</strong><br>
-                                A diferença de <strong style="color: ${cor}; font-size: 1.05rem;">${fMoeda(diff)}</strong> representa o seu estoque parado nas geladeiras ou perda/desperdício.
-                            </p>
+                    <div style="background: ${bg}; padding: 12px 15px; border-left: 5px solid ${cor}; border-radius: 8px; margin-bottom: 18px; display: flex; gap: 12px; align-items: center;">
+                        <span class="material-symbols-outlined" style="color: ${cor}; font-size: 1.8rem;">${icon}</span>
+                        <div style="font-size: 0.85rem; color: #444; line-height: 1.4;">
+                            <strong>Comparativo de Insumos em ${getNomeMesAno()}:</strong> 
+                            Compras Lançadas: <strong>${fMoeda(cmvCompras)}</strong> | 
+                            Consumo Ficha Técnica: <strong>${fMoeda(cmvFicha)}</strong> | 
+                            Diferença (Estoque/Ajuste): <strong style="color: ${cor};">${fMoeda(diff)}</strong>
                         </div>
                     </div>`;
                 })()}
@@ -214,18 +272,18 @@
                 
                 ${renderLinha('(=) RECEITA LÍQUIDA', dreGlobal.receita_liquida, null, 'dre-subtotal')}
                 
-                ${renderLinha('(-) CMV REAL (Insumos Consumidos)', dreGlobal.cmv, 'cmv', 'despesa')}
+                ${renderLinha(labelLinhaCMV, dreGlobal.cmv, 'cmv', 'despesa')}
                 
                 ${renderLinha('(=) LUCRO BRUTO (Margem de Contribuição)', dreGlobal.lucro_bruto, null, 'dre-subtotal')}
                 
-                ${renderLinha('(-) Despesas Operacionais (Aluguel, Folha, Manutenção)', dreGlobal.despesas_operacionais, 'despesas_operacionais', 'despesa')}
+                ${renderLinha('(-) Despesas Operacionais (Aluguel, Folha, Luz)', dreGlobal.despesas_operacionais, 'despesas_operacionais', 'despesa')}
                 ${renderLinha('(-) Despesas com Vendas (Marketing, Motoboy)', dreGlobal.despesas_vendas, 'despesas_vendas', 'despesa')}
                 
-                ${renderLinha('(=) RESULTADO OPERACIONAL (EBITDA base)', dreGlobal.resultado_operacional, null, 'dre-subtotal')}
+                ${renderLinha('(=) RESULTADO OPERACIONAL (EBITDA)', dreGlobal.resultado_operacional, null, 'dre-subtotal')}
                 
                 ${renderLinha('(-) Investimentos em Melhorias/Máquinas', dreGlobal.investimentos, 'investimentos', 'despesa')}
                 ${renderLinha('(-) Despesas Financeiras (Empréstimos, Juros)', dreGlobal.despesas_financeiras, 'despesas_financeiras', 'despesa')}
-                ${renderLinha('(-) Saídas Não Operacionais (Distribuição de Lucro)', dreGlobal.distribuicao_lucros + dreGlobal.nao_operacional, ['distribuicao_lucros', 'nao_operacional'], 'despesa')}
+                ${renderLinha('(-) Saídas Não Operacionais / Sócios', dreGlobal.distribuicao_lucros + dreGlobal.nao_operacional, ['distribuicao_lucros', 'nao_operacional'], 'despesa')}
                 ${renderLinha('(+) Outras Receitas / Aportes', dreGlobal.outras_receitas, ['outras_receitas', 'aporte_capital'], 'receita')}
                 
                 <div class="dre-row ${classeLucro}">
@@ -233,19 +291,13 @@
                     <span><span class="pct-badge" style="background: rgba(255,255,255,0.2); color: white;">${pctLucro}</span> ${fMoeda(dreGlobal.lucro_liquido)}</span>
                 </div>
             `;
-
-            // Garante que o status da aba "visão completa" continue aberto se a pessoa trocar o regime
-            const detalhes = document.querySelectorAll('.dre-detalhes');
-            if(visaoDetalhada) {
-                detalhes.forEach(el => el.style.display = 'block');
-            }
         };
 
         const carregarDRE = async () => {
             const container = document.getElementById('dre-conteudo');
-            container.innerHTML = '<h2 style="text-align: center; color: #333; margin-bottom: 20px;">Competência: Mês Atual</h2><div style="text-align: center; color: #666; font-style: italic;">Calculando inteligência financeira...</div>';
+            container.innerHTML = `<h2 style="text-align: center; color: #333; margin-bottom: 20px;">Competência: ${getNomeMesAno()}</h2><div style="text-align: center; color: #666; font-style: italic;">Calculando inteligência financeira...</div>`;
             try {
-                const res = await fetch(`${API_URL}/financeiro/dre?visao=${visaoRegime}`);
+                const res = await fetch(`${API_URL}/financeiro/dre?visao=${visaoRegime}&mes=${getMesParam()}&tipo_cmv=${tipoCmvAtual}`);
                 dreGlobal = await res.json();
                 renderizarDRE();
             } catch (e) {
