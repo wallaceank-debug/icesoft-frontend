@@ -7,7 +7,8 @@ const COLUNAS_ID = {
     'Saiu p/ Entrega': 'corpo-entrega',
     'Pronto para Retirada': 'corpo-entrega', // 👈 MUDANÇA: Ambos caem na mesma coluna visual
     'Entregue': 'corpo-entregue',
-    'Cancelado': 'corpo-cancelado'
+    'Cancelado': 'corpo-cancelado',
+    'Cancelada (Pix Expirado)': 'corpo-cancelado' // 👈 Exibe os Pix não pagos na coluna Cancelado
 };
 
 let pedidosGlobais = []; 
@@ -80,7 +81,7 @@ async function carregarPedidos() {
 
             if (v.data_hora) {
                 const dataPedido = new Date(v.data_hora).toDateString();
-                if ((statusLimpo === 'Entregue' || statusLimpo === 'Cancelado') && dataPedido !== hoje) {
+                if ((statusLimpo === 'Entregue' || statusLimpo === 'Cancelado' || statusLimpo === 'Cancelada (Pix Expirado)') && dataPedido !== hoje) {
                     return false; 
                 }
             }
@@ -96,6 +97,7 @@ async function carregarPedidos() {
         } else {
             pendentesAgora.forEach(pedido => {
                 if (!pedidosJaImpressos.includes(pedido.id)) {
+                    tocarCampainha();
                     imprimirComandaKanban(pedido);
                     pedidosJaImpressos.push(pedido.id);
                 }
@@ -551,7 +553,15 @@ window.onload = async () => {
             console.log("🔇 Etapa do pedido atualizada em silêncio:", dados);
             carregarPedidos(); 
         });
+
+        // 🔄 Se a internet oscilar e o rádio reconectar, puxa os pedidos imediatamente
+        socket.on('connect', () => {
+            carregarPedidos();
+        });
     }
+
+    // 🛡️ Ronda de segurança a cada 30 segundos (caso o Wi-Fi pisque na hora do Webhook)
+    setInterval(carregarPedidos, 30000);
 };
 
 // Função para buscar mesas ativas e atualizar o ícone no menu lateral

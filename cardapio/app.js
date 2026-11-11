@@ -1714,6 +1714,7 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
 
         if (!res.ok) {
             console.log("Aviso: Falha ao registrar na nuvem.");
+            return false;
         } else {
             // 👇 A MÁGICA DA ATUALIZAÇÃO EM TEMPO REAL:
             // Atualizamos a "carteirinha" salva na memória do celular do cliente imediatamente
@@ -1732,9 +1733,11 @@ async function salvarVendaDelivery(statusForcado = "Pendente Delivery", transaca
                 // Pede para o layout repintar o Cartão VIP na aba Clube
                 atualizarInterfaceLogin(cliente); 
             }
+            return true;
         }
     } catch (e) { 
         console.log("Aviso: Falha de rede ao registrar.");
+        return false;
     }
 }
 
@@ -3255,8 +3258,21 @@ async function gerarEPagarPix(valorEspecifico = null) {
         const data = await res.json();
 
         if (data.sucesso) {
-            // 3. Salva a venda travada como "Aguardando Pagamento"
-            await salvarVendaDelivery("Aguardando Pagamento", data.transacao_id.toString());
+            // 3. Salva a venda travada como "Aguardando Pagamento" (Com tentativa dupla se o 4G do cliente oscilar)
+            let salvouNoBanco = await salvarVendaDelivery("Aguardando Pagamento", data.transacao_id.toString());
+            if (!salvouNoBanco) {
+                // Segunda tentativa automática após 1 segundo
+                await new Promise(r => setTimeout(r, 1000));
+                salvouNoBanco = await salvarVendaDelivery("Aguardando Pagamento", data.transacao_id.toString());
+            }
+
+            // 🛑 TRAVA DE SEGURANÇA: Nunca exibe o QR Code se o pedido não tiver sido salvo no banco!
+            if (!salvouNoBanco) {
+                alert("⚠️ Sua internet oscilou e não conseguimos registrar seu pedido. Por favor, toque em Gerar Pix novamente.");
+                btn.innerText = "Gerar Pix Seguro";
+                btn.disabled = false;
+                return;
+            }
 
             // 4. Prepara a Interface de Cobrança na tela
             document.getElementById('pix-qr-code').src = `data:image/jpeg;base64,${data.qr_code_base64}`;
@@ -3316,35 +3332,30 @@ async function checarStatusPagamento(transacaoId) {
             document.getElementById('pix-status-texto').style.color = "#4CAF50";
             document.getElementById('pix-qr-code').style.opacity = "0.2";
 
-            // Calcula o valor para o Pixel
-            let totalPix = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+            // Calcula o valor para o Pixel já considerando cupom e frete sem chamar rota bloqueada
+            let subtotalPix = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
+            let descontoPix = 0;
+            if (cupomAtivo) {
+                let valorCupomNum = Number(cupomAtivo.valor) || 0;
+                descontoPix = cupomAtivo.tipo === 'porcentagem' ? subtotalPix * (valorCupomNum / 100) : valorCupomNum;
+            }
+
+            let taxaPixel = 0;
             const tipoEntregaChecked = document.querySelector('input[name="tipo_entrega"]:checked');
             if (tipoEntregaChecked && tipoEntregaChecked.value === 'delivery') {
                 const selectBairro = document.getElementById('cliente-bairro');
                 if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
-                    let taxaPixel = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
+                    taxaPixel = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
                     
-                    // ✨ CORREÇÃO: Avisa o Facebook sobre o frete grátis se for Porto Real
                     const selectCidade = document.getElementById('cliente-cidade');
                     const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
-                    if (cidade === 'Porto Real' && totalPix >= 45.00) {
+                    if (cidade === 'Porto Real' && subtotalPix >= 45.00) {
                         taxaPixel = 0;
                     }
-                    
-                    totalPix += taxaPixel;
                 }
             }
 
-            // Aplica descontos no CRM caso haja cupom e ajusta o valor do Pixel
-            if (cupomAtivo) {
-                const resVenda = await fetch(`${API_URL}/vendas`);
-                const vendas = await resVenda.json();
-                const venda = vendas.find(v => v.transacao_id === transacaoId.toString());
-                if(venda) {
-                    await registrarUsoCupomNaNuvem(cupomAtivo.codigo, venda.valor_total);
-                    totalPix = Number(venda.valor_total);
-                }
-            }
+            let totalPix = Math.max(0, (subtotalPix - descontoPix) + taxaPixel);
 
             // 📸 META PIXEL: Avisa o Facebook da Compra via PIX!
             try {
