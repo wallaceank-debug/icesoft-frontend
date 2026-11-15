@@ -338,9 +338,9 @@ function renderizarCardapio(lista) {
                 if (precoComDesconto < 0) precoComDesconto = 0;
                 
                 precoHtml = `
-                    <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1;">
-                        <span style="text-decoration: line-through; color: #94a3b8; font-size: 0.78rem; font-weight: 600;">${valorNormal}</span>
-                        <strong style="color: #10b981; font-size: 1.32rem; font-weight: 800; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.03em;">${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; gap: 2px;">
+                        <span style="text-decoration: line-through; color: #94a3b8; font-size: 1.32rem; font-weight: 700; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.03em;">${valorNormal}</span>
+                        <strong style="color: #10b981; font-size: 1.05rem; font-weight: 800; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.02em;">${precoComDesconto.toFixed(2).replace('.', ',')}</strong>
                     </div>
                 `;
             }
