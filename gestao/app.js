@@ -1914,22 +1914,85 @@ async function excluirInsumo(id) {
 }
 
 // ==========================================
-// 🛒 MOTOR DO MODAL DE COMPRAS DE ESTOQUE
+// 🛒 MOTOR DO MODAL DE COMPRAS DE ESTOQUE (INTEGRADO AO FINANCEIRO)
 // ==========================================
-function abrirModalLancamentoCompra() {
+let categoriasFinCompra = [];
+let bancosFinCompra = [];
+
+async function carregarDadosFinanceirosCompra() {
+    try {
+        const [resCat, resBancos] = await Promise.all([
+            fetch(`${API_URL}/financeiro/categorias`),
+            fetch(`${API_URL}/financeiro/bancos`)
+        ]);
+        categoriasFinCompra = resCat.ok ? await resCat.json() : [];
+        bancosFinCompra = resBancos.ok ? await resBancos.json() : [];
+
+        const selectCat = document.getElementById('compra-fin-categoria');
+        if (selectCat) {
+            selectCat.innerHTML = '';
+            // Prioriza exibir as subcontas do CMV no topo
+            const cmvCats = categoriasFinCompra.filter(c => c.ativa !== false && c.dre_ref === 'cmv');
+            const outrasDesp = categoriasFinCompra.filter(c => c.ativa !== false && c.tipo === 'Despesa' && c.dre_ref !== 'cmv');
+
+            if (cmvCats.length > 0) {
+                let grp = `<optgroup label="📦 Custos de Mercadoria (CMV)">`;
+                cmvCats.forEach(c => { grp += `<option value="${c.id}">${c.nome}</option>`; });
+                grp += `</optgroup>`;
+                selectCat.innerHTML += grp;
+            }
+            if (outrasDesp.length > 0) {
+                let grp2 = `<optgroup label="🏢 Outras Despesas">`;
+                outrasDesp.forEach(c => { grp2 += `<option value="${c.id}">${c.nome}</option>`; });
+                grp2 += `</optgroup>`;
+                selectCat.innerHTML += grp2;
+            }
+        }
+
+        const selectConta = document.getElementById('compra-fin-conta');
+        if (selectConta) {
+            selectConta.innerHTML = '';
+            bancosFinCompra
+                .filter(b => !b.nome.toLowerCase().includes('transição'))
+                .forEach(b => {
+                    selectConta.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+                });
+        }
+    } catch (e) {
+        console.error("Erro ao carregar bancos e categorias na Gestão:", e);
+    }
+}
+
+function toggleCamposFinanceiroCompra() {
+    const check = document.getElementById('compra-lancar-fin');
+    const area = document.getElementById('area-fin-compra');
+    if (check && area) {
+        area.style.display = check.checked ? 'flex' : 'none';
+    }
+}
+
+async function abrirModalLancamentoCompra() {
     const select = document.getElementById('compra-insumo-select');
     select.innerHTML = '<option value="" disabled selected>Escolha um item...</option>';
     
-    // Lista os itens em ordem alfabética na caixinha de seleção
     const insumosOrdenados = [...listaInsumos].sort((a, b) => a.nome.localeCompare(b.nome));
     insumosOrdenados.forEach(ins => {
-        select.innerHTML += `<option value="${ins.id}" data-unidade="${ins.unidade}">${ins.nome}</option>`;
+        select.innerHTML += `<option value="${ins.id}" data-unidade="${ins.unidade}" data-nome="${ins.nome}">${ins.nome}</option>`;
     });
 
-    // Limpa os campos da última vez que foi aberto
     document.getElementById('compra-qtd').value = '';
     document.getElementById('compra-valor').value = '';
     document.getElementById('compra-unidade-label').innerText = '';
+    
+    if (document.getElementById('compra-fin-data')) {
+        document.getElementById('compra-fin-data').value = new Date().toLocaleDateString('en-CA');
+    }
+    if (document.getElementById('compra-fin-status')) {
+        document.getElementById('compra-fin-status').value = 'Pago';
+    }
+
+    await carregarDadosFinanceirosCompra();
+    toggleCamposFinanceiroCompra();
     
     document.getElementById('modal-lancamento-compra').style.display = 'flex';
 }
@@ -1938,14 +2001,41 @@ function fecharModalLancamentoCompra() {
     document.getElementById('modal-lancamento-compra').style.display = 'none';
 }
 
-// Mágica de UX: Atualiza o texto (g), (ml) ou (un) conforme a pessoa seleciona
+// Mágica de UX: Atualiza a unidade (g/ml/un) E adivinha a subconta do CMV pelo nome do insumo!
 function atualizarUnidadeCompra() {
     const select = document.getElementById('compra-insumo-select');
     const opcaoSelecionada = select.options[select.selectedIndex];
     const unidade = opcaoSelecionada.getAttribute('data-unidade');
+    const nomeInsumo = (opcaoSelecionada.getAttribute('data-nome') || '').toUpperCase();
     
     if (unidade) {
         document.getElementById('compra-unidade-label').innerText = `(em ${unidade})`;
+    }
+
+    // 🧠 Auto-seleciona a categoria do CMV da Icesoft conforme o ingrediente escolhido
+    const selectCat = document.getElementById('compra-fin-categoria');
+    if (selectCat && categoriasFinCompra.length > 0 && nomeInsumo) {
+        const regrasInsumo = [
+            { termos: ['ACAI', 'AÇAÍ', 'SORVETE', 'PICOLE', 'PICOLÉ', 'BASE'], busca: 'Açaí' },
+            { termos: ['NUTELLA', 'AVELA', 'AVELÃ', 'LEITINHO', 'CREME', 'CALDA', 'COBERTURA'], busca: 'Cremes' },
+            { termos: ['LEITE', 'CONDENSADO', 'NINHO', 'LACTEO', 'CHANTILLY'], busca: 'Lácteos' },
+            { termos: ['MORANGO', 'BANANA', 'UVA', 'KIWI', 'FRUTA'], busca: 'Frutas' },
+            { termos: ['COPO', 'POTE', 'TAMPA', 'COLHER', 'SACOLA', 'GUARDANAPO', 'EMBALAGEM', 'ISOPOR'], busca: 'Embalagens' },
+            { termos: ['AGUA', 'ÁGUA', 'REFRI', 'COCA', 'GUARANA', 'SUCO'], busca: 'Bebidas' },
+            { termos: ['PACOCA', 'PAÇOCA', 'BIS', 'OREO', 'ÓREO', 'GRANOLA', 'CONFETE', 'CHOCOBOLL', 'AMENDOIM', 'OVO', 'GOTAS'], busca: 'Toppings' }
+        ];
+
+        for (let r of regrasInsumo) {
+            if (r.termos.some(t => nomeInsumo.includes(t))) {
+                const catEncontrada = categoriasFinCompra.find(c =>
+                    c.ativa !== false && c.nome.toLowerCase().includes(r.busca.toLowerCase())
+                );
+                if (catEncontrada) {
+                    selectCat.value = catEncontrada.id;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -1963,6 +2053,16 @@ async function confirmarLancamentoCompra() {
     const valorTotal = parseFloat(valorStr.replace(',', '.'));
     if (isNaN(valorTotal) || valorTotal < 0) return alert("⚠️ Preencha o valor total pago na nota fiscal.");
 
+    const lancarFin = document.getElementById('compra-lancar-fin')?.checked || false;
+    const categoriaId = document.getElementById('compra-fin-categoria')?.value || null;
+    const contaId = document.getElementById('compra-fin-conta')?.value || null;
+    const statusPgto = document.getElementById('compra-fin-status')?.value || 'Pago';
+    const dataVenc = document.getElementById('compra-fin-data')?.value || new Date().toLocaleDateString('en-CA');
+
+    if (lancarFin && (!categoriaId || !contaId)) {
+        return alert("⚠️ Selecione a Categoria do CMV e o Banco para lançar no Financeiro.");
+    }
+
     const btn = document.querySelector('#modal-lancamento-compra .btn-salvar');
     const txtOriginal = btn.innerText;
     btn.innerText = '⏳ Lançando...';
@@ -1972,16 +2072,25 @@ async function confirmarLancamentoCompra() {
         const res = await fetch(`${API_URL}/insumos/${idInsumo}/abastecer`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ quantidade: qtd, valor_total: valorTotal })
+            body: JSON.stringify({
+                quantidade: qtd,
+                valor_total: valorTotal,
+                lancar_financeiro: lancarFin,
+                categoria_id: categoriaId,
+                conta_id: contaId,
+                status_pagamento: statusPgto,
+                data_vencimento: dataVenc
+            })
         });
         
         if (res.ok) {
-            alert(`✅ Nota Lançada! Estoque e custo atualizados na base de dados.`);
+            alert(lancarFin
+                ? `✅ Nota Lançada! Estoque abastecido, fichas técnicas recalculadas e despesa registrada no Financeiro!`
+                : `✅ Nota Lançada! Estoque e custos da ficha técnica atualizados.`);
             fecharModalLancamentoCompra();
-            await carregarTudo(); // 👇 NOVO: Puxa o cardápio novamente para a tela atualizar os custos
+            await carregarTudo();
             await carregarInsumos();
             
-            // Atualiza a tela de trás respeitando os filtros ativos
             const termo = document.getElementById('filtro-insumos-gestao') ? document.getElementById('filtro-insumos-gestao').value : '';
             renderizarInsumosAdmin(termo);
         } else {

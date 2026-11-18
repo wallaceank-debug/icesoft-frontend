@@ -757,16 +757,16 @@
     <script src="app.js"></script>
 
     <!-- ==========================================
-             MODAL 3: LANÇAR COMPRA DE ESTOQUE (ENTRADA DE NOTA)
+             MODAL 3: LANÇAR COMPRA DE ESTOQUE (ENTRADA DE NOTA + INTEGRAÇÃO FINANCEIRA)
              ========================================== -->
         <div id="modal-lancamento-compra" class="modal-fundo" style="display:none; z-index:5000;">
-            <div class="modal-conteudo" style="max-width: 450px; width: 95%;">
+            <div class="modal-conteudo" style="max-width: 480px; width: 95%; max-height: 92vh; overflow-y: auto;">
                 <h2 style="color: #4CAF50; margin-top: 0; display:flex; align-items:center; gap:8px;">
-                    <span class="material-symbols-outlined">receipt_long</span> Entrada de Nota
+                    <span class="material-symbols-outlined">receipt_long</span> Entrada de Nota & Estoque
                 </h2>
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Lançamento de mercadoria recém-comprada para abastecer o estoque e atualizar o custo financeiro.</p>
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 18px;">Abastece a geladeira, recalcula as Fichas Técnicas e já lança a conta no Financeiro.</p>
                 
-                <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 14px;">
                     <div>
                         <label style="font-weight: bold; color: #555; font-size: 0.9rem;">1. Selecione o Ingrediente/Embalagem</label>
                         <select id="compra-insumo-select" class="input-padrao" onchange="atualizarUnidadeCompra()" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Poppins', sans-serif; margin-top: 5px; outline: none; cursor: pointer;">
@@ -783,14 +783,51 @@
                         <div style="flex: 1;">
                             <label style="font-weight: bold; color: #555; font-size: 0.9rem;">3. Valor Total (R$)</label>
                             <input type="number" id="compra-valor" class="input-padrao" placeholder="Ex: 150.50" step="0.01" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; font-family: 'Poppins', sans-serif;">
-                            <span style="font-size: 0.75rem; color: #999;">Valor pago na nota</span>
+                            <span style="font-size: 0.75rem; color: #999;">Valor total da nota</span>
+                        </div>
+                    </div>
+
+                    <!-- 💰 BLOCO DE INTEGRAÇÃO AUTOMÁTICA COM O FINANCEIRO -->
+                    <div style="background: #f1f8e9; border: 1px dashed #66bb6a; padding: 14px; border-radius: 10px; margin-top: 4px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; color: #2e7d32; font-size: 0.9rem;">
+                            <input type="checkbox" id="compra-lancar-fin" checked onchange="toggleCamposFinanceiroCompra()" style="width: 18px; height: 18px; accent-color: #2e7d32;">
+                            💰 Lançar despesa automaticamente no Financeiro
+                        </label>
+                        <small style="display: block; color: #558b2f; font-size: 0.75rem; margin-top: 3px; margin-left: 28px;">
+                            (Desmarque apenas se for importar essa saída depois pelo extrato OFX/CSV do banco)
+                        </small>
+
+                        <div id="area-fin-compra" style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #c8e6c9;">
+                            <div>
+                                <label style="font-weight: 600; color: #33691e; font-size: 0.82rem;">Categoria no DRE (CMV):</label>
+                                <select id="compra-fin-categoria" style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #a5d6a7; margin-top: 3px; background: white; font-family: inherit; font-size: 0.85rem;"></select>
+                            </div>
+
+                            <div>
+                                <label style="font-weight: 600; color: #33691e; font-size: 0.82rem;">Banco / Conta de Pagamento:</label>
+                                <select id="compra-fin-conta" style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #a5d6a7; margin-top: 3px; background: white; font-family: inherit; font-size: 0.85rem;"></select>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="font-weight: 600; color: #33691e; font-size: 0.82rem;">Status:</label>
+                                    <select id="compra-fin-status" style="width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #a5d6a7; margin-top: 3px; background: white; font-family: inherit; font-size: 0.85rem;">
+                                        <option value="Pago">✅ Já Pago (À Vista/Pix)</option>
+                                        <option value="Pendente">🗓️ Boleto a Pagar</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="font-weight: 600; color: #33691e; font-size: 0.82rem;">Data / Vencimento:</label>
+                                    <input type="date" id="compra-fin-data" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #a5d6a7; margin-top: 3px; background: white; font-family: inherit; font-size: 0.85rem; box-sizing: border-box;">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-botoes" style="margin-top: 25px;">
+                <div class="modal-botoes" style="margin-top: 20px;">
                     <button type="button" onclick="fecharModalLancamentoCompra()" class="btn-cancelar">Cancelar</button>
-                    <button type="button" onclick="confirmarLancamentoCompra()" class="btn-salvar" style="background: #4CAF50;">💾 Lançar no Estoque</button>
+                    <button type="button" onclick="confirmarLancamentoCompra()" class="btn-salvar" style="background: #4CAF50;">💾 Lançar Entrada</button>
                 </div>
             </div>
         </div>

@@ -1025,3 +1025,508 @@ async function carregarAlertasInteligentes() {
         console.error("Erro ao carregar alertas:", e);
     }
 }
+
+// ==========================================
+// 📥 CONCILIAÇÃO BANCÁRIA INTELIGENTE (LEITOR OFX E CSV)
+// ==========================================
+let transacoesExtratoLidas = [];
+let regrasConciliacaoMemoria = [];
+let hashesJaImportados = [];
+
+async function abrirModalImportarExtrato() {
+    await carregarBancos();
+    await carregarCategorias();
+
+    const selectConta = document.getElementById('imp-conta-id');
+    selectConta.innerHTML = '<option value="">Selecione o Banco...</option>';
+    contasBancariasGlobais.forEach(b => {
+        if (!b.nome.toLowerCase().includes('transição')) {
+            selectConta.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+        }
+    });
+
+    // Se já estava filtrando um banco na tela principal, pré-seleciona ele
+    const bancoFiltroAtual = document.getElementById('filtro-banco')?.value;
+    if (bancoFiltroAtual) selectConta.value = bancoFiltroAtual;
+
+    try {
+        const res = await fetch(`${API_URL}/financeiro/conciliacao/regras`);
+        const dados = await res.json();
+        regrasConciliacaoMemoria = dados.regras || [];
+        hashesJaImportados = dados.hashes_existentes || [];
+    } catch (e) {
+        regrasConciliacaoMemoria = [];
+        hashesJaImportados = [];
+    }
+
+    transacoesExtratoLidas = [];
+    document.getElementById('imp-arquivo').value = '';
+    document.getElementById('imp-resumo-barra').style.display = 'none';
+    document.getElementById('imp-lista-previa').innerHTML = '<p style="text-align: center; color: #888; font-style: italic; margin: 25px 0;">Escolha o banco acima e selecione um arquivo .OFX ou .CSV do seu computador.</p>';
+    document.getElementById('modal-importar-extrato').style.display = 'flex';
+}
+
+function fecharModalImportarExtrato() {
+    document.getElementById('modal-importar-extrato').style.display = 'none';
+}
+
+function limparDescricaoExtrato(desc) {
+    return (desc || '')
+        .replace(/PIX\s*(ENVIADO|RECEBIDO|TRANSF|QR\s*CODE)\s*[-:]?\s*/gi, '')
+        .replace(/PAGAMENTO\s*(DE\s*BOLETO|EFETUADO|TITULO)\s*[-:]?\s*/gi, '')
+        .replace(/COMPRA\s*(CARTAO|DEBITO)\s*[-:]?\s*/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function sugerirCategoriaAutomatica(descricao, tipo) {
+    const descUpper = (descricao || '').toUpperCase();
+
+    // 1. Primeiro olha na memória que você mesmo ensinou ao sistema
+    for (let r of regrasConciliacaoMemoria) {
+        if (r.termo_busca && descUpper.includes(r.termo_busca.toUpperCase())) {
+            return r.categoria_id;
+        }
+    }
+
+    // 2. Palavras-chave nativas da Icesoft (Sorveteria & Açaí + Bancos)
+    const mapaNativo = [
+        { termos: ['ENEL', 'LIGHT', 'ENERGIA', 'ELETRICA', 'CEMIG', 'CPFL'], buscaCat: 'Energia' },
+        { termos: ['CEDAE', 'AGUAS', 'SANEAMENTO', 'SABESP'], buscaCat: 'Água' },
+        { termos: ['VIVO', 'CLARO', 'TIM', 'OI ', 'INTERNET', 'FIBRA', 'HOST', 'EASYPANEL'], buscaCat: 'Internet' },
+        { termos: ['MOTOBOY', 'ENTREGADOR', 'ENTREGA'], buscaCat: 'Motoboy' },
+        { termos: ['POSTO', 'COMBUSTIVEL', 'GASOLINA', 'IPIRANGA', 'SHELL', 'BR MANIA'], buscaCat: 'Combustível' },
+        { termos: ['FACEBOOK', 'META ADS', 'INSTAGRAM', 'GOOGLE ADS', 'TRAFEGO'], buscaCat: 'Anúncios' },
+        { termos: ['ACAI', 'AÇAÍ', 'SORVETE', 'POLPA', 'PICOLE'], buscaCat: 'Açaí' },
+        { termos: ['NUTELLA', 'AVELA', 'LEITINHO', 'CALDA'], buscaCat: 'Cremes' },
+        { termos: ['ITAMBE', 'PIRACANJUBA', 'NESTLE', 'LEITE', 'LATICINIO'], buscaCat: 'Lácteos' },
+        { termos: ['HORTIFRUTI', 'SACOLAO', 'MORANGO', 'BANANA', 'FRUTA'], buscaCat: 'Frutas' },
+        { termos: ['EMBALAGEM', 'COPO', 'DESCARTAVEL', 'ISOPOR', 'PLAST'], buscaCat: 'Embalagens' },
+        { termos: ['COCA COLA', 'AMBEV', 'REFRIGERANTE', 'BEBIDA', 'DISTRIBUIDORA BEB'], buscaCat: 'Bebidas' },
+        { termos: ['DAS ', 'SIMPLES NACIONAL', 'RECEITA FEDERAL', 'MEI ', 'DARF'], buscaCat: 'Impostos' },
+        { termos: ['TARIFA', 'CESTA DE RELACIONAMENTO', 'ANUIDADE', 'MANUTENCAO CONTA'], buscaCat: 'Tarifas' },
+        { termos: ['SUMUP', 'REPASSE', 'LIQUIDACAO', 'IFOOD', 'PIX RECEBIDO'], buscaCat: 'Transferência' },
+        { termos: ['WALLACE', 'JACQUELINE', 'PRO-LABORE', 'PRO LABORE'], buscaCat: 'Pró-Labore' }
+    ];
+
+    for (let item of mapaNativo) {
+        if (item.termos.some(t => descUpper.includes(t))) {
+            const catAchada = categoriasFinanceiras.find(c =>
+                c.ativa !== false &&
+                (c.tipo === tipo || c.dre_ref === 'movimentacao_interna') &&
+                c.nome.toLowerCase().includes(item.buscaCat.toLowerCase())
+            );
+            if (catAchada) return catAchada.id;
+        }
+    }
+
+    return '';
+}
+
+function processarArquivoExtrato(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const conteudo = e.target.result;
+        const nomeArq = file.name.toLowerCase();
+
+        if (nomeArq.endsWith('.ofx') || conteudo.includes('<OFX>') || conteudo.includes('<STMTTRN>')) {
+            transacoesExtratoLidas = parseExtratoOFX(conteudo);
+        } else {
+            transacoesExtratoLidas = parseExtratoCSV(conteudo);
+        }
+
+        renderizarPreviaExtrato();
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function parseExtratoOFX(texto) {
+    const lista = [];
+    const blocos = texto.split(/<STMTTRN>/i).slice(1);
+
+    blocos.forEach((bloco, idx) => {
+        const getTag = (tag) => {
+            const regex = new RegExp(`<${tag}>([^<\\r\\n]+)`, 'i');
+            const m = bloco.match(regex);
+            return m ? m[1].trim() : '';
+        };
+
+        const dtRaw = getTag('DTPOSTED');
+        const valorRaw = getTag('TRNAMT').replace(',', '.');
+        const fitid = getTag('FITID');
+        const memo = getTag('MEMO') || getTag('NAME') || 'Lançamento Bancário';
+
+        if (!dtRaw || !valorRaw) return;
+
+        const ano = dtRaw.substring(0, 4);
+        const mes = dtRaw.substring(4, 6);
+        const dia = dtRaw.substring(6, 8);
+        const dataIso = `${ano}-${mes}-${dia}`;
+
+        const valorNum = parseFloat(valorRaw);
+        if (isNaN(valorNum) || valorNum === 0) return;
+
+        const tipo = valorNum < 0 ? 'Despesa' : 'Receita';
+        const valorAbs = Math.abs(valorNum);
+        const hash = fitid ? `OFX-${fitid}` : `OFX-${dataIso}-${valorAbs.toFixed(2)}-${memo.substring(0, 20)}`;
+        const jaExiste = hashesJaImportados.includes(hash);
+        const descLimpa = limparDescricaoExtrato(memo);
+
+        lista.push({
+            id_temp: idx,
+            selecionado: !jaExiste,
+            ja_importado: jaExiste,
+            data: dataIso,
+            descricao: memo,
+            termo_regra: descLimpa.toUpperCase().substring(0, 40),
+            valor: valorAbs,
+            tipo: tipo,
+            categoria_id: sugerirCategoriaAutomatica(memo, tipo),
+            salvar_regra: true,
+            hash_extrato: hash
+        });
+    });
+
+    return lista;
+}
+
+function parseExtratoCSV(texto) {
+    const lista = [];
+    const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== '');
+    if (linhas.length < 2) return lista;
+
+    const separador = linhas[0].includes(';') ? ';' : ',';
+    const cabecalho = linhas[0].split(separador).map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+
+    // Detecta colunas automaticamente (Mercado Pago, Sicredi, SumUp, iFood Pago)
+    let idxData = cabecalho.findIndex(c => c.includes('data') || c.includes('date') || c.includes('release_date'));
+    let idxDesc = cabecalho.findIndex(c => c.includes('descri') || c.includes('hist') || c.includes('detalhe') || c.includes('transaction_type') || c.includes('origem') || c.includes('title'));
+    let idxValor = cabecalho.findIndex(c => c.includes('valor') || c.includes('amount') || c.includes('net_amount') || c.includes('líquido') || c.includes('liquido'));
+    let idxId = cabecalho.findIndex(c => c === 'id' || c.includes('reference_id') || c.includes('documento') || c.includes('codigo'));
+
+    if (idxData === -1) idxData = 0;
+    if (idxDesc === -1) idxDesc = 1;
+    if (idxValor === -1) idxValor = cabecalho.length > 2 ? 2 : 1;
+
+    for (let i = 1; i < linhas.length; i++) {
+        const cols = linhas[i].split(separador).map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 2) continue;
+
+        const rawData = cols[idxData] || '';
+        let dataIso = '';
+
+        // Aceita DD/MM/YYYY ou YYYY-MM-DD
+        const mBR = rawData.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        const mISO = rawData.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (mBR) dataIso = `${mBR[3]}-${mBR[2]}-${mBR[1]}`;
+        else if (mISO) dataIso = `${mISO[1]}-${mISO[2]}-${mISO[3]}`;
+        else continue;
+
+        let rawValor = (cols[idxValor] || '').replace(/R\$\s?/gi, '').trim();
+        if (rawValor.includes(',') && rawValor.includes('.')) {
+            rawValor = rawValor.replace(/\./g, '').replace(',', '.');
+        } else if (rawValor.includes(',')) {
+            rawValor = rawValor.replace(',', '.');
+        }
+
+        const valorNum = parseFloat(rawValor);
+        if (isNaN(valorNum) || valorNum === 0) continue;
+
+        const desc = cols[idxDesc] || 'Lançamento Extrato CSV';
+        const idRef = idxId !== -1 ? cols[idxId] : '';
+        const tipo = valorNum < 0 ? 'Despesa' : 'Receita';
+        const valorAbs = Math.abs(valorNum);
+        const hash = idRef ? `CSV-${idRef}` : `CSV-${dataIso}-${valorAbs.toFixed(2)}-${desc.substring(0, 25)}`;
+        const jaExiste = hashesJaImportados.includes(hash);
+        const descLimpa = limparDescricaoExtrato(desc);
+
+        lista.push({
+            id_temp: i,
+            selecionado: !jaExiste,
+            ja_importado: jaExiste,
+            data: dataIso,
+            descricao: desc,
+            termo_regra: descLimpa.toUpperCase().substring(0, 40),
+            valor: valorAbs,
+            tipo: tipo,
+            categoria_id: sugerirCategoriaAutomatica(desc, tipo),
+            salvar_regra: true,
+            hash_extrato: hash
+        });
+    }
+
+    return lista;
+}
+
+function montarOptionsCategoriasExtrato(tipo, catSelecionadaId) {
+    let html = '<option value="">-- Escolha a Categoria --</option>';
+    const catValidas = categoriasFinanceiras.filter(c =>
+        c.ativa !== false && (c.tipo === tipo || c.dre_ref === 'movimentacao_interna')
+    );
+
+    catValidas.forEach(c => {
+        const sel = String(c.id) === String(catSelecionadaId) ? 'selected' : '';
+        const prefixo = c.dre_ref === 'movimentacao_interna' ? '🔄 [Interno/Sem DRE] ' : '';
+        html += `<option value="${c.id}" ${sel}>${prefixo}${c.nome}</option>`;
+    });
+    return html;
+}
+
+function renderizarPreviaExtrato() {
+    const container = document.getElementById('imp-lista-previa');
+    const barra = document.getElementById('imp-resumo-barra');
+    const apenasSaidas = document.getElementById('imp-apenas-saidas')?.checked || false;
+
+    const listaExibida = transacoesExtratoLidas.filter(t => !apenasSaidas || t.tipo === 'Despesa');
+
+    if (listaExibida.length === 0) {
+        barra.style.display = 'none';
+        container.innerHTML = '<p style="text-align: center; color: #c62828; font-weight: 600; margin: 20px 0;">Nenhuma transação encontrada para este filtro ou formato de arquivo.</p>';
+        return;
+    }
+
+    barra.style.display = 'flex';
+    const qtdSelecionados = listaExibida.filter(t => t.selecionado).length;
+    document.getElementById('imp-contador-texto').innerText = `${listaExibida.length} transações lidas (${qtdSelecionados} marcadas para importar)`;
+
+    let html = `<table style="width:100%; border-collapse: collapse; font-size: 0.84rem;">
+        <thead>
+            <tr style="border-bottom: 2px solid #ddd; color: #555; text-align: left;">
+                <th style="padding: 8px; width: 32px;">✔</th>
+                <th style="padding: 8px; width: 90px;">Data</th>
+                <th style="padding: 8px;">Descrição no Banco</th>
+                <th style="padding: 8px; width: 110px; text-align: right;">Valor</th>
+                <th style="padding: 8px; width: 250px;">Categoria (DRE)</th>
+                <th style="padding: 8px; width: 95px; text-align: center;">🧠 Lembrar</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    listaExibida.forEach(item => {
+        const corValor = item.tipo === 'Despesa' ? '#c62828' : '#2e7d32';
+        const sinal = item.tipo === 'Despesa' ? '- ' : '+ ';
+        const [ano, mes, dia] = item.data.split('-');
+        const dataBR = `${dia}/${mes}/${ano}`;
+        const badgeDup = item.ja_importado ? `<span style="background:#ffebee; color:#c62828; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:700;">Já Importado</span>` : '';
+
+        html += `
+            <tr style="border-bottom: 1px solid #eee; background: ${item.ja_importado ? '#f5f5f5' : 'white'}; opacity: ${item.ja_importado ? '0.6' : '1'};">
+                <td style="padding: 8px;">
+                    <input type="checkbox" ${item.selecionado ? 'checked' : ''} onchange="atualizarItemExtrato(${item.id_temp}, 'selecionado', this.checked)">
+                </td>
+                <td style="padding: 8px; color: #666;">${dataBR}</td>
+                <td style="padding: 8px;">
+                    <input type="text" value="${item.descricao.replace(/"/g, '&quot;')}" onchange="atualizarItemExtrato(${item.id_temp}, 'descricao', this.value)" style="width: 96%; padding: 5px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.82rem;">
+                    ${badgeDup}
+                </td>
+                <td style="padding: 8px; text-align: right; font-weight: 700; color: ${corValor};">
+                    ${sinal}R$ ${item.valor.toFixed(2).replace('.', ',')}
+                </td>
+                <td style="padding: 8px;">
+                    <select onchange="atualizarItemExtrato(${item.id_temp}, 'categoria_id', this.value)" style="width: 100%; padding: 6px; border: 1px solid ${item.categoria_id ? '#81c784' : '#ffb74d'}; border-radius: 6px; font-size: 0.82rem; background: ${item.categoria_id ? '#f1f8e9' : '#fff8e1'};">
+                        ${montarOptionsCategoriasExtrato(item.tipo, item.categoria_id)}
+                    </select>
+                </td>
+                <td style="padding: 8px; text-align: center;">
+                    <input type="checkbox" ${item.salvar_regra ? 'checked' : ''} onchange="atualizarItemExtrato(${item.id_temp}, 'salvar_regra', this.checked)" title="Lembrar categoria para: ${item.termo_regra}">
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+function atualizarItemExtrato(idTemp, campo, valor) {
+    const item = transacoesExtratoLidas.find(t => t.id_temp === idTemp);
+    if (!item) return;
+    item[campo] = valor;
+
+    // Se você escolheu a categoria de um fornecedor, preenche os outros iguais da mesma lista na mesma hora!
+    if (campo === 'categoria_id' && valor && item.termo_regra) {
+        transacoesExtratoLidas.forEach(outro => {
+            if (!outro.categoria_id && outro.tipo === item.tipo && outro.termo_regra === item.termo_regra) {
+                outro.categoria_id = valor;
+            }
+        });
+        renderizarPreviaExtrato();
+    }
+}
+
+function marcarTodosExtrato(marcar) {
+    transacoesExtratoLidas.forEach(t => {
+        t.selecionado = marcar ? !t.ja_importado : false;
+    });
+    renderizarPreviaExtrato();
+}
+
+async function confirmarImportacaoExtrato() {
+    const contaId = document.getElementById('imp-conta-id').value;
+    if (!contaId) return alert("⚠️ Escolha no Passo 1 de qual banco é este extrato!");
+
+    const apenasSaidas = document.getElementById('imp-apenas-saidas')?.checked || false;
+    const selecionados = transacoesExtratoLidas.filter(t => t.selecionado && (!apenasSaidas || t.tipo === 'Despesa'));
+
+    if (selecionados.length === 0) return alert("⚠️ Nenhum lançamento marcado para importar.");
+
+    const semCategoria = selecionados.filter(t => !t.categoria_id);
+    if (semCategoria.length > 0) {
+        return alert(`⚠️ Ainda faltam selecionar a categoria de ${semCategoria.length} lançamento(s) marcados (destacados em amarelo).`);
+    }
+
+    const btn = document.getElementById('btn-confirmar-importacao');
+    btn.disabled = true;
+    btn.innerText = "Importando...";
+
+    try {
+        const res = await fetch(`${API_URL}/financeiro/conciliacao/importar-lote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conta_id: contaId, itens: selecionados })
+        });
+        const resp = await res.json();
+        if (res.ok) {
+            alert(`✅ Conciliação concluída!\n\n• ${resp.importados} lançamentos importados com sucesso.\n• ${resp.ignorados} duplicados ignorados.`);
+            fecharModalImportarExtrato();
+            await carregarResumoFinanceiro();
+            await carregarLancamentos();
+        } else {
+            alert("❌ Erro ao importar: " + (resp.erro || "Verifique o servidor."));
+        }
+    } catch (e) {
+        alert("❌ Falha de conexão com o servidor.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "✅ Confirmar e Lançar Selecionados";
+    }
+}
+
+// ==========================================
+// 🚀 VIRADA DE ANO & RESET FINANCEIRO ICESOFT
+// ==========================================
+const BANCOS_OFICIAIS_ICESOFT = [
+    { nome: 'Mercado Pago', saldo: 0 },
+    { nome: 'Sicredi', saldo: 0 },
+    { nome: 'SumUp', saldo: 0 },
+    { nome: 'iFood Pago', saldo: 0 },
+    { nome: 'Cofrinho - Banco Icesoft (MP)', saldo: 0 },
+    { nome: 'Cofrinho - Reserva (MP)', saldo: 0 },
+    { nome: 'Caixa Físico (Gaveta)', saldo: 0 },
+    { nome: 'Conta de Transição (A Receber)', saldo: 0 }
+];
+
+function abrirModalViradaAno() {
+    const containerBancos = document.getElementById('virada-lista-bancos');
+    containerBancos.innerHTML = '';
+
+    BANCOS_OFICIAIS_ICESOFT.forEach((b, idx) => {
+        // Se o banco já existir cadastrado hoje, puxa o saldo atual dele como sugestão
+        const existente = contasBancariasGlobais.find(atual => atual.nome.toLowerCase() === b.nome.toLowerCase());
+        const saldoSugerido = existente ? parseFloat(existente.saldo_atual).toFixed(2) : '0.00';
+
+        containerBancos.innerHTML += `
+            <div style="background: white; padding: 8px 10px; border-radius: 8px; border: 1px solid #d1d9ff;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: #333; display: block; margin-bottom: 4px;">${b.nome}</label>
+                <input type="number" step="0.01" class="input-saldo-virada" data-nome="${b.nome}" value="${saldoSugerido}" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 6px; font-weight: 700; box-sizing: border-box;">
+            </div>
+        `;
+    });
+
+    document.getElementById('modal-virada-ano').style.display = 'flex';
+}
+
+function fecharModalViradaAno() {
+    document.getElementById('modal-virada-ano').style.display = 'none';
+}
+
+async function baixarBackupFinanceiroCSV() {
+    try {
+        const res = await fetch(`${API_URL}/financeiro/backup-lancamentos`);
+        const dados = await res.json();
+
+        let csv = 'ID;Vencimento;Descricao;Tipo;Valor;Status;Categoria;Banco\n';
+        dados.forEach(d => {
+            const dataF = d.data_vencimento ? d.data_vencimento.split('T')[0] : '';
+            const descLimpa = (d.descricao || '').replace(/;/g, ',').replace(/\r?\n/g, ' ');
+            csv += `${d.id};${dataF};"${descLimpa}";${d.tipo};${String(d.valor).replace('.', ',')};${d.status};"${d.categoria}";"${d.banco}"\n`;
+        });
+
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_financeiro_icesoft_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return true;
+    } catch (e) {
+        alert("❌ Erro ao baixar planilha de backup.");
+        return false;
+    }
+}
+
+async function executarViradaAnoIcesoft() {
+    const dataCorte = document.getElementById('virada-data-corte').value;
+    const recriarPlano = document.getElementById('virada-recriar-plano').checked;
+
+    if (!dataCorte) return alert("⚠️ Defina a Data de Corte do novo ciclo financeiro.");
+
+    const confirmacao = prompt(
+        `⚠️ ATENÇÃO: O sistema vai baixar o seu backup em Excel (.CSV), arquivar e limpar os lançamentos antigos, configurar seus 8 bancos/cofrinhos e instalar o Novo Plano de Contas da Icesoft.\n\nPara confirmar, digite ZERAR abaixo:`
+    );
+
+    if (!confirmacao || confirmacao.trim().toUpperCase() !== 'ZERAR') {
+        return alert("Operação cancelada.");
+    }
+
+    // 1. Faz o download automático do arquivo CSV de backup para o computador antes de limpar
+    await baixarBackupFinanceiroCSV();
+
+    const inputsBancos = document.querySelectorAll('.input-saldo-virada');
+    const bancosIniciais = [];
+    inputsBancos.forEach(inp => {
+        bancosIniciais.push({
+            nome: inp.getAttribute('data-nome'),
+            saldo_inicial: parseFloat(inp.value) || 0
+        });
+    });
+
+    const btn = document.getElementById('btn-executar-virada');
+    btn.disabled = true;
+    btn.innerText = "Processando Virada...";
+
+    try {
+        const res = await fetch(`${API_URL}/financeiro/virada-ano`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                data_corte: dataCorte,
+                bancos_iniciais: bancosIniciais,
+                recriar_plano_icesoft: recriarPlano
+            })
+        });
+
+        if (res.ok) {
+            alert("✅ Virada Financeira Icesoft concluída com sucesso! Seu arquivo de backup foi baixado e o novo sistema já está limpo e pronto.");
+            fecharModalViradaAno();
+            await carregarCategorias();
+            await carregarBancos();
+            popularFiltroBancos();
+            popularFiltroCategorias();
+            await carregarResumoFinanceiro();
+            await carregarLancamentos();
+        } else {
+            alert("❌ Erro ao executar a virada no servidor.");
+        }
+    } catch (e) {
+        alert("❌ Falha de conexão com o servidor.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "🚀 2. Executar Virada Limpa";
+    }
+}
