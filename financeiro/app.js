@@ -739,7 +739,8 @@ async function abrirModalBancos() {
                         R$ ${parseFloat(banco.saldo_atual).toFixed(2).replace('.', ',')}
                     </div>
                 </div>
-                <div style="display: flex; gap: 15px;">
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="limparExtratoBanco(${banco.id}, '${banco.nome.replace(/'/g, "\\'")}')" style="background:none; border:none; color:#00897b; cursor:pointer; font-size:1.2rem;" title="Limpar apenas os lançamentos deste banco">🧹</button>
                     <button onclick="prepararEdicaoBanco(${banco.id}, '${banco.nome}', ${banco.saldo_inicial})" style="background:none; border:none; color:#FF9800; cursor:pointer; font-size:1.2rem;" title="Editar Banco">✏️</button>
                     <button onclick="deletarBanco(${banco.id})" style="background:none; border:none; color:#f44336; cursor:pointer; font-size:1.2rem;" title="Excluir Banco">🗑️</button>
                 </div>
@@ -823,6 +824,24 @@ async function deletarBanco(id) {
             await abrirModalBancos(); 
         } else alert("❌ Erro ao deletar o banco.");
     } catch (e) { alert("❌ Falha de conexão."); }
+}
+
+async function limparExtratoBanco(id, nomeBanco) {
+    if (!confirm(`🧹 Deseja apagar TODOS os lançamentos apenas da conta "${nomeBanco}" para reimportar o extrato limpo?\n\n(Os outros bancos não serão afetados.)`)) return;
+    try {
+        const res = await fetch(`${API_URL}/financeiro/bancos/${id}/lancamentos`, { method: 'DELETE' });
+        const dados = await res.json();
+        if (res.ok) {
+            alert(`✅ ${dados.removidos} lançamentos removidos de "${nomeBanco}". Agora você pode importar o extrato novamente!`);
+            await carregarResumoFinanceiro();
+            await carregarLancamentos();
+            await abrirModalBancos();
+        } else {
+            alert("❌ Erro ao limpar lançamentos do banco.");
+        }
+    } catch (e) {
+        alert("❌ Falha de conexão com o servidor.");
+    }
 }
 
 // ==========================================
@@ -1230,22 +1249,20 @@ async function parseExtratoPDF(file) {
 
         if (isNaN(valorAbs) || valorAbs === 0) return;
 
-        // Extrai um possível ID de operação do Mercado Pago (sequência longa de 8+ dígitos) para trava anti-duplicidade
-        const matchIdOp = linha.match(/\b(\d{8,15})\b/);
-        const idOp = matchIdOp ? matchIdOp[1] : '';
-
-        // Limpa a descrição removendo data, valores monetários e o ID numérico
+        // Limpa a descrição removendo apenas a data e os valores monetários (mantém o nome/CPF para diferenciar clientes)
         let desc = linha
             .replace(matchData[0], '')
             .replace(regexValores, '')
-            .replace(idOp, '')
             .replace(/\s+/g, ' ')
             .trim();
 
-        if (!desc) desc = 'Movimentação Mercado Pago (PDF)';
+        if (!desc) desc = 'Movimentação Bancária (PDF)';
 
         const tipo = ehNegativo ? 'Despesa' : 'Receita';
-        const hash = idOp ? `PDF-${idOp}` : `PDF-${dataIso}-${valorAbs.toFixed(2)}-${desc.substring(0, 25)}`;
+        // Assinatura única por Data + Tipo + Valor + Descrição (não confunde CPF/CNPJ do Sicredi com ID repetido)
+        const hashBase = `PDF-${dataIso}-${tipo}-${valorAbs.toFixed(2)}-${desc.substring(0, 35)}`;
+        const qtdMesmoHash = lista.filter(x => x.hash_base === hashBase).length;
+        const hash = qtdMesmoHash > 0 ? `${hashBase}#${qtdMesmoHash + 1}` : hashBase;
         const jaExiste = hashesJaImportados.includes(hash);
         const descLimpa = limparDescricaoExtrato(desc);
 
@@ -1260,6 +1277,7 @@ async function parseExtratoPDF(file) {
             tipo: tipo,
             categoria_id: sugerirCategoriaAutomatica(desc, tipo),
             salvar_regra: true,
+            hash_base: hashBase,
             hash_extrato: hash
         });
     });
