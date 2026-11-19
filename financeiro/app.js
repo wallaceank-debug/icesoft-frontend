@@ -1123,14 +1123,34 @@ function sugerirCategoriaAutomatica(descricao, tipo) {
     return '';
 }
 
-function processarArquivoExtrato(event) {
+async function processarArquivoExtrato(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    const nomeArq = file.name.toLowerCase();
+
+    // 📄 LEITURA DE EXTRATO EM PDF (Mercado Pago e outros bancos)
+    if (nomeArq.endsWith('.pdf')) {
+        const container = document.getElementById('imp-lista-previa');
+        if (container) {
+            container.innerHTML = '<p style="text-align: center; color: #00695c; font-weight: 600; margin: 25px 0;">⏳ Lendo páginas do PDF e extraindo transações...</p>';
+        }
+        try {
+            transacoesExtratoLidas = await parseExtratoPDF(file);
+            renderizarPreviaExtrato();
+        } catch (err) {
+            console.error("Erro ao ler PDF:", err);
+            alert("❌ Não foi possível ler este arquivo PDF. Verifique se ele não está protegido por senha.");
+            if (container) {
+                container.innerHTML = '<p style="text-align: center; color: #c62828; margin: 25px 0;">Erro ao ler o PDF selecionado.</p>';
+            }
+        }
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
         const conteudo = e.target.result;
-        const nomeArq = file.name.toLowerCase();
 
         if (nomeArq.endsWith('.ofx') || conteudo.includes('<OFX>') || conteudo.includes('<STMTTRN>')) {
             transacoesExtratoLidas = parseExtratoOFX(conteudo);
@@ -1141,6 +1161,110 @@ function processarArquivoExtrato(event) {
         renderizarPreviaExtrato();
     };
     reader.readAsText(file, 'UTF-8');
+}
+
+async function parseExtratoPDF(file) {
+    if (typeof pdfjsLib === 'undefined') {
+        throw new Error("Biblioteca PDF.js não carregada.");
+    }
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    const linhasTexto = [];
+
+    // Percorre todas as páginas do extrato reconstruindo cada linha visual da tabela
+    for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const textContent = await page.getTextContent();
+
+        const linhasMap = [];
+        textContent.items.forEach(item => {
+            const str = (item.str || '').trim();
+            if (!str) return;
+            const y = Math.round(item.transform[5]);
+            const x = item.transform[4];
+
+            let linhaExistente = linhasMap.find(l => Math.abs(l.y - y) <= 3);
+            if (!linhaExistente) {
+                linhaExistente = { y, itens: [] };
+                linhasMap.push(linhaExistente);
+            }
+            linhaExistente.itens.push({ x, str });
+        });
+
+        // Ordena de cima para baixo na página e da esquerda para a direita na linha
+        linhasMap.sort((a, b) => b.y - a.y);
+        linhasMap.forEach(l => {
+            l.itens.sort((a, b) => a.x - b.x);
+            const textoLinha = l.itens.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
+            if (textoLinha) linhasTexto.push(textoLinha);
+        });
+    }
+
+    const lista = [];
+    const ignorarTermos = ['SALDO INICIAL', 'SALDO FINAL', 'SALDO DISPON', 'ENTRADAS:', 'SAÍDAS:', 'SAIDAS:', 'DATA DESCRI'];
+
+    linhasTexto.forEach((linha, idx) => {
+        const linhaUpper = linha.toUpperCase();
+        if (ignorarTermos.some(t => linhaUpper.includes(t))) return;
+
+        // Procura data no formato DD-MM-YYYY ou DD/MM/YYYY (padrão Mercado Pago e bancos BR)
+        const matchData = linha.match(/\b(\d{2})[\/\-](\d{2})[\/\-](\d{4})\b/);
+        if (!matchData) return;
+
+        const dataIso = `${matchData[3]}-${matchData[2]}-${matchData[1]}`;
+
+        // Captura todos os valores em reais na linha (ex: R$ -150,00 | -R$ 150,00 | -150,00 | 50,00)
+        const regexValores = /(?:[-+]\s*)?R\$\s*(?:[-+]\s*)?[\d\.]+,\d{2}|(?:[-+]\s*)?\b[\d\.]+,\d{2}\b/g;
+        const valoresEncontrados = linha.match(regexValores);
+        if (!valoresEncontrados || valoresEncontrados.length === 0) return;
+
+        // No extrato do Mercado Pago, o 1º valor da linha é o da transação e o 2º é o Saldo acumulado
+        const rawValor = valoresEncontrados[0];
+        const ehNegativo = rawValor.includes('-');
+        const numLimpo = rawValor.replace(/R\$|\s|\+|-/gi, '').replace(/\./g, '').replace(',', '.');
+        const valorAbs = parseFloat(numLimpo);
+
+        if (isNaN(valorAbs) || valorAbs === 0) return;
+
+        // Extrai um possível ID de operação do Mercado Pago (sequência longa de 8+ dígitos) para trava anti-duplicidade
+        const matchIdOp = linha.match(/\b(\d{8,15})\b/);
+        const idOp = matchIdOp ? matchIdOp[1] : '';
+
+        // Limpa a descrição removendo data, valores monetários e o ID numérico
+        let desc = linha
+            .replace(matchData[0], '')
+            .replace(regexValores, '')
+            .replace(idOp, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (!desc) desc = 'Movimentação Mercado Pago (PDF)';
+
+        const tipo = ehNegativo ? 'Despesa' : 'Receita';
+        const hash = idOp ? `PDF-${idOp}` : `PDF-${dataIso}-${valorAbs.toFixed(2)}-${desc.substring(0, 25)}`;
+        const jaExiste = hashesJaImportados.includes(hash);
+        const descLimpa = limparDescricaoExtrato(desc);
+
+        lista.push({
+            id_temp: idx,
+            selecionado: !jaExiste,
+            ja_importado: jaExiste,
+            data: dataIso,
+            descricao: desc,
+            termo_regra: descLimpa.toUpperCase().substring(0, 40),
+            valor: valorAbs,
+            tipo: tipo,
+            categoria_id: sugerirCategoriaAutomatica(desc, tipo),
+            salvar_regra: true,
+            hash_extrato: hash
+        });
+    });
+
+    return lista;
 }
 
 function parseExtratoOFX(texto) {
