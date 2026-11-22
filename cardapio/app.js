@@ -603,13 +603,18 @@ function abrirModalEscolha(produto, isEditing = false) {
         const gruposDoProduto = produto.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
         
         gruposDoProduto.forEach(grupo => {
-            const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+            // 🔥 Sobe automaticamente os adicionais em promoção para o topo da lista
+            const itensAtivos = (grupo.itens || [])
+                .filter(item => item.ativo !== false)
+                .sort((a, b) => (b.em_promocao === true ? 1 : 0) - (a.em_promocao === true ? 1 : 0));
             if (itensAtivos.length === 0) return;
 
             const limiteAtual = obterLimiteDoGrupoNoProduto(grupo.id);
 
             let itensHtml = itensAtivos.map((item, idx) => {
-                let precoSeguro = Number(item.preco) || 0; 
+                let precoNormal = Number(item.preco) || 0;
+                const temPromo = item.em_promocao === true && item.preco_promocional !== undefined && item.preco_promocional !== null && !isNaN(Number(item.preco_promocional));
+                let precoSeguro = temPromo ? Number(item.preco_promocional) : precoNormal;
                 let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
                 let identificador = `opc-${grupo.id}-${idx}`;
 
@@ -626,27 +631,45 @@ function abrirModalEscolha(produto, isEditing = false) {
                     nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); 
                 }
 
-                if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
+                if (temPromo) {
+                    let textoBadgePromo = '🔥 PROMO';
+                    if (precoSeguro === 0) {
+                        textoBadgePromo = '🔥 GRÁTIS HOJE';
+                    } else if (precoNormal > 0 && precoSeguro < precoNormal) {
+                        const pctOff = Math.round(((precoNormal - precoSeguro) / precoNormal) * 100);
+                        if (pctOff >= 5) textoBadgePromo = `🔥 -${pctOff}% OFF`;
+                    }
+                    tagHtml += `<span class="badge-promo-adicional">${textoBadgePromo}</span>`;
+                } else if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
                     tagHtml += `<span style="font-size: 0.65rem; background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 999px; font-weight: 800; border: 1px solid #bbf7d0; margin-left: 6px; vertical-align: middle;">🔥 Favorito</span>`;
                 }
 
                 const imgThumb = item.imagem_url
-                    ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 52px; height: 52px; border-radius: 12px; object-fit: cover; border: 1px solid #e2e8f0; flex-shrink: 0; cursor: zoom-in;">`
+                    ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 52px; height: 52px; border-radius: 12px; object-fit: cover; border: ${temPromo ? '2px solid #fb7185' : '1px solid #e2e8f0'}; flex-shrink: 0; cursor: zoom-in;">`
                     : ``; 
+
+                const precoVisualHtml = temPromo
+                    ? `<div style="display: flex; align-items: center; gap: 6px;">
+                           ${precoNormal > 0 ? `<span style="text-decoration: line-through; color: #94a3b8; font-size: 0.8rem; font-weight: 600;">+ ${precoNormal.toFixed(2).replace('.', ',')}</span>` : ''}
+                           <span style="color: #10b981; font-size: 0.92rem; font-weight: 800;">${precoSeguro > 0 ? '+ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis!'}</span>
+                       </div>`
+                    : `<span style="color: ${precoSeguro > 0 ? '#64748b' : '#10b981'}; font-size: 0.84rem; font-weight: 700;">${precoSeguro > 0 ? '+ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>`;
 
                 const nomePrecoHtml = `
                     <div style="display: flex; flex-direction: column; gap: 3px; justify-content: center;">
                         <div style="display: flex; align-items: center; flex-wrap: wrap;">
-                            <span style="font-weight: 600; color: #0f172a; font-size: 0.95rem; line-height: 1.25;">${nomeLimpoVisual}</span>
+                            <span style="font-weight: ${temPromo ? '800' : '600'}; color: ${temPromo ? '#9f1239' : '#0f172a'}; font-size: 0.95rem; line-height: 1.25;">${nomeLimpoVisual}</span>
                             ${tagHtml}
                         </div>
-                        <span style="color: ${precoSeguro > 0 ? '#64748b' : '#10b981'}; font-size: 0.84rem; font-weight: 700;">${precoSeguro > 0 ? '+ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                        ${precoVisualHtml}
                     </div>
                 `;
 
+                const classeCardPromo = temPromo ? 'item-opcional-card item-opcional-promo' : 'item-opcional-card';
+
                 if (limiteAtual === 1) { 
                     return `
-                    <div class="item-opcional-card" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; cursor:pointer;">
+                    <div class="${classeCardPromo}" onclick="toggleOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, '${identificador}')" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 8px; border-bottom: 1px solid #f1f5f9; cursor:pointer;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
                             ${imgThumb}
                             ${nomePrecoHtml}
@@ -659,13 +682,13 @@ function abrirModalEscolha(produto, isEditing = false) {
                     const displayBtnIni = qtdExistente > 0 ? 'none' : 'flex';
                     const displayControle = qtdExistente > 0 ? 'flex' : 'none';
                     return `
-                    <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 8px; border-bottom: 1px solid #f1f5f9;">
+                    <div class="${classeCardPromo}" style="display:flex; justify-content:space-between; align-items:center; padding: 12px 8px; border-bottom: 1px solid #f1f5f9;">
                         <div style="display:flex; align-items:center; gap:12px; flex: 1;">
                             ${imgThumb}
                             ${nomePrecoHtml}
                         </div>
                         <div style="flex-shrink: 0; padding-left: 10px;">
-                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: #f8fafc; color: var(--cor-primaria, #e91e63); border-radius: 12px; width: 44px; height: 44px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: 800; font-size: 1.4rem; cursor: pointer; border: 1.5px solid #e2e8f0; transition: 0.2s;">
+                            <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcional(${grupo.id}, '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}')" style="background: ${temPromo ? '#e91e63' : '#f8fafc'}; color: ${temPromo ? '#ffffff' : 'var(--cor-primaria, #e91e63)'}; border-radius: 12px; width: 44px; height: 44px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: 800; font-size: 1.4rem; cursor: pointer; border: 1.5px solid ${temPromo ? '#e91e63' : '#e2e8f0'}; transition: 0.2s;">
                                 +
                             </div>
                             <div id="controle-qtd-${identificador}" style="display: ${displayControle}; align-items: center; background: #ffffff; border: 1.5px solid var(--cor-primaria, #e91e63); border-radius: 999px; padding: 2px; box-shadow: 0 2px 8px rgba(233, 30, 99, 0.12);">
@@ -4482,14 +4505,19 @@ function abrirModalCombo(produtoCombo, isEditing = false) {
             const gruposDoFilho = produtoFilho.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
 
             gruposDoFilho.forEach((grupo) => {
-                const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+                // 🔥 Sobe automaticamente os adicionais em promoção para o topo também nos Combos
+                const itensAtivos = (grupo.itens || [])
+                    .filter(item => item.ativo !== false)
+                    .sort((a, b) => (b.em_promocao === true ? 1 : 0) - (a.em_promocao === true ? 1 : 0));
                 if (itensAtivos.length === 0) return;
                 
                 const secaoId = `${indexFilho}_${qtd}_${grupo.id}`;
                 const limiteAtual = Number(grupo.limite) || 1;
 
                 let itensHtml = itensAtivos.map((item, idx) => {
-                    let precoSeguro = Number(item.preco) || 0; 
+                    let precoNormal = Number(item.preco) || 0;
+                    const temPromo = item.em_promocao === true && item.preco_promocional !== undefined && item.preco_promocional !== null && !isNaN(Number(item.preco_promocional));
+                    let precoSeguro = temPromo ? Number(item.preco_promocional) : precoNormal;
                     let nomeCompleto = item.nome.replace(/'/g, "\\'"); 
                     let identificador = `opc-${secaoId}-${idx}`;
 
@@ -4504,22 +4532,40 @@ function abrirModalCombo(produtoCombo, isEditing = false) {
                         tagHtml += `<span class="tag-recomendacao">${matchTag[1]}</span>`;
                         nomeLimpoVisual = nomeCompleto.replace(/\[.*?\]/, '').trim(); 
                     }
-                    if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
+                    if (temPromo) {
+                        let textoBadgePromo = '🔥 PROMO';
+                        if (precoSeguro === 0) {
+                            textoBadgePromo = '🔥 GRÁTIS HOJE';
+                        } else if (precoNormal > 0 && precoSeguro < precoNormal) {
+                            const pctOff = Math.round(((precoNormal - precoSeguro) / precoNormal) * 100);
+                            if (pctOff >= 5) textoBadgePromo = `🔥 -${pctOff}% OFF`;
+                        }
+                        tagHtml += `<span class="badge-promo-adicional">${textoBadgePromo}</span>`;
+                    } else if (topAdicionaisGlobais.includes(nomeLimpoVisual.trim())) {
                         tagHtml += `<span style="font-size: 0.65rem; background: #c4eed0; color: #0f5223; padding: 3px 8px; border-radius: 12px; font-weight: bold; border: 1px solid #8fcf9e; margin-left: 6px; vertical-align: middle;">🔥 Mais Pedido</span>`;
                     }
 
-                    const imgThumb = item.imagem_url ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid #eee; flex-shrink: 0;">` : ``; 
+                    const imgThumb = item.imagem_url ? `<img src="${item.imagem_url}" onclick="event.stopPropagation(); abrirFotoInteira(this.src)" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: ${temPromo ? '2px solid #fb7185' : '1px solid #eee'}; flex-shrink: 0;">` : ``; 
+
+                    const precoVisualHtml = temPromo
+                        ? `<div style="display: flex; align-items: center; gap: 6px;">
+                               ${precoNormal > 0 ? `<span style="text-decoration: line-through; color: #94a3b8; font-size: 0.78rem; font-weight: 600;">+ ${precoNormal.toFixed(2).replace('.', ',')}</span>` : ''}
+                               <span style="color: #10b981; font-size: 0.9rem; font-weight: 800;">${precoSeguro > 0 ? '+ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis!'}</span>
+                           </div>`
+                        : `<span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>`;
 
                     const nomePrecoHtml = `
                         <div style="display: flex; flex-direction: column; gap: 3px; justify-content: center;">
-                            <div style="display: flex; align-items: center; flex-wrap: wrap;"><span style="font-weight:600; color:#333;">${nomeLimpoVisual}</span>${tagHtml}</div>
-                            <span style="color:#25D366; font-size:0.85rem; font-weight: 600;">${precoSeguro > 0 ? '+ R$ ' + precoSeguro.toFixed(2).replace('.', ',') : 'Grátis'}</span>
+                            <div style="display: flex; align-items: center; flex-wrap: wrap;"><span style="font-weight:${temPromo ? '800' : '600'}; color:${temPromo ? '#9f1239' : '#333'};">${nomeLimpoVisual}</span>${tagHtml}</div>
+                            ${precoVisualHtml}
                         </div>
                     `;
 
+                    const classeCardPromo = temPromo ? 'item-opcional-card item-opcional-promo' : 'item-opcional-card';
+
                     if (limiteAtual === 1) { 
                         return `
-                        <div class="item-opcional-card" onclick="toggleOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, '${identificador}', ${limiteAtual})" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
+                        <div class="${classeCardPromo}" onclick="toggleOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, '${identificador}', ${limiteAtual})" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; cursor:pointer;">
                             <div style="display:flex; align-items:center; gap:12px; flex: 1;">${imgThumb}${nomePrecoHtml}</div>
                             <div style="flex-shrink: 0; padding-left: 10px;"><input type="checkbox" id="${identificador}" ${isChecked} style="accent-color:var(--cor-primaria, #e91e63); pointer-events:none; flex-shrink: 0; width: 22px; height: 22px; margin: 0;"></div>
                         </div>`;
@@ -4527,10 +4573,10 @@ function abrirModalCombo(produtoCombo, isEditing = false) {
                         const displayBtnIni = qtdExistente > 0 ? 'none' : 'flex';
                         const displayControle = qtdExistente > 0 ? 'flex' : 'none';
                         return `
-                        <div class="item-opcional-card" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                        <div class="${classeCardPromo}" style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
                             <div style="display:flex; align-items:center; gap:12px; flex: 1;">${imgThumb}${nomePrecoHtml}</div>
                             <div style="flex-shrink: 0; padding-left: 10px;">
-                                <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}', ${limiteAtual}, '${grupo.nome}')" style="background: #f0f2f5; color: var(--cor-primaria, #e91e63); border-radius: 8px; width: 36px; height: 36px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid #e0e0e0;">+</div>
+                                <div id="btn-add-ini-${identificador}" onclick="alterarQtdOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, 1, '${identificador}', ${limiteAtual}, '${grupo.nome}')" style="background: ${temPromo ? '#e91e63' : '#f0f2f5'}; color: ${temPromo ? '#ffffff' : 'var(--cor-primaria, #e91e63)'}; border-radius: 8px; width: 36px; height: 36px; display: ${displayBtnIni}; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; cursor: pointer; border: 1px solid ${temPromo ? '#e91e63' : '#e0e0e0'};">+</div>
                                 <div id="controle-qtd-${identificador}" style="display: ${displayControle}; align-items: center; background: #f4f7f6; border: 1px solid var(--cor-primaria, #e91e63); border-radius: 8px; padding: 2px;">
                                     <button onclick="alterarQtdOpcionalCombo('${secaoId}', '${nomeCompleto}', ${precoSeguro}, -1, '${identificador}', ${limiteAtual}, '${grupo.nome}')" style="background: none; border: none; font-size: 1.2rem; color: #555; cursor: pointer; width: 32px; height: 32px;">-</button>
                                     <span id="${identificador}" style="font-weight: bold; font-size: 1rem; color: #333; min-width: 24px; text-align: center;">${qtdExistente}</span>

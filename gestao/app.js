@@ -295,8 +295,18 @@ function renderizarGrupos(filtro = '') {
                     ? `<img src="${item.imagem_url}" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid #ddd; flex-shrink: 0;">`
                     : `<div style="width: 45px; height: 45px; border-radius: 8px; border: 1px dashed #ccc; background: #fafafa; flex-shrink: 0; display: flex; justify-content: center; align-items: center; color: #ccc; font-size: 0.7rem;">sem foto</div>`;
 
-                // Ajuste inteligente para mostrar se os preços de PDV e Delivery são diferentes
+                // Ajuste inteligente para mostrar se há Promoção ou diferença entre PDV e Delivery
+                let badgePromoAdic = '';
                 let textoPreco = item.preco > 0 ? '+ R$ ' + Number(item.preco).toFixed(2).replace('.', ',') : 'Grátis';
+
+                if (item.em_promocao === true && item.preco_promocional !== undefined && item.preco_promocional !== null) {
+                    const precoPromoFormatado = Number(item.preco_promocional) > 0
+                        ? '+ R$ ' + Number(item.preco_promocional).toFixed(2).replace('.', ',')
+                        : 'Grátis';
+                    badgePromoAdic = `<span style="background: #ff4081; color: white; font-size: 0.7rem; padding: 2px 7px; border-radius: 10px; margin-left: 6px; font-weight: 700;">🔥 PROMO</span>`;
+                    textoPreco = `<span style="text-decoration: line-through; color: #999; font-weight: normal; margin-right: 5px;">${textoPreco}</span> <span style="color: #ff4081;">${precoPromoFormatado}</span>`;
+                }
+
                 if (item.preco_pdv !== undefined && item.preco_pdv !== item.preco) {
                     let textoPrecoPdv = item.preco_pdv > 0 ? 'R$ ' + Number(item.preco_pdv).toFixed(2).replace('.', ',') : 'Grátis';
                     textoPreco = `Delivery: ${textoPreco} | PDV: <span style="color: #00bcd4;">${textoPrecoPdv}</span>`;
@@ -308,7 +318,7 @@ function renderizarGrupos(filtro = '') {
                         <div class="${classeInativoItem}" style="display: flex; align-items: center; gap: 15px; flex: 1;">
                             ${imgThumb}
                             <div style="display: flex; flex-direction: column; text-align: left;">
-                                <span style="font-weight: 600; color: #333; font-size: 1rem;">${item.nome}</span>
+                                <span style="font-weight: 600; color: #333; font-size: 1rem;">${item.nome} ${badgePromoAdic}</span>
                                 <span style="color: #25D366; font-size: 0.85rem; font-weight: bold;">${textoPreco}</span>
                             </div>
                         </div>
@@ -377,6 +387,14 @@ async function duplicarGrupo(id) {
     } catch (e) { alert("❌ Erro ao duplicar grupo."); }
 }
 
+function toggleAreaPromoAdicional() {
+    const check = document.getElementById('adic-em-promocao');
+    const area = document.getElementById('area-preco-promo-adic');
+    if (check && area) {
+        area.style.display = check.checked ? 'block' : 'none';
+    }
+}
+
 function abrirModalAdicional(idGrupo, indexItem = null) {
     const modal = document.getElementById('modal-adicional');
     const titulo = document.getElementById('titulo-modal-adicional');
@@ -394,6 +412,12 @@ function abrirModalAdicional(idGrupo, indexItem = null) {
         // Se o preço do PDV não existir no banco antigo, ele copia o preço normal para não dar erro
         document.getElementById('adic-preco-pdv').value = item.preco_pdv !== undefined ? item.preco_pdv : item.preco;
         document.getElementById('adic-imagem-url').value = item.imagem_url || '';
+
+        // 🔥 Carrega os dados da promoção do adicional
+        const emPromo = item.em_promocao === true;
+        document.getElementById('adic-em-promocao').checked = emPromo;
+        document.getElementById('adic-preco-promocional').value = (item.preco_promocional !== undefined && item.preco_promocional !== null) ? item.preco_promocional : '';
+        toggleAreaPromoAdicional();
         
         const insJsonAdic = typeof item.insumos_json === 'string' ? item.insumos_json : JSON.stringify(item.insumos_json || []);
         document.getElementById('adic-insumos-json').value = insJsonAdic;
@@ -405,6 +429,11 @@ function abrirModalAdicional(idGrupo, indexItem = null) {
         document.getElementById('adic-preco').value = '';
         document.getElementById('adic-preco-pdv').value = '';
         document.getElementById('adic-imagem-url').value = '';
+
+        // 🔥 Limpa os dados da promoção para novo adicional
+        document.getElementById('adic-em-promocao').checked = false;
+        document.getElementById('adic-preco-promocional').value = '';
+        toggleAreaPromoAdicional();
         
         document.getElementById('adic-insumos-json').value = '[]';
         if(typeof atualizarResumoInsumos === 'function') atualizarResumoInsumos('adic-resumo-insumos', '[]');
@@ -426,7 +455,17 @@ async function salvarAdicional() {
     const precoPdv = parseFloat(document.getElementById('adic-preco-pdv').value.replace(',', '.')) || 0;
     let imagemUrl = document.getElementById('adic-imagem-url').value;
 
+    const emPromocao = document.getElementById('adic-em-promocao')?.checked || false;
+    const precoPromoStr = document.getElementById('adic-preco-promocional')?.value.replace(',', '.') || '';
+    const precoPromocional = emPromocao ? parseFloat(precoPromoStr) : null;
+
     if (!nome) return alert("⚠️ Preencha o nome do adicional!");
+    if (emPromocao && (isNaN(precoPromocional) || precoPromocional < 0)) {
+        return alert("⚠️ Digite um preço promocional válido para o adicional!");
+    }
+    if (emPromocao && preco > 0 && precoPromocional >= preco) {
+        return alert("⚠️ O preço promocional precisa ser menor que o preço normal de Delivery!");
+    }
 
     const btn = document.getElementById('btn-salvar-adicional');
     const textoOriginal = btn.innerText;
@@ -465,9 +504,20 @@ async function salvarAdicional() {
         grupo.itens[indexItem].preco_pdv = precoPdv; // Atualiza o preço da loja
         grupo.itens[indexItem].imagem_url = imagemUrl;
         grupo.itens[indexItem].insumos_json = insumos_json;
+        grupo.itens[indexItem].em_promocao = emPromocao;
+        grupo.itens[indexItem].preco_promocional = precoPromocional;
     } else {
         // Criando novo
-        grupo.itens.push({ nome, preco, preco_pdv: precoPdv, imagem_url: imagemUrl, ativo: true, insumos_json: insumos_json });
+        grupo.itens.push({
+            nome,
+            preco,
+            preco_pdv: precoPdv,
+            imagem_url: imagemUrl,
+            ativo: true,
+            insumos_json: insumos_json,
+            em_promocao: emPromocao,
+            preco_promocional: precoPromocional
+        });
     }
 
     try {
