@@ -367,19 +367,54 @@ function abrirModalEscolhaMesa(produto) {
         .filter(g => g && g.ativo !== false); 
 
     gruposDoProduto.forEach((grupo, indexGrupo) => {
-        const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+        // 🔥 Sobe os adicionais em promoção para o topo na tela das Mesas
+        const itensAtivos = (grupo.itens || [])
+            .filter(item => item.ativo !== false)
+            .sort((a, b) => (b.em_promocao === true ? 1 : 0) - (a.em_promocao === true ? 1 : 0));
         if (itensAtivos.length === 0) return;
 
         let itensHtml = itensAtivos.map((item, idx) => {
             const chkId = `mesa-chk-${grupo.id}-${idx}`;
-            const precoAdc = Number(item.preco) > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</span>` : '';
+            const nomeSeguro = item.nome.replace(/'/g, "\\'");
+
+            // Usa o preço de loja (PDV) se existir, senão usa o preço padrão
+            let precoNormalLoja = Number(item.preco) || 0;
+            if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") {
+                precoNormalLoja = Number(item.preco_pdv);
+            }
+
+            // 🔥 Se o adicional estiver em promoção, aplica o novo preço padronizado
+            const temPromo = item.em_promocao === true && item.preco_promocional !== undefined && item.preco_promocional !== null && !isNaN(Number(item.preco_promocional));
+            const precoReal = temPromo ? Number(item.preco_promocional) : precoNormalLoja;
+
+            let precoAdc = '';
+            if (temPromo) {
+                const textoNovoPreco = precoReal > 0 ? `+ R$ ${precoReal.toFixed(2).replace('.', ',')}` : 'Grátis';
+                precoAdc = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${precoNormalLoja > 0 ? `<span style="text-decoration:line-through; color:#999; font-size:0.85rem;">R$ ${precoNormalLoja.toFixed(2).replace('.', ',')}</span>` : ''}
+                        <span style="color:#e91e63; font-weight:700;">${textoNovoPreco}</span>
+                    </div>
+                `;
+            } else if (precoReal > 0) {
+                precoAdc = `<span style="color:#25D366; font-weight:600;">+ R$ ${precoReal.toFixed(2).replace('.', ',')}</span>`;
+            }
+
+            const badgePromo = temPromo
+                ? `<span style="background:#e91e63; color:white; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:10px;">🔥 PROMO</span>`
+                : '';
+
+            const estiloLinha = temPromo
+                ? 'display:flex; justify-content:space-between; align-items:center; padding:12px 10px; margin:4px 0; background:#fff0f5; border:1px solid #ffb2ce; border-radius:8px; cursor:pointer;'
+                : 'display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;';
             
             return `
-            <div onclick="toggleOpcionalMesa(${grupo.id}, '${item.nome}', ${item.preco}, '${chkId}')" 
-                 style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">
-                    <span style="font-weight: 400; color: #022344; font-size: 1.1rem;">${item.nome}</span>
+            <div onclick="toggleOpcionalMesa(${grupo.id}, '${nomeSeguro}', ${precoReal}, '${chkId}')" 
+                 style="${estiloLinha}">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:${temPromo ? '#e91e63' : '#022344'}; pointer-events:none;">
+                    <span style="font-weight: ${temPromo ? '700' : '400'}; color: ${temPromo ? '#ad1457' : '#022344'}; font-size: 1.1rem;">${item.nome}</span>
+                    ${badgePromo}
                 </div>
                 ${precoAdc}
             </div>`;
@@ -1159,23 +1194,54 @@ function abrirModalComboMesa(produtoCombo) {
             const gruposDoFilho = produtoFilho.grupos_ids.map(id => gruposGlobais.find(g => g.id === Number(id))).filter(g => g && g.ativo !== false);
 
             gruposDoFilho.forEach((grupo) => {
-                const itensAtivos = (grupo.itens || []).filter(item => item.ativo !== false);
+                // 🔥 Sobe os adicionais em promoção para o topo nos Combos das Mesas
+                const itensAtivos = (grupo.itens || [])
+                    .filter(item => item.ativo !== false)
+                    .sort((a, b) => (b.em_promocao === true ? 1 : 0) - (a.em_promocao === true ? 1 : 0));
                 if (itensAtivos.length === 0) return;
                 
                 const secaoId = `${indexFilho}_${qtd}_${grupo.id}`; 
 
                 let itensHtml = itensAtivos.map((item, idx) => {
                     const chkId = `mesa-chk-${secaoId}-${idx}`;
-                    let precoReal = Number(item.preco);
-                    if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") precoReal = Number(item.preco_pdv);
-                    const precoAdc = precoReal > 0 ? `<span style="color:#25D366; font-weight:600;">+ R$ ${precoReal.toFixed(2).replace('.', ',')}</span>` : '';
+                    const nomeSeguro = item.nome.replace(/'/g, "\\'");
+
+                    let precoNormalLoja = Number(item.preco) || 0;
+                    if (item.preco_pdv !== undefined && item.preco_pdv !== null && item.preco_pdv !== "") {
+                        precoNormalLoja = Number(item.preco_pdv);
+                    }
+
+                    const temPromo = item.em_promocao === true && item.preco_promocional !== undefined && item.preco_promocional !== null && !isNaN(Number(item.preco_promocional));
+                    const precoReal = temPromo ? Number(item.preco_promocional) : precoNormalLoja;
+
+                    let precoAdc = '';
+                    if (temPromo) {
+                        const textoNovoPreco = precoReal > 0 ? `+ R$ ${precoReal.toFixed(2).replace('.', ',')}` : 'Grátis';
+                        precoAdc = `
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                ${precoNormalLoja > 0 ? `<span style="text-decoration:line-through; color:#999; font-size:0.85rem;">R$ ${precoNormalLoja.toFixed(2).replace('.', ',')}</span>` : ''}
+                                <span style="color:#e91e63; font-weight:700;">${textoNovoPreco}</span>
+                            </div>
+                        `;
+                    } else if (precoReal > 0) {
+                        precoAdc = `<span style="color:#25D366; font-weight:600;">+ R$ ${precoReal.toFixed(2).replace('.', ',')}</span>`;
+                    }
+
+                    const badgePromo = temPromo
+                        ? `<span style="background:#e91e63; color:white; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:10px;">🔥 PROMO</span>`
+                        : '';
+
+                    const estiloLinha = temPromo
+                        ? 'display:flex; justify-content:space-between; align-items:center; padding:12px 10px; margin:4px 0; background:#fff0f5; border:1px solid #ffb2ce; border-radius:8px; cursor:pointer;'
+                        : 'display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;';
                     
                     return `
-                    <div onclick="toggleOpcionalComboMesa('${secaoId}', '${item.nome}', ${precoReal}, '${chkId}', ${grupo.limite})" 
-                         style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #eee; cursor:pointer;">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:#022344; pointer-events:none;">
-                            <span style="font-weight: 400; color: #022344; font-size: 1.1rem;">${item.nome}</span>
+                    <div onclick="toggleOpcionalComboMesa('${secaoId}', '${nomeSeguro}', ${precoReal}, '${chkId}', ${grupo.limite})" 
+                         style="${estiloLinha}">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <input type="checkbox" id="${chkId}" style="width:20px; height:20px; accent-color:${temPromo ? '#e91e63' : '#022344'}; pointer-events:none;">
+                            <span style="font-weight: ${temPromo ? '700' : '400'}; color: ${temPromo ? '#ad1457' : '#022344'}; font-size: 1.1rem;">${item.nome}</span>
+                            ${badgePromo}
                         </div>
                         ${precoAdc}
                     </div>`;
