@@ -207,7 +207,42 @@
                     <button id="btn-salvar-mensagens" onclick="salvarMensagens()" style="width: 100%; padding: 15px; background: #00bcd4; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s;">💾 Salvar Mensagens</button>
                 </div>
 
-                <!-- CARD 3: IFOOD (EM BREVE) -->
+                <!-- CARD 3: RECUPERAÇÃO DE CARRINHO ABANDONADO -->
+                <div class="card-integracao">
+                    <div class="header-card-int">
+                        <div style="font-size: 2.5rem;">🛒</div>
+                        <div style="flex: 1;">
+                            <h2 style="margin: 0; font-size: 1.2rem; color: #333;">Recuperação de Carrinho</h2>
+                            <span class="status-badge" id="status-rec-carrinho">Desligado</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #fff8e1; border: 1px dashed #ffb300; padding: 10px 12px; border-radius: 8px; font-size: 0.8rem; color: #795548; margin-bottom: 15px; line-height: 1.45;">
+                        <strong>🛡️ Regras automáticas ativas:</strong><br>
+                        • Dispara após <strong>15 min</strong> de abandono (apenas carrinhos novos).<br>
+                        • Trava anti-abuso: máximo <strong>1 envio a cada 15 dias</strong> por cliente.<br>
+                        • Pausa sozinho quando a loja estiver fechada.
+                    </div>
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 15px;">
+                        <input type="checkbox" id="rec-carrinho-ativo" onchange="atualizarBadgeRecuperacao()" style="width: 20px; height: 20px; accent-color: #25D366; cursor: pointer;">
+                        <span style="font-weight: 700; color: #333;">Ativar robô de recuperação automática</span>
+                    </label>
+
+                    <label>🎟️ Código do Cupom Programado (crie antes em Gestão Delivery)</label>
+                    <input type="text" id="rec-carrinho-cupom" class="input-padrao" placeholder="Ex: VOLTA10" style="text-transform: uppercase;">
+
+                    <span class="variavel-dica">
+                        Variáveis mágicas: <span class="variavel-tag">{nome}</span>, <span class="variavel-tag">{itens}</span>, <span class="variavel-tag">{total}</span> e <span class="variavel-tag">{cupom}</span>.
+                    </span>
+
+                    <label>💬 Mensagem enviada após 15 minutos</label>
+                    <textarea id="msg-carrinho-abandonado" class="input-padrao" rows="6" placeholder="Oi {nome}! 🍦 Vi que você deixou algumas delícias na sua sacola na Icesoft:&#10;&#10;{itens}&#10;Total: {total}&#10;&#10;Sua sacola ainda está guardadinha te esperando! Use o cupom *{cupom}* para finalizar agora: https://icesoftsorvetes.com.br"></textarea>
+
+                    <button id="btn-salvar-recuperacao" onclick="salvarRecuperacaoCarrinho()" style="width: 100%; padding: 15px; background: #e91e63; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s;">💾 Salvar Recuperação</button>
+                </div>
+
+                <!-- CARD 4: IFOOD (EM BREVE) -->
                 <div class="card-integracao" style="opacity: 0.6;">
                     <div class="header-card-int">
                         <div style="font-size: 2.5rem; background: #ea1d2c; width: 45px; height: 45px; border-radius: 10px; display: flex; justify-content: center; align-items: center; color: white;">iF</div>

@@ -185,6 +185,7 @@ async function carregarTudo() {
         renderizarCidades(); 
         renderizarBairros(); 
         renderizarVitrineClube();
+        restaurarCarrinhoDaMemoria(); // 🛍️ NOVO: Restaura a sacola guardada no celular (até 4h)
         carregarModuloPecaDeNovo(); // ⚡ NOVO: Ativa o módulo "Peça de Novo em 1 Toque"
 
         // 🚀 UX OTIMIZADA: Carrosséis e Banners foram desativados para focar 
@@ -1193,6 +1194,10 @@ function atualizarBarraCarrinho() {
         barra.classList.replace('carrinho-visivel', 'carrinho-oculto');
         barra.style.display = 'none';
     }
+
+    // 🛍️ Salva a sacola no celular e avisa o radar de recuperação
+    if (typeof salvarCarrinhoNaMemoria === 'function') salvarCarrinhoNaMemoria();
+    if (typeof sincronizarCarrinhoNuvem === 'function') sincronizarCarrinhoNuvem();
 }
 
 function renderizarResumoCarrinho() {
@@ -1826,6 +1831,7 @@ async function processarEnvioWhatsApp() {
     } catch(e) { console.log("⚠️ Erro no Pixel:", e); }
 
     // 4. Limpa o carrinho e esconde a tela de checkout
+    ignorandoSyncAposCompra = true;
     carrinho = []; 
     atualizarBarraCarrinho(); 
     fecharModalCheckout();
@@ -2552,6 +2558,7 @@ if(inputTelefone) {
         // 4. O Gatilho do CRM: Se o número estiver completinho (15 caracteres)
         if (e.target.value.length === 15) {
             buscarDadosClienteCRM(e.target.value);
+            if (typeof sincronizarCarrinhoNuvem === 'function') sincronizarCarrinhoNuvem();
         } else {
             // Se ele apagar um número, esconde o selo CRM e a Barrinha Fidelidade
             if (document.getElementById('badge-crm')) document.getElementById('badge-crm').style.display = 'none';
@@ -3390,6 +3397,7 @@ async function checarStatusPagamento(transacaoId) {
 
             setTimeout(() => {
                 document.getElementById('modal-pix').style.display = 'none';
+                ignorandoSyncAposCompra = true;
                 carrinho = [];
                 atualizarBarraCarrinho();
 
@@ -5044,4 +5052,146 @@ function repetirUltimoPedido() {
         registrarEventoFunil('Repetiu Último Pedido');
         abrirModalCarrinho(); // Já abre a sacola na hora para o cliente revisar e finalizar!
     }
+}
+
+// ==========================================
+// 🛍️ SACOLA COM MEMÓRIA (4 HORAS) + RADAR DE CARRINHO ABANDONADO
+// ==========================================
+let timerSyncCarrinho = null;
+let ignorandoSyncAposCompra = false;
+
+function salvarCarrinhoNaMemoria() {
+    try {
+        if (carrinho.length === 0) {
+            localStorage.removeItem('icesoft_carrinho_memoria');
+        } else {
+            localStorage.setItem('icesoft_carrinho_memoria', JSON.stringify({
+                itens: carrinho,
+                salvo_em: Date.now()
+            }));
+        }
+    } catch (e) {}
+}
+
+function restaurarCarrinhoDaMemoria() {
+    try {
+        const salvo = localStorage.getItem('icesoft_carrinho_memoria');
+        if (!salvo) return;
+
+        const dados = JSON.parse(salvo);
+        const quatroHorasMs = 4 * 60 * 60 * 1000;
+
+        // Se já passou de 4 horas, limpa para não mostrar pedido velho
+        if (!dados || !Array.isArray(dados.itens) || (Date.now() - dados.salvo_em) > quatroHorasMs) {
+            localStorage.removeItem('icesoft_carrinho_memoria');
+            return;
+        }
+
+        // Audita silenciosamente se os produtos salvos ainda estão ativos e com estoque hoje
+        const itensValidos = [];
+        const contagemPorProduto = {};
+
+        for (let item of dados.itens) {
+            // Não restaura brindes de resgate caso o cliente não esteja logado
+            if (item.isResgate && !localStorage.getItem('icesoft_cliente')) continue;
+
+            if (item.produtoId) {
+                const prodAtual = produtosDaNuvem.find(p => Number(p.id) === Number(item.produtoId));
+                if (!prodAtual) continue; // Produto foi pausado ou esgotou
+
+                if (prodAtual.controlar_estoque === true) {
+                    const qtdJaContada = contagemPorProduto[prodAtual.id] || 0;
+                    if (qtdJaContada + 1 > (Number(prodAtual.estoque) || 0)) continue;
+                    contagemPorProduto[prodAtual.id] = qtdJaContada + 1;
+                }
+            }
+            itensValidos.push(item);
+        }
+
+        if (itensValidos.length > 0) {
+            carrinho = itensValidos;
+            atualizarBarraCarrinho();
+        } else {
+            localStorage.removeItem('icesoft_carrinho_memoria');
+        }
+    } catch (e) {
+        localStorage.removeItem('icesoft_carrinho_memoria');
+    }
+}
+
+function obterIdentificacaoParaCarrinho() {
+    let telefone = '';
+    let nome = '';
+
+    // 1. Tenta ler o que foi digitado no Checkout
+    const inputTel = document.getElementById('cliente-telefone');
+    const inputNome = document.getElementById('cliente-nome');
+    if (inputTel && inputTel.value.replace(/\D/g, '').length >= 10) {
+        telefone = padronizarTelefone(inputTel.value.trim());
+    }
+    if (inputNome && inputNome.value.trim() !== '') {
+        nome = inputNome.value.trim();
+    }
+
+    // 2. Se não estava no checkout, busca no login do Clube Icesoft
+    if (!telefone) {
+        try {
+            const cliSalvo = localStorage.getItem('icesoft_cliente');
+            if (cliSalvo) {
+                const cli = JSON.parse(cliSalvo);
+                if (cli && cli.telefone) telefone = padronizarTelefone(cli.telefone);
+                if (!nome && cli && cli.nome) nome = cli.nome;
+            }
+        } catch (e) {}
+    }
+
+    // 3. Fallback: busca o último telefone usado em pedidos anteriores neste aparelho
+    if (!telefone) {
+        const ultimoTel = localStorage.getItem('icesoft_ultimo_telefone');
+        if (ultimoTel) telefone = padronizarTelefone(ultimoTel);
+    }
+
+    return { telefone, nome };
+}
+
+function sincronizarCarrinhoNuvem() {
+    if (timerSyncCarrinho) clearTimeout(timerSyncCarrinho);
+
+    if (ignorandoSyncAposCompra) {
+        ignorandoSyncAposCompra = false;
+        return;
+    }
+
+    // Aguarda 2,5 segundos após a última mexida para enviar um pacote limpo ao servidor
+    timerSyncCarrinho = setTimeout(async () => {
+        const { telefone, nome } = obterIdentificacaoParaCarrinho();
+        if (!telefone || telefone.replace(/\D/g, '').length < 10) return;
+
+        const itensResumo = carrinho.map(item => ({
+            nome: item.nome,
+            preco: Number(item.preco) || 0
+        }));
+        const totalCarrinho = carrinho.reduce((soma, item) => soma + (Number(item.preco) || 0), 0);
+
+        try {
+            await fetch(`${API_URL}/carrinhos/sincronizar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telefone: telefone,
+                    cliente_nome: nome,
+                    itens: itensResumo,
+                    valor_total: totalCarrinho
+                })
+            });
+        } catch (e) {}
+    }, 2500);
+}
+
+// Se um cliente novo digitar o nome depois do telefone no Checkout, atualiza o cadastro do carrinho
+const campoNomeRec = document.getElementById('cliente-nome');
+if (campoNomeRec) {
+    campoNomeRec.addEventListener('change', () => {
+        if (carrinho.length > 0) sincronizarCarrinhoNuvem();
+    });
 }

@@ -23,6 +23,17 @@ async function carregarConfiguracoes() {
         if (configs.msg_concluido) document.getElementById('msg-concluido').value = configs.msg_concluido;
         if (configs.msg_balcao) document.getElementById('msg-balcao').value = configs.msg_balcao;
 
+        // 🛒 Carrega configurações da Recuperação de Carrinho
+        const chkRec = document.getElementById('rec-carrinho-ativo');
+        if (chkRec) chkRec.checked = Boolean(configs.rec_carrinho_ativo);
+        if (configs.rec_carrinho_cupom && document.getElementById('rec-carrinho-cupom')) {
+            document.getElementById('rec-carrinho-cupom').value = configs.rec_carrinho_cupom;
+        }
+        if (configs.msg_carrinho_abandonado && document.getElementById('msg-carrinho-abandonado')) {
+            document.getElementById('msg-carrinho-abandonado').value = configs.msg_carrinho_abandonado;
+        }
+        atualizarBadgeRecuperacao();
+
         if (configs.zap_url && configs.zap_instancia) {
             const badge = document.getElementById('status-zap');
             if (badge) {
@@ -71,6 +82,38 @@ async function salvarMensagens() {
     };
 
     await enviarParaNuvem(payload, btn, textoOriginal, "#00bcd4");
+}
+
+// 3.5 ATUALIZA O SELO VISUAL E SALVA A RECUPERAÇÃO DE CARRINHO
+function atualizarBadgeRecuperacao() {
+    const chk = document.getElementById('rec-carrinho-ativo');
+    const badge = document.getElementById('status-rec-carrinho');
+    if (!chk || !badge) return;
+
+    if (chk.checked) {
+        badge.innerText = '✅ Ativo (15 min)';
+        badge.className = 'status-badge status-on';
+    } else {
+        badge.innerText = 'Desligado';
+        badge.className = 'status-badge';
+    }
+}
+
+async function salvarRecuperacaoCarrinho() {
+    const btn = document.getElementById('btn-salvar-recuperacao');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Salvando...";
+    btn.style.backgroundColor = "#FF9800";
+    btn.disabled = true;
+
+    const payload = {
+        rec_carrinho_ativo: document.getElementById('rec-carrinho-ativo').checked,
+        rec_carrinho_cupom: document.getElementById('rec-carrinho-cupom').value.trim().toUpperCase(),
+        msg_carrinho_abandonado: document.getElementById('msg-carrinho-abandonado').value
+    };
+
+    await enviarParaNuvem(payload, btn, textoOriginal, "#e91e63");
+    atualizarBadgeRecuperacao();
 }
 
 // 4. FUNÇÃO UNIVERSAL QUE FAZ O ENVIO E MUDA A COR DO BOTÃO
