@@ -43,8 +43,11 @@ async function carregarDashboard() {
 
         let vendas = await resposta.json();
         
-        // 3. Remove os cancelamentos para não mascarar o lucro (Trata tanto 'Cancelada' quanto 'Cancelado')
-        const vendasValidas = vendas.filter(v => v.status !== 'Cancelada' && v.status !== 'Cancelado');
+        // 3. Remove TODOS os cancelamentos (incluindo Pix Expirado) e pedidos ainda Aguardando Pagamento
+        const vendasValidas = vendas.filter(v => {
+            const st = String(v.status || '').toLowerCase().trim();
+            return !st.includes('cancelad') && st !== 'aguardando pagamento';
+        });
 
         // --- COMEÇO DO CÓDIGO DE HORÁRIOS E TICKET MÉDIO ---
         let contagemHorarios = new Array(24).fill(0);
@@ -53,7 +56,13 @@ async function carregarDashboard() {
         vendasValidas.forEach(v => {
             if (v.data_hora) {
                 let dataDoPedido = new Date(v.data_hora);
-                let horaQueSaiu = dataDoPedido.getHours();
+                // Força o fuso de Brasília igual aos gráficos diários
+                let horaTexto = new Intl.DateTimeFormat('pt-BR', {
+                    timeZone: 'America/Sao_Paulo',
+                    hour: '2-digit',
+                    hour12: false
+                }).format(dataDoPedido);
+                let horaQueSaiu = parseInt(horaTexto, 10) % 24;
                 
                 contagemHorarios[horaQueSaiu]++; // Conta 1 pedido
                 valorHorarios[horaQueSaiu] += parseFloat(v.valor_total || 0); // Soma o dinheiro
@@ -64,8 +73,8 @@ async function carregarDashboard() {
         let ticketMedioHorarios = new Array(24).fill(0);
         for(let i = 0; i < 24; i++) {
             if (contagemHorarios[i] > 0) {
-                // Arredonda para 2 casas decimais (ex: 45.50)
-                ticketMedioHorarios[i] = (valorHorarios[i] / contagemHorarios[i]).toFixed(2);
+                // Arredonda para 2 casas decimais como número
+                ticketMedioHorarios[i] = Number((valorHorarios[i] / contagemHorarios[i]).toFixed(2));
             }
         }
 
@@ -101,17 +110,48 @@ function processarMetricasEGraficos(vendas) {
         let valor = parseFloat(v.valor_total || v.total || 0);
         faturamentoTotal += valor;
 
-        // --- FORMA DE PAGAMENTO ---
-        let pag = v.forma_pagamento ? String(v.forma_pagamento).split('(')[0].trim() : 'Não Informado';
-        if(pag.toLowerCase().includes('pix')) pag = 'Pix';
-        contagemPagamentos[pag] = (contagemPagamentos[pag] || 0) + valor;
+        // --- FORMA DE PAGAMENTO (Lê pagamentos divididos igual ao Fechamento de Caixa) ---
+        let usouDetalhes = false;
+        if (v.pagamentos_detalhes) {
+            let pd = v.pagamentos_detalhes;
+            if (typeof pd === 'string') {
+                try { pd = JSON.parse(pd); } catch (e) { pd = null; }
+            }
+            if (pd && typeof pd === 'object') {
+                const vDin = parseFloat(pd.dinheiro || 0);
+                const vPix = parseFloat(pd.pix || 0);
+                const vCartao = parseFloat(pd.cartao || 0);
+                const vOutros = parseFloat(pd.outros || 0);
+                if (vDin + vPix + vCartao + vOutros > 0) {
+                    if (vDin > 0) contagemPagamentos['Dinheiro'] = (contagemPagamentos['Dinheiro'] || 0) + vDin;
+                    if (vPix > 0) contagemPagamentos['Pix'] = (contagemPagamentos['Pix'] || 0) + vPix;
+                    if (vCartao > 0) contagemPagamentos['Cartão'] = (contagemPagamentos['Cartão'] || 0) + vCartao;
+                    if (vOutros > 0) contagemPagamentos['Outros'] = (contagemPagamentos['Outros'] || 0) + vOutros;
+                    usouDetalhes = true;
+                }
+            }
+        }
+        if (!usouDetalhes) {
+            let pag = v.forma_pagamento ? String(v.forma_pagamento).split('(')[0].trim() : 'Não Informado';
+            if (pag.toLowerCase().includes('pix')) pag = 'Pix';
+            contagemPagamentos[pag] = (contagemPagamentos[pag] || 0) + valor;
+        }
 
         // --- ORIGEM (CANAIS) E TICKET MÉDIO SEPARADO ---
         let origem = v.origem || 'Balcão';
         contagemOrigem[origem] = (contagemOrigem[origem] || 0) + 1;
 
-        // 👇 LÓGICA DE SEPARAÇÃO: DELIVERY VS SALÃO (Balcão/Mesas)
-        if (origem.toLowerCase().includes('delivery')) {
+        // 👇 LÓGICA DE SEPARAÇÃO: DELIVERY (Próprio + Apps + WhatsApp) VS SALÃO (Balcão/Mesas)
+        const origemLower = origem.toLowerCase();
+        const ehDelivery = origemLower.includes('delivery') ||
+            origemLower.includes('ifood') ||
+            origemLower.includes('aiqfome') ||
+            origemLower.includes('whatsapp') ||
+            origemLower.includes('cardápio') ||
+            origemLower.includes('cardapio') ||
+            origemLower.includes('online');
+
+        if (ehDelivery) {
             faturamentoDelivery += valor;
             pedidosDelivery++;
         } else {
@@ -136,7 +176,7 @@ function processarMetricasEGraficos(vendas) {
             faturamentoPorData[dataFormatadaLocal] = (faturamentoPorData[dataFormatadaLocal] || 0) + valor;
         }
 
-        // --- PRODUTOS ---
+        // --- PRODUTOS (Respeita a quantidade real vendida e limpa prefixos) ---
         let itensLidos = v.itens;
         if (typeof itensLidos === 'string') {
             if (itensLidos.includes("[object")) return; 
@@ -148,15 +188,21 @@ function processarMetricasEGraficos(vendas) {
         if (Array.isArray(itensLidos)) {
             itensLidos.forEach(item => {
                 let nome = typeof item === 'string' ? item : (item.nome || item.produto_nome || item.nomeBase || "");
-                if (nome) {
-                    let nomeLimpo = nome.replace('Delivery: ', '').split('(')[0].trim();
-                    if (nomeLimpo) contagemProdutos[nomeLimpo] = (contagemProdutos[nomeLimpo] || 0) + 1;
+                let qtd = (typeof item === 'object' && item !== null) ? (Number(item.quantidade) || 1) : 1;
+                if (nome && !nome.toLowerCase().includes('taxa de entrega')) {
+                    let nomeLimpo = nome
+                        .replace(/^(delivery:|balcão:|balcao:|🔥 oferta:|🎁 \[resgate\])\s*/gi, '')
+                        .split('(')[0]
+                        .trim();
+                    if (nomeLimpo) contagemProdutos[nomeLimpo] = (contagemProdutos[nomeLimpo] || 0) + qtd;
                 }
             });
         } else if (typeof itensLidos === 'string') {
             let textoLimpo = itensLidos.replace(/(Balcão:|Delivery:|Mesa\s\d+\s?-)\s*/gi, '');
             let nomeBase = textoLimpo.split('(')[0].trim();
-            if (nomeBase) contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
+            if (nomeBase && !nomeBase.toLowerCase().includes('taxa de entrega')) {
+                contagemProdutos[nomeBase] = (contagemProdutos[nomeBase] || 0) + 1;
+            }
         }
     });
 
