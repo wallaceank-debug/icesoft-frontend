@@ -3240,14 +3240,212 @@ async function resgatarFidelidade() {
 }
 
 // ==========================================
-// 💸 MOTOR DE PIX DINÂMICO MERCADO PAGO
+// 💸 MOTOR DE PIX DINÂMICO MERCADO PAGO (COM RECUPERAÇÃO AUTOMÁTICA)
 // ==========================================
 let verificadorPix = null;
+let timerContagemPix = null;
+let pixConfirmadoEmAndamento = false;
+const CHAVE_PIX_STORAGE = 'icesoft_pix_pendente';
+const TEMPO_VALIDADE_PIX_MS = 9.5 * 60 * 1000; // 9 min e 30s (margem segura antes dos 10 min do servidor)
+
+function salvarPixPendenteNaMemoria(dadosPix) {
+    try {
+        localStorage.setItem(CHAVE_PIX_STORAGE, JSON.stringify(dadosPix));
+    } catch (e) {
+        console.log("Não foi possível salvar Pix na memória do aparelho:", e);
+    }
+}
+
+function lerPixPendenteDaMemoria(ignorarExpiracao = false) {
+    try {
+        const salvo = localStorage.getItem(CHAVE_PIX_STORAGE);
+        if (!salvo) return null;
+        const dados = JSON.parse(salvo);
+        if (!dados || !dados.transacao_id || !dados.qr_code_copia_cola) {
+            localStorage.removeItem(CHAVE_PIX_STORAGE);
+            return null;
+        }
+        if (!ignorarExpiracao && Date.now() >= dados.expira_em) {
+            return null;
+        }
+        return dados;
+    } catch (e) {
+        localStorage.removeItem(CHAVE_PIX_STORAGE);
+        return null;
+    }
+}
+
+function limparPixPendenteDaMemoria() {
+    localStorage.removeItem(CHAVE_PIX_STORAGE);
+    if (verificadorPix) {
+        clearInterval(verificadorPix);
+        verificadorPix = null;
+    }
+    if (timerContagemPix) {
+        clearInterval(timerContagemPix);
+        timerContagemPix = null;
+    }
+    const banner = document.getElementById('banner-pix-pendente');
+    if (banner) banner.style.display = 'none';
+}
+
+async function copiarTextoSeguro(texto) {
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(texto);
+            return true;
+        } catch (e) {}
+    }
+    try {
+        const areaTemp = document.createElement('textarea');
+        areaTemp.value = texto;
+        areaTemp.style.position = 'fixed';
+        areaTemp.style.left = '-9999px';
+        document.body.appendChild(areaTemp);
+        areaTemp.focus();
+        areaTemp.select();
+        areaTemp.setSelectionRange(0, 99999);
+        const copiou = document.execCommand('copy');
+        document.body.removeChild(areaTemp);
+        return copiou;
+    } catch (e) {
+        return false;
+    }
+}
+
+function formatarTempoRestantePix(ms) {
+    const totalSegundos = Math.max(0, Math.floor(ms / 1000));
+    const minutos = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
+    const segundos = String(totalSegundos % 60).padStart(2, '0');
+    return `${minutos}:${segundos}`;
+}
+
+function iniciarMonitoramentoVisualPix() {
+    if (timerContagemPix) clearInterval(timerContagemPix);
+
+    const atualizarRelogio = () => {
+        if (pixConfirmadoEmAndamento) return;
+
+        const pixSalvo = lerPixPendenteDaMemoria(true);
+        const banner = document.getElementById('banner-pix-pendente');
+        const modalPix = document.getElementById('modal-pix');
+        const modalAberto = modalPix && modalPix.style.display === 'flex';
+
+        if (!pixSalvo) {
+            if (banner) banner.style.display = 'none';
+            if (timerContagemPix) clearInterval(timerContagemPix);
+            return;
+        }
+
+        const restanteMs = pixSalvo.expira_em - Date.now();
+        if (restanteMs <= 0) {
+            clearInterval(timerContagemPix);
+            timerContagemPix = null;
+            // Faz uma última checagem no banco caso o cliente tenha pago no último segundo
+            checarStatusPagamento(pixSalvo.transacao_id, true);
+            return;
+        }
+
+        const tempoFmt = formatarTempoRestantePix(restanteMs);
+
+        // Atualiza o relógio dentro do modal (se estiver aberto) ou mostra o banner no topo (se o modal estiver fechado)
+        if (modalAberto) {
+            if (banner) banner.style.display = 'none';
+            const statusTexto = document.getElementById('pix-status-texto');
+            if (statusTexto) {
+                statusTexto.innerHTML = `⏳ Aguardando pagamento... (${tempoFmt})`;
+                statusTexto.style.color = "#f59e0b";
+            }
+        } else if (banner) {
+            const valorEl = document.getElementById('banner-pix-valor');
+            const timerEl = document.getElementById('banner-pix-timer');
+            if (valorEl) valorEl.innerText = `R$ ${Number(pixSalvo.valor || 0).toFixed(2).replace('.', ',')}`;
+            if (timerEl) timerEl.innerText = `⏳ Expira em ${tempoFmt} • Toque para pagar`;
+            banner.style.display = 'block';
+        }
+    };
+
+    atualizarRelogio();
+    timerContagemPix = setInterval(atualizarRelogio, 1000);
+}
+
+function reabrirModalPixPendente() {
+    const pixSalvo = lerPixPendenteDaMemoria();
+    if (!pixSalvo) {
+        limparPixPendenteDaMemoria();
+        alert("⏰ Este código Pix já expirou. Finalize novamente no carrinho para gerar um novo código.");
+        return;
+    }
+
+    const banner = document.getElementById('banner-pix-pendente');
+    if (banner) banner.style.display = 'none';
+
+    document.getElementById('pix-qr-code').src = `data:image/jpeg;base64,${pixSalvo.qr_code_base64}`;
+    document.getElementById('pix-copia-cola').value = pixSalvo.qr_code_copia_cola;
+    document.getElementById('btn-copiar-pix').innerText = "📋 Copiar Código Pix";
+    document.getElementById('pix-qr-code').style.opacity = "1";
+    document.getElementById('modal-pix').style.display = 'flex';
+
+    iniciarMonitoramentoVisualPix();
+    checarStatusPagamento(pixSalvo.transacao_id);
+
+    if (verificadorPix) clearInterval(verificadorPix);
+    verificadorPix = setInterval(() => checarStatusPagamento(pixSalvo.transacao_id), 5000);
+}
+
+async function copiarPixDoBanner() {
+    const pixSalvo = lerPixPendenteDaMemoria();
+    if (!pixSalvo) {
+        limparPixPendenteDaMemoria();
+        alert("⏰ Este código Pix já expirou. Gere um novo pedido no carrinho.");
+        return;
+    }
+
+    await copiarTextoSeguro(pixSalvo.qr_code_copia_cola);
+    const btn = document.getElementById('btn-copiar-pix-banner');
+    if (btn) {
+        btn.innerText = "✅ Código Copiado!";
+        btn.style.background = "#10b981";
+        setTimeout(() => {
+            btn.innerText = "📋 Copiar Código";
+            btn.style.background = "#32BCAD";
+        }, 3000);
+    }
+}
+
+function descartarPixPendenteBanner() {
+    if (confirm("Deseja remover o aviso deste Pix pendente? Se você já pagou no banco, aguarde um instante para confirmarmos automaticamente.")) {
+        limparPixPendenteDaMemoria();
+    }
+}
+
+async function verificarPixPendenteNaMemoria() {
+    const pixSalvo = lerPixPendenteDaMemoria(true);
+    if (!pixSalvo) return;
+
+    // Se já passou do tempo limite, faz a conferência final para ver se não foi pago antes de descartar
+    if (Date.now() >= pixSalvo.expira_em) {
+        await checarStatusPagamento(pixSalvo.transacao_id, true);
+        return;
+    }
+
+    // Checa imediatamente se o pagamento já caiu enquanto a página estava fechada
+    await checarStatusPagamento(pixSalvo.transacao_id);
+
+    // Se ainda não foi pago, ativa o banner de recuperação e o sonar em segundo plano
+    if (lerPixPendenteDaMemoria()) {
+        iniciarMonitoramentoVisualPix();
+        if (!verificadorPix) {
+            verificadorPix = setInterval(() => checarStatusPagamento(pixSalvo.transacao_id), 5000);
+        }
+    }
+}
 
 async function gerarEPagarPix(valorEspecifico = null) {
     const btn = document.getElementById('btn-avancar-checkout');
     btn.innerText = "⏳ Gerando Pix Seguro...";
     btn.disabled = true;
+    pixConfirmadoEmAndamento = false;
 
     // 1. Calcula o total exato do carrinho
     let subtotal = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
@@ -3259,10 +3457,10 @@ async function gerarEPagarPix(valorEspecifico = null) {
 
     const tipoEntrega = document.querySelector('input[name="tipo_entrega"]:checked').value;
     let taxaEntrega = 0;
-    if(tipoEntrega === 'delivery') {
+    if (tipoEntrega === 'delivery') {
         const selectBairro = document.getElementById('cliente-bairro');
         taxaEntrega = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
-        
+
         // ✨ CORREÇÃO: Zera a taxa do Pix se for Porto Real e atingiu a meta
         const selectCidade = document.getElementById('cliente-cidade');
         const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
@@ -3274,6 +3472,7 @@ async function gerarEPagarPix(valorEspecifico = null) {
     let totalFinal = (subtotal - desconto) + taxaEntrega;
     if (totalFinal < 0) totalFinal = 0;
 
+    const valorCobradoPix = valorEspecifico !== null ? Number(valorEspecifico) : totalFinal;
     const nome = document.getElementById('cliente-nome').value.trim();
     const telefone = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
 
@@ -3282,7 +3481,7 @@ async function gerarEPagarPix(valorEspecifico = null) {
         const res = await fetch(`${API_URL}/pagamento/pix`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ valor: (valorEspecifico !== null ? valorEspecifico : totalFinal), cliente_nome: nome, cliente_telefone: telefone })
+            body: JSON.stringify({ valor: valorCobradoPix, cliente_nome: nome, cliente_telefone: telefone })
         });
 
         const data = await res.json();
@@ -3299,70 +3498,97 @@ async function gerarEPagarPix(valorEspecifico = null) {
             // 🛑 TRAVA DE SEGURANÇA: Nunca exibe o QR Code se o pedido não tiver sido salvo no banco!
             if (!salvouNoBanco) {
                 alert("⚠️ Sua internet oscilou e não conseguimos registrar seu pedido. Por favor, toque em Gerar Pix novamente.");
-                btn.innerText = "Gerar Pix Seguro";
                 btn.disabled = false;
+                atualizarBotaoCTA();
                 return;
             }
+
+            // 🛡️ GUARDA NA MEMÓRIA DO CELULAR PARA RECUPERAÇÃO CASO O CLIENTE SAIA DA PÁGINA
+            salvarPixPendenteNaMemoria({
+                transacao_id: data.transacao_id.toString(),
+                qr_code_base64: data.qr_code_base64,
+                qr_code_copia_cola: data.qr_code_copia_cola,
+                valor: valorCobradoPix,
+                valor_total_pedido: totalFinal,
+                telefone: telefone,
+                criado_em: Date.now(),
+                expira_em: Date.now() + TEMPO_VALIDADE_PIX_MS
+            });
 
             // 4. Prepara a Interface de Cobrança na tela
             document.getElementById('pix-qr-code').src = `data:image/jpeg;base64,${data.qr_code_base64}`;
             document.getElementById('pix-copia-cola').value = data.qr_code_copia_cola;
             document.getElementById('btn-copiar-pix').innerText = "📋 Copiar Código Pix";
             document.getElementById('pix-status-texto').innerHTML = "⏳ Aguardando pagamento...";
-            document.getElementById('pix-status-texto').style.color = "#FF9800";
+            document.getElementById('pix-status-texto').style.color = "#f59e0b";
             document.getElementById('pix-qr-code').style.opacity = "1";
 
             document.getElementById('modal-pix').style.display = 'flex';
             fecharModalCheckout();
+            iniciarMonitoramentoVisualPix();
 
             // 5. Liga o Sonar: Checa a cada 5 segundos se o Webhook deu baixa no pagamento
-            if(verificadorPix) clearInterval(verificadorPix);
+            if (verificadorPix) clearInterval(verificadorPix);
             verificadorPix = setInterval(() => checarStatusPagamento(data.transacao_id), 5000);
 
         } else {
             alert("⚠️ Não foi possível gerar o Pix. Selecione outra forma de pagamento.");
-            btn.innerText = "Enviar Pedido 🚀";
             btn.disabled = false;
+            atualizarBotaoCTA();
         }
     } catch (e) {
         alert("❌ Erro de conexão ao tentar gerar o Pix.");
-        btn.innerText = "Enviar Pedido 🚀";
         btn.disabled = false;
+        atualizarBotaoCTA();
     }
 }
 
-function copiarPix() {
+async function copiarPix() {
     const input = document.getElementById('pix-copia-cola');
-    input.select();
-    document.execCommand('copy');
-    document.getElementById('btn-copiar-pix').innerText = "✅ Código Copiado!";
+    if (!input) return;
+    await copiarTextoSeguro(input.value);
+    const btnCopiar = document.getElementById('btn-copiar-pix');
+    if (btnCopiar) {
+        btnCopiar.innerText = "✅ Código Copiado!";
+        setTimeout(() => {
+            btnCopiar.innerText = "📋 Copiar Código Pix";
+        }, 3000);
+    }
 }
 
 function cancelarPix() {
-    if(verificadorPix) clearInterval(verificadorPix);
+    limparPixPendenteDaMemoria();
     document.getElementById('modal-pix').style.display = 'none';
     document.getElementById('modal-checkout').style.display = 'flex';
     const btn = document.getElementById('btn-avancar-checkout');
-    btn.innerText = "Enviar Pedido 🚀";
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
+    atualizarBotaoCTA();
 }
 
 // ==========================================
 // 📡 SONAR DO PIX COM DISPARO DE PIXEL META
 // ==========================================
-async function checarStatusPagamento(transacaoId) {
+async function checarStatusPagamento(transacaoId, encerrarSeNaoPago = false) {
+    if (!transacaoId || pixConfirmadoEmAndamento) return;
+
     try {
         const resStatus = await fetch(`${API_URL}/pagamento/pix/${transacaoId}/status`);
         const dataStatus = await resStatus.json();
 
         if (dataStatus.pago) {
-            clearInterval(verificadorPix);
+            pixConfirmadoEmAndamento = true;
+            const pixSalvo = lerPixPendenteDaMemoria(true);
+            limparPixPendenteDaMemoria();
 
-            document.getElementById('pix-status-texto').innerHTML = "✅ Pagamento Confirmado!";
-            document.getElementById('pix-status-texto').style.color = "#4CAF50";
-            document.getElementById('pix-qr-code').style.opacity = "0.2";
+            const statusTexto = document.getElementById('pix-status-texto');
+            const qrImg = document.getElementById('pix-qr-code');
+            if (statusTexto) {
+                statusTexto.innerHTML = "✅ Pagamento Confirmado!";
+                statusTexto.style.color = "#4CAF50";
+            }
+            if (qrImg) qrImg.style.opacity = "0.2";
 
-            // Calcula o valor para o Pixel já considerando cupom e frete sem chamar rota bloqueada
+            // Calcula o valor para o Pixel (ou usa o valor salvo na memória caso a página tenha sido recarregada)
             let subtotalPix = carrinho.reduce((soma, item) => soma + Number(item.preco), 0);
             let descontoPix = 0;
             if (cupomAtivo) {
@@ -3376,7 +3602,7 @@ async function checarStatusPagamento(transacaoId) {
                 const selectBairro = document.getElementById('cliente-bairro');
                 if (selectBairro && selectBairro.selectedIndex >= 0 && selectBairro.value !== "Retirada no Local") {
                     taxaPixel = Number(selectBairro.options[selectBairro.selectedIndex].getAttribute('data-taxa')) || 0;
-                    
+
                     const selectCidade = document.getElementById('cliente-cidade');
                     const cidade = selectCidade && selectCidade.value ? selectCidade.value : '';
                     if (cidade === 'Porto Real' && subtotalPix >= 45.00) {
@@ -3386,6 +3612,9 @@ async function checarStatusPagamento(transacaoId) {
             }
 
             let totalPix = Math.max(0, (subtotalPix - descontoPix) + taxaPixel);
+            if (totalPix <= 0 && pixSalvo) {
+                totalPix = Number(pixSalvo.valor_total_pedido || pixSalvo.valor || 0);
+            }
 
             // 📸 META PIXEL: Avisa o Facebook da Compra via PIX!
             try {
@@ -3393,20 +3622,49 @@ async function checarStatusPagamento(transacaoId) {
                 if (typeof fbq === 'function') {
                     fbq('track', 'Purchase', { currency: 'BRL', value: totalPix });
                 }
-            } catch(e) { console.log("⚠️ Erro no Pixel:", e); }
+            } catch (e) { console.log("⚠️ Erro no Pixel:", e); }
+
+            const inputTel = document.getElementById('cliente-telefone');
+            const telTela = inputTel ? inputTel.value.trim() : '';
+            const telFinal = telTela || (pixSalvo && pixSalvo.telefone) || localStorage.getItem('icesoft_ultimo_telefone') || '';
+
+            const modalPix = document.getElementById('modal-pix');
+            const modalEstavaAberto = modalPix && modalPix.style.display === 'flex';
 
             setTimeout(() => {
-                document.getElementById('modal-pix').style.display = 'none';
+                if (modalPix) modalPix.style.display = 'none';
                 ignorandoSyncAposCompra = true;
                 carrinho = [];
                 atualizarBarraCarrinho();
 
-                rastreioTelefoneCliente = padronizarTelefone(document.getElementById('cliente-telefone').value.trim());
+                rastreioTelefoneCliente = padronizarTelefone(telFinal);
                 abrirTelaRastreio();
-            }, 2000);
+                pixConfirmadoEmAndamento = false;
+            }, modalEstavaAberto ? 2000 : 300);
+
+        } else if (encerrarSeNaoPago) {
+            limparPixPendenteDaMemoria();
+            const modalPix = document.getElementById('modal-pix');
+            if (modalPix && modalPix.style.display === 'flex') {
+                const statusTexto = document.getElementById('pix-status-texto');
+                if (statusTexto) {
+                    statusTexto.innerHTML = "⏰ Este código Pix expirou. Volte e gere um novo.";
+                    statusTexto.style.color = "#ef4444";
+                }
+            }
         }
     } catch (e) { }
 }
+
+// 🔄 Verifica automaticamente se existe Pix pendente ao abrir o cardápio ou ao voltar do app do banco
+window.addEventListener('DOMContentLoaded', () => {
+    verificarPixPendenteNaMemoria();
+});
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        verificarPixPendenteNaMemoria();
+    }
+});
 
 // ==========================================
 // EFEITO FOTO EXPANDIDA (LIGHTBOX)
