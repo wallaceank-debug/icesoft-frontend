@@ -36,8 +36,12 @@ function renderizarCategorias() {
 
         container.innerHTML += `
             <div class="cat-card" draggable="true" ondragstart="dragStart(${index})" ondragover="dragOver(event)" ondrop="drop(${index})">
-                <div style="display:flex; align-items:center; gap:15px; flex:1;">
+                <div style="display:flex; align-items:center; gap:12px; flex:1;">
                     <span class="material-symbols-outlined" style="color:#ccc; cursor:grab; font-size:1.8rem;" title="Arraste para reordenar">drag_indicator</span>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <button type="button" onclick="moverCategoria(${index}, -1)" ${index === 0 ? 'disabled' : ''} style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; padding:0 6px; font-size:0.7rem; color:#334155; opacity:${index === 0 ? '0.35' : '1'};" title="Subir">▲</button>
+                        <button type="button" onclick="moverCategoria(${index}, 1)" ${index === listaCategorias.length - 1 ? 'disabled' : ''} style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; padding:0 6px; font-size:0.7rem; color:#334155; opacity:${index === listaCategorias.length - 1 ? '0.35' : '1'};" title="Descer">▼</button>
+                    </div>
                     <div>
                         <strong style="color:#333; font-size:1.1rem; display:block; margin-bottom:3px;">${cat.nome}</strong>
                         <div>${seloApp} ${seloAgenda}</div>
@@ -159,26 +163,66 @@ async function toggleVisibilidade(id, status) {
 }
 
 // ==========================================
-// REORDENAÇÃO (ARRASTAR E SOLTAR)
+// REORDENAÇÃO (ARRASTAR E SOLTAR + SETAS ▲ ▼)
 // ==========================================
 function dragStart(index) { arrastadoIndex = index; }
 function dragOver(e) { e.preventDefault(); }
+
+function mostrarAvisoOrdem(texto, corFundo = '#0f172a') {
+    let aviso = document.getElementById('aviso-ordem-cat');
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.id = 'aviso-ordem-cat';
+        aviso.style.cssText = 'position:fixed; bottom:24px; right:24px; color:#fff; padding:12px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; z-index:9999; box-shadow:0 8px 20px rgba(0,0,0,0.25); transition:opacity 0.3s;';
+        document.body.appendChild(aviso);
+    }
+    aviso.style.background = corFundo;
+    aviso.style.opacity = '1';
+    aviso.innerText = texto;
+}
+
+async function salvarNovaOrdemNoServidor() {
+    const novaOrdem = listaCategorias.map((cat, i) => ({ id: cat.id, ordem: i + 1 }));
+    mostrarAvisoOrdem('⏳ Salvando nova ordem...', '#0284c7');
+
+    try {
+        const res = await fetch(`${API_URL}/categorias/ordem`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(novaOrdem)
+        });
+
+        if (!res.ok) throw new Error('Falha ao gravar no banco');
+
+        mostrarAvisoOrdem('✅ Ordem salva no cardápio!', '#16a34a');
+        setTimeout(() => {
+            const aviso = document.getElementById('aviso-ordem-cat');
+            if (aviso) aviso.style.opacity = '0';
+        }, 2200);
+    } catch (e) {
+        mostrarAvisoOrdem('❌ Erro ao salvar ordem!', '#dc2626');
+        alert("⚠️ Não foi possível salvar a nova ordem no servidor. A lista será recarregada.");
+        await carregarCategorias();
+    }
+}
+
+async function moverCategoria(indexAtual, direcao) {
+    const novoIndex = indexAtual + direcao;
+    if (novoIndex < 0 || novoIndex >= listaCategorias.length) return;
+
+    const item = listaCategorias.splice(indexAtual, 1)[0];
+    listaCategorias.splice(novoIndex, 0, item);
+    renderizarCategorias();
+    await salvarNovaOrdemNoServidor();
+}
 
 async function drop(indexDestino) {
     if (arrastadoIndex === null || arrastadoIndex === indexDestino) return;
 
     const item = listaCategorias.splice(arrastadoIndex, 1)[0];
     listaCategorias.splice(indexDestino, 0, item);
-    renderizarCategorias(); 
-
-    const novaOrdem = listaCategorias.map((cat, i) => ({ id: cat.id, ordem: i + 1 }));
-
-    try {
-        await fetch(`${API_URL}/categorias/ordem`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaOrdem)
-        });
-    } catch (e) {
-        alert("Erro ao salvar a ordem no banco de dados.");
-    }
+    renderizarCategorias();
     arrastadoIndex = null;
+
+    await salvarNovaOrdemNoServidor();
 }

@@ -448,6 +448,334 @@
             50% { transform: scale(1.08); opacity: 0.75; }
             100% { transform: scale(1); opacity: 1; }
         }
+
+        /* =========================================================
+           🖤 TEMA SAZONAL: BLACK FRIDAY ICESOFT (CHAVE LIGA/DESLIGA)
+           Para desligar depois, basta remover class="tema-black-friday" do <body>
+        ========================================================= */
+        .banner-black-friday {
+            display: none;
+        }
+
+        body.tema-black-friday {
+            background-color: #0c0910 !important;
+            background-image: radial-gradient(circle at top center, rgba(233, 30, 99, 0.18) 0%, transparent 45%) !important;
+            color: #f8fafc !important;
+            box-shadow: 0 0 50px rgba(233, 30, 99, 0.14) !important;
+        }
+
+        /* Faixa Slim de Black Friday no topo */
+        body.tema-black-friday .banner-black-friday {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: linear-gradient(90deg, #140d1b 0%, #310e24 50%, #140d1b 100%);
+            border-bottom: 1px solid rgba(251, 191, 36, 0.4);
+            color: #fde68a;
+            padding: 9px 14px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.01em;
+        }
+
+        body.tema-black-friday .badge-bf {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f0a14;
+            font-size: 0.68rem;
+            font-weight: 900;
+            padding: 3px 9px;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+            box-shadow: 0 2px 10px rgba(251, 191, 36, 0.35);
+        }
+
+        /* Tela de Carregamento Escura */
+        body.tema-black-friday #tela-carregamento {
+            background: #0c0910 !important;
+        }
+        body.tema-black-friday #tela-carregamento h3 {
+            color: #f8fafc !important;
+        }
+
+        /* Header e Barra de Busca */
+        body.tema-black-friday .app-header-moderno {
+            background: rgba(16, 12, 22, 0.94) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+
+        body.tema-black-friday #loja-nome-exibicao {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday #img-logo-loja {
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 18px rgba(233, 30, 99, 0.45) !important;
+        }
+
+        body.tema-black-friday #indicador-status-loja {
+            background: rgba(16, 185, 129, 0.14) !important;
+            border: 1px solid rgba(16, 185, 129, 0.35) !important;
+        }
+
+        body.tema-black-friday #indicador-tempo-entrega {
+            background: rgba(251, 191, 36, 0.14) !important;
+            color: #fcd34d !important;
+            border-color: rgba(251, 191, 36, 0.35) !important;
+        }
+
+        body.tema-black-friday .app-header-moderno button {
+            background: #1f1829 !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            color: #e2e8f0 !important;
+        }
+
+        body.tema-black-friday #busca-produtos {
+            background: #1a1423 !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday #busca-produtos:focus {
+            background: #221a2e !important;
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15) !important;
+        }
+
+        body.tema-black-friday #busca-produtos::placeholder {
+            color: #94a3b8 !important;
+        }
+
+        /* Faixa Sticky e Pílulas de Categorias */
+        body.tema-black-friday .faixa-sticky {
+            background: rgba(12, 9, 16, 0.92) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+
+        body.tema-black-friday .faixa-sticky > span {
+            color: #fbbf24 !important;
+        }
+
+        body.tema-black-friday .pilula-categoria-btn {
+            background: #1a1423 !important;
+            color: #cbd5e1 !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            box-shadow: none !important;
+        }
+
+        body.tema-black-friday .pilula-categoria-btn[style*="--cor-primaria"] {
+            background: linear-gradient(135deg, var(--cor-primaria, #e91e63), #be185d) !important;
+            color: #ffffff !important;
+            border-color: #fbbf24 !important;
+            box-shadow: 0 4px 16px rgba(233, 30, 99, 0.45) !important;
+        }
+
+        /* Aviso / Mensagem de Boas-Vindas do Painel */
+        body.tema-black-friday #loja-mensagem-exibicao {
+            background: rgba(251, 191, 36, 0.1) !important;
+            border-color: rgba(251, 191, 36, 0.35) !important;
+            color: #fde68a !important;
+        }
+
+        /* Card "Peça de Novo em 1 Toque" */
+        body.tema-black-friday #box-peca-de-novo {
+            background: linear-gradient(135deg, #1b1426, #2b1223) !important;
+            border-color: rgba(233, 30, 99, 0.48) !important;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45) !important;
+        }
+
+        body.tema-black-friday #box-peca-de-novo strong {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday #box-peca-de-novo div[style*="#475569"] {
+            color: #cbd5e1 !important;
+        }
+
+        body.tema-black-friday #box-peca-de-novo div[style*="border-top"] {
+            border-top-color: rgba(233, 30, 99, 0.3) !important;
+        }
+
+        body.tema-black-friday #box-peca-de-novo span[style*="#ffe4e6"] {
+            background: rgba(251, 191, 36, 0.18) !important;
+            color: #fbbf24 !important;
+        }
+
+        /* Títulos e Acordeões de Categorias */
+        body.tema-black-friday #lista-produtos > h2 {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday h3[id^="categoria-"] {
+            background: #171220 !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-left: 5px solid #fbbf24 !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.38) !important;
+        }
+
+        body.tema-black-friday h3[id^="categoria-"] .seta-categoria {
+            color: #fbbf24 !important;
+        }
+
+        /* Cards de Produtos (As fotos ganham contraste máximo no fundo escuro) */
+        body.tema-black-friday .produto-card {
+            background: #171220 !important;
+            border: 1px solid rgba(255, 255, 255, 0.09) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38) !important;
+        }
+
+        body.tema-black-friday .produto-card:active {
+            background: #21192e !important;
+        }
+
+        /* Brilho Dourado Automático para Produtos e Combos em Promoção! */
+        body.tema-black-friday .produto-card:has(span[style*="line-through"]) {
+            background: linear-gradient(145deg, #1b1426 0%, #2a1324 100%) !important;
+            border: 1.5px solid rgba(251, 191, 36, 0.55) !important;
+            box-shadow: 0 8px 28px rgba(233, 30, 99, 0.22) !important;
+        }
+
+        body.tema-black-friday .produto-card h3 {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday .produto-card p {
+            color: #a1a1aa !important;
+        }
+
+        body.tema-black-friday .produto-card div[style*="#f8fafc"] {
+            background: #231b30 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Preços com alta legibilidade (Normal branco / Promoção verde esmeralda gigante) */
+        body.tema-black-friday .produto-card strong {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday .produto-card span[style*="line-through"] {
+            color: #71717a !important;
+            font-size: 0.92rem !important;
+        }
+
+        body.tema-black-friday .produto-card span[style*="line-through"] + strong {
+            color: #34d399 !important;
+            font-size: 1.35rem !important;
+        }
+
+        /* Botão + Adicionar vibrante */
+        body.tema-black-friday .produto-card > div:last-child > div:last-child > span:last-child {
+            background: linear-gradient(135deg, var(--cor-primaria, #e91e63), #ff2a78) !important;
+            box-shadow: 0 4px 16px rgba(233, 30, 99, 0.45) !important;
+        }
+
+        /* Selos do Clube Icesoft e Tags */
+        body.tema-black-friday .produto-card span[style*="#ecfeff"] {
+            background: rgba(6, 182, 212, 0.16) !important;
+            color: #67e8f9 !important;
+            border-color: rgba(103, 232, 249, 0.35) !important;
+        }
+
+        body.tema-black-friday .produto-card span[style*="#f0fdfa"] {
+            background: rgba(20, 184, 166, 0.16) !important;
+            color: #5eead4 !important;
+            border-color: rgba(94, 234, 212, 0.3) !important;
+        }
+
+        body.tema-black-friday .tag-oferta {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+            color: #0f0a14 !important;
+            border-color: #fde68a !important;
+        }
+
+        body.tema-black-friday .tag-so_hoje {
+            background: #e11d48 !important;
+            color: #ffffff !important;
+            border-color: #fda4af !important;
+        }
+
+        /* Carrinho Flutuante, Barra de Cupom e Menu Inferior */
+        body.tema-black-friday #carrinho-flutuante {
+            background: linear-gradient(135deg, #1b1426, #0f0b14) !important;
+            border: 1.5px solid rgba(251, 191, 36, 0.5) !important;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65) !important;
+        }
+
+        body.tema-black-friday #barra-cupom-flutuante {
+            background: rgba(22, 17, 30, 0.96) !important;
+            border-top: 1px solid rgba(251, 191, 36, 0.35) !important;
+        }
+
+        body.tema-black-friday #texto-cupom-chamada {
+            color: #fbbf24 !important;
+        }
+
+        body.tema-black-friday #texto-cupom-falta {
+            color: #e2e8f0 !important;
+        }
+
+        body.tema-black-friday .bottom-nav {
+            background: rgba(16, 12, 22, 0.95) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.55) !important;
+        }
+
+        body.tema-black-friday .nav-item {
+            color: #71717a !important;
+        }
+
+        body.tema-black-friday .nav-item.ativa {
+            background: rgba(233, 30, 99, 0.18) !important;
+            color: #ff4d8d !important;
+        }
+
+        /* Aba Clube & Pontos harmonizada no escuro */
+        body.tema-black-friday #aba-clube h2,
+        body.tema-black-friday #aba-clube h3 {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday #tela-login-clube div[style*="background: #ffffff"],
+        body.tema-black-friday #area-clube-logado div[style*="background: white"],
+        body.tema-black-friday #vitrine-troca-clube div[style*="background: #ffffff"],
+        body.tema-black-friday #vitrine-troca-clube div[style*="background: white"] {
+            background: #171220 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.tema-black-friday #aba-clube strong[style*="color: #333"] {
+            color: #ffffff !important;
+        }
+
+        body.tema-black-friday #aba-clube p {
+            color: #cbd5e1 !important;
+        }
+
+        body.tema-black-friday #tela-login-clube div[style*="#fffbeb"],
+        body.tema-black-friday #area-clube-logado div[style*="#fffdf5"] {
+            background: rgba(245, 158, 11, 0.12) !important;
+            color: #fde68a !important;
+            border-color: rgba(251, 191, 36, 0.35) !important;
+        }
+
+        body.tema-black-friday #tela-login-clube div[style*="#ecfeff"],
+        body.tema-black-friday #area-clube-logado div[style*="#f0fdfa"] {
+            background: rgba(6, 182, 212, 0.12) !important;
+            color: #a5f3fc !important;
+            border-color: rgba(34, 211, 238, 0.35) !important;
+        }
+
+        body.tema-black-friday #tela-login-clube strong[style*="#b45309"] {
+            color: #fbbf24 !important;
+        }
+
+        body.tema-black-friday #tela-login-clube strong[style*="#0e7490"],
+        body.tema-black-friday #vitrine-troca-clube h3 {
+            color: #22d3ee !important;
+        }
     </style>
    
     <!-- Meta Pixel Code -->
@@ -468,7 +796,7 @@
       <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=977375813513190&ev=PageView&noscript=1"/>
     </noscript>
 </head>
-<body>
+<body class="tema-black-friday">
     
     <!-- ==========================================
          BANNER DE AVISO: NAVEGADOR DO INSTAGRAM
@@ -501,6 +829,12 @@
          ABA PRINCIPAL: CARDÁPIO ONLINE
          ========================================== -->
     <div id="aba-cardapio" class="aba-conteudo ativa" style="padding-bottom: 170px;">
+
+        <!-- Faixa Sazonal Black Friday (Some sozinha ao desligar o tema) -->
+        <div class="banner-black-friday">
+            <span class="badge-bf">🖤 BLACK FRIDAY</span>
+            <span>Combos e ofertas especiais por tempo limitado 🍦</span>
+        </div>
         
         <!-- Header Contemporâneo -->
         <header class="app-header-moderno">

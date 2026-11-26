@@ -282,8 +282,9 @@ function renderizarCardapio(lista) {
     container.innerHTML = '<h2 style="margin-bottom: 16px; color: #0f172a; font-weight: 800;">Cardápio</h2>';
 
     const categoriasOrdenadas = obterOrdemDasCategorias(lista);
+    let primeiraVisivel = true;
 
-    categoriasOrdenadas.forEach((catNome, index) => {
+    categoriasOrdenadas.forEach((catNome) => {
         const produtosDestaCategoria = lista.filter(p => {
             let catPrincipal = (p.categoria && p.categoria !== 'null') ? p.categoria : 'Diversos';
             if (catPrincipal === catNome) return true;
@@ -409,7 +410,8 @@ function renderizarCardapio(lista) {
             `;
         });
 
-        const isPrimeira = index === 0;
+        const isPrimeira = primeiraVisivel;
+        primeiraVisivel = false;
         const displayInicial = isPrimeira ? 'block' : 'none';
         const rotacaoSeta = isPrimeira ? 'transform: rotate(180deg);' : 'transform: rotate(0deg);';
 
